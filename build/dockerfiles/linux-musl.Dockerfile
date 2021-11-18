@@ -49,8 +49,10 @@ RUN [[ $(uname -m) == "x86_64" ]] && yarn --cwd test/smoke compile && yarn --cwd
 RUN [[ $(uname -m) == "x86_64" ]] && apk add --update --no-cache chromium procps
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 RUN [[ $(uname -m) == "x86_64" ]] && yarn playwright-install
-RUN [[ $(uname -m) == "x86_64" ]] && rm /root/.cache/ms-playwright/chromium-930007/chrome-linux/chrome && \
-    ln -s /usr/bin/chromium-browser /root/.cache/ms-playwright/chromium-930007/chrome-linux/chrome
+RUN [[ $(uname -m) == "x86_64" ]] && \
+     PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
+    rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
 
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-alpine" \

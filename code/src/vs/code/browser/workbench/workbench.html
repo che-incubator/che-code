@@ -23,8 +23,9 @@
 		<meta id="vscode-workbench-auth-session" data-settings="{{WORKBENCH_AUTH_SESSION}}">
 
 		<!-- Workbench Icon/Manifest/CSS -->
-		<link rel="icon" href="/favicon.ico" type="image/x-icon" />
-		<link rel="manifest" href="/manifest.json">
+		<link rel="icon" href="./favicon.ico" type="image/x-icon" />
+		<link rel="manifest" href="./manifest.json">
+
 		<link data-name="vs/workbench/workbench.web.api" rel="stylesheet" href="./static/out/vs/workbench/workbench.web.api.css">
 
 	</head>
@@ -37,10 +38,10 @@
 	<script src="./static/out/vs/webPackagePaths.js"></script>
 	<script>
 		Object.keys(self.webPackagePaths).map(function (key, index) {
-			self.webPackagePaths[key] = `${window.location.origin}/static/node_modules/${key}/${self.webPackagePaths[key]}`;
+			self.webPackagePaths[key] = `${window.location.protocol}//${window.location.host}${window.location.pathname}static/node_modules/${key}/${self.webPackagePaths[key]}`;
 		});
 		require.config({
-			baseUrl: `${window.location.origin}/static/out`,
+			baseUrl: `${window.location.protocol}//${window.location.host}${window.location.pathname}static/out`,
 			recordStats: true,
 			trustedTypesPolicy: window.trustedTypes?.createPolicy('amdLoader', {
 				createScriptURL(value) {

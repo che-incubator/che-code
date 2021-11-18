@@ -1,0 +1,16 @@
+{
+    "nameShort": "CheCode",
+	"nameLong": "CheCode",
+	"applicationName": "che-code",
+	"dataFolderName": ".che-code",
+	"win32MutexName": "che-code",
+	"licenseName": "EPL2-0",
+	"win32DirName": "CheCode",
+	"win32NameVersion": "CheCode",
+	"win32RegValueName": "CheCode",
+	"win32AppUserModelId": "Che.Code",
+	"win32ShellNameShort": "CheC&ode",
+	"darwinBundleIdentifier": "org.eclipse.che.code",
+	"linuxIconName": "org.eclipse.che.code",
+	"urlProtocol": "checode"
+}

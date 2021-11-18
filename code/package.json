@@ -1,5 +1,5 @@
 {
-  "name": "code-oss-dev",
+  "name": "che-code",
   "version": "1.62.0",
   "distro": "b20d22b7ba814d2fdc985ad724271807ca95f2a8",
   "author": {
@@ -91,6 +91,7 @@
     "xterm-addon-unicode11": "0.3.0",
     "xterm-addon-webgl": "0.12.0-beta.15",
     "xterm-headless": "4.15.0-beta.10",
+    "ws": "8.2.3",
     "yauzl": "^2.9.2",
     "yazl": "^2.4.3"
   },
@@ -119,6 +120,7 @@
     "@types/windows-mutex": "^0.4.0",
     "@types/windows-process-tree": "^0.2.0",
     "@types/winreg": "^1.2.30",
+    "@types/ws": "8.2.0",
     "@types/yauzl": "^2.9.1",
     "@types/yazl": "^2.4.2",
     "@typescript-eslint/eslint-plugin": "3.2.0",
@@ -230,5 +232,6 @@
   "resolutions": {
     "elliptic": "^6.5.3",
     "nwmatcher": "^1.4.4"
-  }
+  },
+  "bin": "out/vs/server/main.js"
 }

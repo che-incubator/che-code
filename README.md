@@ -30,7 +30,7 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 
 This repository has a main branch being rebased on the main remote branch of `Code-OSS`.
 Then, for each stable version of `Code-OSS`there is a matching branch.
-For example remote `release/1.60` is handled locally as a `1.60.x` branch.
+For example remote `release/1.60` is handled locally as a `1.62.x` branch.
 
 ### Pulling/Diff against new Code OSS version - useful commands
 
@@ -45,13 +45,13 @@ $ git remote add upstream-code https://github.com/microsoft/vscode
 For a release branch:
 
 ```bash
-$ git subtree pull --prefix code upstream-code release/1.60 --squash
+$ git subtree pull --prefix code upstream-code release/1.62
 ```
 
 For the main branch:
 
 ```bash
-$ git subtree pull --prefix code upstream-code main --squash
+$ git subtree pull --prefix code upstream-code main
 ```
 
 #### Check the diff between local and remote
@@ -59,7 +59,7 @@ $ git subtree pull --prefix code upstream-code main --squash
 For a release branch:
 
 ```bash
-$ git diff upstream-code/release/1.60 1.60.x:code
+$ git diff upstream-code/release/1.62 1.62.x:code
 ```
 
 For a main branch:
@@ -68,8 +68,3 @@ For a main branch:
 $ git diff upstream-code/main main:code
 ```
 
-
-#### get the sha1 of the current subtree
-```bash
-$ git log -1 --grep="^git-subtree-dir: code/*\$" --no-show-signature | grep "git-subtree-split:" | tail -n 1 | cut -d ':' -f 2 | tr -d ' '
-```

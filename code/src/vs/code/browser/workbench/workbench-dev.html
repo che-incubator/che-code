@@ -26,8 +26,8 @@
 		<meta id="vscode-workbench-builtin-extensions" data-settings="{{WORKBENCH_BUILTIN_EXTENSIONS}}">
 
 		<!-- Workbench Icon/Manifest/CSS -->
-		<link rel="icon" href="/favicon.ico" type="image/x-icon" />
-		<link rel="manifest" href="/manifest.json">
+		<link rel="icon" href="./favicon.ico" type="image/x-icon" />
+		<link rel="manifest" href="./manifest.json">
 	</head>
 
 	<body aria-label="">
@@ -38,10 +38,10 @@
 	<script src="./static/out/vs/webPackagePaths.js"></script>
 	<script>
 		Object.keys(self.webPackagePaths).map(function (key, index) {
-			self.webPackagePaths[key] = `${window.location.origin}/static/remote/web/node_modules/${key}/${self.webPackagePaths[key]}`;
+			self.webPackagePaths[key] = `${window.location.protocol}//${window.location.host}${window.location.pathname}static/node_modules/${key}/${self.webPackagePaths[key]}`;
 		});
 		require.config({
-			baseUrl: `${window.location.origin}/static/out`,
+			baseUrl: `${window.location.protocol}//${window.location.host}${window.location.pathname}static/out`,
 			recordStats: true,
 			trustedTypesPolicy: window.trustedTypes?.createPolicy('amdLoader', {
 				createScriptURL(value) {

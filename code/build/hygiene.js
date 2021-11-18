@@ -28,10 +28,13 @@ function hygiene(some, linting = true) {
 	const productJson = es.through(function (file) {
 		const product = JSON.parse(file.contents.toString('utf8'));
 
+		// CHECODE: we have openvsx
+		/*
 		if (product.extensionsGallery) {
 			console.error(`product.json: Contains 'extensionsGallery'`);
 			errorCount++;
 		}
+		*/
 
 		this.emit('data', file);
 	});
@@ -59,6 +62,11 @@ function hygiene(some, linting = true) {
 	});
 
 	const copyrights = es.through(function (file) {
+		// CHECODE: skip che relative copyright files
+		if (/^.*\/vs\/server\/che.*/.test(file.relative)) {
+			this.emit('data', file);
+			return;
+		}
 		const lines = file.__lines;
 
 		for (let i = 0; i < copyrightHeaderLines.length; i++) {

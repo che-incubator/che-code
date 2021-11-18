@@ -1,0 +1,10 @@
+{
+	"sendASmile": {
+		"reportIssueUrl": "https://github.com/eclipse/che/issues/new?assignees=&labels=kind%2Fbug&template=bug_report.yml",
+		"requestFeatureUrl": "https://github.com/eclipse/che/issues/new?assignees=&labels=kind%2Fenhancement&template=enhancement.yaml"
+	},
+	"extensionsGallery" : {
+		"serviceUrl": "https://open-vsx.org/vscode/gallery",
+		"itemUrl": "https://open-vsx.org/vscode/item"
+	}
+}

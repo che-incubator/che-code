@@ -1,0 +1,4 @@
+{
+    "name": "che-code",
+    "bin": "out/vs/server/main.js"
+}
