@@ -366,7 +366,7 @@ interface IWorkbenchConstructionOptions {
 	/**
 	 * [TEMPORARY]: This will be removed soon.
 	 * Use an unique origin for the web worker extension host.
-	 * Defaults to false.
+	 * Defaults to true.
 	 */
 	readonly __uniqueWebWorkerExtensionHostOrigin?: boolean;
 
@@ -384,11 +384,6 @@ interface IWorkbenchConstructionOptions {
 	 * Resolves an external uri before it is opened.
 	 */
 	readonly resolveExternalUri?: IExternalUriResolver;
-
-	/**
-	 * Support for URL callbacks.
-	 */
-	readonly externalURLOpener?: IExternalURLOpener;
 
 	/**
 	 * A provider for supplying tunneling functionality,
@@ -447,6 +442,13 @@ interface IWorkbenchConstructionOptions {
 	 * link protection popup.
 	 */
 	readonly additionalTrustedDomains?: string[];
+
+	/**
+	 * Urls that will be opened externally that are allowed access
+	 * to the opener window. This is primarily used to allow
+	 * `window.close()` to be called from the newly opened window.
+	 */
+	readonly openerAllowedExternalUrlPrefixes?: string[];
 
 	/**
 	 * Support for URL callbacks.
@@ -608,8 +610,11 @@ interface IWorkbench {
 	 *
 	 * This will also remove any `beforeUnload` handlers that would bring up a
 	 * confirmation dialog.
+	 *
+	 * The returned promise should be awaited on to ensure any data to persist
+	 * has been persisted.
 	 */
-	shutdown: () => void;
+	shutdown: () => Promise<void>;
 }
 
 /**

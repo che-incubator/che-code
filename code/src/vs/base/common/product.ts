@@ -53,6 +53,7 @@ export interface IProductConfiguration {
 	readonly updateUrl?: string;
 	readonly webEndpointUrl?: string;
 	readonly webEndpointUrlTemplate?: string;
+	readonly webviewContentExternalBaseUrlTemplate?: string;
 	readonly target?: string;
 
 	readonly settingsSearchBuildId?: number;
@@ -134,7 +135,9 @@ export interface IProductConfiguration {
 	readonly extensionKind?: { readonly [extensionId: string]: ('ui' | 'workspace' | 'web')[]; };
 	readonly extensionPointExtensionKind?: { readonly [extensionPointId: string]: ('ui' | 'workspace' | 'web')[]; };
 	readonly extensionSyncedKeys?: { readonly [extensionId: string]: string[]; };
+	/** @deprecated */
 	readonly extensionAllowedProposedApi?: readonly string[];
+	readonly extensionEnabledApiProposals?: { readonly [extensionId: string]: string[] }
 	readonly extensionUntrustedWorkspaceSupport?: { readonly [extensionId: string]: ExtensionUntrustedWorkspaceSupport };
 	readonly extensionVirtualWorkspacesSupport?: { readonly [extensionId: string]: ExtensionVirtualWorkspaceSupport };
 

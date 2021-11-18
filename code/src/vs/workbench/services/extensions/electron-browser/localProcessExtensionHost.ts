@@ -277,6 +277,7 @@ export class LocalProcessExtensionHost implements IExtensionHost {
 				}
 
 				// On linux crash reporter needs to be started on child node processes explicitly
+				// TODO@bpasero TODO@deepak1556 remove once we updated to Electron 15
 				if (platform.isLinux) {
 					const crashReporterStartOptions: CrashReporterStartOptions = {
 						companyName: this._productService.crashReporter?.companyName || 'Microsoft',
@@ -361,6 +362,8 @@ export class LocalProcessExtensionHost implements IExtensionHost {
 				let startupTimeoutHandle: any;
 				if (!this._environmentService.isBuilt && !this._environmentService.remoteAuthority || this._isExtensionDevHost) {
 					startupTimeoutHandle = setTimeout(() => {
+						this._logService.error(`[LocalProcessExtensionHost]: Extension host did not start in 10 seconds (debugBrk: ${this._isExtensionDevDebugBrk})`);
+
 						const msg = this._isExtensionDevDebugBrk
 							? nls.localize('extensionHost.startupFailDebug', "Extension host did not start in 10 seconds, it might be stopped on the first line and needs a debugger to continue.")
 							: nls.localize('extensionHost.startupFail', "Extension host did not start in 10 seconds, that might be a problem.");

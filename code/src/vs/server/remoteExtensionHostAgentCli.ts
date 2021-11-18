@@ -36,6 +36,8 @@ import { isAbsolute, join } from 'vs/base/common/path';
 import { cwd } from 'vs/base/common/process';
 import { DownloadService } from 'vs/platform/download/common/downloadService';
 import { IDownloadService } from 'vs/platform/download/common/download';
+import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
+import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 
 class CliMain extends Disposable {
 
@@ -73,7 +75,7 @@ class CliMain extends Disposable {
 
 		const environmentService = new ServerEnvironmentService(this.args, productService);
 		services.set(IServerEnvironmentService, environmentService);
-		const logService: ILogService = new LogService(new SpdLogLogger(RemoteExtensionLogFileName, join(environmentService.logsPath, `${RemoteExtensionLogFileName}.log`), true, getLogLevel(environmentService)));
+		const logService: ILogService = new LogService(new SpdLogLogger(RemoteExtensionLogFileName, join(environmentService.logsPath, `${RemoteExtensionLogFileName}.log`), true, false, getLogLevel(environmentService)));
 		services.set(ILogService, logService);
 		logService.trace(`Remote configuration data at ${this.remoteDataFolder}`);
 		logService.trace('process arguments:', this.args);
@@ -89,6 +91,7 @@ class CliMain extends Disposable {
 		await configurationService.initialize();
 		services.set(IConfigurationService, configurationService);
 
+		services.set(IUriIdentityService, new UriIdentityService(fileService));
 		services.set(IRequestService, new SyncDescriptor(RequestService));
 		services.set(IDownloadService, new SyncDescriptor(DownloadService));
 		services.set(ITelemetryService, NullTelemetryService);
