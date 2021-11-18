@@ -50,6 +50,7 @@ import { ILifecycleService, ShutdownReason, WillShutdownEvent } from 'vs/workben
 import { IRemoteAgentService } from 'vs/workbench/services/remote/common/remoteAgentService';
 import { ACTIVE_GROUP, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export class TerminalService implements ITerminalService {
 	declare _serviceBrand: undefined;
@@ -160,6 +161,7 @@ export class TerminalService implements ITerminalService {
 		@IContextKeyService private _contextKeyService: IContextKeyService,
 		@ILabelService labelService: ILabelService,
 		@ILifecycleService lifecycleService: ILifecycleService,
+		@ILogService private readonly _logService: ILogService,
 		@IDialogService private _dialogService: IDialogService,
 		@IInstantiationService private _instantiationService: IInstantiationService,
 		@IRemoteAgentService private _remoteAgentService: IRemoteAgentService,
@@ -435,7 +437,7 @@ export class TerminalService implements ITerminalService {
 							}
 						} else {
 							// add split terminals to this group
-							await this.createTerminal({ config: { attachPersistentProcess: terminalLayout.terminal! }, location: { parentTerminal: terminalInstance } });
+							terminalInstance = await this.createTerminal({ config: { attachPersistentProcess: terminalLayout.terminal! }, location: { parentTerminal: terminalInstance } });
 						}
 					}
 					const activeInstance = this.instances.find(t => {
@@ -585,22 +587,27 @@ export class TerminalService implements ITerminalService {
 
 		// Persist terminal _buffer state_, note that even if this happens the dirty terminal prompt
 		// still shows as that cannot be revived
-		this._shutdownWindowCount = await this._nativeDelegate?.getWindowCount();
-		const shouldReviveProcesses = this._shouldReviveProcesses(reason);
-		if (shouldReviveProcesses) {
-			await this._primaryOffProcessTerminalService?.persistTerminalState();
-		}
-
-		// Persist terminal _processes_
-		const shouldPersistProcesses = this._configHelper.config.enablePersistentSessions && reason === ShutdownReason.RELOAD;
-		if (!shouldPersistProcesses) {
-			const hasDirtyInstances = (
-				(this.configHelper.config.confirmOnExit === 'always' && this.instances.length > 0) ||
-				(this.configHelper.config.confirmOnExit === 'hasChildProcesses' && this.instances.some(e => e.hasChildProcesses))
-			);
-			if (hasDirtyInstances) {
-				return this._onBeforeShutdownConfirmation(reason);
+		try {
+			this._shutdownWindowCount = await this._nativeDelegate?.getWindowCount();
+			const shouldReviveProcesses = this._shouldReviveProcesses(reason);
+			if (shouldReviveProcesses) {
+				await this._primaryOffProcessTerminalService?.persistTerminalState();
 			}
+
+			// Persist terminal _processes_
+			const shouldPersistProcesses = this._configHelper.config.enablePersistentSessions && reason === ShutdownReason.RELOAD;
+			if (!shouldPersistProcesses) {
+				const hasDirtyInstances = (
+					(this.configHelper.config.confirmOnExit === 'always' && this.instances.length > 0) ||
+					(this.configHelper.config.confirmOnExit === 'hasChildProcesses' && this.instances.some(e => e.hasChildProcesses))
+				);
+				if (hasDirtyInstances) {
+					return this._onBeforeShutdownConfirmation(reason);
+				}
+			}
+		} catch (err: unknown) {
+			// Swallow as exceptions should not cause a veto to prevent shutdown
+			this._logService.warn('Exception occurred during terminal shutdown', err);
 		}
 
 		this._isShuttingDown = true;
@@ -1371,10 +1378,6 @@ export class TerminalService implements ITerminalService {
 	}
 
 	private _getSplitParent(location?: ITerminalLocationOptions): ITerminalInstance | undefined {
-		if (this._connectionState === TerminalConnectionState.Connecting && this.activeInstance) {
-			const group = this._terminalGroupService.getGroupForInstance(this.activeInstance);
-			return group?.terminalInstances[group.terminalInstances.length - 1];
-		}
 		if (location && typeof location === 'object' && 'parentTerminal' in location) {
 			return location.parentTerminal;
 		} else if (location && typeof location === 'object' && 'splitActiveTerminal' in location) {

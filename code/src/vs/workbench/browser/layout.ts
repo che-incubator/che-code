@@ -1308,6 +1308,12 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 
 			this.storageService.store(Storage.SIDEBAR_SIZE, sideBarSize, StorageScope.GLOBAL, StorageTarget.MACHINE);
 
+			const auxiliaryBarSize = this.state.auxiliaryBar.hidden
+				? grid.getViewCachedVisibleSize(this.auxiliaryBarPartView)
+				: grid.getViewSize(this.auxiliaryBarPartView).width;
+
+			this.storageService.store(Storage.AUXILIARYBAR_SIZE, auxiliaryBarSize, StorageScope.GLOBAL, StorageTarget.MACHINE);
+
 			const panelSize = this.state.panel.hidden
 				? grid.getViewCachedVisibleSize(this.panelPartView)
 				: (this.state.panel.position === Position.BOTTOM ? grid.getViewSize(this.panelPartView).height : grid.getViewSize(this.panelPartView).width);
@@ -1678,7 +1684,7 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	}
 
 	private setAuxiliaryBarHidden(hidden: boolean, skipLayout?: boolean): void {
-		if (!this.configurationService.getValue(Settings.AUXILIARYBAR_ENABLED)) {
+		if (!this.configurationService || !this.configurationService.getValue(Settings.AUXILIARYBAR_ENABLED)) {
 			return;
 		}
 
