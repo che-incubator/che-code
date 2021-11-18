@@ -1,0 +1,14 @@
+{
+  "name": "che-code",
+  "version": "0.0.1",
+  "description": "Run Code-OSS on kubernetes",
+  "scripts": {
+    "prepare": "cd code && yarn && yarn download-builtin-extensions",
+    "watch": "cd code && yarn watch",
+    "server": "cd code && VSCODE_DEV=1 yarn node out/vs/server/main.js",
+    "build": "cd code && yarn run gulp vscode-reh-web-linux-alpine",
+    "build:min": "cd code && yarn gulp vscode-reh-web-linux-alpine-min",
+    "rebuild-native-modules": "cd code && npm rebuild"
+  },
+  "license": "EPL-2.0"
+}

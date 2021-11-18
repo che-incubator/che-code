@@ -1,0 +1,7 @@
+.git
+code/.build/**
+code/out**
+code/node_modules/**
+Dockerfile
+vscode-reh-*
+tools
