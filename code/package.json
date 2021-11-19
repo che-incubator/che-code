@@ -1,7 +1,7 @@
 {
   "name": "che-code",
   "version": "1.63.0",
-  "distro": "a9033b9207d753215ad13618e125ddb770066bd1",
+  "distro": "f5a2c7f01629f6d3c0dc65e3fbb3818033206bf2",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -83,7 +83,7 @@
     "vscode-proxy-agent": "^0.11.0",
     "vscode-regexpp": "^3.1.0",
     "vscode-ripgrep": "^1.12.1",
-    "vscode-textmate": "5.4.1",
+    "vscode-textmate": "5.5.0",
     "xterm": "4.16.0-beta.2",
     "xterm-addon-search": "0.9.0-beta.6",
     "xterm-addon-serialize": "0.7.0-beta.3",
