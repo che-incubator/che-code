@@ -20,7 +20,8 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, ThemeColor } from 'vs/platform/theme/common/themeService';
 import { INotebookCellActionContext } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
-import { CodeCellLayoutInfo, MarkdownCellLayoutInfo } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { CodeCellLayoutInfo, ICellViewModel, MarkdownCellLayoutInfo } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellParts/cellPart';
 import { CellStatusbarAlignment, INotebookCellStatusBarItem } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 
 const $ = DOM.$;
@@ -36,7 +37,7 @@ export const enum ClickTargetType {
 	ContributedCommandItem = 2
 }
 
-export class CellEditorStatusBar extends Disposable {
+export class CellEditorStatusBar extends CellPart {
 	readonly statusBarContainer: HTMLElement;
 
 	private readonly leftItemsContainer: HTMLElement;
@@ -92,13 +93,13 @@ export class CellEditorStatusBar extends Disposable {
 		}));
 	}
 
-	private layout(): void {
-		if (!this.currentContext) {
-			return;
-		}
+	prepareRender(): void {
+		// nothing to read
+	}
 
+	updateLayout(element: ICellViewModel): void {
 		// TODO@roblou maybe more props should be in common layoutInfo?
-		const layoutInfo = this.currentContext.cell.layoutInfo as CodeCellLayoutInfo | MarkdownCellLayoutInfo;
+		const layoutInfo = element.layoutInfo as CodeCellLayoutInfo | MarkdownCellLayoutInfo;
 		const width = layoutInfo.editorWidth;
 		if (!width) {
 			return;
@@ -124,10 +125,14 @@ export class CellEditorStatusBar extends Disposable {
 			return;
 		}
 
-		this.itemsDisposable.add(this.currentContext.cell.onDidChangeLayout(() => this.layout()));
+		this.itemsDisposable.add(this.currentContext.cell.onDidChangeLayout(() => {
+			if (this.currentContext) {
+				this.updateLayout(this.currentContext.cell);
+			}
+		}));
 		this.itemsDisposable.add(this.currentContext.cell.onDidChangeCellStatusBarItems(() => this.updateRenderedItems()));
 		this.itemsDisposable.add(this.currentContext.notebookEditor.onDidChangeActiveCell(() => this.updateActiveCell()));
-		this.layout();
+		this.updateLayout(this.currentContext.cell);
 		this.updateActiveCell();
 		this.updateRenderedItems();
 	}
