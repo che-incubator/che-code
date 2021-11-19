@@ -63,6 +63,7 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}        
-      - name: Docker Build
+      - name: Docker Build and Push
         run: |
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:next .
+          SHORT_SHA1=$(git rev-parse --short=7 HEAD)
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:insiders -t quay.io/che-incubator/che-code:next -t quay.io/che-incubator/che-code:${SHORT_SHA1} .
