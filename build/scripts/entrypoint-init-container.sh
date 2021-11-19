@@ -12,7 +12,9 @@
 #
 
 # Copy checode stuff to the shared volume
-cp -r /checode* /checode-mount/
+cp -r /checode-* /checode/
+# copy entrypoint
+cp /entrypoint-volume.sh /checode/
 echo "listing all files copied"
-ls -la /checode-mount
+ls -la /checode
 

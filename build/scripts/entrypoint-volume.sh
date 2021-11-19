@@ -11,11 +11,11 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-# list checode-mount
-ls -la /checode-mount/
+# list checode
+ls -la /checode/
 
 # Start the machine-exec component in background
-nohup /checode-mount/bin/machine-exec --url '0.0.0.0:3333' &
+nohup /checode/bin/machine-exec --url '0.0.0.0:3333' &
 sleep 5
 
 # Start the checode component based on musl or libc
@@ -23,9 +23,10 @@ sleep 5
 # detect if we're using alpine/musl
 libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
 if [ -n "$libc" ]; then
-    /checode-mount/checode-linux-musl/node /checode-mount/checode-linux-musl/out/vs/server/main.js --port 3100
+    cd /checode/checode-linux-musl || exit
 else
-    /checode-mount/checode-linux-libc/node /checode-mount/checode-linux-libc/out/vs/server/main.js --port 3100
+    cd /checode/checode-linux-libc || exit
 fi
 
-
+# Launch che with a custom connectionToken
+./node out/vs/server/main.js --port 3100 --connectionToken eclipse-che
