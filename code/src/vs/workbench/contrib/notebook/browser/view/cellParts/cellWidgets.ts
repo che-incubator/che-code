@@ -20,7 +20,7 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, ThemeColor } from 'vs/platform/theme/common/themeService';
 import { INotebookCellActionContext } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
-import { CodeCellLayoutInfo, ICellViewModel, MarkdownCellLayoutInfo } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { ICellViewModel } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellParts/cellPart';
 import { CellStatusbarAlignment, INotebookCellStatusBarItem } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 
@@ -97,9 +97,8 @@ export class CellEditorStatusBar extends CellPart {
 		// nothing to read
 	}
 
-	updateLayout(element: ICellViewModel): void {
-		// TODO@roblou maybe more props should be in common layoutInfo?
-		const layoutInfo = element.layoutInfo as CodeCellLayoutInfo | MarkdownCellLayoutInfo;
+	updateLayoutNow(element: ICellViewModel): void {
+		const layoutInfo = element.layoutInfo;
 		const width = layoutInfo.editorWidth;
 		if (!width) {
 			return;
@@ -127,12 +126,12 @@ export class CellEditorStatusBar extends CellPart {
 
 		this.itemsDisposable.add(this.currentContext.cell.onDidChangeLayout(() => {
 			if (this.currentContext) {
-				this.updateLayout(this.currentContext.cell);
+				this.updateLayoutNow(this.currentContext.cell);
 			}
 		}));
 		this.itemsDisposable.add(this.currentContext.cell.onDidChangeCellStatusBarItems(() => this.updateRenderedItems()));
 		this.itemsDisposable.add(this.currentContext.notebookEditor.onDidChangeActiveCell(() => this.updateActiveCell()));
-		this.updateLayout(this.currentContext.cell);
+		this.updateLayoutNow(this.currentContext.cell);
 		this.updateActiveCell();
 		this.updateRenderedItems();
 	}
