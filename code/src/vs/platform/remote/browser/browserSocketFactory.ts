@@ -241,23 +241,9 @@ export class BrowserSocketFactory implements ISocketFactory {
 
 	connect(host: string, port: number, query: string, callback: IConnectCallback): void {
 
-		// In Che, the editor will be served over https
-		// then ws protocol won't work
-		// const socket = this._webSocketFactory.create(`${websocketProtocol}://${hostToConnect}&skipWebSocketFrames=false`);
-
-		const location = window.location;
-		const browserProtocol = window.location.protocol;
-		let websocketProtocol;
-		if ('https:' === browserProtocol) {
-			websocketProtocol = 'wss';
-		} else {
-			websocketProtocol = 'ws';
-		}
-
-		// full URL to connect
-		const toConnectAddress = `${websocketProtocol}://${location.host}${window.location.pathname}?${query}`;
-		const socket = this._webSocketFactory.create(`${toConnectAddress}&skipWebSocketFrames=false`);
-
+		// CHECODE: need to use pathname to make it working behind single-host/subpath
+		const webSocketSchema = (/^https:/.test(window.location.href) ? 'wss' : 'ws');
+		const socket = this._webSocketFactory.create(`${webSocketSchema}://${window.location.host}${window.location.pathname}?${query}&skipWebSocketFrames=false`);
 		const errorListener = socket.onError((err) => callback(err, undefined));
 		socket.onOpen(() => {
 			errorListener.dispose();
