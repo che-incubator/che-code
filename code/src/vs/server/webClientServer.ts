@@ -162,7 +162,10 @@ export class WebClientServer {
 					newQuery[key] = parsedUrl.query[key];
 				}
 			}
-			const newLocation = url.format({ pathname: '/', query: newQuery });
+			// CHECODE: redirect to the provided path instead of / to handle the case where
+			// it is running behind a subpath
+			const pathname = parsedUrl.pathname || '/';
+			const newLocation = url.format({ pathname, query: newQuery });
 			responseHeaders['Location'] = newLocation;
 
 			res.writeHead(302, responseHeaders);
