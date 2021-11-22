@@ -28,5 +28,5 @@ else
     cd /checode/checode-linux-libc || exit
 fi
 
-# Launch che with a custom connectionToken
-./node out/vs/server/main.js --port 3100 --connectionToken eclipse-che
+# Launch che with a custom connection-token
+./node out/vs/server/main.js --port 3100 --connection-token eclipse-che
