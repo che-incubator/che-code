@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-name: publish-next
+name: image-publish-insiders
 
 on:
   push:

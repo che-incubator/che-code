@@ -1,0 +1,10 @@
+schemaVersion: 2.1.0
+metadata:
+  name: my-dummy-project
+components:
+  - name: tools
+    container:
+      image: quay.io/fbenoit/alpine:jdk11
+      command:
+        - foo.sh
+      memoryLimit: 1Gi
