@@ -234,6 +234,7 @@ export interface IGalleryExtensionIdentifier extends IExtensionIdentifier {
 export interface IGalleryExtensionVersion {
 	version: string;
 	date: string;
+	isPreReleaseVersion: boolean;
 }
 
 export interface IGalleryExtension {
@@ -365,6 +366,7 @@ export enum ExtensionManagementErrorCode {
 	Unsupported = 'Unsupported',
 	Malicious = 'Malicious',
 	Incompatible = 'Incompatible',
+	IncompatiblePreRelease = 'IncompatiblePreRelease',
 	IncompatibleTargetPlatform = 'IncompatibleTargetPlatform',
 	Invalid = 'Invalid',
 	Download = 'Download',
