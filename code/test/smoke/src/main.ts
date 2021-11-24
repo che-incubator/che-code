@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as fs from 'fs';
+import { gracefulify } from 'graceful-fs';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
@@ -30,6 +31,13 @@ import { setup as setupLaunchTests } from './areas/workbench/launch.test';
 import { setup as setupTerminalProfileTests } from './areas/terminal/terminal-profiles.test';
 import { setup as setupTerminalTabsTests } from './areas/terminal/terminal-tabs.test';
 import { setup as setupTerminalEditorsTests } from './areas/terminal/terminal-editors.test';
+import { setup as setupTerminalPersistenceTests } from './areas/terminal/terminal-persistence.test';
+
+try {
+	gracefulify(fs);
+} catch (error) {
+	console.error(`Error enabling graceful-fs: ${error}`);
+}
 
 const testDataPath = path.join(os.tmpdir(), 'vscsmoke');
 if (fs.existsSync(testDataPath)) {
@@ -360,8 +368,9 @@ describe(`VSCode Smoke Tests (${opts.web ? 'Web' : 'Electron'})`, () => {
 	if (!opts.web) { setupLocalizationTests(opts); }
 	if (!opts.web) { setupLaunchTests(opts); }
 
-	// TODO: Enable terminal tests for non-web
+	// TODO: Enable terminal tests for non-web when it moved to playwright
 	if (opts.web) { setupTerminalProfileTests(opts); }
 	if (opts.web) { setupTerminalTabsTests(opts); }
 	if (opts.web) { setupTerminalEditorsTests(opts); }
+	if (opts.web) { setupTerminalPersistenceTests(opts); }
 });

@@ -7,6 +7,8 @@
 	"licenseName": "EPL2-0",
 	"licenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
 	"serverGreeting": [],
+	"serverLicense": [],
+	"serverLicensePrompt": "",
 	"win32DirName": "CheCode",
 	"win32NameVersion": "CheCode",
 	"win32RegValueName": "CheCode",
