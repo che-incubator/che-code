@@ -30,6 +30,8 @@ components:
       command:
         - /checode/entrypoint-volume.sh
       volumeMounts:
+        - name: foo
+          path: /foo
         - name: checode
           path: /checode
       endpoints:

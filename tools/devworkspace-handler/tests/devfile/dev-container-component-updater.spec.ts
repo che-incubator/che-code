@@ -36,35 +36,6 @@ describe('Test DevContainerComponentUpdater', () => {
   test('basics with existing devContainer', async () => {
     container.bind('boolean').toConstantValue(false).whenTargetNamed('INSERT_DEV_WORKSPACE_TEMPLATE_AS_PLUGIN');
     devContainerComponentUpdater = container.get(DevContainerComponentUpdater);
-    const devfileContext = {
-      devWorkspace: {
-        spec: {
-          template: {
-            components: [
-              {
-                name: 'hello',
-                container: {
-                  volumeMounts: [
-                    {
-                      name: 'baz',
-                      path: '/baz',
-                    },
-                    {
-                      name: 'bar',
-                      path: '/bar',
-                    },
-                  ],
-                },
-              },
-              {
-                name: 'baz',
-                volume: {},
-              },
-            ],
-          },
-        },
-      },
-    } as unknown as CheCodeDevfileContext;
 
     const devContainerComponent: V1alpha2DevWorkspaceSpecTemplateComponents = {
       name: 'foo',
@@ -105,6 +76,10 @@ describe('Test DevContainerComponentUpdater', () => {
         ],
         volumeMounts: [
           {
+            name: 'checode',
+            path: '/checode',
+          },
+          {
             name: 'foo',
             path: '/bar',
           },
@@ -121,6 +96,48 @@ describe('Test DevContainerComponentUpdater', () => {
         ],
       },
     };
+
+    const devfileContext = {
+      devworkspaceTemplates: [
+        {
+          components: [
+            cheCodeDescriptionComponent,
+            {
+              name: 'checode',
+              volume: {},
+            },
+          ],
+        },
+      ],
+      devWorkspace: {
+        spec: {
+          template: {
+            components: [
+              {
+                name: 'hello',
+                container: {
+                  volumeMounts: [
+                    {
+                      name: 'baz',
+                      path: '/baz',
+                    },
+                    {
+                      name: 'bar',
+                      path: '/bar',
+                    },
+                  ],
+                },
+              },
+              {
+                name: 'baz',
+                volume: {},
+              },
+            ],
+          },
+        },
+      },
+    } as unknown as CheCodeDevfileContext;
+
     await devContainerComponentUpdater.update(devfileContext, cheCodeDescriptionComponent, devContainerComponent, true);
 
     // check that inside the devContainer we have stuff being added
@@ -151,6 +168,10 @@ describe('Test DevContainerComponentUpdater', () => {
       {
         name: 'existing',
         path: '/existing',
+      },
+      {
+        name: 'checode',
+        path: '/checode',
       },
       {
         name: 'foo',

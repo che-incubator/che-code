@@ -93,10 +93,31 @@ export class DevContainerComponentUpdater {
 
     // check if we need to add component for these volumes
     const existingComponents = devfileContext.devWorkspace.spec.template.components;
+
+    // volumes defined in the templates
+    const volumesInsideTemplates = devfileContext.devWorkspaceTemplates
+      ?.map(template => template.spec.components)
+      .map(components =>
+        components.map(component => {
+          if (component.volume) {
+            return component.name;
+          } else {
+            return undefined;
+          }
+        })
+      )
+      .filter(defined => defined)
+      .flat();
     // keep only volumes that match the given component
-    const volumeComponentsToAdd = toInsertVolumeMounts.filter(
-      volumeMount => !existingComponents.find(component => component.volume && component.name == volumeMount.name)
-    );
+    const volumeComponentsToAdd = toInsertVolumeMounts
+      .filter(
+        volumeMount => !existingComponents.find(component => component.volume && component.name == volumeMount.name)
+      )
+      .filter(
+        // also filter out all volumes that are defined in the editor template
+        volumeMount => !(volumesInsideTemplates || []).includes(volumeMount.name)
+      );
+
     volumeComponentsToAdd.forEach(volume => {
       // volume
       devContainerAttributes[`${DevContainerComponentUpdater.CONTRIBUTE_VOLUME_COMPONENT}${volume.name}`] = true;
