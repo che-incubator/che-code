@@ -43,7 +43,7 @@ export class DefaultConfiguration extends Disposable {
 	) {
 		super();
 		if (environmentService.options?.configurationDefaults) {
-			this.configurationRegistry.registerDefaultConfigurations([environmentService.options.configurationDefaults]);
+			this.configurationRegistry.registerDefaultConfigurations([{ overrides: environmentService.options.configurationDefaults }]);
 		}
 	}
 
@@ -57,6 +57,7 @@ export class DefaultConfiguration extends Disposable {
 
 	async initialize(): Promise<ConfigurationModel> {
 		await this.initializeCachedConfigurationDefaultsOverrides();
+		this._configurationModel = undefined;
 		this._register(this.configurationRegistry.onDidUpdateConfiguration(({ defaultsOverrides }) => this.onDidUpdateConfiguration(defaultsOverrides)));
 		return this.configurationModel;
 	}
