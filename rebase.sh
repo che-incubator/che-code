@@ -35,6 +35,13 @@ override_json_file() {
   rm "$filename.tmp"
 }
 
+escape_litteral() {
+      escaped=${1//\$/\\$}
+    escaped=${escaped//\[/\\[}
+    escaped=${escaped//\]/\\]}
+    escaped=${escaped//\`/\\\`}
+    echo "$escaped"
+}
 
 # appy some string replace in $1 file
 apply_replace() {
@@ -54,12 +61,9 @@ apply_replace() {
     from=$(jq -n "$replaceCommand" | jq -r '.from')
     by=$(jq -n "$replaceCommand" | jq -r '.by')
 
-    escape_from=${from//\$/\\$}
-    escape_from=${escape_from//\[/\\[}
-    escape_from=${escape_from//\]/\\]}
-    escape_from=${escape_from//\`/\\\`}
-    echo sed_in_place -e "s|$escape_from|${by}/|" "${filename}"
-    sed_in_place -e "s|${escape_from}|${by}/|" "${filename}"
+    escape_from=$(escape_litteral "$from")
+    escape_by=$(escape_litteral "$by")
+    sed_in_place -e "s|${escape_from}|${escape_by}/|" "${filename}"
 
     # check that it's there
     if ! grep "$by" "${filename}" > /dev/null 2>&1 ; then
