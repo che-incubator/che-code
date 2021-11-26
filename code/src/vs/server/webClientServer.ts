@@ -162,10 +162,36 @@ export class WebClientServer {
 					newQuery[key] = parsedUrl.query[key];
 				}
 			}
-			// CHECODE: redirect to the provided path instead of / to handle the case where
-			// it is running behind a subpath
-			const pathname = parsedUrl.pathname || '/';
-			const newLocation = url.format({ pathname, query: newQuery });
+			// CHECODE: redirect to the provided path instead of / to handle the case behind reverse proxy
+			let newLocation;
+			// Grab headers
+			const xForwardedProto = req.headers['x-forwarded-proto'];
+			const xForwardedHost = req.headers['x-forwarded-host'];
+			const xForwardedPort = req.headers['x-forwarded-port'];
+			const xForwardedPrefix = req.headers['x-forwarded-prefix'];
+
+			if (xForwardedProto && typeof xForwardedProto === 'string' && xForwardedHost && typeof xForwardedHost === 'string') {
+				// use protocol
+				newLocation = `${xForwardedProto}://`;
+
+				// add host
+				newLocation = newLocation.concat(xForwardedHost);
+
+				// add port only if it's not the default one
+				if (xForwardedPort && typeof xForwardedPort === 'number' && xForwardedPort !== 443) {
+					newLocation = newLocation.concat(`:${xForwardedPort}`);
+				}
+
+				// add all prefixes
+				if (xForwardedPrefix) {
+					newLocation = newLocation.concat(...xForwardedPrefix);
+				}
+				// add query
+				const urlNewLocation = new URL(newLocation);
+				newLocation = url.format({ ...urlNewLocation, query: newQuery })
+			} else {
+				newLocation = url.format({ pathname: '/', query: newQuery })
+			}
 			responseHeaders['Location'] = newLocation;
 
 			res.writeHead(302, responseHeaders);
