@@ -35,6 +35,45 @@ override_json_file() {
   rm "$filename.tmp"
 }
 
+
+# appy some string replace in $1 file
+apply_replace() {
+  
+  local -r filename=$1
+  
+  local -r replaceSettings=".rebase/replace/$filename.json"
+  
+  # get one replace instruction on each line
+  local -r replaceCommands=$(jq -c '.[]' "${replaceSettings}")
+  
+  IFS=$'\n'
+  local from
+  local by
+  for replaceCommand in $replaceCommands; do
+    # need to replace from by the by
+    from=$(jq -n "$replaceCommand" | jq -r '.from')
+    by=$(jq -n "$replaceCommand" | jq -r '.by')
+
+    escape_from=${from//\$/\\$}
+    escape_from=${escape_from//\[/\\[}
+    escape_from=${escape_from//\]/\\]}
+    escape_from=${escape_from//\`/\\\`}
+    echo sed_in_place -e "s|$escape_from|${by}/|" "${filename}"
+    sed_in_place -e "s|${escape_from}|${by}/|" "${filename}"
+
+    # check that it's there
+    if ! grep "$by" "${filename}" > /dev/null 2>&1 ; then
+      echo "Unable to perform the replace. Value is not present in the resulting file"
+      echo "Wanted to check ${by}"
+      echo "File content is"
+      cat "${filename}"
+      exit 1
+    fi
+  done
+
+}
+
+
 # Apply changes on code/package.json file
 apply_code_package_changes() {
   
@@ -80,6 +119,21 @@ apply_code_product_changes() {
 }
 
 
+# Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
+apply_code_vs_platform_remote_browser_factory_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/platform/remote/browser/browserSocketFactory.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/platform/remote/browser/browserSocketFactory.ts
+  
+  # resolve the change
+  git add code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
+}
+
+
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
@@ -95,6 +149,8 @@ resolve_conflicts() {
       apply_code_product_changes
       elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
+      elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
+      apply_code_vs_platform_remote_browser_factory_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
@@ -142,6 +198,16 @@ do_rebase() {
       echo "${stderr}"
       exit 1
     fi
+  fi
+}
+
+# make sed -i portable
+sed_in_place() {
+    SHORT_UNAME=$(uname -s)
+  if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' "$@"
+  elif [ "${SHORT_UNAME:0:5}" == "Linux" ]; then
+    sed -i "$@"
   fi
 }
 
