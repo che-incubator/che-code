@@ -1,0 +1,7 @@
+[
+
+    {
+        "from": "${webSocketSchema}://${/:/.test(host) ? `[${host}]` : host}:${port}/?${query}",
+        "by": "${webSocketSchema}://${window.location.host}${window.location.pathname}?${query}"
+    }
+]
