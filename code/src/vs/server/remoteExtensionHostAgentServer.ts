@@ -502,9 +502,9 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 		// Finally!
 
 		if (skipWebSocketFrames) {
-			this._handleWebSocketConnection(new NodeSocket(socket), isReconnection, reconnectionToken);
+			this._handleWebSocketConnection(new NodeSocket(socket, `server-connection-${reconnectionToken}`), isReconnection, reconnectionToken);
 		} else {
-			this._handleWebSocketConnection(new WebSocketNodeSocket(new NodeSocket(socket), permessageDeflate, null, true), isReconnection, reconnectionToken);
+			this._handleWebSocketConnection(new WebSocketNodeSocket(new NodeSocket(socket, `server-connection-${reconnectionToken}`), permessageDeflate, null, true), isReconnection, reconnectionToken);
 		}
 	}
 
@@ -759,6 +759,7 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 					}
 				}
 
+				protocol.sendPause();
 				protocol.sendControl(VSBuffer.fromString(JSON.stringify(startParams.port ? { debugPort: startParams.port } : {})));
 				const dataChunk = protocol.readEntireBuffer();
 				protocol.dispose();
@@ -771,6 +772,7 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 					return this._rejectWebSocketConnection(logPrefix, protocol, `Duplicate reconnection token`);
 				}
 
+				protocol.sendPause();
 				protocol.sendControl(VSBuffer.fromString(JSON.stringify(startParams.port ? { debugPort: startParams.port } : {})));
 				const dataChunk = protocol.readEntireBuffer();
 				protocol.dispose();

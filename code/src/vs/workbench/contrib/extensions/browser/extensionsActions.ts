@@ -14,7 +14,7 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { dispose } from 'vs/base/common/lifecycle';
 import { IExtension, ExtensionState, IExtensionsWorkbenchService, VIEWLET_ID, IExtensionsViewPaneContainer, IExtensionContainer, TOGGLE_IGNORE_EXTENSION_ACTION_ID, SELECT_INSTALL_VSIX_EXTENSION_COMMAND_ID } from 'vs/workbench/contrib/extensions/common/extensions';
 import { ExtensionsConfigurationInitialContent } from 'vs/workbench/contrib/extensions/common/extensionsFileTemplate';
-import { IGalleryExtension, IExtensionGalleryService, ILocalExtension, InstallOptions, InstallOperation, TargetPlatformToString, ExtensionManagementErrorCode } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IGalleryExtension, IExtensionGalleryService, ILocalExtension, InstallOptions, InstallOperation, TargetPlatformToString, ExtensionManagementErrorCode, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { ExtensionRecommendationReason, IExtensionIgnoredRecommendationsService, IExtensionRecommendationsService } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
@@ -64,6 +64,7 @@ import { escapeMarkdownSyntaxTokens, IMarkdownString, MarkdownString } from 'vs/
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
 import { flatten } from 'vs/base/common/arrays';
+import { isBoolean } from 'vs/base/common/types';
 
 function getRelativeDateLabel(date: Date): string {
 	const delta = new Date().getTime() - date.getTime();
@@ -1125,6 +1126,68 @@ export class SwitchToReleasedVersionAction extends ExtensionAction {
 	}
 }
 
+export class SwitchUnsupportedExtensionToPreReleaseExtensionAction extends ExtensionAction {
+
+	private static readonly Class = `${ExtensionAction.LABEL_ACTION_CLASS} hide-when-disabled`;
+
+	constructor(
+		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
+	) {
+		super('workbench.extensions.action.switchUnsupportedExtensionToPreReleaseExtension', '', SwitchUnsupportedExtensionToPreReleaseExtensionAction.Class);
+	}
+
+	update(): void {
+		this.enabled = false;
+		if (!!this.extension && !!this.extension.local && this.extension.isUnsupported && !isBoolean(this.extension.isUnsupported) && this.extension.state === ExtensionState.Installed) {
+			this.enabled = true;
+			this.label = localize('switchUnsupportedExtensionToPreReleaseExtension', "Switch to '{0}' Pre-Release version", this.extension.isUnsupported.preReleaseExtension.displayName);
+		}
+	}
+
+	override async run(): Promise<any> {
+		if (!!this.extension && !!this.extension.local && this.extension.isUnsupported && !isBoolean(this.extension.isUnsupported)) {
+			const gallery = (await this.galleryService.getExtensions([{ id: this.extension.isUnsupported.preReleaseExtension.id }], true, CancellationToken.None))[0];
+			return this.instantiationService.createInstance(SwitchUnsupportedExtensionToPreReleaseExtensionCommandAction, this.extension.local, gallery, false).run();
+		}
+	}
+}
+
+export class SwitchUnsupportedExtensionToPreReleaseExtensionCommandAction extends Action {
+
+	constructor(
+		private readonly local: ILocalExtension,
+		private readonly gallery: IGalleryExtension,
+		private promptReload: boolean,
+		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
+		@IProductService private readonly productService: IProductService,
+		@IHostService private readonly hostService: IHostService,
+		@IWorkbenchExtensionEnablementService private readonly workbenchExtensionEnablementService: IWorkbenchExtensionEnablementService,
+		@INotificationService private readonly notificationService: INotificationService,
+	) {
+		super('workbench.extensions.action.switchUnsupportedExtensionToPreReleaseExtensionCommand', localize('switchUnsupportedExtensionToPreReleaseExtension', "Switch to '{0}' Pre-Release version", gallery.displayName));
+	}
+
+	override async run(): Promise<any> {
+		await Promise.all([
+			this.extensionManagementService.uninstall(this.local),
+			this.extensionManagementService.installFromGallery(this.gallery, { installPreReleaseVersion: true, isMachineScoped: this.local.isMachineScoped })
+				.then(local => this.workbenchExtensionEnablementService.setEnablement([this.local], EnablementState.EnabledGlobally)),
+		]);
+		if (this.promptReload) {
+			this.notificationService.prompt(
+				Severity.Info,
+				localize('SwitchToAnotherReleaseExtension.successReload', "Please reload {0} to complete switching to the '{1}' extension.", this.productService.nameLong, this.gallery.displayName),
+				[{
+					label: localize('reloadNow', "Reload Now"),
+					run: () => this.hostService.reload()
+				}],
+				{ sticky: true }
+			);
+		}
+	}
+}
+
 export class InstallAnotherVersionAction extends ExtensionAction {
 
 	static readonly ID = 'workbench.extensions.action.install.anotherVersion';
@@ -2177,12 +2240,21 @@ export class ExtensionStatusAction extends ExtensionAction {
 			return;
 		}
 
-		if (this.extension.gallery && this.extension.state === ExtensionState.Uninstalled && !await this.extensionsWorkbenchService.canInstall(this.extension)) {
-			if (this.extension.isMalicious) {
-				this.updateStatus({ icon: warningIcon, message: new MarkdownString(localize('malicious tooltip', "This extension was reported to be problematic.")) }, true);
-				return;
+		if (this.extension.isMalicious) {
+			this.updateStatus({ icon: warningIcon, message: new MarkdownString(localize('malicious tooltip', "This extension was reported to be problematic.")) }, true);
+			return;
+		}
+		if (this.extension.isUnsupported) {
+			if (isBoolean(this.extension.isUnsupported)) {
+				this.updateStatus({ icon: warningIcon, message: new MarkdownString(localize('unsupported tooltip', "This extension no longer supported.")) }, true);
+			} else {
+				const link = `[${this.extension.isUnsupported.preReleaseExtension.displayName}](${URI.parse(`command:extension.open?${encodeURIComponent(JSON.stringify([this.extension.isUnsupported.preReleaseExtension.id]))}`)})`;
+				this.updateStatus({ icon: warningIcon, message: new MarkdownString(localize('unsupported prerelease tooltip', "This extension is now part of the {0} extension as a pre-release version and it is no longer supported.", link)) }, true);
 			}
+			return;
+		}
 
+		if (this.extension.gallery && this.extension.state === ExtensionState.Uninstalled && !await this.extensionsWorkbenchService.canInstall(this.extension)) {
 			if (this.extensionManagementServerService.localExtensionManagementServer || this.extensionManagementServerService.remoteExtensionManagementServer) {
 				const targetPlatform = await (this.extensionManagementServerService.localExtensionManagementServer ? this.extensionManagementServerService.localExtensionManagementServer!.extensionManagementService.getTargetPlatform() : this.extensionManagementServerService.remoteExtensionManagementServer!.extensionManagementService.getTargetPlatform());
 				const message = new MarkdownString(`${localize('incompatible platform', "The '{0}' extension is not available in {1} for {2}.", this.extension.displayName || this.extension.identifier.id, this.productService.nameLong, TargetPlatformToString(targetPlatform))} [${localize('learn more', "Learn More")}](https://aka.ms/vscode-platform-specific-extensions)`);
