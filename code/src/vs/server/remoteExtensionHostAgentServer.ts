@@ -352,6 +352,9 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 			// clean up deprecated extensions
 			(extensionManagementService as ExtensionManagementService).removeDeprecatedExtensions();
 
+			// migrate unsupported extensions
+			(extensionManagementService as ExtensionManagementService).migrateUnsupportedExtensions();
+
 			this._register(new ErrorTelemetry(accessor.get(ITelemetryService)));
 
 			return {
