@@ -183,8 +183,9 @@ export class WebClientServer {
 				}
 
 				// add all prefixes
-				if (xForwardedPrefix) {
-					newLocation = newLocation.concat(...xForwardedPrefix);
+				if (xForwardedPrefix && typeof xForwardedPrefix === 'string') {
+					const items = xForwardedPrefix.split(',').map(item=>item.trim());
+					newLocation = newLocation.concat(...items);
 				}
 
 				// add missing / if any
