@@ -31,7 +31,7 @@ fi
 # detect if we're using alpine/musl
 libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
 if [ -n "$libc" ]; then
-    /checode-linux-musl/node /checode-linux-musl/out/vs/server/main.js --port 3100 --folder ${CHE_PROJECTS_ROOT}
+    /checode-linux-musl/node /checode-linux-musl/out/vs/server/main.js --port 3100 --folder ${PROJECTS_ROOT}
 else
-    /checode-linux-libc/node /checode-linux-libc/out/vs/server/main.js --port 3100 --folder ${CHE_PROJECTS_ROOT}
+    /checode-linux-libc/node /checode-linux-libc/out/vs/server/main.js --port 3100 --folder ${PROJECTS_ROOT}
 fi
