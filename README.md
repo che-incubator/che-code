@@ -12,11 +12,10 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
  - NodeJS version used by `Code-OSS` (Exact version can be find inside https://github.com/microsoft/vscode/blob/main/remote/.yarnrc with target property)
  - Yarn v1.x
 
-## Directories Layout
+## Directories layout
 
 - `code` contains the upstream content (subtree) + changes required to have Code running in a remote server.
-- `deploy/helm`: Helm templates to deploy it on a k8s cluster
-- `Dockerfile` is for building the container.
+- `build/dockerfiles` are for building a container.
 - `package.json` holds some top-level scripts that you can find also in the `code` folder.
 
 ## Development mode
