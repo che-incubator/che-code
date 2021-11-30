@@ -25,6 +25,12 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 2. Compile and watch folders: `yarn run watch`
 3. Run the server (another terminal for example): `yarn run server`
 
+## Image build
+
+1. `docker build -f build/dockerfiles/linux-musl.Dockerfile -t linux-musl-amd64 .`
+2. `docker build -f build/dockerfiles/linux-libc.Dockerfile -t linux-libc-amd64 .`
+3. `export DOCKER_BUILDKIT=1`
+4. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
 ## Updates and branches
 
