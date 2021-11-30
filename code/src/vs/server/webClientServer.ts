@@ -186,9 +186,18 @@ export class WebClientServer {
 				if (xForwardedPrefix) {
 					newLocation = newLocation.concat(...xForwardedPrefix);
 				}
+
+				// add missing / if any
+				if (!newLocation.endsWith('/')) {
+					newLocation = `${newLocation}/`;
+				}
+
 				// add query
-				const urlNewLocation = new URL(newLocation);
-				newLocation = url.format({ ...urlNewLocation, query: newQuery })
+				const urlSearchParams = new URLSearchParams(newQuery);
+				const queryAppendix = urlSearchParams.toString();
+				if (queryAppendix.length > 0) {
+					newLocation = `${newLocation}?${queryAppendix}`;
+				}
 			} else {
 				newLocation = url.format({ pathname: '/', query: newQuery })
 			}
