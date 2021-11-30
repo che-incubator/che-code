@@ -29,4 +29,4 @@ else
 fi
 
 # Launch che with a custom connection-token
-./node out/vs/server/main.js --port 3100 --connection-token eclipse-che
+./node out/vs/server/main.js --port 3100 --connection-token eclipse-che --folder ${CHE_PROJECTS_ROOT}
