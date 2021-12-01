@@ -3863,16 +3863,16 @@ declare namespace monaco.editor {
 		readonly scrollByPage: boolean;
 	}
 
-	export type DeriveFromWorkspaceTrust = 'deriveFromWorkspaceTrust';
+	export type InUntrustedWorkspace = 'inUntrustedWorkspace';
 
 	/**
 	 * Configuration options for unicode highlighting.
 	 */
 	export interface IUnicodeHighlightOptions {
-		nonBasicASCII?: boolean | DeriveFromWorkspaceTrust;
+		nonBasicASCII?: boolean | InUntrustedWorkspace;
 		invisibleCharacters?: boolean;
 		ambiguousCharacters?: boolean;
-		includeComments?: boolean | DeriveFromWorkspaceTrust;
+		includeComments?: boolean | InUntrustedWorkspace;
 		/**
 		 * A list of allowed code points in a single string.
 		*/
