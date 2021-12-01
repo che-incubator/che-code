@@ -185,28 +185,11 @@ type RemoveDeriveFromWorkspaceTrust<T> = T extends DeriveFromWorkspaceTrust ? ne
 type ResolvedOptions = { [TKey in keyof InternalUnicodeHighlightOptions]: RemoveDeriveFromWorkspaceTrust<InternalUnicodeHighlightOptions[TKey]> };
 
 function resolveOptions(trusted: boolean, options: InternalUnicodeHighlightOptions): ResolvedOptions {
-	let defaults;
-	if (trusted) {
-		defaults = {
-			nonBasicASCII: false,
-			ambiguousCharacters: true,
-			invisibleCharacters: true,
-			includeComments: true,
-		};
-	} else {
-		defaults = {
-			nonBasicASCII: true,
-			ambiguousCharacters: true,
-			invisibleCharacters: true,
-			includeComments: false,
-		};
-	}
-
 	return {
-		nonBasicASCII: options.nonBasicASCII !== deriveFromWorkspaceTrust ? options.nonBasicASCII : defaults.nonBasicASCII,
-		ambiguousCharacters: options.ambiguousCharacters !== deriveFromWorkspaceTrust ? options.ambiguousCharacters : defaults.ambiguousCharacters,
-		invisibleCharacters: options.invisibleCharacters !== deriveFromWorkspaceTrust ? options.invisibleCharacters : defaults.invisibleCharacters,
-		includeComments: options.includeComments !== deriveFromWorkspaceTrust ? options.includeComments : defaults.includeComments,
+		nonBasicASCII: options.nonBasicASCII !== deriveFromWorkspaceTrust ? options.nonBasicASCII : !trusted,
+		ambiguousCharacters: options.ambiguousCharacters,
+		invisibleCharacters: options.invisibleCharacters,
+		includeComments: options.includeComments !== deriveFromWorkspaceTrust ? options.includeComments : !trusted,
 		allowedCharacters: options.allowedCharacters ?? [],
 	};
 }
@@ -522,11 +505,11 @@ interface IDisableUnicodeHighlightAction {
 
 export class DisableHighlightingOfAmbiguousCharactersAction extends EditorAction implements IDisableUnicodeHighlightAction {
 	public static ID = 'editor.action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters';
-	public readonly shortLabel = nls.localize('unicodeHighlight.disableHighlightingOfAmbiguousCharacters.shortLabel', '');
+	public readonly shortLabel = nls.localize('unicodeHighlight.disableHighlightingOfAmbiguousCharacters.shortLabel', 'Disable Ambiguous Highlight');
 	constructor() {
 		super({
 			id: DisableHighlightingOfAmbiguousCharactersAction.ID,
-			label: nls.localize('action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters', 'Disable Ambiguous Highlight'),
+			label: nls.localize('action.unicodeHighlight.disableHighlightingOfAmbiguousCharacters', 'Disable highlighting of ambiguous characters'),
 			alias: 'Disable highlighting of ambiguous characters',
 			precondition: undefined
 		});
@@ -574,7 +557,7 @@ export class DisableHighlightingOfNonBasicAsciiCharactersAction extends EditorAc
 	constructor() {
 		super({
 			id: DisableHighlightingOfNonBasicAsciiCharactersAction.ID,
-			label: nls.localize('action.unicodeHighlight.dhowDisableHighlightingOfNonBasicAsciiCharacters', 'Disable highlighting of non basic ASCII characters'),
+			label: nls.localize('action.unicodeHighlight.disableHighlightingOfNonBasicAsciiCharacters', 'Disable highlighting of non basic ASCII characters'),
 			alias: 'Disable highlighting of non basic ASCII characters',
 			precondition: undefined
 		});
