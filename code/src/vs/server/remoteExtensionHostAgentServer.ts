@@ -502,6 +502,8 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 
 		// Never timeout this socket due to inactivity!
 		socket.setTimeout(0);
+		// Disable Nagle's algorithm
+		socket.setNoDelay(true);
 		// Finally!
 
 		if (skipWebSocketFrames) {
