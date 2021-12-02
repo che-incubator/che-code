@@ -21,7 +21,7 @@ import { FileAccess } from 'vs/base/common/network';
 import { generateUuid } from 'vs/base/common/uuid';
 import { cwd } from 'vs/base/common/process';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { getCheWorkspace } from './che/webClientServer';
+import { getCheRedirectLocation, getCheWorkspace } from './che/webClientServer';
 
 const textMimeType = {
 	'.html': 'text/html',
@@ -164,46 +164,7 @@ export class WebClientServer {
 				}
 			}
 			// CHECODE: redirect to the provided path instead of / to handle the case behind reverse proxy
-			let newLocation;
-			// Grab headers
-			const xForwardedProto = req.headers['x-forwarded-proto'];
-			const xForwardedHost = req.headers['x-forwarded-host'];
-			const xForwardedPort = req.headers['x-forwarded-port'];
-			const xForwardedPrefix = req.headers['x-forwarded-prefix'];
-
-			if (xForwardedProto && typeof xForwardedProto === 'string' && xForwardedHost && typeof xForwardedHost === 'string') {
-				// use protocol
-				newLocation = `${xForwardedProto}://`;
-
-				// add host
-				newLocation = newLocation.concat(xForwardedHost);
-
-				// add port only if it's not the default one
-				if (xForwardedPort && typeof xForwardedPort === 'number' && xForwardedPort !== 443) {
-					newLocation = newLocation.concat(`:${xForwardedPort}`);
-				}
-
-				// add all prefixes
-				if (xForwardedPrefix && typeof xForwardedPrefix === 'string') {
-					const items = xForwardedPrefix.split(',').map(item=>item.trim());
-					newLocation = newLocation.concat(...items);
-				}
-
-				// add missing / if any
-				if (!newLocation.endsWith('/')) {
-					newLocation = `${newLocation}/`;
-				}
-
-				// add query
-				const urlSearchParams = new URLSearchParams(newQuery);
-				const queryAppendix = urlSearchParams.toString();
-				if (queryAppendix.length > 0) {
-					newLocation = `${newLocation}?${queryAppendix}`;
-				}
-			} else {
-				newLocation = url.format({ pathname: '/', query: newQuery })
-			}
-			responseHeaders['Location'] = newLocation;
+			responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);
 
 			res.writeHead(302, responseHeaders);
 			return res.end();
