@@ -21,6 +21,7 @@ import { FileAccess } from 'vs/base/common/network';
 import { generateUuid } from 'vs/base/common/uuid';
 import { cwd } from 'vs/base/common/process';
 import { IProductService } from 'vs/platform/product/common/productService';
+import { getCheWorkspace } from './che/webClientServer';
 
 const textMimeType = {
 	'.html': 'text/html',
@@ -309,8 +310,8 @@ export class WebClientServer {
 			}
 		}
 
-		// empty window otherwise
-		return {};
+		// else grab che workspace if specified
+		return getCheWorkspace();
 	}
 
 	private _getFirstQueryValue(parsedUrl: url.UrlWithParsedQuery, key: string): string | undefined {
