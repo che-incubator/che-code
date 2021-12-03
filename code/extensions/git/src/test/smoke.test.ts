@@ -42,6 +42,7 @@ suite('git smoke test', function () {
 	suiteSetup(async function () {
 		fs.writeFileSync(file('app.js'), 'hello', 'utf8');
 		fs.writeFileSync(file('index.pug'), 'hello', 'utf8');
+		// DO not do git init -b as ubi8 git is 2.27.0 and not support that flag
 		cp.execSync('git init', { cwd });
 		cp.execSync('git config user.name testuser', { cwd });
 		cp.execSync('git config user.email monacotools@microsoft.com', { cwd });
