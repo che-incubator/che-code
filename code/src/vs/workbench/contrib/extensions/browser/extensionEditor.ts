@@ -5,7 +5,7 @@
 
 import 'vs/css!./media/extensionEditor';
 import { localize } from 'vs/nls';
-import { createCancelablePromise } from 'vs/base/common/async';
+import { CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import * as arrays from 'vs/base/common/arrays';
 import { OS } from 'vs/base/common/platform';
 import { Event, Emitter } from 'vs/base/common/event';
@@ -23,7 +23,7 @@ import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { ExtensionsInput, IExtensionEditorOptions } from 'vs/workbench/contrib/extensions/common/extensionsInput';
 import { IExtensionsWorkbenchService, IExtensionsViewPaneContainer, VIEWLET_ID, IExtension, ExtensionContainers, ExtensionEditorTab, ExtensionState } from 'vs/workbench/contrib/extensions/common/extensions';
-import { RatingsWidget, InstallCountWidget, RemoteBadgeWidget, ExtensionHoverWidget } from 'vs/workbench/contrib/extensions/browser/extensionsWidgets';
+import { RatingsWidget, InstallCountWidget, RemoteBadgeWidget } from 'vs/workbench/contrib/extensions/browser/extensionsWidgets';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import {
@@ -68,7 +68,7 @@ import { Delegate } from 'vs/workbench/contrib/extensions/browser/extensionsList
 import { renderMarkdown } from 'vs/base/browser/markdownRenderer';
 import { attachKeybindingLabelStyler } from 'vs/platform/theme/common/styler';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
-import { errorIcon, infoIcon, preReleaseIcon, starEmptyIcon, verifiedPublisherIcon as verifiedPublisherThemeIcon, warningIcon } from 'vs/workbench/contrib/extensions/browser/extensionsIcons';
+import { errorIcon, infoIcon, starEmptyIcon, verifiedPublisherIcon as verifiedPublisherThemeIcon, warningIcon } from 'vs/workbench/contrib/extensions/browser/extensionsIcons';
 import { MarkdownString } from 'vs/base/common/htmlContent';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
@@ -151,7 +151,6 @@ interface IExtensionEditorTemplate {
 	actionsAndStatusContainer: HTMLElement;
 	extensionActionBar: ActionBar;
 	status: HTMLElement;
-	preReleaseText: HTMLElement;
 	recommendation: HTMLElement;
 	navbar: NavBar;
 	content: HTMLElement;
@@ -224,6 +223,7 @@ export class ExtensionEditor extends EditorPane {
 		this.extensionEditorWidget = this._register(new class extends Disposable implements IExtensionEditorWidget {
 			private gallery: IGalleryExtension | undefined = undefined;
 			private extension: IExtension | undefined = undefined;
+			private updatePromise: CancelablePromise<void> | undefined;
 			constructor() {
 				super();
 				this._register(that.extensionsWorkbenchService.onChange(e => {
@@ -239,7 +239,8 @@ export class ExtensionEditor extends EditorPane {
 				this.extension = extension;
 				this.gallery = gallery;
 				if (that.template) {
-					that.updateTemplate(this.extension, this.gallery, that.template, !!preserveFocus);
+					this.updatePromise?.cancel();
+					this.updatePromise = createCancelablePromise(token => that.updateTemplate(this.extension!, this.gallery, that.template!, !!preserveFocus, token));
 				}
 			}
 		}());
@@ -303,7 +304,6 @@ export class ExtensionEditor extends EditorPane {
 		}));
 
 		const status = append(actionsAndStatusContainer, $('.status'));
-		const preReleaseText = append(details, $('.pre-release-text'));
 		const recommendation = append(details, $('.recommendation'));
 
 		this._register(Event.chain(extensionActionBar.onDidRun)
@@ -336,7 +336,6 @@ export class ExtensionEditor extends EditorPane {
 			rating,
 			actionsAndStatusContainer,
 			extensionActionBar,
-			preReleaseText,
 			status,
 			recommendation
 		};
@@ -411,7 +410,7 @@ export class ExtensionEditor extends EditorPane {
 		}
 	}
 
-	private async updateTemplate(extension: IExtension, gallery: IGalleryExtension | undefined, template: IExtensionEditorTemplate, preserveFocus: boolean): Promise<void> {
+	private async updateTemplate(extension: IExtension, gallery: IGalleryExtension | undefined, template: IExtensionEditorTemplate, preserveFocus: boolean, token: CancellationToken): Promise<void> {
 		this.activeElement = null;
 		this.editorLoadComplete = false;
 
@@ -422,9 +421,9 @@ export class ExtensionEditor extends EditorPane {
 
 		this.transientDisposables.clear();
 
-		this.extensionReadme = new Cache(() => createCancelablePromise(token => extension.getReadme(!!this.showPreReleaseVersionContextKey?.get(), token)));
-		this.extensionChangelog = new Cache(() => createCancelablePromise(token => extension.getChangelog(!!this.showPreReleaseVersionContextKey?.get(), token)));
-		this.extensionManifest = new Cache(() => createCancelablePromise(token => extension.getManifest(!!this.showPreReleaseVersionContextKey?.get(), token)));
+		this.extensionReadme = new Cache(() => extension.getReadme(!!this.showPreReleaseVersionContextKey?.get(), token));
+		this.extensionChangelog = new Cache(() => extension.getChangelog(!!this.showPreReleaseVersionContextKey?.get(), token));
+		this.extensionManifest = new Cache(() => extension.getManifest(!!this.showPreReleaseVersionContextKey?.get(), token));
 
 		const remoteBadge = this.instantiationService.createInstance(RemoteBadgeWidget, template.iconContainer, true);
 		this.transientDisposables.add(addDisposableListener(template.icon, 'error', () => template.icon.src = extension.iconUrlFallback, { once: true }));
@@ -477,6 +476,15 @@ export class ExtensionEditor extends EditorPane {
 			}));
 		}
 
+		const [colorThemes, fileIconThemes, productIconThemes] = await Promise.all([
+			this.workbenchThemeService.getColorThemes(),
+			this.workbenchThemeService.getFileIconThemes(),
+			this.workbenchThemeService.getProductIconThemes(),
+		]);
+		if (token.isCancellationRequested) {
+			return;
+		}
+
 		const widgets = [
 			remoteBadge,
 			this.instantiationService.createInstance(InstallCountWidget, template.installCount, false),
@@ -488,9 +496,9 @@ export class ExtensionEditor extends EditorPane {
 			reloadAction,
 			this.instantiationService.createInstance(ExtensionStatusLabelAction),
 			this.instantiationService.createInstance(UpdateAction),
-			this.instantiationService.createInstance(SetColorThemeAction, await this.workbenchThemeService.getColorThemes()),
-			this.instantiationService.createInstance(SetFileIconThemeAction, await this.workbenchThemeService.getFileIconThemes()),
-			this.instantiationService.createInstance(SetProductIconThemeAction, await this.workbenchThemeService.getProductIconThemes()),
+			this.instantiationService.createInstance(SetColorThemeAction, colorThemes),
+			this.instantiationService.createInstance(SetFileIconThemeAction, fileIconThemes),
+			this.instantiationService.createInstance(SetProductIconThemeAction, productIconThemes),
 
 			this.instantiationService.createInstance(EnableDropDownAction),
 			this.instantiationService.createInstance(DisableDropDownAction),
@@ -526,7 +534,6 @@ export class ExtensionEditor extends EditorPane {
 			this.transientDisposables.add(disposable);
 		}
 
-		this.setPreReleaseText(extension, template);
 		this.setStatus(extension, extensionStatus, template);
 		this.setRecommendationText(extension, template);
 
@@ -539,6 +546,10 @@ export class ExtensionEditor extends EditorPane {
 		}
 
 		const manifest = await this.extensionManifest.get().promise;
+		if (token.isCancellationRequested) {
+			return;
+		}
+
 		if (manifest) {
 			combinedInstallAction.manifest = manifest;
 		}
@@ -575,33 +586,6 @@ export class ExtensionEditor extends EditorPane {
 		this.editorLoadComplete = true;
 	}
 
-	private setPreReleaseText(extension: IExtension, template: IExtensionEditorTemplate): void {
-		let preReleaseText: string | undefined;
-		reset(template.preReleaseText);
-		const disposables = this.transientDisposables.add(new DisposableStore());
-		const updatePreReleaseText = (layout: boolean) => {
-			const newPreReleaseText = ExtensionHoverWidget.getPreReleaseMessage(extension);
-			if (preReleaseText !== newPreReleaseText) {
-				preReleaseText = newPreReleaseText;
-				disposables.clear();
-				reset(template.preReleaseText);
-				if (preReleaseText) {
-					append(template.preReleaseText, $(`span${ThemeIcon.asCSSSelector(preReleaseIcon)}`));
-					disposables.add(this.renderMarkdownText(preReleaseText, template.preReleaseText));
-				}
-				if (layout && this.dimension) {
-					this.layout(this.dimension);
-				}
-			}
-		};
-		updatePreReleaseText(false);
-		this.transientDisposables.add(this.extensionsWorkbenchService.onChange(e => {
-			if (e && areSameExtensions(e.identifier, extension.identifier)) {
-				updatePreReleaseText(true);
-			}
-		}));
-	}
-
 	private setStatus(extension: IExtension, extensionStatus: ExtensionStatusAction, template: IExtensionEditorTemplate): void {
 		const disposables = new DisposableStore();
 		this.transientDisposables.add(disposables);
@@ -630,7 +614,6 @@ export class ExtensionEditor extends EditorPane {
 
 	private setRecommendationText(extension: IExtension, template: IExtensionEditorTemplate): void {
 		const updateRecommendationText = (layout: boolean) => {
-			reset(template.recommendation);
 			const extRecommendations = this.extensionRecommendationsService.getAllRecommendationsWithReason();
 			if (extRecommendations[extension.identifier.id.toLowerCase()]) {
 				const reasonText = extRecommendations[extension.identifier.id.toLowerCase()].reasonText;
@@ -645,6 +628,10 @@ export class ExtensionEditor extends EditorPane {
 				this.layout(this.dimension);
 			}
 		};
+		reset(template.recommendation);
+		if (extension.state === ExtensionState.Installed) {
+			return;
+		}
 		updateRecommendationText(false);
 		this.transientDisposables.add(this.extensionRecommendationsService.onDidChangeRecommendations(() => updateRecommendationText(true)));
 	}
