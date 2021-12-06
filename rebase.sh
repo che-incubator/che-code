@@ -181,9 +181,9 @@ continue_merge() {
 do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
-  # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/main)
-  #UPSTREAM_VERSION=1.62.2
+  # grab current release version
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.63)
+
   
   # Grab current version
   if result=$(pull_changes "${UPSTREAM_VERSION}" 2>&1); then
