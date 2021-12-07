@@ -30,6 +30,7 @@ import { canceled, onUnexpectedError } from 'vs/base/common/errors';
 import { Barrier } from 'vs/base/common/async';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { NewWorkerMessage, TerminateWorkerMessage } from 'vs/workbench/services/extensions/common/polyfillNestedWorker.protocol';
+import { FileAccess } from 'vs/base/common/network';
 
 export interface IWebWorkerExtensionHostInitData {
 	readonly autoStart: boolean;
@@ -87,10 +88,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 
 	private _webWorkerExtensionHostIframeSrc(): string | null {
 		const suffix = this._environmentService.debugExtensionHost && this._environmentService.debugRenderer ? '?debugged=1' : '?';
-		if (this._environmentService.options && this._environmentService.options.webWorkerExtensionHostIframeSrc) {
-			return this._environmentService.options.webWorkerExtensionHostIframeSrc + suffix;
-		}
-
 		const forceHTTPS = (location.protocol === 'https:');
 		const webEndpointUrlTemplate = this._productService.webEndpointUrlTemplate;
 		const commit = this._productService.commit;
@@ -111,22 +108,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			return base + suffix;
 		}
 
-		if (this._productService.webEndpointUrl) {
-			let baseUrl = this._productService.webEndpointUrl;
-			if (this._productService.quality) {
-				baseUrl += `/${this._productService.quality}`;
-			}
-			if (this._productService.commit) {
-				baseUrl += `/${this._productService.commit}`;
-			}
-			const base = (
-				forceHTTPS
-					? `${baseUrl}/out/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
-					: `${baseUrl}/out/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
-			);
-
-			return base + suffix;
-		}
 		return null;
 	}
 
@@ -141,7 +122,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 					this._protocolPromise = this._startOutsideIframe();
 				}
 			} else {
-				this._protocolPromise = this._startOutsideIframe();
+				const fileExtensionHostIframeSrc = FileAccess.asBrowserUri('../worker/httpsWebWorkerExtensionHostIframe.html', require);
+				this._protocolPromise = this._startInsideIframe(`${fileExtensionHostIframeSrc.toString(true)}?`);
 			}
 			this._protocolPromise.then(protocol => this._protocol = protocol);
 		}

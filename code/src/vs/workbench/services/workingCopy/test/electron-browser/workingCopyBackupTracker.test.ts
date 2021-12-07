@@ -43,6 +43,7 @@ import { IWorkingCopyEditorService } from 'vs/workbench/services/workingCopy/com
 import { TestContextService, TestWorkingCopy } from 'vs/workbench/test/common/workbenchTestServices';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IWorkingCopyBackup } from 'vs/workbench/services/workingCopy/common/workingCopy';
+import { Event, Emitter } from 'vs/base/common/event';
 
 flakySuite('WorkingCopyBackupTracker (native)', function () {
 
@@ -83,6 +84,21 @@ flakySuite('WorkingCopyBackupTracker (native)', function () {
 			for (const [_, disposable] of this.pendingBackupOperations) {
 				disposable.dispose();
 			}
+		}
+
+		private readonly _onDidResume = this._register(new Emitter<void>());
+		readonly onDidResume = this._onDidResume.event;
+
+		protected override suspendBackupOperations(): { resume: () => void; } {
+			const { resume } = super.suspendBackupOperations();
+
+			return {
+				resume: () => {
+					resume();
+
+					this._onDidResume.fire();
+				}
+			};
 		}
 	}
 
@@ -377,6 +393,19 @@ flakySuite('WorkingCopyBackupTracker (native)', function () {
 		accessor.lifecycleService.fireBeforeShutdown(event);
 
 		assert.strictEqual(tracker.pendingBackupOperationCount, 0);
+
+		// Ops are suspended during shutdown!
+		model?.textEditorModel?.setValue('bar');
+		assert.strictEqual(accessor.workingCopyService.dirtyCount, 1);
+		assert.strictEqual(tracker.pendingBackupOperationCount, 0);
+
+		const onResume = Event.toPromise(tracker.onDidResume);
+		await event.value;
+
+		// Ops are resumed after shutdown!
+		model?.textEditorModel?.setValue('foo');
+		await onResume;
+		assert.strictEqual(tracker.pendingBackupOperationCount, 1);
 
 		await cleanup();
 	});
