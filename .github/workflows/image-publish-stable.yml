@@ -12,7 +12,7 @@ name: image-publish-stable
 on:
   push:
     branches:
-      - 1.**.x
+      - '1.*.x'
 
 jobs:
 
