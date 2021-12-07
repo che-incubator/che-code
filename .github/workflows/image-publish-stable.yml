@@ -11,7 +11,8 @@ name: image-publish-stable
 
 on:
   push:
-    branches: [ 1.*.x ]
+    branches:
+      - 1.*.x
 
 jobs:
 
