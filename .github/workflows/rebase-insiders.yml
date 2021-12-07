@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2021 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: rebase
+
+# Trigger on demand or every 4 hour
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 */4 * * *"
+  
+jobs:
+
+  rebase:
+    name: rebase
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+           fetch-depth: 0
+           token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: configure git
+        run: |
+          git config --global user.email "fbenoit+sync-checode@redhat.com"
+          git config --global user.name "Eclipse Che Sync"
+      - name: add upstream remote and fetch main branch
+        run: |
+          git remote add upstream-code https://github.com/microsoft/vscode
+          git fetch upstream-code main
+      - name: rebase
+        run: |
+          ./rebase.sh
+      - name: Validate tests on libc image
+        run: |
+          docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc.Dockerfile .
+      - name: push changes
+        run: |
+          set -e
+          git push origin main
+
+
