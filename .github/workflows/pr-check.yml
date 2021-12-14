@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-name: pr-check
+name: Pull Request Check
 
 # Trigger the workflow on pull request
 on: [pull_request]
@@ -59,3 +59,19 @@ jobs:
       - name: Docker Build
         run: |
           docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --load -t assembly-pr .
+      - name: Upload assembly image
+        uses: ishworkh/docker-image-artifact-upload@v1
+        with:
+          image: "assembly-pr"
+      - name: Store PR info
+        run: |
+          echo "${{ github.event.number }}" > PR_NUMBER
+          echo "${{ github.event.pull_request.head.sha }}" > PR_SHA
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pull-request-number
+          path: PR_NUMBER
+      - uses: actions/upload-artifact@v2
+        with:
+          name: pull-request-sha
+          path: PR_SHA
