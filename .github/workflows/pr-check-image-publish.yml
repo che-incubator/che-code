@@ -49,9 +49,15 @@ jobs:
           username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
           password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }} 
       - name: Download assembly image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: dawidd6/action-download-artifact@v2
         with:
-          image: "assembly-pr"
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: action_image_artifact_assembly-pr
+          path: assembly-image/
+      - name: Load docker image
+        run: |
+          ls -la assembly-image/
+          docker load -i assembly-image/assembly-pr
       - name: Docker Push
         run: |
           export IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code:pr-${{env.PR_SHA}}-amd64
