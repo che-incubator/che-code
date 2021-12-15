@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**********************************************************************
  * Copyright (c) 2021 Red Hat, Inc.
  *
@@ -8,15 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
+import { ContainerModule, interfaces } from 'inversify';
 
-import 'reflect-metadata';
+import { GithubResolver } from './github-resolver';
 
-import { Main } from './main';
+const githubModule = new ContainerModule((bind: interfaces.Bind) => {
+  bind(GithubResolver).toSelf().inSingletonScope();
+});
 
-(async (): Promise<void> => {
-  const main = new Main();
-  const success = await main.start();
-  if (!success) {
-    process.exit(1);
-  }
-})();
+export { githubModule };

@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "private": false,
   "description": "Handle management of devWorkspace templates for che-code",
+  "main": "lib/entrypoint.js",
+  "bin": {
+    "che-code-devworkspace-handler": "lib/entrypoint.js"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -36,6 +40,7 @@
   "dependencies": {
     "@devfile/api": "latest",
     "axios": "0.21.2",
+    "fs-extra": "^10.0.0",
     "inversify": "^5.0.1",
     "js-yaml": "^4.0.0",
     "jsonc-parser": "^3.0.0",
@@ -44,7 +49,6 @@
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "eslint": "^8.1.0",
-    "fs-extra": "^10.0.0",
     "if-env": "^1.0.4",
     "jest": "^27.3.1",
     "prettier": "^2.4.1",

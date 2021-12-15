@@ -11,7 +11,7 @@
 import 'reflect-metadata';
 
 import fs from 'fs-extra';
-
+import * as axios from 'axios';
 import { InversifyBinding, InversifyBindingOptions } from '../../src/inversify/inversify-binding';
 
 import { Container } from 'inversify';
@@ -24,6 +24,9 @@ import { DevContainerComponentInserter } from '../../src/devfile/dev-container-c
 import { CheCodeDevfileExtract } from '../../src/devfile/che-code-devfile-extract';
 import { K8SUnits } from '../../src/k8s/k8s-units';
 import { CheCodeDevfileResolver } from '../../src/api/che-code-devfile-resolver';
+import { UrlFetcher } from '../../src/fetch/url-fetcher';
+import { GithubResolver } from '../../src/github/github-resolver';
+import { PluginRegistryResolver } from '../../src/plugin-registry/plugin-registry-resolver';
 
 describe('Test InversifyBinding', () => {
   const mockedArgv: string[] = ['dummy', 'dummy'];
@@ -40,7 +43,10 @@ describe('Test InversifyBinding', () => {
   test('default', async () => {
     const inversifyBinding = new InversifyBinding();
 
+    const axiosInstance = axios.default;
     const options: InversifyBindingOptions = {
+      pluginRegistryUrl: 'http://fake-registry',
+      axiosInstance,
       insertDevWorkspaceTemplatesAsPlugin: false,
     };
 
@@ -57,6 +63,15 @@ describe('Test InversifyBinding', () => {
     expect(container.get(DevContainerComponentInserter)).toBeDefined();
     expect(container.get(DevContainerComponentUpdater)).toBeDefined();
     expect(container.get(CheCodeDevfileExtract)).toBeDefined();
+
+    // check fetch module
+    expect(container.get(UrlFetcher)).toBeDefined();
+
+    // check github module
+    expect(container.get(GithubResolver)).toBeDefined();
+
+    // check plugin-registry module
+    expect(container.get(PluginRegistryResolver)).toBeDefined();
 
     // check k8s module
     expect(container.get(K8SUnits)).toBeDefined();

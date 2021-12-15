@@ -9,9 +9,13 @@
  ***********************************************************************/
 import 'reflect-metadata';
 
+import { AxiosInstance } from 'axios';
 import { Container } from 'inversify';
 import { devfileModule } from '../devfile/devfile-module';
 import { k8sModule } from '../k8s/k8s-module';
+import { fetchModule } from '../fetch/fetch-module';
+import { githubModule } from '../github/github-module';
+import { pluginRegistryModule } from '../plugin-registry/plugin-registry-module';
 
 /**
  * Manage all bindings for inversify
@@ -27,7 +31,14 @@ export class InversifyBinding {
       .whenTargetNamed('INSERT_DEV_WORKSPACE_TEMPLATE_AS_PLUGIN');
 
     this.container.load(devfileModule);
+    this.container.load(fetchModule);
+    this.container.load(githubModule);
     this.container.load(k8sModule);
+    this.container.load(pluginRegistryModule);
+
+    this.container.bind(Symbol.for('AxiosInstance')).toConstantValue(options.axiosInstance);
+    this.container.bind('string').toConstantValue(options.pluginRegistryUrl).whenTargetNamed('PLUGIN_REGISTRY_URL');
+
     return this.container;
   }
 }
@@ -38,4 +49,7 @@ export class InversifyBinding {
 export interface InversifyBindingOptions {
   // insert the devWorkspaceTemplate as a plugin of the devWorkspace
   insertDevWorkspaceTemplatesAsPlugin: boolean;
+
+  pluginRegistryUrl: string;
+  axiosInstance: AxiosInstance;
 }
