@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-name: rebase
+name: rebase-insiders
 
 # Trigger on demand or every 4 hour
 on:
@@ -17,7 +17,7 @@ on:
   
 jobs:
 
-  rebase:
+  rebase-insiders:
     name: rebase
     runs-on: ubuntu-20.04
     steps:
