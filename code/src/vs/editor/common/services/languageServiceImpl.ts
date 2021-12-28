@@ -10,7 +10,7 @@ import { NULL_MODE_ID } from 'vs/editor/common/modes/nullMode';
 import { LanguagesRegistry } from 'vs/editor/common/services/languagesRegistry';
 import { ILanguageSelection, ILanguageService } from 'vs/editor/common/services/languageService';
 import { firstOrDefault } from 'vs/base/common/arrays';
-import { ILanguageIdCodec } from 'vs/editor/common/modes';
+import { ILanguageIdCodec, TokenizationRegistry } from 'vs/editor/common/modes';
 import { PLAINTEXT_MODE_ID } from 'vs/editor/common/modes/modesRegistry';
 
 class LanguageSelection implements ILanguageSelection {
@@ -93,8 +93,8 @@ export class LanguageService extends Disposable implements ILanguageService {
 		return this._registry.getExtensions(alias);
 	}
 
-	public getFilenames(alias: string): string[] {
-		return this._registry.getFilenames(alias);
+	public getFilenamesForLanguageId(languageId: string): string[] {
+		return this._registry.getFilenamesForLanguageId(languageId);
 	}
 
 	public getMimeTypeForLanguageId(languageId: string): string | null {
@@ -105,8 +105,8 @@ export class LanguageService extends Disposable implements ILanguageService {
 		return this._registry.getLanguageName(languageId);
 	}
 
-	public getLanguageIdForLanguageName(alias: string): string | null {
-		return this._registry.getLanguageIdForLanguageName(alias);
+	public getLanguageIdForLanguageName(languageName: string): string | null {
+		return this._registry.getLanguageIdForLanguageName(languageName);
 	}
 
 	public getLanguageIdForMimeType(mimeType: string | null | undefined): string | null {
@@ -115,11 +115,6 @@ export class LanguageService extends Disposable implements ILanguageService {
 
 	public getLanguageIdByFilepathOrFirstLine(resource: URI | null, firstLine?: string): string | null {
 		const modeIds = this._registry.getLanguageIdByFilepathOrFirstLine(resource, firstLine);
-		return firstOrDefault(modeIds, null);
-	}
-
-	private getModeId(commaSeparatedMimetypesOrCommaSeparatedIds: string | undefined): string | null {
-		const modeIds = this._registry.extractModeIds(commaSeparatedMimetypesOrCommaSeparatedIds);
 		return firstOrDefault(modeIds, null);
 	}
 
@@ -162,16 +157,12 @@ export class LanguageService extends Disposable implements ILanguageService {
 		return validLanguageId;
 	}
 
-	public triggerMode(commaSeparatedMimetypesOrCommaSeparatedIds: string): void {
-		const languageId = this.getModeId(commaSeparatedMimetypesOrCommaSeparatedIds);
-		// Fall back to plain text if no mode was found
-		this._getOrCreateMode(languageId || 'plaintext');
-	}
-
 	private _getOrCreateMode(languageId: string): void {
 		if (!this._encounteredLanguages.has(languageId)) {
 			this._encounteredLanguages.add(languageId);
 			const validLanguageId = this.validateLanguageId(languageId) || NULL_MODE_ID;
+			// Ensure tokenizers are created
+			TokenizationRegistry.getOrCreate(validLanguageId);
 			this._onDidEncounterLanguage.fire(validLanguageId);
 		}
 	}

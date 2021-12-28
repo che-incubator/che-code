@@ -39,16 +39,18 @@ export interface ILanguageService {
 	getRegisteredLanguageIds(): string[];
 	getRegisteredLanguageNames(): string[];
 	getExtensions(alias: string): string[]; // TODO
-	getFilenames(alias: string): string[]; // TODO
+	getFilenamesForLanguageId(languageId: string): string[];
 	getMimeTypeForLanguageId(languageId: string): string | null;
 	getLanguageName(languageId: string): string | null;
-	getLanguageIdForLanguageName(languageName: string): string | null; // TODO
+	/**
+	 * Look up a language by its name case insensitive.
+	 */
+	getLanguageIdForLanguageName(languageName: string): string | null;
 	getLanguageIdForMimeType(mimeType: string | null | undefined): string | null;
 	getLanguageIdByFilepathOrFirstLine(resource: URI, firstLine?: string): string | null;
 	validateLanguageId(languageId: string): string | null;
 	getConfigurationFiles(languageId: string): URI[];
 
-	// --- instantiation
 	/**
 	 * Will fall back to 'plaintext' if `languageId` is unknown.
 	 */
@@ -61,6 +63,4 @@ export interface ILanguageService {
 	 * Will fall back to 'plaintext' if the `languageId` cannot be determined.
 	 */
 	createByFilepathOrFirstLine(resource: URI | null, firstLine?: string): ILanguageSelection;
-
-	triggerMode(commaSeparatedMimetypesOrCommaSeparatedIds: string): void;
 }

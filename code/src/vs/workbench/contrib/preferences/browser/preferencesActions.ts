@@ -31,14 +31,15 @@ export class ConfigureLanguageBasedSettingsAction extends Action {
 	override async run(): Promise<void> {
 		const languages = this.languageService.getRegisteredLanguageNames();
 		const picks: IQuickPickItem[] = languages.sort().map((lang, index) => {
-			const description: string = nls.localize('languageDescriptionConfigured', "({0})", this.languageService.getLanguageIdForLanguageName(lang.toLowerCase()));
+			const languageId = this.languageService.getLanguageIdForLanguageName(lang)!;
+			const description: string = nls.localize('languageDescriptionConfigured', "({0})", languageId);
 			// construct a fake resource to be able to show nice icons if any
 			let fakeResource: URI | undefined;
 			const extensions = this.languageService.getExtensions(lang);
 			if (extensions && extensions.length) {
 				fakeResource = URI.file(extensions[0]);
 			} else {
-				const filenames = this.languageService.getFilenames(lang);
+				const filenames = this.languageService.getFilenamesForLanguageId(languageId);
 				if (filenames && filenames.length) {
 					fakeResource = URI.file(filenames[0]);
 				}
@@ -53,7 +54,7 @@ export class ConfigureLanguageBasedSettingsAction extends Action {
 		await this.quickInputService.pick(picks, { placeHolder: nls.localize('pickLanguage', "Select Language") })
 			.then(pick => {
 				if (pick) {
-					const languageId = this.languageService.getLanguageIdForLanguageName(pick.label.toLowerCase());
+					const languageId = this.languageService.getLanguageIdForLanguageName(pick.label);
 					if (typeof languageId === 'string') {
 						return this.preferencesService.openUserSettings({ jsonEditor: true, revealSetting: { key: `[${languageId}]`, edit: true } });
 					}
