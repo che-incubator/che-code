@@ -13,7 +13,7 @@ import { LanguageService } from 'vs/editor/common/services/languageServiceImpl';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { ModelServiceImpl } from 'vs/editor/common/services/modelServiceImpl';
 import { ITextResourceConfigurationService, ITextResourcePropertiesService } from 'vs/editor/common/services/textResourceConfigurationService';
-import { SimpleBulkEditService, SimpleConfigurationService, SimpleDialogService, SimpleNotificationService, SimpleEditorProgressService, SimpleResourceConfigurationService, SimpleResourcePropertiesService, SimpleUriLabelService, SimpleWorkspaceContextService, StandaloneCommandService, StandaloneKeybindingService, StandaloneTelemetryService, SimpleLayoutService, SimpleWorkspaceTrustManagementService } from 'vs/editor/standalone/browser/simpleServices';
+import { SimpleBulkEditService, SimpleConfigurationService, SimpleDialogService, SimpleNotificationService, SimpleEditorProgressService, SimpleResourceConfigurationService, SimpleResourcePropertiesService, SimpleUriLabelService, SimpleWorkspaceContextService, StandaloneCommandService, StandaloneKeybindingService, StandaloneTelemetryService, SimpleLayoutService, SimpleWorkspaceTrustManagementService, SimpleTextModelService } from 'vs/editor/standalone/browser/simpleServices';
 import { StandaloneCodeEditorServiceImpl } from 'vs/editor/standalone/browser/standaloneCodeServiceImpl';
 import { StandaloneThemeServiceImpl } from 'vs/editor/standalone/browser/standaloneThemeServiceImpl';
 import { IStandaloneThemeService } from 'vs/editor/standalone/common/standaloneThemeService';
@@ -58,11 +58,26 @@ import { ILanguageConfigurationService, LanguageConfigurationService } from 'vs/
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { OpenerService } from 'vs/editor/browser/services/openerService';
+import { ITextModelService } from 'vs/editor/common/services/resolverService';
 
 export interface IEditorOverrideServices {
 	[index: string]: any;
 }
 
+/**
+ *
+ * !!! README !!!
+ *
+ * Some services need the editor's container dom node and are therefore dynamic (i.e. a new service instance is created
+ * per each editor instance). For example, the `IKeybindingService` needs to attach dom listeners on the editor's container
+ * dom node. There can't be a single service, because it cannot attach such a listener to the <body> of the page, as that
+ * would interfere with the page where the editor is embedded.
+ *
+ * However, most services are static and must be shared across all editor instances. For example, `IModelService` needs
+ * to be shared across all editors.
+ *
+ * Finally, we don't want to eagerly instantiate services because embedders can override services when they create editors.
+ */
 export module StaticServices {
 
 	const _serviceCollection = new ServiceCollection();
@@ -97,17 +112,17 @@ export module StaticServices {
 		}
 	}
 
-	let _all: LazyStaticService<any>[] = [];
+	const _all: LazyStaticService<any>[] = [];
 
 	function define<T>(serviceId: ServiceIdentifier<T>, factory: (overrides: IEditorOverrideServices | undefined) => T): LazyStaticService<T> {
-		let r = new LazyStaticService(serviceId, factory);
+		const r = new LazyStaticService(serviceId, factory);
 		_all.push(r);
 		return r;
 	}
 
 	export function init(overrides: IEditorOverrideServices): [ServiceCollection, IInstantiationService] {
 		// Create a fresh service collection
-		let result = new ServiceCollection();
+		const result = new ServiceCollection();
 
 		// make sure to add all services that use `registerSingleton`
 		for (const [id, descriptor] of getSingletonServiceDescriptors()) {
@@ -115,7 +130,7 @@ export module StaticServices {
 		}
 
 		// Initialize the service collection with the overrides
-		for (let serviceId in overrides) {
+		for (const serviceId in overrides) {
 			if (overrides.hasOwnProperty(serviceId)) {
 				result.set(createDecorator(serviceId), overrides[serviceId]);
 			}
@@ -125,13 +140,13 @@ export module StaticServices {
 		_all.forEach(service => result.set(service.id, service.get(overrides)));
 
 		// Ensure the collection gets the correct instantiation service
-		let instantiationService = new InstantiationService(result, true);
+		const instantiationService = new InstantiationService(result, true);
 		result.set(IInstantiationService, instantiationService);
 
 		return [result, instantiationService];
 	}
 
-	export const instantiationService = define<IInstantiationService>(IInstantiationService, () => new InstantiationService(_serviceCollection, true));
+	// export const instantiationService = define<IInstantiationService>(IInstantiationService, () => new InstantiationService(_serviceCollection, true));
 
 	const configurationServiceImpl = new SimpleConfigurationService();
 	export const configurationService = define(IConfigurationService, () => configurationServiceImpl);
@@ -152,7 +167,7 @@ export module StaticServices {
 
 	export const markerService = define(IMarkerService, () => new MarkerService());
 
-	export const languageService = define(ILanguageService, (o) => new LanguageService());
+	export const languageService = define(ILanguageService, () => new LanguageService());
 
 	export const standaloneThemeService = define(IStandaloneThemeService, () => new StandaloneThemeServiceImpl());
 
@@ -187,28 +202,34 @@ export module StaticServices {
 	export const storageService = define(IStorageService, () => new InMemoryStorageService());
 
 	export const editorWorkerService = define(IEditorWorkerService, (o) => new EditorWorkerServiceImpl(modelService.get(o), resourceConfigurationService.get(o), logService.get(o), languageConfigurationService.get(o)));
+
+	export const bulkEditService = define(IBulkEditService, (o) => new SimpleBulkEditService(modelService.get(o)));
+
+	export const workspaceTrustManagementService = define(IWorkspaceTrustManagementService, () => new SimpleWorkspaceTrustManagementService());
+
+	export const textModelService = define(ITextModelService, (o) => new SimpleTextModelService(modelService.get(o)));
+
+	export const accessibilityService = define(IAccessibilityService, (o) => new AccessibilityService(contextKeyService.get(o), configurationService.get(o)));
+
+	export const listService = define(IListService, (o) => new ListService(standaloneThemeService.get(o)));
 }
 
 export class DynamicStandaloneServices extends Disposable {
 
 	private readonly _serviceCollection: ServiceCollection;
-	private readonly _instantiationService: IInstantiationService;
 
 	constructor(domElement: HTMLElement, overrides: IEditorOverrideServices) {
 		super();
 
-		const [_serviceCollection, _instantiationService] = StaticServices.init(overrides);
+		const [_serviceCollection, instantiationService] = StaticServices.init(overrides);
 		this._serviceCollection = _serviceCollection;
-		this._instantiationService = _instantiationService;
 
-		const configurationService = this.get(IConfigurationService);
 		const notificationService = this.get(INotificationService);
 		const telemetryService = this.get(ITelemetryService);
 		const themeService = this.get(IThemeService);
 		const logService = this.get(ILogService);
 		const contextKeyService = this.get(IContextKeyService);
 		const codeEditorService = this.get(ICodeEditorService);
-		const modelService = this.get(IModelService);
 
 		const ensure = <T>(serviceId: ServiceIdentifier<T>, factory: () => T): T => {
 			let value: T | null = null;
@@ -222,19 +243,15 @@ export class DynamicStandaloneServices extends Disposable {
 			return value;
 		};
 
-		ensure(IAccessibilityService, () => new AccessibilityService(contextKeyService, configurationService));
+		const commandService = ensure(ICommandService, () => new StandaloneCommandService(instantiationService));
 
-		ensure(IListService, () => new ListService(themeService));
+		const keybindingService = ensure(IKeybindingService, () => this._register(new StandaloneKeybindingService(contextKeyService, commandService, telemetryService, notificationService, logService, domElement)));
 
-		let commandService = ensure(ICommandService, () => new StandaloneCommandService(this._instantiationService));
+		const layoutService = ensure(ILayoutService, () => new SimpleLayoutService(codeEditorService, domElement));
 
-		let keybindingService = ensure(IKeybindingService, () => this._register(new StandaloneKeybindingService(contextKeyService, commandService, telemetryService, notificationService, logService, domElement)));
+		ensure(IQuickInputService, () => new StandaloneQuickInputServiceImpl(instantiationService, codeEditorService));
 
-		let layoutService = ensure(ILayoutService, () => new SimpleLayoutService(codeEditorService, domElement));
-
-		ensure(IQuickInputService, () => new StandaloneQuickInputServiceImpl(_instantiationService, codeEditorService));
-
-		let contextViewService = ensure(IContextViewService, () => this._register(new ContextViewService(layoutService)));
+		const contextViewService = ensure(IContextViewService, () => this._register(new ContextViewService(layoutService)));
 
 		ensure(IOpenerService, () => new OpenerService(codeEditorService, commandService));
 
@@ -248,25 +265,13 @@ export class DynamicStandaloneServices extends Disposable {
 		});
 
 		ensure(IMenuService, () => new MenuService(commandService));
-
-		ensure(IBulkEditService, () => new SimpleBulkEditService(modelService));
-
-		ensure(IWorkspaceTrustManagementService, () => new SimpleWorkspaceTrustManagementService());
 	}
 
 	public get<T>(serviceId: ServiceIdentifier<T>): T {
-		let r = <T>this._serviceCollection.get(serviceId);
+		const r = <T>this._serviceCollection.get(serviceId);
 		if (!r) {
 			throw new Error('Missing service ' + serviceId);
 		}
 		return r;
-	}
-
-	public set<T>(serviceId: ServiceIdentifier<T>, instance: T): void {
-		this._serviceCollection.set(serviceId, instance);
-	}
-
-	public has<T>(serviceId: ServiceIdentifier<T>): boolean {
-		return this._serviceCollection.has(serviceId);
 	}
 }
