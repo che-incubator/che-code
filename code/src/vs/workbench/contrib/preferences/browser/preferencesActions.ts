@@ -29,23 +29,22 @@ export class ConfigureLanguageBasedSettingsAction extends Action {
 	}
 
 	override async run(): Promise<void> {
-		const languages = this.languageService.getRegisteredLanguageNames();
-		const picks: IQuickPickItem[] = languages.sort().map((lang, index) => {
-			const languageId = this.languageService.getLanguageIdForLanguageName(lang)!;
+		const languages = this.languageService.getSortedRegisteredLanguageNames();
+		const picks: IQuickPickItem[] = languages.map(({ languageName, languageId }) => {
 			const description: string = nls.localize('languageDescriptionConfigured', "({0})", languageId);
 			// construct a fake resource to be able to show nice icons if any
 			let fakeResource: URI | undefined;
-			const extensions = this.languageService.getExtensions(lang);
-			if (extensions && extensions.length) {
+			const extensions = this.languageService.getExtensions(languageId);
+			if (extensions.length) {
 				fakeResource = URI.file(extensions[0]);
 			} else {
-				const filenames = this.languageService.getFilenamesForLanguageId(languageId);
-				if (filenames && filenames.length) {
+				const filenames = this.languageService.getFilenames(languageId);
+				if (filenames.length) {
 					fakeResource = URI.file(filenames[0]);
 				}
 			}
 			return {
-				label: lang,
+				label: languageName,
 				iconClasses: getIconClasses(this.modelService, this.languageService, fakeResource),
 				description
 			} as IQuickPickItem;
@@ -54,7 +53,7 @@ export class ConfigureLanguageBasedSettingsAction extends Action {
 		await this.quickInputService.pick(picks, { placeHolder: nls.localize('pickLanguage', "Select Language") })
 			.then(pick => {
 				if (pick) {
-					const languageId = this.languageService.getLanguageIdForLanguageName(pick.label);
+					const languageId = this.languageService.getLanguageIdByLanguageName(pick.label);
 					if (typeof languageId === 'string') {
 						return this.preferencesService.openUserSettings({ jsonEditor: true, revealSetting: { key: `[${languageId}]`, edit: true } });
 					}

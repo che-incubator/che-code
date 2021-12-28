@@ -15,7 +15,7 @@ import { DefaultEndOfLine, EndOfLinePreference, EndOfLineSequence, IIdentifiedSi
 import { TextModel, createTextBuffer } from 'vs/editor/common/model/textModel';
 import { IModelLanguageChangedEvent, IModelContentChangedEvent } from 'vs/editor/common/model/textModelEvents';
 import { DocumentSemanticTokensProviderRegistry, DocumentSemanticTokensProvider, SemanticTokens, SemanticTokensEdits } from 'vs/editor/common/modes';
-import { PLAINTEXT_MODE_ID } from 'vs/editor/common/modes/modesRegistry';
+import { PLAINTEXT_LANGUAGE_ID } from 'vs/editor/common/modes/modesRegistry';
 import { ILanguageSelection, ILanguageService } from 'vs/editor/common/services/languageService';
 import { IModelService, DocumentTokensProvider } from 'vs/editor/common/services/modelService';
 import { ITextResourcePropertiesService } from 'vs/editor/common/services/textResourceConfigurationService';
@@ -143,8 +143,8 @@ export class ModelServiceImpl extends Disposable implements IModelService {
 	private readonly _onModelRemoved: Emitter<ITextModel> = this._register(new Emitter<ITextModel>());
 	public readonly onModelRemoved: Event<ITextModel> = this._onModelRemoved.event;
 
-	private readonly _onModelModeChanged: Emitter<{ model: ITextModel; oldModeId: string; }> = this._register(new Emitter<{ model: ITextModel; oldModeId: string; }>());
-	public readonly onModelModeChanged: Event<{ model: ITextModel; oldModeId: string; }> = this._onModelModeChanged.event;
+	private readonly _onModelModeChanged = this._register(new Emitter<{ model: ITextModel; oldLanguageId: string; }>());
+	public readonly onModelLanguageChanged = this._onModelModeChanged.event;
 
 	private _modelCreationOptionsByLanguageAndResource: { [languageAndResource: string]: ITextModelCreationOptions; };
 
@@ -370,8 +370,8 @@ export class ModelServiceImpl extends Disposable implements IModelService {
 		const options = this.getCreationOptions(languageId, resource, isForSimpleWidget);
 		const model: TextModel = new TextModel(
 			value,
-			options,
 			languageId,
+			options,
 			resource,
 			this._undoRedoService,
 			this._languageService,
@@ -501,7 +501,7 @@ export class ModelServiceImpl extends Disposable implements IModelService {
 			modelData = this._createModelData(value, languageSelection.languageId, resource, isForSimpleWidget);
 			this.setMode(modelData.model, languageSelection);
 		} else {
-			modelData = this._createModelData(value, PLAINTEXT_MODE_ID, resource, isForSimpleWidget);
+			modelData = this._createModelData(value, PLAINTEXT_LANGUAGE_ID, resource, isForSimpleWidget);
 		}
 
 		this._onModelAdded.fire(modelData.model);
@@ -624,12 +624,12 @@ export class ModelServiceImpl extends Disposable implements IModelService {
 	}
 
 	private _onDidChangeLanguage(model: ITextModel, e: IModelLanguageChangedEvent): void {
-		const oldModeId = e.oldLanguage;
-		const newModeId = model.getLanguageId();
-		const oldOptions = this.getCreationOptions(oldModeId, model.uri, model.isForSimpleWidget);
-		const newOptions = this.getCreationOptions(newModeId, model.uri, model.isForSimpleWidget);
+		const oldLanguageId = e.oldLanguage;
+		const newLanguageId = model.getLanguageId();
+		const oldOptions = this.getCreationOptions(oldLanguageId, model.uri, model.isForSimpleWidget);
+		const newOptions = this.getCreationOptions(newLanguageId, model.uri, model.isForSimpleWidget);
 		ModelServiceImpl._setModelOptionsForModel(model, newOptions, oldOptions);
-		this._onModelModeChanged.fire({ model, oldModeId });
+		this._onModelModeChanged.fire({ model, oldLanguageId: oldLanguageId });
 	}
 }
 

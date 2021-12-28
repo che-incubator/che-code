@@ -20,17 +20,13 @@ export const Extensions = {
 export class EditorModesRegistry {
 
 	private readonly _languages: ILanguageExtensionPoint[];
-	private _dynamicLanguages: ILanguageExtensionPoint[];
 
 	private readonly _onDidChangeLanguages = new Emitter<void>();
 	public readonly onDidChangeLanguages: Event<void> = this._onDidChangeLanguages.event;
 
 	constructor() {
 		this._languages = [];
-		this._dynamicLanguages = [];
 	}
-
-	// --- languages
 
 	public registerLanguage(def: ILanguageExtensionPoint): IDisposable {
 		this._languages.push(def);
@@ -46,28 +42,26 @@ export class EditorModesRegistry {
 			}
 		};
 	}
-	public setDynamicLanguages(def: ILanguageExtensionPoint[]): void {
-		this._dynamicLanguages = def;
-		this._onDidChangeLanguages.fire(undefined);
-	}
-	public getLanguages(): ILanguageExtensionPoint[] {
-		return (<ILanguageExtensionPoint[]>[]).concat(this._languages).concat(this._dynamicLanguages);
+
+	public getLanguages(): ReadonlyArray<ILanguageExtensionPoint> {
+		return this._languages;
 	}
 }
 
 export const ModesRegistry = new EditorModesRegistry();
 Registry.add(Extensions.ModesRegistry, ModesRegistry);
 
-export const PLAINTEXT_MODE_ID = 'plaintext';
+export const PLAINTEXT_LANGUAGE_ID = 'plaintext';
 export const PLAINTEXT_EXTENSION = '.txt';
 
 ModesRegistry.registerLanguage({
-	id: PLAINTEXT_MODE_ID,
+	id: PLAINTEXT_LANGUAGE_ID,
 	extensions: [PLAINTEXT_EXTENSION],
 	aliases: [nls.localize('plainText.alias', "Plain Text"), 'text'],
 	mimetypes: [Mimes.text]
 });
-LanguageConfigurationRegistry.register(PLAINTEXT_MODE_ID, {
+
+LanguageConfigurationRegistry.register(PLAINTEXT_LANGUAGE_ID, {
 	brackets: [
 		['(', ')'],
 		['[', ']'],

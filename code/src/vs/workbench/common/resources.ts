@@ -71,7 +71,7 @@ export class ResourceContextKey implements IContextKey<URI> {
 				this._setLangId();
 			}
 		}));
-		this._disposables.add(_modelService.onModelModeChanged(e => {
+		this._disposables.add(_modelService.onModelLanguageChanged(e => {
 			if (isEqual(e.model.uri, this.get())) {
 				this._setLangId();
 			}
@@ -88,7 +88,7 @@ export class ResourceContextKey implements IContextKey<URI> {
 			this._langIdKey.set(null);
 			return;
 		}
-		const langId = this._modelService.getModel(value)?.getLanguageId() ?? this._languageService.getLanguageIdByFilepathOrFirstLine(value);
+		const langId = this._modelService.getModel(value)?.getLanguageId() ?? this._languageService.guessLanguageIdByFilepathOrFirstLine(value);
 		this._langIdKey.set(langId);
 	}
 

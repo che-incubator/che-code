@@ -100,6 +100,7 @@ import { INotebookExecutionService } from 'vs/workbench/contrib/notebook/common/
 import { INotebookKeymapService } from 'vs/workbench/contrib/notebook/common/notebookKeymapService';
 import { NotebookKeymapService } from 'vs/workbench/contrib/notebook/browser/notebookKeymapServiceImpl';
 import { NotebookCellTextModel } from 'vs/workbench/contrib/notebook/common/model/notebookCellTextModel';
+import { PLAINTEXT_LANGUAGE_ID } from 'vs/editor/common/modes/modesRegistry';
 
 /*--------------------------------------------------------------------------------------------- */
 
@@ -273,7 +274,7 @@ class CellContentProvider implements ITextModelContentProvider {
 						return cell.textBuffer.getLineContent(1).substr(0, limit);
 					}
 				};
-				const languageId = this._languageService.getLanguageIdForLanguageName(cell.language);
+				const languageId = this._languageService.getLanguageIdByLanguageName(cell.language);
 				const languageSelection = languageId ? this._languageService.createById(languageId) : (cell.cellKind === CellKind.Markup ? this._languageService.createById('markdown') : this._languageService.createByFilepathOrFirstLine(resource, cell.textBuffer.getLineContent(1)));
 				result = this._modelService.createModel(
 					bufferFactory,
@@ -381,7 +382,7 @@ class CellInfoContentProvider {
 		if (streamOutputData) {
 			return {
 				content: streamOutputData,
-				mode: this._languageService.createById('plaintext')
+				mode: this._languageService.createById(PLAINTEXT_LANGUAGE_ID)
 			};
 		}
 

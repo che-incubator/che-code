@@ -6,12 +6,11 @@
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
-import { NULL_MODE_ID } from 'vs/editor/common/modes/nullMode';
 import { LanguagesRegistry } from 'vs/editor/common/services/languagesRegistry';
-import { ILanguageSelection, ILanguageService } from 'vs/editor/common/services/languageService';
+import { ILanguageNameIdPair, ILanguageSelection, ILanguageService } from 'vs/editor/common/services/languageService';
 import { firstOrDefault } from 'vs/base/common/arrays';
 import { ILanguageIdCodec, TokenizationRegistry } from 'vs/editor/common/modes';
-import { PLAINTEXT_MODE_ID } from 'vs/editor/common/modes/modesRegistry';
+import { PLAINTEXT_LANGUAGE_ID } from 'vs/editor/common/modes/modesRegistry';
 
 class LanguageSelection implements ILanguageSelection {
 
@@ -21,14 +20,14 @@ class LanguageSelection implements ILanguageSelection {
 	private readonly _onDidChange: Emitter<string>;
 	public readonly onDidChange: Event<string>;
 
-	constructor(onLanguagesMaybeChanged: Event<void>, selector: () => string) {
+	constructor(onDidChangeLanguages: Event<void>, selector: () => string) {
 		this._selector = selector;
 		this.languageId = this._selector();
 
 		let listener: IDisposable;
 		this._onDidChange = new Emitter<string>({
 			onFirstListenerAdd: () => {
-				listener = onLanguagesMaybeChanged(() => this._evaluate());
+				listener = onDidChangeLanguages(() => this._evaluate());
 			},
 			onLastListenerRemove: () => {
 				listener.dispose();
@@ -54,14 +53,14 @@ export class LanguageService extends Disposable implements ILanguageService {
 	static instanceCount = 0;
 
 	private readonly _encounteredLanguages: Set<string>;
-	private readonly _registry: LanguagesRegistry;
+	protected readonly _registry: LanguagesRegistry;
 	public readonly languageIdCodec: ILanguageIdCodec;
 
 	private readonly _onDidEncounterLanguage = this._register(new Emitter<string>());
 	public readonly onDidEncounterLanguage: Event<string> = this._onDidEncounterLanguage.event;
 
-	protected readonly _onLanguagesMaybeChanged = this._register(new Emitter<void>({ leakWarningThreshold: 200 /* https://github.com/microsoft/vscode/issues/119968 */ }));
-	public readonly onLanguagesMaybeChanged: Event<void> = this._onLanguagesMaybeChanged.event;
+	protected readonly _onDidChange = this._register(new Emitter<void>({ leakWarningThreshold: 200 /* https://github.com/microsoft/vscode/issues/119968 */ }));
+	public readonly onDidChange: Event<void> = this._onDidChange.event;
 
 	constructor(warnOnOverwrite = false) {
 		super();
@@ -69,7 +68,7 @@ export class LanguageService extends Disposable implements ILanguageService {
 		this._encounteredLanguages = new Set<string>();
 		this._registry = this._register(new LanguagesRegistry(true, warnOnOverwrite));
 		this.languageIdCodec = this._registry.languageIdCodec;
-		this._register(this._registry.onDidChange(() => this._onLanguagesMaybeChanged.fire()));
+		this._register(this._registry.onDidChange(() => this._onDidChange.fire()));
 	}
 
 	public override dispose(): void {
@@ -85,85 +84,79 @@ export class LanguageService extends Disposable implements ILanguageService {
 		return this._registry.getRegisteredLanguageIds();
 	}
 
-	public getRegisteredLanguageNames(): string[] {
-		return this._registry.getRegisteredLanguageNames();
-	}
-
-	public getExtensions(alias: string): string[] {
-		return this._registry.getExtensions(alias);
-	}
-
-	public getFilenamesForLanguageId(languageId: string): string[] {
-		return this._registry.getFilenamesForLanguageId(languageId);
-	}
-
-	public getMimeTypeForLanguageId(languageId: string): string | null {
-		return this._registry.getMimeTypeForLanguageId(languageId);
+	public getSortedRegisteredLanguageNames(): ILanguageNameIdPair[] {
+		return this._registry.getSortedRegisteredLanguageNames();
 	}
 
 	public getLanguageName(languageId: string): string | null {
 		return this._registry.getLanguageName(languageId);
 	}
 
-	public getLanguageIdForLanguageName(languageName: string): string | null {
-		return this._registry.getLanguageIdForLanguageName(languageName);
+	public getMimeType(languageId: string): string | null {
+		return this._registry.getMimeType(languageId);
 	}
 
-	public getLanguageIdForMimeType(mimeType: string | null | undefined): string | null {
-		return this._registry.getLanguageIdForMimeType(mimeType);
+	public getExtensions(languageId: string): ReadonlyArray<string> {
+		return this._registry.getExtensions(languageId);
 	}
 
-	public getLanguageIdByFilepathOrFirstLine(resource: URI | null, firstLine?: string): string | null {
-		const modeIds = this._registry.getLanguageIdByFilepathOrFirstLine(resource, firstLine);
-		return firstOrDefault(modeIds, null);
+	public getFilenames(languageId: string): ReadonlyArray<string> {
+		return this._registry.getFilenames(languageId);
 	}
 
-	public validateLanguageId(languageId: string | null): string | null {
-		return this._registry.validateLanguageId(languageId);
-	}
-
-	public getConfigurationFiles(languageId: string): URI[] {
+	public getConfigurationFiles(languageId: string): ReadonlyArray<URI> {
 		return this._registry.getConfigurationFiles(languageId);
 	}
 
-	// --- instantiation
+	public getLanguageIdByLanguageName(languageName: string): string | null {
+		return this._registry.getLanguageIdByLanguageName(languageName);
+	}
+
+	public getLanguageIdByMimeType(mimeType: string | null | undefined): string | null {
+		return this._registry.getLanguageIdByMimeType(mimeType);
+	}
+
+	public guessLanguageIdByFilepathOrFirstLine(resource: URI | null, firstLine?: string): string | null {
+		const languageIds = this._registry.guessLanguageIdByFilepathOrFirstLine(resource, firstLine);
+		return firstOrDefault(languageIds, null);
+	}
 
 	public createById(languageId: string | null | undefined): ILanguageSelection {
-		return new LanguageSelection(this.onLanguagesMaybeChanged, () => {
-			const validLanguageId = (languageId && this.isRegisteredLanguageId(languageId) ? languageId : PLAINTEXT_MODE_ID);
-			this._getOrCreateMode(validLanguageId);
-			return validLanguageId;
+		return new LanguageSelection(this.onDidChange, () => {
+			return this._createAndGetLanguageIdentifier(languageId);
 		});
 	}
 
 	public createByMimeType(mimeType: string | null | undefined): ILanguageSelection {
-		return new LanguageSelection(this.onLanguagesMaybeChanged, () => {
-			const languageId = this.getLanguageIdForMimeType(mimeType);
-			return this._createModeAndGetLanguageIdentifier(languageId);
+		return new LanguageSelection(this.onDidChange, () => {
+			const languageId = this.getLanguageIdByMimeType(mimeType);
+			return this._createAndGetLanguageIdentifier(languageId);
 		});
 	}
 
 	public createByFilepathOrFirstLine(resource: URI | null, firstLine?: string): ILanguageSelection {
-		return new LanguageSelection(this.onLanguagesMaybeChanged, () => {
-			const languageId = this.getLanguageIdByFilepathOrFirstLine(resource, firstLine);
-			return this._createModeAndGetLanguageIdentifier(languageId);
+		return new LanguageSelection(this.onDidChange, () => {
+			const languageId = this.guessLanguageIdByFilepathOrFirstLine(resource, firstLine);
+			return this._createAndGetLanguageIdentifier(languageId);
 		});
 	}
 
-	private _createModeAndGetLanguageIdentifier(languageId: string | null | undefined): string {
-		// Fall back to plain text if no mode was found
-		const validLanguageId = this.validateLanguageId(languageId || 'plaintext') || NULL_MODE_ID;
-		this._getOrCreateMode(validLanguageId);
-		return validLanguageId;
-	}
+	private _createAndGetLanguageIdentifier(languageId: string | null | undefined): string {
+		if (!languageId || !this.isRegisteredLanguageId(languageId)) {
+			// Fall back to plain text if language is unknown
+			languageId = PLAINTEXT_LANGUAGE_ID;
+		}
 
-	private _getOrCreateMode(languageId: string): void {
 		if (!this._encounteredLanguages.has(languageId)) {
 			this._encounteredLanguages.add(languageId);
-			const validLanguageId = this.validateLanguageId(languageId) || NULL_MODE_ID;
+
 			// Ensure tokenizers are created
-			TokenizationRegistry.getOrCreate(validLanguageId);
-			this._onDidEncounterLanguage.fire(validLanguageId);
+			TokenizationRegistry.getOrCreate(languageId);
+
+			// Fire event
+			this._onDidEncounterLanguage.fire(languageId);
 		}
+
+		return languageId;
 	}
 }
