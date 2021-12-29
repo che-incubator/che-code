@@ -13,14 +13,14 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
-import { EditorScopedLayoutService } from 'vs/editor/standalone/browser/simpleServices';
+import { EditorScopedLayoutService } from 'vs/editor/standalone/browser/standaloneLayoutService';
 import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService';
 import { QuickInputController } from 'vs/base/parts/quickinput/browser/quickInput';
 import { QuickInputService, IQuickInputControllerHost } from 'vs/platform/quickinput/browser/quickInput';
 import { once } from 'vs/base/common/functional';
 import { IQuickAccessController } from 'vs/platform/quickinput/common/quickAccess';
 
-export class EditorScopedQuickInputServiceImpl extends QuickInputService {
+export class EditorScopedQuickInputService extends QuickInputService {
 
 	private host: IQuickInputControllerHost | undefined = undefined;
 
@@ -32,7 +32,7 @@ export class EditorScopedQuickInputServiceImpl extends QuickInputService {
 		@IAccessibilityService accessibilityService: IAccessibilityService,
 		@ICodeEditorService codeEditorService: ICodeEditorService
 	) {
-		super(instantiationService, contextKeyService, themeService, accessibilityService, new EditorScopedLayoutService(codeEditorService, editor.getContainerDomNode()));
+		super(instantiationService, contextKeyService, themeService, accessibilityService, new EditorScopedLayoutService(editor.getContainerDomNode(), codeEditorService));
 
 		// Use the passed in code editor as host for the quick input widget
 		const contribution = QuickInputEditorContribution.get(editor);
@@ -56,11 +56,11 @@ export class EditorScopedQuickInputServiceImpl extends QuickInputService {
 	}
 }
 
-export class StandaloneQuickInputServiceImpl implements IQuickInputService {
+export class StandaloneQuickInputService implements IQuickInputService {
 
 	declare readonly _serviceBrand: undefined;
 
-	private mapEditorToService = new Map<ICodeEditor, EditorScopedQuickInputServiceImpl>();
+	private mapEditorToService = new Map<ICodeEditor, EditorScopedQuickInputService>();
 	private get activeService(): IQuickInputService {
 		const editor = this.codeEditorService.getFocusedCodeEditor();
 		if (!editor) {
@@ -71,7 +71,7 @@ export class StandaloneQuickInputServiceImpl implements IQuickInputService {
 		// editor or create it lazily if not yet created
 		let quickInputService = this.mapEditorToService.get(editor);
 		if (!quickInputService) {
-			const newQuickInputService = quickInputService = this.instantiationService.createInstance(EditorScopedQuickInputServiceImpl, editor);
+			const newQuickInputService = quickInputService = this.instantiationService.createInstance(EditorScopedQuickInputService, editor);
 			this.mapEditorToService.set(editor, quickInputService);
 
 			once(editor.onDidDispose)(() => {

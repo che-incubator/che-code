@@ -3,121 +3,177 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
+import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
-import { ILanguageIdCodec } from 'vs/editor/common/modes';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { LanguagesRegistry } from 'vs/editor/common/services/languagesRegistry';
+import { ILanguageNameIdPair, ILanguageSelection, ILanguageService } from 'vs/editor/common/services/language';
+import { firstOrDefault } from 'vs/base/common/arrays';
+import { ILanguageIdCodec, TokenizationRegistry } from 'vs/editor/common/modes';
+import { PLAINTEXT_LANGUAGE_ID } from 'vs/editor/common/modes/modesRegistry';
 
-export const ILanguageService = createDecorator<ILanguageService>('languageService');
+export class LanguageService extends Disposable implements ILanguageService {
+	public _serviceBrand: undefined;
 
-export interface ILanguageExtensionPoint {
-	id: string;
-	extensions?: string[];
-	filenames?: string[];
-	filenamePatterns?: string[];
-	firstLine?: string;
-	aliases?: string[];
-	mimetypes?: string[];
-	configuration?: URI;
+	static instanceCount = 0;
+
+	private readonly _encounteredLanguages: Set<string>;
+	protected readonly _registry: LanguagesRegistry;
+	public readonly languageIdCodec: ILanguageIdCodec;
+
+	private readonly _onDidEncounterLanguage = this._register(new Emitter<string>());
+	public readonly onDidEncounterLanguage: Event<string> = this._onDidEncounterLanguage.event;
+
+	protected readonly _onDidChange = this._register(new Emitter<void>({ leakWarningThreshold: 200 /* https://github.com/microsoft/vscode/issues/119968 */ }));
+	public readonly onDidChange: Event<void> = this._onDidChange.event;
+
+	constructor(warnOnOverwrite = false) {
+		super();
+		LanguageService.instanceCount++;
+		this._encounteredLanguages = new Set<string>();
+		this._registry = this._register(new LanguagesRegistry(true, warnOnOverwrite));
+		this.languageIdCodec = this._registry.languageIdCodec;
+		this._register(this._registry.onDidChange(() => this._onDidChange.fire()));
+	}
+
+	public override dispose(): void {
+		LanguageService.instanceCount--;
+		super.dispose();
+	}
+
+	public isRegisteredLanguageId(languageId: string | null | undefined): boolean {
+		return this._registry.isRegisteredLanguageId(languageId);
+	}
+
+	public getRegisteredLanguageIds(): string[] {
+		return this._registry.getRegisteredLanguageIds();
+	}
+
+	public getSortedRegisteredLanguageNames(): ILanguageNameIdPair[] {
+		return this._registry.getSortedRegisteredLanguageNames();
+	}
+
+	public getLanguageName(languageId: string): string | null {
+		return this._registry.getLanguageName(languageId);
+	}
+
+	public getMimeType(languageId: string): string | null {
+		return this._registry.getMimeType(languageId);
+	}
+
+	public getExtensions(languageId: string): ReadonlyArray<string> {
+		return this._registry.getExtensions(languageId);
+	}
+
+	public getFilenames(languageId: string): ReadonlyArray<string> {
+		return this._registry.getFilenames(languageId);
+	}
+
+	public getConfigurationFiles(languageId: string): ReadonlyArray<URI> {
+		return this._registry.getConfigurationFiles(languageId);
+	}
+
+	public getLanguageIdByLanguageName(languageName: string): string | null {
+		return this._registry.getLanguageIdByLanguageName(languageName);
+	}
+
+	public getLanguageIdByMimeType(mimeType: string | null | undefined): string | null {
+		return this._registry.getLanguageIdByMimeType(mimeType);
+	}
+
+	public guessLanguageIdByFilepathOrFirstLine(resource: URI | null, firstLine?: string): string | null {
+		const languageIds = this._registry.guessLanguageIdByFilepathOrFirstLine(resource, firstLine);
+		return firstOrDefault(languageIds, null);
+	}
+
+	public createById(languageId: string | null | undefined): ILanguageSelection {
+		return new LanguageSelection(this.onDidChange, () => {
+			return this._createAndGetLanguageIdentifier(languageId);
+		});
+	}
+
+	public createByMimeType(mimeType: string | null | undefined): ILanguageSelection {
+		return new LanguageSelection(this.onDidChange, () => {
+			const languageId = this.getLanguageIdByMimeType(mimeType);
+			return this._createAndGetLanguageIdentifier(languageId);
+		});
+	}
+
+	public createByFilepathOrFirstLine(resource: URI | null, firstLine?: string): ILanguageSelection {
+		return new LanguageSelection(this.onDidChange, () => {
+			const languageId = this.guessLanguageIdByFilepathOrFirstLine(resource, firstLine);
+			return this._createAndGetLanguageIdentifier(languageId);
+		});
+	}
+
+	private _createAndGetLanguageIdentifier(languageId: string | null | undefined): string {
+		if (!languageId || !this.isRegisteredLanguageId(languageId)) {
+			// Fall back to plain text if language is unknown
+			languageId = PLAINTEXT_LANGUAGE_ID;
+		}
+
+		if (!this._encounteredLanguages.has(languageId)) {
+			this._encounteredLanguages.add(languageId);
+
+			// Ensure tokenizers are created
+			TokenizationRegistry.getOrCreate(languageId);
+
+			// Fire event
+			this._onDidEncounterLanguage.fire(languageId);
+		}
+
+		return languageId;
+	}
 }
 
-export interface ILanguageSelection {
-	readonly languageId: string;
-	readonly onDidChange: Event<string>;
-}
+class LanguageSelection implements ILanguageSelection {
 
-export interface ILanguageNameIdPair {
-	readonly languageName: string;
-	readonly languageId: string;
-}
+	public languageId: string;
 
-export interface ILanguageService {
-	readonly _serviceBrand: undefined;
+	private _listener: IDisposable | null = null;
+	private _emitter: Emitter<string> | null = null;
 
-	/**
-	 * A codec which can encode and decode a string `languageId` as a number.
-	 */
-	readonly languageIdCodec: ILanguageIdCodec;
+	constructor(
+		private readonly _onDidChangeLanguages: Event<void>,
+		private readonly _selector: () => string
+	) {
+		this.languageId = this._selector();
+	}
 
-	/**
-	 * An event emitted when a language is needed for the first time.
-	 */
-	onDidEncounterLanguage: Event<string>;
+	private _dispose(): void {
+		if (this._listener) {
+			this._listener.dispose();
+			this._listener = null;
+		}
+		if (this._emitter) {
+			this._emitter.dispose();
+			this._emitter = null;
+		}
+	}
 
-	/**
-	 * An event emitted when languages have changed.
-	 */
-	onDidChange: Event<void>;
+	public get onDidChange(): Event<string> {
+		if (!this._listener) {
+			this._listener = this._onDidChangeLanguages(() => this._evaluate());
+		}
+		if (!this._emitter) {
+			this._emitter = new Emitter<string>({
+				onLastListenerRemove: () => {
+					this._dispose();
+				}
+			});
+		}
+		return this._emitter.event;
+	}
 
-	/**
-	 * Check if `languageId` is registered.
-	 */
-	isRegisteredLanguageId(languageId: string): boolean;
-
-	/**
-	 * Get a list of all registered languages.
-	 */
-	getRegisteredLanguageIds(): string[];
-
-	/**
-	 * Get a list of all registered languages with a name.
-	 * If a language is explicitly registered without a name, it will not be part of the result.
-	 * The result is sorted using by name case insensitive.
-	 */
-	getSortedRegisteredLanguageNames(): ILanguageNameIdPair[];
-
-	/**
-	 * Get the preferred language name for a language.
-	 */
-	getLanguageName(languageId: string): string | null;
-
-	/**
-	 * Get the mimetype for a language.
-	 */
-	getMimeType(languageId: string): string | null;
-
-	/**
-	 * Get all file extensions for a language.
-	 */
-	getExtensions(languageId: string): ReadonlyArray<string>;
-
-	/**
-	 * Get all file names for a language.
-	 */
-	getFilenames(languageId: string): ReadonlyArray<string>;
-
-	/**
-	 * Get all language configuration files for a language.
-	 */
-	getConfigurationFiles(languageId: string): ReadonlyArray<URI>;
-
-	/**
-	 * Look up a language by its name case insensitive.
-	 */
-	getLanguageIdByLanguageName(languageName: string): string | null;
-
-	/**
-	 * Look up a language by its mime type.
-	 */
-	getLanguageIdByMimeType(mimeType: string | null | undefined): string | null;
-
-	/**
-	 * Guess the language id for a resource.
-	 */
-	guessLanguageIdByFilepathOrFirstLine(resource: URI, firstLine?: string): string | null;
-
-	/**
-	 * Will fall back to 'plaintext' if `languageId` is unknown.
-	 */
-	createById(languageId: string | null | undefined): ILanguageSelection;
-
-	/**
-	 * Will fall back to 'plaintext' if `mimeType` is unknown.
-	 */
-	createByMimeType(mimeType: string | null | undefined): ILanguageSelection;
-
-	/**
-	 * Will fall back to 'plaintext' if the `languageId` cannot be determined.
-	 */
-	createByFilepathOrFirstLine(resource: URI | null, firstLine?: string): ILanguageSelection;
+	private _evaluate(): void {
+		const languageId = this._selector();
+		if (languageId === this.languageId) {
+			// no change
+			return;
+		}
+		this.languageId = languageId;
+		if (this._emitter) {
+			this._emitter.fire(this.languageId);
+		}
+	}
 }
