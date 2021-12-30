@@ -18,7 +18,7 @@ import { EditorAction, ServicesAccessor, registerEditorAction } from 'vs/editor/
 import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService';
 import { DiffEditorWidget } from 'vs/editor/browser/widget/diffEditorWidget';
 import { IComputedEditorOptions, EditorOption, EditorFontLigatures } from 'vs/editor/common/config/editorOptions';
-import { LineTokens } from 'vs/editor/common/core/lineTokens';
+import { LineTokens } from 'vs/editor/common/model/tokens/lineTokens';
 import { Position } from 'vs/editor/common/core/position';
 import { ILineChange, ScrollType } from 'vs/editor/common/editorCommon';
 import { ITextModel, TextModelResolvedOptions } from 'vs/editor/common/model';
@@ -32,7 +32,7 @@ import { registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/
 import { Constants } from 'vs/base/common/uint';
 import { Codicon } from 'vs/base/common/codicons';
 import { registerIcon } from 'vs/platform/theme/common/iconRegistry';
-import { ILanguageIdCodec } from 'vs/editor/common/modes';
+import { ILanguageIdCodec } from 'vs/editor/common/languages';
 import { ILanguageService } from 'vs/editor/common/services/language';
 
 const DIFF_LINES_PADDING = 3;
