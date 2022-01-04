@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// empty placeholder declaration for the `icons`-contribution point
+import { registerSharedProcessRemoteService } from 'vs/platform/ipc/electron-sandbox/services';
+import { IV8InspectProfilingService } from 'vs/platform/profiling/common/profiling';
 
-// https://github.com/microsoft/vscode/issues/119101 @aeschli
+registerSharedProcessRemoteService(IV8InspectProfilingService, 'v8InspectProfiling', { supportsDelayedInstantiation: true });
