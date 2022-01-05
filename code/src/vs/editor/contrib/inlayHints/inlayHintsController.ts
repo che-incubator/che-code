@@ -13,7 +13,7 @@ import { LRUCache, ResourceMap } from 'vs/base/common/map';
 import { IRange } from 'vs/base/common/range';
 import { assertType } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
-import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
+import { ICodeEditor, MouseTargetType } from 'vs/editor/browser/editorBrowser';
 import { CssProperties, DynamicCssRules } from 'vs/editor/browser/editorDom';
 import { registerEditorContribution } from 'vs/editor/browser/editorExtensions';
 import { EditorOption, EDITOR_FONT_DEFAULTS } from 'vs/editor/common/config/editorOptions';
@@ -23,8 +23,11 @@ import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { InlayHint, InlayHintKind, InlayHintsProvider, InlayHintsProviderRegistry } from 'vs/editor/common/languages';
 import { LanguageFeatureRequestDelays } from 'vs/editor/common/languages/languageFeatureRegistry';
 import { IModelDeltaDecoration, InjectedTextOptions, ITextModel, IWordAtPosition, TrackedRangeStickiness } from 'vs/editor/common/model';
+import { ModelDecorationInjectedTextOptions } from 'vs/editor/common/model/textModel';
 import { ITextModelService } from 'vs/editor/common/services/resolverService';
+import { ClickLinkGesture } from 'vs/editor/contrib/gotoSymbol/link/clickLinkGesture';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
+import { IOpenerService } from 'vs/platform/opener/common/opener';
 import * as colors from 'vs/platform/theme/common/colorRegistry';
 import { themeColorFromId } from 'vs/platform/theme/common/themeService';
 
@@ -100,6 +103,10 @@ class InlayHintsCache {
 	}
 }
 
+class InlayHintLink {
+	constructor(readonly href: string, readonly index: number, readonly hint: InlayHint) { }
+}
+
 export class InlayHintsController implements IEditorContribution {
 
 	static readonly ID: string = 'editor.contrib.InlayHints';
@@ -111,11 +118,13 @@ export class InlayHintsController implements IEditorContribution {
 	private readonly _sessionDisposables = new DisposableStore();
 	private readonly _getInlayHintsDelays = new LanguageFeatureRequestDelays(InlayHintsProviderRegistry, 25, 500);
 	private readonly _cache = new InlayHintsCache();
-	private readonly _decorationsMetadata = new Map<string, { hint: InlayHint, classNameRef: IDisposable, linkTarget?: string }>();
+	private readonly _decorationsMetadata = new Map<string, { hint: InlayHint, classNameRef: IDisposable }>();
 	private readonly _ruleFactory = new DynamicCssRules(this._editor);
+	private _activeInlayHintLink?: InlayHintLink;
 
 	constructor(
-		private readonly _editor: ICodeEditor
+		private readonly _editor: ICodeEditor,
+		@IOpenerService private readonly _openerService: IOpenerService,
 	) {
 		this._disposables.add(InlayHintsProviderRegistry.onDidChange(() => this._update()));
 		this._disposables.add(_editor.onDidChangeModel(() => this._update()));
@@ -191,6 +200,46 @@ export class InlayHintsController implements IEditorContribution {
 				}));
 			}
 		}
+
+		// link gesture
+		let undoHover = () => { };
+		const gesture = this._sessionDisposables.add(new ClickLinkGesture(this._editor));
+		this._sessionDisposables.add(gesture.onMouseMoveOrRelevantKeyDown(e => {
+			const [mouseEvent] = e;
+			if (mouseEvent.target.type !== MouseTargetType.CONTENT_TEXT || typeof mouseEvent.target.detail !== 'object' || !mouseEvent.hasTriggerModifier) {
+				undoHover();
+				return;
+			}
+			const model = this._editor.getModel()!;
+			const options = mouseEvent.target.detail?.injectedText?.options;
+			if (options instanceof ModelDecorationInjectedTextOptions && options.attachedData instanceof InlayHintLink) {
+				this._activeInlayHintLink = options.attachedData;
+
+				const lineNumber = this._activeInlayHintLink.hint.position.lineNumber;
+				const range = new Range(lineNumber, 1, lineNumber, model.getLineMaxColumn(lineNumber));
+				const lineHints = new Set<InlayHint>();
+				for (let data of this._decorationsMetadata.values()) {
+					if (range.containsPosition(data.hint.position)) {
+						lineHints.add(data.hint);
+					}
+				}
+				this._updateHintsDecorators([range], Array.from(lineHints));
+				undoHover = () => {
+					this._activeInlayHintLink = undefined;
+					this._updateHintsDecorators([range], Array.from(lineHints));
+				};
+			}
+		}));
+		this._sessionDisposables.add(gesture.onCancel(undoHover));
+		this._sessionDisposables.add(gesture.onExecute(e => {
+			if (e.target.type !== MouseTargetType.CONTENT_TEXT || typeof e.target.detail !== 'object' || !e.hasTriggerModifier) {
+				return;
+			}
+			const options = e.target.detail?.injectedText?.options;
+			if (options instanceof ModelDecorationInjectedTextOptions && options.attachedData instanceof InlayHintLink) {
+				this._openerService.open(options.attachedData.href, { allowCommands: true, openToSide: e.hasSideBySideModifier });
+			}
+		}));
 	}
 
 	private _getHintsRanges(): Range[] {
@@ -214,7 +263,7 @@ export class InlayHintsController implements IEditorContribution {
 		const { fontSize, fontFamily } = this._getLayoutInfo();
 		const model = this._editor.getModel()!;
 
-		const newDecorationsData: { hint: InlayHint, decoration: IModelDeltaDecoration, linkTarget?: string, classNameRef: IDisposable }[] = [];
+		const newDecorationsData: { hint: InlayHint, decoration: IModelDeltaDecoration, classNameRef: IDisposable }[] = [];
 
 		const fontFamilyVar = '--code-editorInlayHintsFontFamily';
 		this._editor.getContainerDomNode().style.setProperty(fontFamilyVar, fontFamily);
@@ -261,6 +310,12 @@ export class InlayHintsController implements IEditorContribution {
 
 				if (isLink) {
 					cssProperties.textDecoration = 'underline';
+
+					if (this._activeInlayHintLink?.hint === hint && this._activeInlayHintLink.index === i && this._activeInlayHintLink.href === node.href) {
+						// active link!
+						cssProperties.cursor = 'pointer';
+						cssProperties.color = themeColorFromId(colors.editorActiveLinkForeground);
+					}
 				}
 
 				if (isFirst && isLast) {
@@ -286,7 +341,6 @@ export class InlayHintsController implements IEditorContribution {
 
 				newDecorationsData.push({
 					hint,
-					linkTarget: isLink ? node.href : undefined,
 					classNameRef,
 					decoration: {
 						range,
@@ -295,6 +349,7 @@ export class InlayHintsController implements IEditorContribution {
 								content: fixSpace(isLink ? node.label : node),
 								inlineClassNameAffectsLetterSpacing: true,
 								inlineClassName: classNameRef.className,
+								attachedData: isLink ? new InlayHintLink(node.href, i, hint) : undefined
 							} as InjectedTextOptions,
 							description: 'InlayHint',
 							showIfCollapsed: !usesWordRange,
@@ -325,7 +380,7 @@ export class InlayHintsController implements IEditorContribution {
 		const newDecorationIds = model.deltaDecorations(decorationIdsToReplace, newDecorationsData.map(d => d.decoration), this._decorationOwnerId);
 		for (let i = 0; i < newDecorationIds.length; i++) {
 			const data = newDecorationsData[i];
-			this._decorationsMetadata.set(newDecorationIds[i], { hint: data.hint, classNameRef: data.classNameRef, linkTarget: data.linkTarget });
+			this._decorationsMetadata.set(newDecorationIds[i], { hint: data.hint, classNameRef: data.classNameRef });
 		}
 	}
 
