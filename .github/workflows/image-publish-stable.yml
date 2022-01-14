@@ -68,4 +68,23 @@ jobs:
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:${CURRENT_BRANCH} -t quay.io/che-incubator/che-code:latest -t quay.io/che-incubator/che-code:${CURRENT_BRANCH}-${SHORT_SHA1} .
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:${CURRENT_BRANCH} -t quay.io/che-incubator/che-code:${CURRENT_BRANCH}-${SHORT_SHA1} .
+  dev:
+    name: dev
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}        
+      - name: Docker Build and Push
+        run: |
+          SHORT_SHA1=$(git rev-parse --short=7 HEAD)
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --push -t quay.io/che-incubator/che-code-dev:${CURRENT_BRANCH} -t quay.io/che-incubator/che-code-dev:${CURRENT_BRANCH}-${SHORT_SHA1} .
