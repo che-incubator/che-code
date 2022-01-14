@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2022 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+schemaVersion: 2.1.0
+metadata:
+  name: che-code
+components:
+  - name: dev
+    container:
+      image: quay.io/che-incubator/che-code-dev:insiders
+      memoryLimit: 7Gi
+      endpoints:
+        - exposure: public
+          name: dev
+          protocol: http
+          targetPort: 8000
+  - name: projects
+    volume:
+      ephemeral: true
+      size: 3Gi
+commands:
+  - id: build
+    exec:
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        yarn watch
+      group:
+        kind: build
+        isDefault: true
+  - id: run
+    exec:
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        yarn server
+      group:
+        kind: run
+        isDefault: true
