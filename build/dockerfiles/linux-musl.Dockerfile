@@ -1,3 +1,11 @@
+# Copyright (c) 2021-2022 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
 FROM docker.io/node:14.16.0-alpine3.13 as linux-musl-builder
 RUN apk add --update --no-cache \
