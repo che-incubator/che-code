@@ -43,8 +43,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Checkout
-        uses: actions/checkout@v2
       - name: Download linux-libc-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
@@ -75,3 +73,16 @@ jobs:
         with:
           name: pull-request-sha
           path: PR_SHA
+  dev:
+    name: dev
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Docker Build
+        run: |
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t dev-pr .
+      - name: Upload dev image
+        uses: ishworkh/docker-image-artifact-upload@v1
+        with:
+          image: "dev-pr"

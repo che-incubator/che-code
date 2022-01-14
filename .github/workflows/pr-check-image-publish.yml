@@ -64,6 +64,22 @@ jobs:
           docker tag assembly-pr ${IMAGE_NAME}
           docker push ${IMAGE_NAME}
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+      - name: Download dev image
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: action_image_artifact_dev-pr
+          path: dev-image/
+      - name: Load dev Docker image
+        run: |
+          ls -la dev-image/
+          docker load -i dev-image/dev-pr
+      - name: Docker Push
+        run: |
+          export DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env.PR_NUMBER}}-amd64
+          docker tag dev-pr ${DEV_IMAGE_NAME}
+          docker push ${DEV_IMAGE_NAME}
+          echo "DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
       - name: 'Comment PR'
         uses: actions/github-script@v5
         with:
@@ -73,5 +89,5 @@ jobs:
               issue_number: process.env.PR_NUMBER,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request image published at ${process.env.IMAGE_NAME} ✨`
+              body: `Pull Request images published ✨\nimage: ${process.env.IMAGE_NAME}\n Dev image: ${process.env.DEV_IMAGE_NAME}`
             })
