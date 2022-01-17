@@ -212,6 +212,13 @@
 				]
 			},
 			{
+				"target": "**/vs/base/worker/**",
+				"restrictions": [
+					"vs/nls",
+					"**/vs/base/{common,worker}/**"
+				]
+			},
+			{
 				"target": "**/vs/platform/*/common/**",
 				"restrictions": [
 					"vs/nls",
@@ -324,7 +331,6 @@
 				"restrictions": [
 					"vs/nls",
 					"**/vs/base/common/**",
-					"**/vs/base/worker/**",
 					"**/vs/platform/*/common/**",
 					"**/vs/editor/common/**"
 				]
@@ -451,6 +457,28 @@
 				]
 			},
 			{
+				"target": "**/vs/editor/editor.all.ts",
+				"restrictions": [
+					"**/vs/base/{common,browser}/**",
+					"**/vs/base/parts/*/{common,browser}/**",
+					"**/vs/editor/{common,contrib,browser}/**"
+				]
+			},
+			{
+				"target": "**/vs/editor/editor.worker.ts",
+				"restrictions": [
+					"**/vs/base/{common,worker}/**",
+					"**/vs/editor/common/**"
+				]
+			},
+			{
+				"target": "**/vs/editor/editor.{api,main}.ts",
+				"restrictions": [
+					"**/vs/base/{common,browser}/**",
+					"**/vs/editor/**"
+				]
+			},
+			{
 				"target": "**/vs/workbench/common/**",
 				"restrictions": [
 					"vs/nls",
@@ -493,6 +521,39 @@
 					"**/vs/workbench/common/**",
 					"**/vs/workbench/services/*/common/**",
 					"**/vs/workbench/contrib/*/common/**"
+				]
+			},
+			{
+				"target": "**/vs/workbench/api/browser/**",
+				"restrictions": [
+					"vscode",
+					"vs/nls",
+					"**/vs/base/{common,browser}/**",
+					"**/vs/base/parts/*/{common,browser}/**",
+					"**/vs/platform/*/{common,browser}/**",
+					"**/vs/editor/{common,browser}/**",
+					"**/vs/editor/contrib/**", // editor/contrib is equivalent to /browser/ by convention
+					"**/vs/workbench/api/{common,browser}/**",
+					"**/vs/workbench/{common,browser}/**",
+					"**/vs/workbench/services/*/{common,browser}/**",
+					"**/vs/workbench/contrib/*/{common,browser}/**"
+				]
+			},
+			{
+				"target": "**/vs/workbench/api/node/**",
+				"restrictions": [
+					"vscode",
+					"vs/nls",
+					"**/vs/base/{common,node}/**",
+					"**/vs/base/parts/*/{common,node}/**",
+					"**/vs/platform/*/{common,node}/**",
+					"**/vs/editor/{common,node}/**",
+					"**/vs/editor/contrib/*/{common,node}/**",
+					"**/vs/workbench/api/{common,node}/**",
+					"**/vs/workbench/{common,node}/**",
+					"**/vs/workbench/services/*/{common,node}/**",
+					"**/vs/workbench/contrib/*/{common,node}/**",
+					"*" // node modules
 				]
 			},
 			{
@@ -589,7 +650,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,browser,worker}/**",
+					"**/vs/base/**/{common,browser}/**",
 					"**/vs/platform/**/{common,browser}/**",
 					"**/vs/editor/{common,browser}/**",
 					"**/vs/workbench/workbench.web.api",
@@ -624,7 +685,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,browser,worker,electron-sandbox}/**",
+					"**/vs/base/**/{common,browser,electron-sandbox}/**",
 					"**/vs/platform/**/{common,browser,electron-sandbox}/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/{common,browser,electron-sandbox}/**",
@@ -641,7 +702,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,browser,worker,node,electron-sandbox,electron-browser}/**",
+					"**/vs/base/**/{common,browser,node,electron-sandbox,electron-browser}/**",
 					"**/vs/platform/**/{common,browser,node,electron-sandbox,electron-browser}/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/{common,browser,node,electron-sandbox,electron-browser}/**",
@@ -715,7 +776,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,worker}/**",
+					"**/vs/base/**/common/**",
 					"**/vs/platform/**/common/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/common/**",
@@ -778,7 +839,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,browser,worker,electron-sandbox}/**",
+					"**/vs/base/**/{common,browser,electron-sandbox}/**",
 					"**/vs/platform/**/{common,browser,electron-sandbox}/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/{common,browser,electron-sandbox}/**",
@@ -796,7 +857,7 @@
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
-					"**/vs/base/**/{common,browser,worker,node,electron-sandbox,electron-browser}/**",
+					"**/vs/base/**/{common,browser,node,electron-sandbox,electron-browser}/**",
 					"**/vs/platform/**/{common,browser,node,electron-sandbox,electron-browser}/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/{common,browser,node,electron-sandbox,electron-browser}/**",
@@ -835,6 +896,20 @@
 			},
 			{
 				"target": "**/vs/code/electron-browser/**",
+				"restrictions": [
+					"vs/nls",
+					"vs/css!./**/*",
+					"**/vs/base/**/{common,browser,node,electron-sandbox,electron-browser}/**",
+					"**/vs/base/parts/**/{common,browser,node,electron-sandbox,electron-browser}/**",
+					"**/vs/platform/**/{common,browser,node,electron-sandbox,electron-browser}/**",
+					"**/vs/code/**/{common,browser,node,electron-sandbox,electron-browser}/**",
+					"@vscode/*",
+					"@parcel/*",
+					"*" // node modules
+				]
+			},
+			{
+				"target": "**/vs/code/electron-sandbox/**",
 				"restrictions": [
 					"vs/nls",
 					"vs/css!./**/*",
@@ -910,7 +985,7 @@
 				]
 			},
 			{
-				"target": "**/src/vs/workbench/workbench.sandbox.main.ts",
+				"target": "**/src/vs/workbench/{workbench.sandbox.main.ts,workbench.desktop.sandbox.main.ts}",
 				"restrictions": [
 					"vs/nls",
 					"**/vs/base/**/{common,browser,electron-sandbox}/**",
@@ -918,7 +993,8 @@
 					"**/vs/platform/**/{common,browser,electron-sandbox}/**",
 					"**/vs/editor/**",
 					"**/vs/workbench/**/{common,browser,electron-sandbox}/**",
-					"**/vs/workbench/workbench.common.main"
+					"**/vs/workbench/workbench.common.main",
+					"**/vs/workbench/workbench.sandbox.main"
 				]
 			},
 			{
@@ -933,6 +1009,22 @@
 					"**/vs/workbench/workbench.common.main",
 					"**/vs/workbench/workbench.sandbox.main"
 				]
+			},
+			{
+				"target": "**/src/vs/workbench/{workbench.desktop.main.nls.js,workbench.web.api.nls.js}",
+				"restrictions": []
+			},
+			{
+				"target": "**/src/vs/{css.d.ts,monaco.d.ts,nls.d.ts,nls.mock.ts}",
+				"restrictions": []
+			},
+			{
+				"target": "**/src/vscode-dts/**",
+				"restrictions": []
+			},
+			{
+				"target": "**/src/{bootstrap-amd.js,bootstrap-fork.js,bootstrap-node.js,bootstrap-window.js,bootstrap.js,cli.js,main.js}",
+				"restrictions": []
 			},
 			{
 				"target": "**/extensions/**",
@@ -1038,6 +1130,14 @@
 					"crypto",
 					"xterm*"
 				]
+			},
+			{
+				"target": "**/build/**",
+				"restrictions": "**/*"
+			},
+			{
+				"target": "**/{buildfile.js,buildfile.desktop.js,buildfile.web.js}",
+				"restrictions": "**/*"
 			}
 		],
 		"header/header": [
