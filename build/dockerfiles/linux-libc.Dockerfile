@@ -7,7 +7,7 @@
 #
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-50 as linux-libc-builder
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-53 as linux-libc-builder
 
 USER root
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
