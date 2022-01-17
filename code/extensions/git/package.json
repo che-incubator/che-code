@@ -87,13 +87,6 @@
         "icon": "$(compare-changes)"
       },
       {
-        "command": "git.openChangeEditor",
-        "title": "%command.openChange%",
-        "category": "Git",
-        "icon": "$(compare-changes)",
-        "enablement": "scmActiveResourceHasChanges"
-      },
-      {
         "command": "git.openAllChanges",
         "title": "%command.openAllChanges%",
         "category": "Git"
@@ -605,18 +598,14 @@
         },
         {
           "command": "git.openFile",
-          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0"
+          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && resourceScheme == file && scmActiveResourceHasChanges"
         },
         {
           "command": "git.openHEADFile",
-          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0"
+          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && resourceScheme == file && scmActiveResourceHasChanges"
         },
         {
           "command": "git.openChange",
-          "when": "false"
-        },
-        {
-          "command": "git.openChangeEditor",
           "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0"
         },
         {
@@ -689,7 +678,7 @@
         },
         {
           "command": "git.rename",
-          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && resourceScheme == file"
+          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && resourceScheme == file && scmActiveResourceRepository"
         },
         {
           "command": "git.commit",
@@ -889,7 +878,7 @@
         },
         {
           "command": "git.ignore",
-          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0"
+          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && resourceScheme == file && scmActiveResourceRepository"
         },
         {
           "command": "git.stashIncludeUntracked",
@@ -1378,9 +1367,9 @@
           "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && isInNotebookTextDiffEditor && resourceScheme =~ /^git$|^file$/"
         },
         {
-          "command": "git.openChangeEditor",
+          "command": "git.openChange",
           "group": "navigation",
-          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && !isInDiffEditor && resourceScheme == file"
+          "when": "config.git.enabled && !git.missing && gitOpenRepositoryCount != 0 && !isInDiffEditor && resourceScheme == file && scmActiveResourceHasChanges"
         },
         {
           "command": "git.stageSelectedRanges",
@@ -2396,9 +2385,9 @@
     ]
   },
   "dependencies": {
+    "@vscode/iconv-lite-umd": "0.7.0",
     "byline": "^5.0.0",
     "file-type": "^7.2.0",
-    "iconv-lite-umd": "0.6.10",
     "jschardet": "3.0.0",
     "vscode-extension-telemetry": "0.4.4",
     "vscode-nls": "^4.0.0",

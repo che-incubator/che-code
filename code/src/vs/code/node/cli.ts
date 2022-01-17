@@ -14,7 +14,7 @@ import { randomPort } from 'vs/base/common/ports';
 import { isString } from 'vs/base/common/types';
 import { whenDeleted, writeFileSync } from 'vs/base/node/pfs';
 import { findFreePort } from 'vs/base/node/ports';
-import { watchFileContents } from 'vs/platform/files/node/watcher/nodejs/nodejsWatcher';
+import { watchFileContents } from 'vs/platform/files/node/watcher/nodejs/nodejsWatcherLib';
 import { NativeParsedArgs } from 'vs/platform/environment/common/argv';
 import { buildHelpMessage, buildVersionMessage, OPTIONS } from 'vs/platform/environment/node/argv';
 import { addArg, parseCLIProcessArgv } from 'vs/platform/environment/node/argvHelper';
@@ -402,7 +402,7 @@ export async function main(argv: string[]): Promise<any> {
 
 							const cts = new CancellationTokenSource();
 							child.on('close', () => cts.dispose(true));
-							await watchFileContents(tmpName, chunk => stream.write(chunk), cts.token);
+							await watchFileContents(tmpName, chunk => stream.write(chunk), () => { /* ignore */ }, cts.token);
 						} finally {
 							unlinkSync(tmpName);
 						}

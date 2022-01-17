@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RemoteTerminalMachineExecChannel } from './che/remoteTerminalMachineExecChannel';
 import * as crypto from 'crypto';
+import { RemoteTerminalMachineExecChannel } from './che/remoteTerminalMachineExecChannel';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as net from 'net';
@@ -53,7 +53,7 @@ import { DiskFileSystemProvider } from 'vs/platform/files/node/diskFileSystemPro
 import { IFileService } from 'vs/platform/files/common/files';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
-import { IPCServer, ClientConnectionEvent, IMessagePassingProtocol, StaticRouter } from 'vs/base/parts/ipc/common/ipc';
+import { IPCServer, ClientConnectionEvent, IMessagePassingProtocol, StaticRouter, ProxyChannel } from 'vs/base/parts/ipc/common/ipc';
 import { Emitter, Event } from 'vs/base/common/event';
 import { RemoteAgentEnvironmentChannel } from 'vs/server/remoteAgentEnvironmentImpl';
 import { RemoteAgentFileSystemProviderChannel } from 'vs/server/remoteFileSystemProviderServer';
@@ -80,6 +80,11 @@ import { PtyHostService } from 'vs/platform/terminal/node/ptyHostService';
 import { IRemoteTelemetryService, RemoteNullTelemetryService, RemoteTelemetryService } from 'vs/server/remoteTelemetryService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
+import { ICredentialsService } from 'vs/platform/credentials/common/credentials';
+import { CredentialsMainService } from 'vs/platform/credentials/node/credentialsMainService';
+import { IEncryptionService } from 'vs/workbench/services/encryption/common/encryptionService';
+import { EncryptionMainService } from 'vs/platform/encryption/node/encryptionMainService';
+import { RemoteTelemetryChannel } from 'vs/server/remoteTelemetryChannel';
 
 const SHUTDOWN_TIMEOUT = 5 * 60 * 1000;
 
@@ -289,20 +294,20 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 		services.set(IRequestService, new SyncDescriptor(RequestService));
 
 		let appInsightsAppender: ITelemetryAppender = NullAppender;
+		const machineId = await getMachineId();
 		if (supportsTelemetry(this._productService, this._environmentService)) {
 			if (this._productService.aiConfig && this._productService.aiConfig.asimovKey) {
 				appInsightsAppender = new AppInsightsAppender(eventPrefix, null, this._productService.aiConfig.asimovKey);
 				this._register(toDisposable(() => appInsightsAppender!.flush())); // Ensure the AI appender is disposed so that it flushes remaining data
 			}
 
-			const machineId = await getMachineId();
 			const config: ITelemetryServiceConfig = {
 				appenders: [appInsightsAppender],
 				commonProperties: resolveCommonProperties(fileService, release(), hostname(), process.arch, this._productService.commit, this._productService.version + '-remote', machineId, this._productService.msftInternalDomains, this._environmentService.installSourcePath, 'remoteAgent'),
 				piiPaths: [this._environmentService.appRoot]
 			};
 
-			services.set(IRemoteTelemetryService, new SyncDescriptor(RemoteTelemetryService, [config]));
+			services.set(IRemoteTelemetryService, new SyncDescriptor(RemoteTelemetryService, [config, undefined]));
 		} else {
 			services.set(IRemoteTelemetryService, RemoteNullTelemetryService);
 		}
@@ -330,12 +335,21 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 		);
 		services.set(IPtyService, ptyService);
 
+		const encryptionService = instantiationService.createInstance(EncryptionMainService, machineId);
+		services.set(IEncryptionService, encryptionService);
+
+		const credentialsService = instantiationService.createInstance(CredentialsMainService);
+		services.set(ICredentialsService, credentialsService);
+
 		return instantiationService.invokeFunction(accessor => {
-			const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(this._connectionToken, this._environmentService, extensionManagementCLIService, this._logService, accessor.get(IRemoteTelemetryService), appInsightsAppender, this._productService);
+			const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(this._connectionToken, this._environmentService, extensionManagementCLIService, this._logService, this._productService);
 			this._socketServer.registerChannel('remoteextensionsenvironment', remoteExtensionEnvironmentChannel);
 
+			const telemetryChannel = new RemoteTelemetryChannel(accessor.get(IRemoteTelemetryService), appInsightsAppender);
+			this._socketServer.registerChannel('telemetry', telemetryChannel);
+
 			if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {
-			this._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(this._environmentService, this._logService, ptyService, this._productService));
+				this._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(this._environmentService, this._logService, ptyService, this._productService));
 			} else {
 				this._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(this._logService));
 			}
@@ -349,11 +363,14 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 			const channel = new ExtensionManagementChannel(extensionManagementService, (ctx: RemoteAgentConnectionContext) => this._getUriTransformer(ctx.remoteAuthority));
 			this._socketServer.registerChannel('extensions', channel);
 
+			const encryptionChannel = ProxyChannel.fromService<RemoteAgentConnectionContext>(accessor.get(IEncryptionService));
+			this._socketServer.registerChannel('encryption', encryptionChannel);
+
+			const credentialsChannel = ProxyChannel.fromService<RemoteAgentConnectionContext>(accessor.get(ICredentialsService));
+			this._socketServer.registerChannel('credentials', credentialsChannel);
+
 			// clean up deprecated extensions
 			(extensionManagementService as ExtensionManagementService).removeDeprecatedExtensions();
-
-			// migrate unsupported extensions
-			(extensionManagementService as ExtensionManagementService).migrateUnsupportedExtensions();
 
 			this._register(new ErrorTelemetry(accessor.get(ITelemetryService)));
 
@@ -927,8 +944,18 @@ export class RemoteExtensionHostAgentServer extends Disposable {
 const connectionTokenRegex = /^[0-9A-Za-z-]+$/;
 
 function parseConnectionToken(args: ServerParsedArgs): { connectionToken: string; connectionTokenIsMandatory: boolean; } {
-	const connectionToken = args['connection-token'];
+
+	let connectionToken = args['connection-token'];
 	const connectionTokenFile = args['connection-token-file'];
+	const compatibility = args['compatibility'] === '1.63';
+
+	if (args['without-connection-token']) {
+		if (connectionToken || connectionTokenFile) {
+			console.warn(`Please do not use the argument '--connection-token' or '--connection-token-file' at the same time as '--without-connection-token'.`);
+			process.exit(1);
+		}
+		return { connectionToken: 'without-connection-token' /* to be implemented @alexd */, connectionTokenIsMandatory: false };
+	}
 
 	if (connectionTokenFile) {
 		if (connectionToken) {
@@ -952,8 +979,14 @@ function parseConnectionToken(args: ServerParsedArgs): { connectionToken: string
 		if (connectionToken !== undefined && !connectionTokenRegex.test(connectionToken)) {
 			console.warn(`The connection token '${connectionToken}' does not adhere to the characters 0-9, a-z, A-Z or -.`);
 			process.exit(1);
+		} else if (connectionToken === undefined) {
+			connectionToken = generateUuid();
+			console.log(`Connection token: ${connectionToken}`);
+			if (compatibility) {
+				console.log(`Connection token or will made mandatory in the next release. To run without connection token, use '--without-connection-token'.`);
+			}
 		}
-		return { connectionToken: connectionToken || generateUuid(), connectionTokenIsMandatory: false };
+		return { connectionToken, connectionTokenIsMandatory: !compatibility };
 	}
 }
 

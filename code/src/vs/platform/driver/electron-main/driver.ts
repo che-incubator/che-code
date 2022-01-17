@@ -64,13 +64,9 @@ export class Driver implements IDriver, IWindowDriverRegistry {
 	}
 
 	async getWindowIds(): Promise<number[]> {
-		this.logService.info(`[driver] getWindowIds(): begin`);
-
 		const windowIds = this.windowsMainService.getWindows()
 			.map(window => window.id)
 			.filter(windowId => this.registeredWindowIds.has(windowId) && !this.reloadingWindowIds.has(windowId));
-
-		this.logService.info(`[driver] getWindowIds(): end (windowIds: ${windowIds.join(', ')})`);
 
 		return windowIds;
 	}
@@ -235,8 +231,6 @@ export class Driver implements IDriver, IWindowDriverRegistry {
 	}
 
 	private async getWindowDriver(windowId: number): Promise<IWindowDriver> {
-		this.logService.info(`[driver] getWindowDriver(${windowId})`);
-
 		await this.whenUnfrozen(windowId);
 
 		const id = `window:${windowId}`;
@@ -246,13 +240,9 @@ export class Driver implements IDriver, IWindowDriverRegistry {
 	}
 
 	private async whenUnfrozen(windowId: number): Promise<void> {
-		this.logService.info(`[driver] whenUnfrozen(${windowId}): begin`);
-
 		while (this.reloadingWindowIds.has(windowId)) {
 			await Event.toPromise(this.onDidReloadingChange.event);
 		}
-
-		this.logService.info(`[driver] whenUnfrozen(${windowId}): end`);
 	}
 }
 

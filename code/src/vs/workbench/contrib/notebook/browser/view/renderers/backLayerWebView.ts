@@ -241,6 +241,14 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Disposable {
 					child-src https: data:;
 				">` : ''}
 				<style nonce="${this.nonce}">
+					::highlight(find-highlight) {
+						background-color: var(--vscode-editor-findMatchHighlightBackground);
+					}
+
+					::highlight(current-find-highlight) {
+						background-color: var(--vscode-editor-findMatchBackground);
+					}
+
 					#container .cell_container {
 						width: 100%;
 					}
@@ -528,7 +536,7 @@ var requirejs = (function() {
 				console.warn('Command links are deprecated and will be removed, use messag passing instead: https://github.com/microsoft/vscode/issues/123601');
 			}
 
-			if (matchesScheme(link, Schemas.http) || matchesScheme(link, Schemas.https) || matchesScheme(link, Schemas.mailto)
+			if (matchesScheme(link, Schemas.vscodeNotebookCell) || matchesScheme(link, Schemas.http) || matchesScheme(link, Schemas.https) || matchesScheme(link, Schemas.mailto)
 				|| matchesScheme(link, Schemas.command)) {
 				this.openerService.open(link, { fromUserGesture: true, allowContributedOpeners: true, allowCommands: true });
 			}
@@ -650,7 +658,7 @@ var requirejs = (function() {
 				case 'clicked-link':
 					{
 						let linkToOpen: URI | string | undefined;
-						if (matchesSomeScheme(data.href, Schemas.http, Schemas.https, Schemas.mailto, Schemas.command)) {
+						if (matchesSomeScheme(data.href, Schemas.http, Schemas.https, Schemas.mailto, Schemas.command, Schemas.vscodeNotebookCell, Schemas.vscodeNotebook, Schemas.file)) {
 							linkToOpen = data.href;
 						} else if (!/^[\w\-]+:/.test(data.href)) {
 							if (this.documentUri.scheme === Schemas.untitled) {
@@ -1283,7 +1291,7 @@ var requirejs = (function() {
 		}, 50);
 	}
 
-	async find(query: string): Promise<IFindMatch[]> {
+	async find(query: string, options: { wholeWord?: boolean; caseSensitive?: boolean; includeMarkup: boolean; includeOutput: boolean; }): Promise<IFindMatch[]> {
 		if (query === '') {
 			return [];
 		}
@@ -1299,7 +1307,8 @@ var requirejs = (function() {
 
 		this._sendMessageToWebview({
 			type: 'find',
-			query: query
+			query: query,
+			options
 		});
 
 		const ret = await p;
