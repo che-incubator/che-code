@@ -22,7 +22,6 @@ components:
           targetPort: 8000
   - name: projects
     volume:
-      ephemeral: true
       size: 3Gi
 commands:
   - id: build
