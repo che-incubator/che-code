@@ -63,16 +63,15 @@ apply_replace() {
 
     escape_from=$(escape_litteral "$from")
     escape_by=$(escape_litteral "$by")
-    sed_in_place -e "s|${escape_from}|${escape_by}/|" "${filename}"
-
-    # check that it's there
-    if ! grep "$by" "${filename}" > /dev/null 2>&1 ; then
+    sed -i '.bak' -e "s|${escape_from}|${escape_by}|" "${filename}"
+    if diff "$filename" "$filename.bak" &> /dev/null; then
       echo "Unable to perform the replace. Value is not present in the resulting file"
       echo "Wanted to check ${by}"
       echo "File content is"
       cat "${filename}"
       exit 1
     fi
+    rm "$filename.bak"
   done
 
 }
@@ -108,6 +107,22 @@ apply_code_remote_package_changes() {
   git add code/remote/package.json > /dev/null 2>&1
 }
 
+# Apply changes on code/remote/yarn.lock file
+apply_code_remote_yarn_lock_changes() {
+
+  echo "  ⚙️ reworking code/remote/yarn.lock..."
+  
+  # reset the file from what is upstream
+  git checkout --theirs code/remote/yarn.lock > /dev/null 2>&1
+
+  # update yarn lock
+  yarn --ignore-scripts --cwd code/remote
+
+  # resolve the change
+  git add code/remote/yarn.lock > /dev/null 2>&1
+
+}
+
 # Apply changes on code/product.json file
 apply_code_product_changes() {
   
@@ -137,6 +152,21 @@ apply_code_vs_platform_remote_browser_factory_changes() {
   git add code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/server/remoteExtensionHostAgentServer.ts file
+apply_code_vs_server_remote_extension_host_agent_server_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/server/remoteExtensionHostAgentServer.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/server/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/server/remoteExtensionHostAgentServer.ts
+  
+  # resolve the change
+  git add code/src/vs/server/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
+}
+
+
 
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
@@ -149,12 +179,16 @@ resolve_conflicts() {
     echo " ➡️  Analyzing conflict for $conflictingFile"
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
-      elif [[ "$conflictingFile" == "code/product.json" ]]; then
+    elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
-      elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
+    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
-      elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
+    elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then
+      apply_code_remote_yarn_lock_changes      
+    elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_code_vs_platform_remote_browser_factory_changes
+    elif [[ "$conflictingFile" == "code/src/vs/server/remoteExtensionHostAgentServer.ts" ]]; then
+      apply_code_vs_server_remote_extension_host_agent_server_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
