@@ -3,18 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Event, Emitter } from 'vs/base/common/event';
 import { tmpdir } from 'os';
 import { basename, dirname, join } from 'vs/base/common/path';
 import { Promises, RimRafMode } from 'vs/base/node/pfs';
 import { flakySuite, getPathFromAmdModule, getRandomTestPath } from 'vs/base/test/node/testUtils';
 import { FileChangeType } from 'vs/platform/files/common/files';
-import { IDiskFileChange } from 'vs/platform/files/common/watcher';
-import { NodeJSFileWatcher } from 'vs/platform/files/node/watcher/nodejs/nodejsWatcher';
+import { INonRecursiveWatchRequest } from 'vs/platform/files/common/watcher';
+import { NodeJSFileWatcherLibrary, watchFileContents } from 'vs/platform/files/node/watcher/nodejs/nodejsWatcherLib';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { getDriveLetter } from 'vs/base/common/extpath';
 import { ltrim } from 'vs/base/common/strings';
 import { DeferredPromise } from 'vs/base/common/async';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
+import { NodeJSWatcher } from 'vs/platform/files/node/watcher/nodejs/nodejsWatcher';
 
 // this suite has shown flaky runs in Azure pipelines where
 // tasks would just hang and timeout after a while (not in
@@ -23,20 +24,21 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 ((process.env['BUILD_SOURCEVERSION'] || process.env['CI']) ? suite.skip : flakySuite)('File Watcher (node.js)', () => {
 
-	let testDir: string;
-	let watcher: TestNodeJSFileWatcher;
-	let event: Event<IDiskFileChange[]>;
+	class TestNodeJSWatcher extends NodeJSWatcher {
 
-	let loggingEnabled = false;
+		override async watch(requests: INonRecursiveWatchRequest[]): Promise<void> {
+			await super.watch(requests);
+			await this.whenReady();
+		}
 
-	function enableLogging(enable: boolean) {
-		loggingEnabled = enable;
-		watcher?.setVerboseLogging(enable);
+		async whenReady(): Promise<void> {
+			for (const [, watcher] of this.watchers) {
+				await watcher.instance.ready;
+			}
+		}
 	}
 
-	enableLogging(false);
-
-	class TestNodeJSFileWatcher extends NodeJSFileWatcher {
+	class TestNodeJSFileWatcherLibrary extends NodeJSFileWatcherLibrary {
 
 		private readonly _whenDisposed = new DeferredPromise<void>();
 		readonly whenDisposed = this._whenDisposed.p;
@@ -48,34 +50,42 @@ import { DeferredPromise } from 'vs/base/common/async';
 		}
 	}
 
-	setup(async function () {
+	let testDir: string;
+	let watcher: TestNodeJSWatcher;
+
+	let loggingEnabled = false;
+
+	function enableLogging(enable: boolean) {
+		loggingEnabled = enable;
+		watcher?.setVerboseLogging(enable);
+	}
+
+	enableLogging(false);
+
+	setup(async () => {
+		watcher = new TestNodeJSWatcher();
+
+		watcher.onDidLogMessage(e => {
+			if (loggingEnabled) {
+				console.log(`[non-recursive watcher test message] ${e.message}`);
+			}
+		});
+
+		watcher.onDidError(e => {
+			if (loggingEnabled) {
+				console.log(`[non-recursive watcher test error] ${e}`);
+			}
+		});
+
 		testDir = getRandomTestPath(tmpdir(), 'vsctests', 'filewatcher');
 
 		const sourceDir = getPathFromAmdModule(require, './fixtures/service');
 
 		await Promises.copy(sourceDir, testDir, { preserveSymlinks: false });
-
-		await createWatcher(testDir);
 	});
 
-	function createWatcher(path: string, excludes: string[] = []): Promise<void> {
-		if (watcher) {
-			watcher.dispose();
-		}
-
-		const emitter = new Emitter<IDiskFileChange[]>();
-		event = emitter.event;
-
-		watcher = new TestNodeJSFileWatcher({ path, excludes }, changes => emitter.fire(changes), msg => {
-			if (loggingEnabled) {
-				console.log(`[recursive watcher test message] ${msg.type}: ${msg.message}`);
-			}
-		}, loggingEnabled);
-
-		return watcher.ready;
-	}
-
 	teardown(async () => {
+		await watcher.stop();
 		watcher.dispose();
 
 		// Possible that the file watcher is still holding
@@ -85,25 +95,6 @@ import { DeferredPromise } from 'vs/base/common/async';
 		return Promises.rm(testDir).catch(error => console.error(error));
 	});
 
-	async function awaitEvent(onDidChangeFile: Event<IDiskFileChange[]>, path: string, type: FileChangeType): Promise<void> {
-		if (loggingEnabled) {
-			console.log(`Awaiting change type '${toMsg(type)}' on file '${path}'`);
-		}
-
-		// Await the event
-		await new Promise<void>((resolve, reject) => {
-			const disposable = onDidChangeFile(events => {
-				for (const event of events) {
-					if (event.path === path && event.type === type) {
-						disposable.dispose();
-						setImmediate(() => resolve()); // copied from parcel watcher tests, seems to drop unrelated events on macOS
-						break;
-					}
-				}
-			});
-		});
-	}
-
 	function toMsg(type: FileChangeType): string {
 		switch (type) {
 			case FileChangeType.ADDED: return 'added';
@@ -112,25 +103,45 @@ import { DeferredPromise } from 'vs/base/common/async';
 		}
 	}
 
+	async function awaitEvent(service: TestNodeJSWatcher, path: string, type: FileChangeType): Promise<void> {
+		if (loggingEnabled) {
+			console.log(`Awaiting change type '${toMsg(type)}' on file '${path}'`);
+		}
+
+		// Await the event
+		await new Promise<void>(resolve => {
+			const disposable = service.onDidChangeFile(events => {
+				for (const event of events) {
+					if (event.path === path && event.type === type) {
+						disposable.dispose();
+						resolve();
+						break;
+					}
+				}
+			});
+		});
+	}
+
 	test('basics (folder watch)', async function () {
+		await watcher.watch([{ path: testDir, excludes: [], recursive: false }]);
 
 		// New file
 		const newFilePath = join(testDir, 'newFile.txt');
-		let changeFuture: Promise<unknown> = awaitEvent(event, newFilePath, FileChangeType.ADDED);
+		let changeFuture: Promise<unknown> = awaitEvent(watcher, newFilePath, FileChangeType.ADDED);
 		await Promises.writeFile(newFilePath, 'Hello World');
 		await changeFuture;
 
 		// New folder
 		const newFolderPath = join(testDir, 'New Folder');
-		changeFuture = awaitEvent(event, newFolderPath, FileChangeType.ADDED);
+		changeFuture = awaitEvent(watcher, newFolderPath, FileChangeType.ADDED);
 		await Promises.mkdir(newFolderPath);
 		await changeFuture;
 
 		// Rename file
 		let renamedFilePath = join(testDir, 'renamedFile.txt');
 		changeFuture = Promise.all([
-			awaitEvent(event, newFilePath, FileChangeType.DELETED),
-			awaitEvent(event, renamedFilePath, FileChangeType.ADDED)
+			awaitEvent(watcher, newFilePath, FileChangeType.DELETED),
+			awaitEvent(watcher, renamedFilePath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(newFilePath, renamedFilePath);
 		await changeFuture;
@@ -138,8 +149,8 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Rename folder
 		let renamedFolderPath = join(testDir, 'Renamed Folder');
 		changeFuture = Promise.all([
-			awaitEvent(event, newFolderPath, FileChangeType.DELETED),
-			awaitEvent(event, renamedFolderPath, FileChangeType.ADDED)
+			awaitEvent(watcher, newFolderPath, FileChangeType.DELETED),
+			awaitEvent(watcher, renamedFolderPath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(newFolderPath, renamedFolderPath);
 		await changeFuture;
@@ -147,8 +158,8 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Rename file (same name, different case)
 		const caseRenamedFilePath = join(testDir, 'RenamedFile.txt');
 		changeFuture = Promise.all([
-			awaitEvent(event, renamedFilePath, FileChangeType.DELETED),
-			awaitEvent(event, caseRenamedFilePath, FileChangeType.ADDED)
+			awaitEvent(watcher, renamedFilePath, FileChangeType.DELETED),
+			awaitEvent(watcher, caseRenamedFilePath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(renamedFilePath, caseRenamedFilePath);
 		await changeFuture;
@@ -157,8 +168,8 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Rename folder (same name, different case)
 		const caseRenamedFolderPath = join(testDir, 'REnamed Folder');
 		changeFuture = Promise.all([
-			awaitEvent(event, renamedFolderPath, FileChangeType.DELETED),
-			awaitEvent(event, caseRenamedFolderPath, FileChangeType.ADDED)
+			awaitEvent(watcher, renamedFolderPath, FileChangeType.DELETED),
+			awaitEvent(watcher, caseRenamedFolderPath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(renamedFolderPath, caseRenamedFolderPath);
 		await changeFuture;
@@ -167,8 +178,8 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Move file
 		const movedFilepath = join(testDir, 'movedFile.txt');
 		changeFuture = Promise.all([
-			awaitEvent(event, renamedFilePath, FileChangeType.DELETED),
-			awaitEvent(event, movedFilepath, FileChangeType.ADDED)
+			awaitEvent(watcher, renamedFilePath, FileChangeType.DELETED),
+			awaitEvent(watcher, movedFilepath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(renamedFilePath, movedFilepath);
 		await changeFuture;
@@ -176,42 +187,42 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Move folder
 		const movedFolderpath = join(testDir, 'Moved Folder');
 		changeFuture = Promise.all([
-			awaitEvent(event, renamedFolderPath, FileChangeType.DELETED),
-			awaitEvent(event, movedFolderpath, FileChangeType.ADDED)
+			awaitEvent(watcher, renamedFolderPath, FileChangeType.DELETED),
+			awaitEvent(watcher, movedFolderpath, FileChangeType.ADDED)
 		]);
 		await Promises.rename(renamedFolderPath, movedFolderpath);
 		await changeFuture;
 
 		// Copy file
 		const copiedFilepath = join(testDir, 'copiedFile.txt');
-		changeFuture = awaitEvent(event, copiedFilepath, FileChangeType.ADDED);
+		changeFuture = awaitEvent(watcher, copiedFilepath, FileChangeType.ADDED);
 		await Promises.copyFile(movedFilepath, copiedFilepath);
 		await changeFuture;
 
 		// Copy folder
 		const copiedFolderpath = join(testDir, 'Copied Folder');
-		changeFuture = awaitEvent(event, copiedFolderpath, FileChangeType.ADDED);
+		changeFuture = awaitEvent(watcher, copiedFolderpath, FileChangeType.ADDED);
 		await Promises.copy(movedFolderpath, copiedFolderpath, { preserveSymlinks: false });
 		await changeFuture;
 
 		// Change file
-		changeFuture = awaitEvent(event, copiedFilepath, FileChangeType.UPDATED);
+		changeFuture = awaitEvent(watcher, copiedFilepath, FileChangeType.UPDATED);
 		await Promises.writeFile(copiedFilepath, 'Hello Change');
 		await changeFuture;
 
 		// Create new file
 		const anotherNewFilePath = join(testDir, 'anotherNewFile.txt');
-		changeFuture = awaitEvent(event, anotherNewFilePath, FileChangeType.ADDED);
+		changeFuture = awaitEvent(watcher, anotherNewFilePath, FileChangeType.ADDED);
 		await Promises.writeFile(anotherNewFilePath, 'Hello Another World');
 		await changeFuture;
 
 		// Delete file
-		changeFuture = awaitEvent(event, copiedFilepath, FileChangeType.DELETED);
+		changeFuture = awaitEvent(watcher, copiedFilepath, FileChangeType.DELETED);
 		await Promises.unlink(copiedFilepath);
 		await changeFuture;
 
 		// Delete folder
-		changeFuture = awaitEvent(event, copiedFolderpath, FileChangeType.DELETED);
+		changeFuture = awaitEvent(watcher, copiedFolderpath, FileChangeType.DELETED);
 		await Promises.rmdir(copiedFolderpath);
 		await changeFuture;
 
@@ -220,33 +231,35 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 	test('basics (file watch)', async function () {
 		const filePath = join(testDir, 'lorem.txt');
-		await createWatcher(filePath);
+		await watcher.watch([{ path: filePath, excludes: [], recursive: false }]);
 
 		// Change file
-		let changeFuture = awaitEvent(event, filePath, FileChangeType.UPDATED);
+		let changeFuture = awaitEvent(watcher, filePath, FileChangeType.UPDATED);
 		await Promises.writeFile(filePath, 'Hello Change');
 		await changeFuture;
 
 		// Delete file
-		changeFuture = awaitEvent(event, filePath, FileChangeType.DELETED);
+		changeFuture = awaitEvent(watcher, filePath, FileChangeType.DELETED);
 		await Promises.unlink(filePath);
 		await changeFuture;
 
 		// Recreate watcher
 		await Promises.writeFile(filePath, 'Hello Change');
-		await createWatcher(filePath);
+		await watcher.watch([]);
+		await watcher.watch([{ path: filePath, excludes: [], recursive: false }]);
 
 		// Move file
-		changeFuture = awaitEvent(event, filePath, FileChangeType.DELETED);
+		changeFuture = awaitEvent(watcher, filePath, FileChangeType.DELETED);
 		await Promises.move(filePath, `${filePath}-moved`);
 		await changeFuture;
 	});
 
 	test('atomic writes (folder watch)', async function () {
+		await watcher.watch([{ path: testDir, excludes: [], recursive: false }]);
 
 		// Delete + Recreate file
 		const newFilePath = join(testDir, 'lorem.txt');
-		let changeFuture: Promise<unknown> = awaitEvent(event, newFilePath, FileChangeType.UPDATED);
+		let changeFuture: Promise<unknown> = awaitEvent(watcher, newFilePath, FileChangeType.UPDATED);
 		await Promises.unlink(newFilePath);
 		Promises.writeFile(newFilePath, 'Hello Atomic World');
 		await changeFuture;
@@ -254,17 +267,18 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 	test('atomic writes (file watch)', async function () {
 		const filePath = join(testDir, 'lorem.txt');
-		await createWatcher(filePath);
+		await watcher.watch([{ path: filePath, excludes: [], recursive: false }]);
 
 		// Delete + Recreate file
 		const newFilePath = join(filePath);
-		let changeFuture: Promise<unknown> = awaitEvent(event, newFilePath, FileChangeType.UPDATED);
+		let changeFuture: Promise<unknown> = awaitEvent(watcher, newFilePath, FileChangeType.UPDATED);
 		await Promises.unlink(newFilePath);
 		Promises.writeFile(newFilePath, 'Hello Atomic World');
 		await changeFuture;
 	});
 
 	test('multiple events (folder watch)', async function () {
+		await watcher.watch([{ path: testDir, excludes: [], recursive: false }]);
 
 		// multiple add
 
@@ -272,9 +286,9 @@ import { DeferredPromise } from 'vs/base/common/async';
 		const newFilePath2 = join(testDir, 'newFile-2.txt');
 		const newFilePath3 = join(testDir, 'newFile-3.txt');
 
-		const addedFuture1: Promise<unknown> = awaitEvent(event, newFilePath1, FileChangeType.ADDED);
-		const addedFuture2: Promise<unknown> = awaitEvent(event, newFilePath2, FileChangeType.ADDED);
-		const addedFuture3: Promise<unknown> = awaitEvent(event, newFilePath3, FileChangeType.ADDED);
+		const addedFuture1: Promise<unknown> = awaitEvent(watcher, newFilePath1, FileChangeType.ADDED);
+		const addedFuture2: Promise<unknown> = awaitEvent(watcher, newFilePath2, FileChangeType.ADDED);
+		const addedFuture3: Promise<unknown> = awaitEvent(watcher, newFilePath3, FileChangeType.ADDED);
 
 		await Promise.all([
 			await Promises.writeFile(newFilePath1, 'Hello World 1'),
@@ -286,9 +300,9 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 		// multiple change
 
-		const changeFuture1: Promise<unknown> = awaitEvent(event, newFilePath1, FileChangeType.UPDATED);
-		const changeFuture2: Promise<unknown> = awaitEvent(event, newFilePath2, FileChangeType.UPDATED);
-		const changeFuture3: Promise<unknown> = awaitEvent(event, newFilePath3, FileChangeType.UPDATED);
+		const changeFuture1: Promise<unknown> = awaitEvent(watcher, newFilePath1, FileChangeType.UPDATED);
+		const changeFuture2: Promise<unknown> = awaitEvent(watcher, newFilePath2, FileChangeType.UPDATED);
+		const changeFuture3: Promise<unknown> = awaitEvent(watcher, newFilePath3, FileChangeType.UPDATED);
 
 		await Promise.all([
 			await Promises.writeFile(newFilePath1, 'Hello Update 1'),
@@ -300,9 +314,9 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 		// copy with multiple files
 
-		const copyFuture1: Promise<unknown> = awaitEvent(event, join(testDir, 'newFile-1-copy.txt'), FileChangeType.ADDED);
-		const copyFuture2: Promise<unknown> = awaitEvent(event, join(testDir, 'newFile-2-copy.txt'), FileChangeType.ADDED);
-		const copyFuture3: Promise<unknown> = awaitEvent(event, join(testDir, 'newFile-3-copy.txt'), FileChangeType.ADDED);
+		const copyFuture1: Promise<unknown> = awaitEvent(watcher, join(testDir, 'newFile-1-copy.txt'), FileChangeType.ADDED);
+		const copyFuture2: Promise<unknown> = awaitEvent(watcher, join(testDir, 'newFile-2-copy.txt'), FileChangeType.ADDED);
+		const copyFuture3: Promise<unknown> = awaitEvent(watcher, join(testDir, 'newFile-3-copy.txt'), FileChangeType.ADDED);
 
 		await Promise.all([
 			Promises.copy(join(testDir, 'newFile-1.txt'), join(testDir, 'newFile-1-copy.txt'), { preserveSymlinks: false }),
@@ -314,9 +328,9 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 		// multiple delete
 
-		const deleteFuture1: Promise<unknown> = awaitEvent(event, newFilePath1, FileChangeType.DELETED);
-		const deleteFuture2: Promise<unknown> = awaitEvent(event, newFilePath2, FileChangeType.DELETED);
-		const deleteFuture3: Promise<unknown> = awaitEvent(event, newFilePath3, FileChangeType.DELETED);
+		const deleteFuture1: Promise<unknown> = awaitEvent(watcher, newFilePath1, FileChangeType.DELETED);
+		const deleteFuture2: Promise<unknown> = awaitEvent(watcher, newFilePath2, FileChangeType.DELETED);
+		const deleteFuture3: Promise<unknown> = awaitEvent(watcher, newFilePath3, FileChangeType.DELETED);
 
 		await Promise.all([
 			await Promises.unlink(newFilePath1),
@@ -329,11 +343,11 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 	test('multiple events (file watch)', async function () {
 		const filePath = join(testDir, 'lorem.txt');
-		await createWatcher(filePath);
+		await watcher.watch([{ path: filePath, excludes: [], recursive: false }]);
 
 		// multiple change
 
-		const changeFuture1: Promise<unknown> = awaitEvent(event, filePath, FileChangeType.UPDATED);
+		const changeFuture1: Promise<unknown> = awaitEvent(watcher, filePath, FileChangeType.UPDATED);
 
 		await Promise.all([
 			await Promises.writeFile(filePath, 'Hello Update 1'),
@@ -344,9 +358,16 @@ import { DeferredPromise } from 'vs/base/common/async';
 		await Promise.all([changeFuture1]);
 	});
 
+	test('excludes can be updated (folder watch)', async function () {
+		await watcher.watch([{ path: testDir, excludes: ['**'], recursive: false }]);
+		await watcher.watch([{ path: testDir, excludes: [], recursive: false }]);
+
+		return basicCrudTest(join(testDir, 'files-excludes.txt'));
+	});
+
 	test('excludes are ignored (file watch)', async function () {
 		const filePath = join(testDir, 'lorem.txt');
-		await createWatcher(filePath, ['**']);
+		await watcher.watch([{ path: filePath, excludes: ['**'], recursive: false }]);
 
 		return basicCrudTest(filePath, true);
 	});
@@ -356,7 +377,7 @@ import { DeferredPromise } from 'vs/base/common/async';
 		const linkTarget = join(testDir, 'deep');
 		await Promises.symlink(linkTarget, link);
 
-		await createWatcher(link);
+		await watcher.watch([{ path: link, excludes: [], recursive: false }]);
 
 		return basicCrudTest(join(link, 'newFile.txt'));
 	});
@@ -366,18 +387,18 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 		// New file
 		if (!skipAdd) {
-			changeFuture = awaitEvent(event, filePath, FileChangeType.ADDED);
+			changeFuture = awaitEvent(watcher, filePath, FileChangeType.ADDED);
 			await Promises.writeFile(filePath, 'Hello World');
 			await changeFuture;
 		}
 
 		// Change file
-		changeFuture = awaitEvent(event, filePath, FileChangeType.UPDATED);
+		changeFuture = awaitEvent(watcher, filePath, FileChangeType.UPDATED);
 		await Promises.writeFile(filePath, 'Hello Change');
 		await changeFuture;
 
 		// Delete file
-		changeFuture = awaitEvent(event, filePath, FileChangeType.DELETED);
+		changeFuture = awaitEvent(watcher, filePath, FileChangeType.DELETED);
 		await Promises.unlink(await Promises.realpath(filePath)); // support symlinks
 		await changeFuture;
 	}
@@ -387,7 +408,7 @@ import { DeferredPromise } from 'vs/base/common/async';
 		const linkTarget = join(testDir, 'lorem.txt');
 		await Promises.symlink(linkTarget, link);
 
-		await createWatcher(link);
+		await watcher.watch([{ path: link, excludes: [], recursive: false }]);
 
 		return basicCrudTest(link, true);
 	});
@@ -397,7 +418,7 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Local UNC paths are in the form of: \\localhost\c$\my_dir
 		const uncPath = `\\\\localhost\\${getDriveLetter(testDir)?.toLowerCase()}$\\${ltrim(testDir.substr(testDir.indexOf(':') + 1), '\\')}`;
 
-		await createWatcher(uncPath);
+		await watcher.watch([{ path: uncPath, excludes: [], recursive: false }]);
 
 		return basicCrudTest(join(uncPath, 'newFile.txt'));
 	});
@@ -407,7 +428,7 @@ import { DeferredPromise } from 'vs/base/common/async';
 		// Local UNC paths are in the form of: \\localhost\c$\my_dir
 		const uncPath = `\\\\localhost\\${getDriveLetter(testDir)?.toLowerCase()}$\\${ltrim(testDir.substr(testDir.indexOf(':') + 1), '\\')}\\lorem.txt`;
 
-		await createWatcher(uncPath);
+		await watcher.watch([{ path: uncPath, excludes: [], recursive: false }]);
 
 		return basicCrudTest(uncPath, true);
 	});
@@ -415,14 +436,14 @@ import { DeferredPromise } from 'vs/base/common/async';
 	(isLinux /* linux: is case sensitive */ ? test.skip : test)('wrong casing (folder watch)', async function () {
 		const wrongCase = join(dirname(testDir), basename(testDir).toUpperCase());
 
-		await createWatcher(wrongCase);
+		await watcher.watch([{ path: wrongCase, excludes: [], recursive: false }]);
 
 		return basicCrudTest(join(wrongCase, 'newFile.txt'));
 	});
 
 	(isLinux /* linux: is case sensitive */ ? test.skip : test)('wrong casing (file watch)', async function () {
 		const filePath = join(testDir, 'LOREM.txt');
-		await createWatcher(filePath);
+		await watcher.watch([{ path: filePath, excludes: [], recursive: false }]);
 
 		return basicCrudTest(filePath, true);
 	});
@@ -430,12 +451,14 @@ import { DeferredPromise } from 'vs/base/common/async';
 	test('invalid path does not explode', async function () {
 		const invalidPath = join(testDir, 'invalid');
 
-		await createWatcher(invalidPath);
+		await watcher.watch([{ path: invalidPath, excludes: [], recursive: false }]);
 	});
 
 	(isMacintosh /* macOS: does not seem to report this */ ? test.skip : test)('deleting watched path is handled properly (folder watch)', async function () {
 		const watchedPath = join(testDir, 'deep');
-		await createWatcher(watchedPath);
+
+		const watcher = new TestNodeJSFileWatcherLibrary({ path: watchedPath, excludes: [], recursive: false }, changes => { });
+		await watcher.ready;
 
 		// Delete watched path and ensure watcher is now disposed
 		Promises.rm(watchedPath, RimRafMode.UNLINK);
@@ -444,14 +467,33 @@ import { DeferredPromise } from 'vs/base/common/async';
 
 	test('deleting watched path is handled properly (file watch)', async function () {
 		const watchedPath = join(testDir, 'lorem.txt');
-		await createWatcher(watchedPath);
+		const watcher = new TestNodeJSFileWatcherLibrary({ path: watchedPath, excludes: [], recursive: false }, changes => { });
+		await watcher.ready;
 
-		// Delete watched path
-		const changeFuture = awaitEvent(event, watchedPath, FileChangeType.DELETED);
+		// Delete watched path and ensure watcher is now disposed
 		Promises.unlink(watchedPath);
-		await changeFuture;
-
-		// Ensure watcher is now disposed
 		await watcher.whenDisposed;
 	});
+
+	test('watchFileContents', async function () {
+		const watchedPath = join(testDir, 'lorem.txt');
+
+		const cts = new CancellationTokenSource();
+
+		const readyPromise = new DeferredPromise<void>();
+		const chunkPromise = new DeferredPromise<void>();
+		const watchPromise = watchFileContents(watchedPath, () => chunkPromise.complete(), () => readyPromise.complete(), cts.token);
+
+		await readyPromise.p;
+
+		Promises.writeFile(watchedPath, 'Hello World');
+
+		await chunkPromise.p;
+
+		cts.cancel(); // this will resolve `watchPromise`
+
+		return watchPromise;
+	});
 });
+
+// TODO test for excludes? subsequent updates to rewatch like parcel?

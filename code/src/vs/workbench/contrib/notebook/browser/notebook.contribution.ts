@@ -806,11 +806,17 @@ configurationRegistry.registerConfiguration({
 			tags: ['notebookLayout']
 		},
 		[NotebookSetting.markupFontSize]: {
-			markdownDescription: nls.localize('notebook.markup.fontSize', "Controls the font size of rendered markup in notebooks. When set to `0`, 120% of `#editor.fontSize#` is used."),
+			markdownDescription: nls.localize('notebook.markup.fontSize', "Controls the font size in pixels of rendered markup in notebooks. When set to `0`, 120% of `#editor.fontSize#` is used."),
 			type: 'number',
 			default: 0,
 			tags: ['notebookLayout']
 		},
-		[NotebookSetting.cellEditorOptionsCustomizations]: editorOptionsCustomizationSchema
+		[NotebookSetting.cellEditorOptionsCustomizations]: editorOptionsCustomizationSchema,
+		[NotebookSetting.interactiveWindowCollapseCodeCells]: {
+			markdownDescription: nls.localize('notebook.interactiveWindow.collapseCodeCells', "Controls whether code cells in the interactive window are collapsed by default."),
+			type: 'string',
+			enum: ['always', 'never', 'fromEditor'],
+			default: 'fromEditor'
+		},
 	}
 });

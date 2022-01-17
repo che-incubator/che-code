@@ -12,13 +12,13 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { ActionsOrientation, prepareActions } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ActivePanelContext, PanelFocusContext } from 'vs/workbench/common/panel';
 import { CompositePart, ICompositeTitleLabel } from 'vs/workbench/browser/parts/compositePart';
-import { IWorkbenchLayoutService, Parts, Position } from 'vs/workbench/services/layout/browser/layoutService';
+import { IWorkbenchLayoutService, Parts } from 'vs/workbench/services/layout/browser/layoutService';
 import { IStorageService, StorageScope, IStorageValueChangeEvent, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { PanelActivityAction, TogglePanelAction, PlaceHolderPanelActivityAction, PlaceHolderToggleCompositePinnedAction, PositionPanelActionConfigs, SetPanelPositionAction } from 'vs/workbench/browser/parts/panel/panelActions';
+import { PanelActivityAction, TogglePanelAction, PlaceHolderPanelActivityAction, PlaceHolderToggleCompositePinnedAction, MovePanelToSidePanelAction } from 'vs/workbench/browser/parts/panel/panelActions';
 import { IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { PANEL_BACKGROUND, PANEL_BORDER, PANEL_ACTIVE_TITLE_FOREGROUND, PANEL_INACTIVE_TITLE_FOREGROUND, PANEL_ACTIVE_TITLE_BORDER, PANEL_INPUT_BORDER, EDITOR_DRAG_AND_DROP_BACKGROUND, PANEL_DRAG_AND_DROP_BORDER } from 'vs/workbench/common/theme';
 import { activeContrastBorder, focusBorder, contrastBorder, editorBackground, badgeBackground, badgeForeground } from 'vs/platform/theme/common/colorRegistry';
@@ -919,17 +919,15 @@ export class PanelPart extends BasePanelPart {
 
 	protected getActivityHoverOptions(): IActivityHoverOptions {
 		return {
-			position: () => this.layoutService.getPanelPosition() === Position.BOTTOM && !this.layoutService.isPanelMaximized() ? HoverPosition.ABOVE : HoverPosition.BELOW,
+			position: () => !this.layoutService.isPanelMaximized() ? HoverPosition.ABOVE : HoverPosition.BELOW,
 		};
 	}
 
 	protected fillExtraContextMenuActions(actions: IAction[]): void {
+
 		actions.push(...[
 			new Separator(),
-			...PositionPanelActionConfigs
-				// show the contextual menu item if it is not in that position
-				.filter(({ when }) => this.contextKeyService.contextMatchesRules(when))
-				.map(({ id, label }) => this.instantiationService.createInstance(SetPanelPositionAction, id, label)),
+			toAction({ id: MovePanelToSidePanelAction.ID, label: localize('moveToSidePanel', "Move Views to Side Panel"), run: () => this.instantiationService.invokeFunction(accessor => new MovePanelToSidePanelAction().run(accessor)) }),
 			this.instantiationService.createInstance(TogglePanelAction, TogglePanelAction.ID, localize('hidePanel', "Hide Panel"))
 		]);
 	}
@@ -957,12 +955,7 @@ export class PanelPart extends BasePanelPart {
 	}
 
 	override layout(width: number, height: number, top: number, left: number): void {
-		let dimensions: Dimension;
-		if (this.layoutService.getPanelPosition() === Position.RIGHT) {
-			dimensions = new Dimension(width - 1, height); // Take into account the 1px border when layouting
-		} else {
-			dimensions = new Dimension(width, height);
-		}
+		const dimensions = new Dimension(width, height);
 
 		// Layout contents
 		super.layout(dimensions.width, dimensions.height, top, left);
@@ -1002,49 +995,16 @@ registerThemingParticipant((theme, collector) => {
 
 	// Title Active
 	const titleActive = theme.getColor(PANEL_ACTIVE_TITLE_FOREGROUND);
-	const titleActiveBorder = theme.getColor(PANEL_ACTIVE_TITLE_BORDER);
-	if (titleActive || titleActiveBorder) {
+	if (titleActive) {
 		collector.addRule(`
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:hover .action-label {
-				color: ${titleActive} !important;
-				border-bottom-color: ${titleActiveBorder} !important;
-			}
+		.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:hover .action-label {
+			color: ${titleActive} !important;
+		}
 		`);
-	}
-
-	// Title focus
-	const focusBorderColor = theme.getColor(focusBorder);
-	if (focusBorderColor) {
 		collector.addRule(`
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:focus .action-label {
-				color: ${titleActive} !important;
-				border-bottom-color: ${focusBorderColor} !important;
-				border-bottom: 1px solid;
-			}
-			`);
-		collector.addRule(`
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:focus {
-				outline: none;
-			}
-			`);
-	}
-
-	// Styling with Outline color (e.g. high contrast theme)
-	const outline = theme.getColor(activeContrastBorder);
-	if (outline) {
-		collector.addRule(`
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item.checked .action-label,
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:hover .action-label {
-				outline-color: ${outline};
-				outline-width: 1px;
-				outline-style: solid;
-				border-bottom: none;
-				outline-offset: -2px;
-			}
-
-			.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:not(.checked):hover .action-label {
-				outline-style: dashed;
-			}
+		.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:focus .action-label {
+			color: ${titleActive} !important;
+		}
 		`);
 	}
 
@@ -1055,5 +1015,51 @@ registerThemingParticipant((theme, collector) => {
 				border-color: ${inputBorder}
 			}
 		`);
+	}
+
+
+	// Base Panel Styles
+	// Title focus
+	const focusBorderColor = theme.getColor(focusBorder);
+	if (focusBorderColor) {
+		collector.addRule(`
+				.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item:focus .active-item-indicator:before {
+					border-top-color: ${focusBorderColor};
+				}
+				`);
+		collector.addRule(`
+				.monaco-workbench .part.panel > .title > .panel-switcher-container > .monaco-action-bar .action-item:focus {
+					outline: none;
+				}
+				`);
+	}
+
+	const titleActiveBorder = theme.getColor(PANEL_ACTIVE_TITLE_BORDER);
+	if (titleActiveBorder) {
+		collector.addRule(`
+				.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item.checked:not(:focus) .active-item-indicator:before,
+					.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item.checked.clicked:focus .active-item-indicator:before {
+					border-top-color: ${titleActiveBorder};
+				}
+			`);
+	}
+
+	// Styling with Outline color (e.g. high contrast theme)
+	const outline = theme.getColor(activeContrastBorder);
+	if (outline) {
+		collector.addRule(`
+				.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item.checked .action-label,
+				.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item:hover .action-label {
+					outline-color: ${outline};
+					outline-width: 1px;
+					outline-style: solid;
+					border-bottom: none;
+					outline-offset: -2px;
+				}
+
+				.monaco-workbench .part.basepanel > .title > .panel-switcher-container > .monaco-action-bar .action-item:not(.checked):hover .action-label {
+					outline-style: dashed;
+				}
+			`);
 	}
 });

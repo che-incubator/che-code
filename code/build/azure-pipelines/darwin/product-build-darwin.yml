@@ -117,6 +117,11 @@ steps:
 
   - script: |
       set -e
+      node build/azure-pipelines/mixin --server
+    displayName: Mix in server quality
+
+  - script: |
+      set -e
       VSCODE_MIXIN_PASSWORD="$(github-distro-mixin-password)" \
         yarn gulp vscode-reh-darwin-min-ci
       VSCODE_MIXIN_PASSWORD="$(github-distro-mixin-password)" \
@@ -179,12 +184,11 @@ steps:
     timeoutInMinutes: 7
     condition: and(succeeded(), eq(variables['VSCODE_ARCH'], 'x64'), eq(variables['VSCODE_STEP_ON_IT'], 'false'))
 
-  # Firefox unit testing is disabled pending https://github.com/microsoft/playwright/issues/11130
   - script: |
       set -e
-      yarn test-browser --build --browser chromium --browser webkit --tfs "Browser Unit Tests"
-    displayName: Run unit tests (Browser, Chromium & Webkit)
-    timeoutInMinutes: 7
+      DEBUG=*browser* yarn test-browser --sequential --build --browser chromium --browser webkit --browser firefox --tfs "Browser Unit Tests"
+    displayName: Run unit tests (Browser, Chromium & Firefox & Webkit)
+    timeoutInMinutes: 20
     condition: and(succeeded(), eq(variables['VSCODE_ARCH'], 'x64'), eq(variables['VSCODE_STEP_ON_IT'], 'false'))
 
   - script: |
