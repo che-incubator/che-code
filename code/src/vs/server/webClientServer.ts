@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { getCheRedirectLocation } from './che/webClientServer';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as url from 'url';
@@ -153,8 +154,8 @@ export class WebClientServer {
 					newQuery[key] = parsedUrl.query[key];
 				}
 			}
-			const newLocation = url.format({ pathname: '/', query: newQuery });
-			responseHeaders['Location'] = newLocation;
+			
+			responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);
 
 			res.writeHead(302, responseHeaders);
 			return res.end();

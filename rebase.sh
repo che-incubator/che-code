@@ -167,6 +167,21 @@ apply_code_vs_server_remote_extension_host_agent_server_changes() {
 }
 
 
+# Apply changes on code/src/vs/server/webClientServer.ts file
+apply_code_vs_server_web_client_server_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/server/webClientServer.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/server/webClientServer.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/server/webClientServer.ts
+  
+  # resolve the change
+  git add code/src/vs/server/webClientServer.ts > /dev/null 2>&1
+}
+
+
 
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
@@ -189,6 +204,8 @@ resolve_conflicts() {
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/remoteExtensionHostAgentServer.ts" ]]; then
       apply_code_vs_server_remote_extension_host_agent_server_changes
+    elif [[ "$conflictingFile" == "code/src/vs/server/webClientServer.ts" ]]; then
+      apply_code_vs_server_web_client_server_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
