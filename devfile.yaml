@@ -15,7 +15,7 @@ components:
     container:
       image: quay.io/che-incubator/che-code-dev:insiders
       memoryLimit: 7Gi
-      cpuLimit: 4000m
+      cpuLimit: 3500m
       endpoints:
         - exposure: public
           name: dev
