@@ -142,11 +142,23 @@ export class DevContainerComponentUpdater {
     // Either perform a sum or just insert fields
     if (devContainerExisted) {
       // memory
-      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'memoryLimit');
-      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'memoryRequest');
+      this.addOrSum(
+        cheCodeDescriptionComponentContainer,
+        devContainer,
+        devContainerAttributes,
+        'memoryLimit',
+        'memory'
+      );
+      this.addOrSum(
+        cheCodeDescriptionComponentContainer,
+        devContainer,
+        devContainerAttributes,
+        'memoryRequest',
+        'memory'
+      );
       // cpu
-      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'cpuLimit');
-      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'cpuRequest');
+      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'cpuLimit', 'cpu');
+      this.addOrSum(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'cpuRequest', 'cpu');
     } else {
       // add attributes with original memory
       this.addIfExists(cheCodeDescriptionComponentContainer, devContainer, devContainerAttributes, 'memoryLimit');
@@ -201,7 +213,8 @@ export class DevContainerComponentUpdater {
     from: V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainer,
     toContainer: V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainer,
     toAttributes: any,
-    attributeName: string
+    attributeName: string,
+    metrics: 'memory' | 'cpu'
   ) {
     if (from[attributeName]) {
       toAttributes[`${DevContainerComponentUpdater.CONTRIBUTE_PREFIX}${attributeName}`] = true;
@@ -210,7 +223,7 @@ export class DevContainerComponentUpdater {
         toAttributes[`${DevContainerComponentUpdater.CONTRIBUTE_ORIGINAL_PREFIX}${attributeName}`] =
           toContainer[attributeName];
         // add sum
-        toContainer[attributeName] = this.k8SUnits.sumUnits(from[attributeName], toContainer[attributeName]);
+        toContainer[attributeName] = this.k8SUnits.sumUnits(from[attributeName], toContainer[attributeName], metrics);
       } else {
         // use value
         toContainer[attributeName] = from[attributeName];

@@ -60,13 +60,17 @@ export class K8SUnits {
     }
   }
 
-  sumUnits(unit1: string, unit2: string): string {
+  sumUnits(unit1: string, unit2: string, metrics: 'memory' | 'cpu'): string {
     // convert unit to simple unit
     const sum = this.unitToNumber(unit1) + this.unitToNumber(unit2);
-    return this.format(sum);
+    if (metrics === 'memory') {
+      return this.formatMemory(sum);
+    } else {
+      return this.formatCpu(sum);
+    }
   }
 
-  format(value: number, decimals = 2) {
+  formatMemory(value: number, decimals = 2) {
     if (value === 0) {
       return '0';
     }
@@ -83,6 +87,24 @@ export class K8SUnits {
     const dm = decimals < 0 ? 0 : decimals;
     const i = Math.floor(Math.log(value) / Math.log(k));
     return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))}${sizes[i]}`;
+  }
+
+  formatCpu(value: number, decimals = 2) {
+    if (value === 0) {
+      return '0';
+    }
+
+    const k = 1000;
+    let sizes: string[];
+    sizes = ['', 'k', 'm'];
+    const dm = decimals < 0 ? 0 : decimals;
+    const i = Math.floor(Math.log(value) / Math.log(k));
+    let computedValue = parseFloat((value / Math.pow(k, i)).toFixed(dm));
+    if (i > 2) {
+      return `${computedValue * (i - 2) * 1000}m`;
+    } else {
+      return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))}${sizes[i]}`;
+    }
   }
 
   isBinaryUnit(value: number) {
