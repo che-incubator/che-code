@@ -96,28 +96,48 @@ describe('Test K8S Unit', () => {
     expect(result).toBe(1200);
   });
 
-  test('test sum e', async () => {
-    const result = k8SUnits.sumUnits('1e', '2E');
-    expect(result).toBe('3E');
-  });
-
-  test('test sum I', async () => {
-    const result = k8SUnits.sumUnits('1Gi', '2Gi');
-    expect(result).toBe('3Gi');
-  });
-
-  test('test sum 0', async () => {
-    const result = k8SUnits.sumUnits('0E', '0K');
+  test('test cpu sum', async () => {
+    const result = k8SUnits.sumUnits('0m', '0k', 'cpu');
     expect(result).toBe('0');
   });
 
-  test('test sum G with decimals', async () => {
-    const result = k8SUnits.sumUnits('1.2G', '2.1G');
+  test('test cpu sum m', async () => {
+    const result = k8SUnits.sumUnits('500m', '3500m', 'cpu');
+    expect(result).toBe('4000m');
+  });
+
+  test('test cpu sum k', async () => {
+    const result = k8SUnits.sumUnits('400k', '200k', 'cpu');
+    expect(result).toBe('600k');
+  });
+
+  test('test cpu with negative decimals', async () => {
+    const result = k8SUnits.formatCpu(1200, -2);
+    expect(result).toBe('1k');
+  });
+
+  test('test memory sum e', async () => {
+    const result = k8SUnits.sumUnits('1e', '2E', 'memory');
+    expect(result).toBe('3E');
+  });
+
+  test('test memory sum I', async () => {
+    const result = k8SUnits.sumUnits('1Gi', '2Gi', 'memory');
+    expect(result).toBe('3Gi');
+  });
+
+  test('test memory sum 0', async () => {
+    const result = k8SUnits.sumUnits('0E', '0K', 'memory');
+    expect(result).toBe('0');
+  });
+
+  test('test memory sum G with decimals', async () => {
+    const result = k8SUnits.sumUnits('1.2G', '2.1G', 'memory');
     expect(result).toBe('3.3G');
   });
 
   test('test format G with negative decimals', async () => {
-    const result = k8SUnits.format(1200, -2);
+    const result = k8SUnits.formatMemory(1200, -2);
     expect(result).toBe('1K');
   });
 });
