@@ -40,15 +40,10 @@ RUN [[ $(uname -m) == "x86_64" ]] && microdnf install -y chromium
 RUN mkdir -p /projects && mkdir -p /home/che
 RUN cat /etc/passwd | sed s#root:x.*#root:x:\${USER_ID}:\${GROUP_ID}::\${HOME}:/bin/bash#g > /home/che/.passwd.template \
     && cat /etc/group | sed s#root:x:0:#root:x:0:0,\${USER_ID}:#g > /home/che/.group.template
-RUN for f in "/bin/" "/home/che" "/etc/passwd" "/etc/group" "/projects" ; do\
-           chgrp -R 0 ${f} && \
-           chmod -R g+rwX ${f}; \
-       done
 
 COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /bin/machine-exec
 COPY --chmod=755 /build/scripts/entrypoint-dev.sh /entrypoint.sh
 
-USER 1001
 ENTRYPOINT /entrypoint.sh
 WORKDIR /projects
 ENV PATH /home/che/.npm-global/bin/:$PATH
@@ -57,3 +52,10 @@ ENV PATH /home/che/.npm-global/bin/:$PATH
 RUN git clone --depth 1 https://github.com/che-incubator/che-code /tmp/che-code && \
     cd /tmp/che-code && yarn && cd /tmp/che-code/code && yarn compile && \
     tar zcf ${HOME}/.node_modules.tgz node_modules && rm -rf /tmp/che-code
+
+RUN for f in "/bin/" "/home/che" "/etc/passwd" "/etc/group" "/projects" ; do\
+           chgrp -R 0 ${f} && \
+           chmod -R g+rwX ${f}; \
+       done
+
+USER 1001
