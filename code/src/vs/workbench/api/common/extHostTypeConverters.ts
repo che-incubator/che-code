@@ -834,7 +834,7 @@ export namespace DefinitionLink {
 				: undefined,
 		};
 	}
-	export function to(value: extHostProtocol.IDefinitionLinkDto): vscode.LocationLink {
+	export function to(value: extHostProtocol.ILocationLinkDto): vscode.LocationLink {
 		return {
 			targetUri: URI.revive(value.uri),
 			targetRange: Range.to(value.range),
@@ -1169,7 +1169,9 @@ export namespace InlayHintLabelPart {
 
 	export function to(converter: CommandsConverter, part: modes.InlayHintLabelPart): types.InlayHintLabelPart {
 		const result = new types.InlayHintLabelPart(part.label);
-
+		result.tooltip = htmlContent.isMarkdownString(part.tooltip)
+			? MarkdownString.to(part.tooltip)
+			: part.tooltip;
 		if (modes.Command.is(part.command)) {
 			result.command = converter.fromInternal(part.command);
 		} else if (part.location) {
