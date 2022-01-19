@@ -55,6 +55,5 @@ ENV PATH /home/che/.npm-global/bin/:$PATH
 
 # build che-code and keep node-modules folder
 RUN git clone --depth 1 https://github.com/che-incubator/che-code /tmp/che-code && \
-    cd /tmp/che-code && yarn && yarn && cd /tmp/che-code/code && yarn compile && \
-    tar zcf ${HOME}/.node-modules.tar.gz node_modules && rm -rf /tmp/che-code
-
+    cd /tmp/che-code && yarn && cd /tmp/che-code/code && yarn compile && \
+    tar zcf ${HOME}/.node-modules.tgz node_modules && rm -rf /tmp/che-code
