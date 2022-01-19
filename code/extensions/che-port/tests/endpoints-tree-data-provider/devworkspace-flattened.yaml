@@ -1,0 +1,162 @@
+commands:
+- apply:
+    component: che-code-injector
+  attributes:
+    controller.devfile.io/imported-by: che-code-workspaced61b0d7d9ab04966
+  id: init-container-command
+- exec:
+    commandLine: |
+      /opt/rh/rh-mysql57/root/usr/bin/mysql -u root < ${PROJECTS_ROOT}/java-spring-petclinic/src/main/resources/db/mysql/user.sql && \
+      /opt/rh/rh-mysql57/root/usr/bin/mysql -u root petclinic < ${PROJECTS_ROOT}/java-spring-petclinic/src/main/resources/db/mysql/schema.sql && \
+      /opt/rh/rh-mysql57/root/usr/bin/mysql -u root petclinic < ${PROJECTS_ROOT}/java-spring-petclinic/src/main/resources/db/mysql/data.sql && \
+      echo -e "\e[32mDone.\e[0m Database petclinic was configured"
+    component: mysql
+    group:
+      isDefault: true
+      kind: run
+    workingDir: ${PROJECTS_ROOT}/java-spring-petclinic
+  id: prepare-database
+- exec:
+    commandLine: mvn clean install
+    component: tools
+    group:
+      isDefault: true
+      kind: build
+    workingDir: ${PROJECTS_ROOT}/java-spring-petclinic
+  id: build
+- exec:
+    commandLine: java -jar target/*.jar
+    component: tools
+    group:
+      isDefault: true
+      kind: run
+    workingDir: ${PROJECTS_ROOT}/java-spring-petclinic
+  id: run-with-hsqldb
+- exec:
+    commandLine: |
+      java -jar -Dspring-boot.run.profiles=mysql \
+      -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 \
+      target/*.jar
+    component: tools
+    group:
+      isDefault: true
+      kind: run
+    workingDir: ${PROJECTS_ROOT}/java-spring-petclinic
+  id: run-with-mysql
+- exec:
+    commandLine: java -jar -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
+      target/*.jar
+    component: tools
+    group:
+      isDefault: true
+      kind: run
+    workingDir: ${PROJECTS_ROOT}/java-spring-petclinic
+  id: run-debug
+components:
+- attributes:
+    controller.devfile.io/imported-by: che-code-workspaced61b0d7d9ab04966
+  name: checode
+  volume: {}
+- attributes:
+    controller.devfile.io/imported-by: che-code-workspaced61b0d7d9ab04966
+  container:
+    command:
+    - /entrypoint-init-container.sh
+    cpuLimit: 500m
+    cpuRequest: 30m
+    env:
+    - name: CHE_DASHBOARD_URL
+      value: https://che-eclipse-che.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com
+    - name: CHE_PLUGIN_REGISTRY_URL
+      value: https://che-eclipse-che.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com/plugin-registry/v3
+    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+      value: http://plugin-registry.eclipse-che.svc:8080/v3
+    image: quay.io/che-incubator/che-code:insiders
+    memoryLimit: 128Mi
+    memoryRequest: 32Mi
+    sourceMapping: /projects
+    volumeMounts:
+    - name: checode
+      path: /checode
+  name: che-code-injector
+- attributes:
+    che-code.eclipse.org/contribute-cpuLimit: true
+    che-code.eclipse.org/contribute-cpuRequest: true
+    che-code.eclipse.org/contribute-endpoint/che-code: 3100
+    che-code.eclipse.org/contribute-entry-point: true
+    che-code.eclipse.org/contribute-memoryLimit: true
+    che-code.eclipse.org/contribute-memoryRequest: true
+    che-code.eclipse.org/contribute-volume-mount/checode: /checode
+    che-code.eclipse.org/contributed-container: tools
+    che-code.eclipse.org/original-memoryLimit: 3Gi
+  container:
+    command:
+    - /checode/entrypoint-volume.sh
+    cpuLimit: 500m
+    cpuRequest: 30m
+    endpoints:
+    - exposure: none
+      name: debug
+      protocol: tcp
+      targetPort: 5005
+    - attributes:
+        controller.devfile.io/endpoint-url: http://workspaced61b0d7d9ab04966-1.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com/
+      exposure: public
+      name: 8080-tcp
+      protocol: http
+      targetPort: 8080
+    - attributes:
+        contributed-by: che-code.eclipse.org
+        controller.devfile.io/endpoint-url: https://che-eclipse-che.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com/workspaced61b0d7d9ab04966/tools/3100/?tkn=eclipse-che
+        cookiesAuthEnabled: true
+        discoverable: false
+        type: main
+        urlRewriteSupported: true
+      exposure: public
+      name: che-code
+      path: ?tkn=eclipse-che
+      protocol: https
+      secure: false
+      targetPort: 3100
+    image: quay.io/devfile/universal-developer-image:ubi8-d433ed6
+    memoryLimit: 4Gi
+    memoryRequest: 256Mi
+    sourceMapping: /projects
+    volumeMounts:
+    - name: m2
+      path: /home/user/.m2
+    - name: checode
+      path: /checode
+  name: tools
+- name: m2
+  volume:
+    size: 1G
+- container:
+    endpoints:
+    - exposure: none
+      name: db
+      protocol: tcp
+      targetPort: 3306
+    env:
+    - name: MYSQL_USER
+      value: petclinic
+    - name: MYSQL_PASSWORD
+      value: petclinic
+    - name: MYSQL_DATABASE
+      value: petclinic
+    - name: PS1
+      value: $(echo ${0})\\$
+    image: quay.io/eclipse/che--centos--mysql-57-centos7:latest-e08ee4d43b7356607685b69bde6335e27cf20c020f345b6c6c59400183882764
+    memoryLimit: 300Mi
+    sourceMapping: /projects
+  name: mysql
+events:
+  preStart:
+  - init-container-command
+projects:
+- git:
+    checkoutFrom:
+      revision: devfilev2
+    remotes:
+      origin: https://github.com/che-samples/java-spring-petclinic.git
+  name: java-spring-petclinic

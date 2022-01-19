@@ -30,6 +30,8 @@ const extensionsPath = path.join(path.dirname(__dirname), 'extensions');
 // });
 const compilations = [
 	'authentication-proxy/tsconfig.json',
+	'che-api/tsconfig.json',
+	'che-port/tsconfig.json',
 	'configuration-editing/build/tsconfig.json',
 	'configuration-editing/tsconfig.json',
 	'css-language-features/client/tsconfig.json',
@@ -149,7 +151,6 @@ const tasks = compilations.map(function (tsconfigFile) {
 	}
 
 	const cleanTask = task.define(`clean-extension-${name}`, util.rimraf(out));
-
 	const compileTask = task.define(`compile-extension:${name}`, task.series(cleanTask, () => {
 		const pipeline = createPipeline(false, true);
 		const nonts = gulp.src(src, srcOpts).pipe(filter(['**', '!**/*.ts']));

@@ -1,0 +1,170 @@
+{
+  "name": "port",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "publisher": "eclipse-che",
+  "license": "EPL-2.0",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "icon": "images/icon.png",
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "gulp compile-extension:che-port",
+    "watch": "gulp watch-extension:che-port",
+    "vscode:prepublish": "npm run compile",
+    "test": "jest",
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    },
+  "dependencies": {
+    "reflect-metadata": "^0.1.13",
+    "fs-extra": "^10.0.0",
+    "jest": "27.3.1",
+    "ts-jest": "27.0.7",
+    "vscode-nls": "^5.0.0",
+    "@devfile/api": "^2.2.0-alpha-1641413790"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^27.4.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "14.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/che-incubator/che-code.git"
+  },
+  "extensionDependencies": [
+    "eclipse-che.api"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "right": [
+        {
+          "id": "endpoints",
+          "title": "Endpoints",
+          "icon": "resources/plug.svg"
+        }
+      ]
+    },
+    "views": {
+      "endpoints": [
+        {
+          "name": "endpoints",
+          "id": "endpoints"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "portPlugin.filterOutPlugins",
+        "title": "Hide plug-in endpoints",
+        "icon": {
+          "light": "resources/light/filter-off.svg",
+          "dark": "resources/dark/filter-off.svg"
+        }
+      },
+      {
+        "command": "portPlugin.filterInPlugins",
+        "title": "Show plug-in endpoints",
+        "icon": {
+          "light": "resources/light/filter-on.svg",
+          "dark": "resources/dark/filter-on.svg"
+        }
+      },
+      {
+        "command": "portPlugin.openNewTabPort",
+        "title": "Open in a new tab",
+        "icon": {
+          "light": "resources/light/external-link.svg",
+          "dark": "resources/dark/external-link.svg"
+        }
+      },
+      {
+        "command": "portPlugin.copyClipboardUrl",
+        "title": "Copy endpoint URL to clipboard",
+        "icon": {
+          "light": "resources/light/clipboard.svg",
+          "dark": "resources/dark/clipboard.svg"
+        }
+      },
+      {
+        "command": "portPlugin.preview",
+        "title": "Open in preview",
+        "icon": {
+          "light": "resources/light/eye.svg",
+          "dark": "resources/dark/eye.svg"
+        }
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "portPlugin.filterInPlugins",
+          "when": "view == endpoints && !portPluginShowPlugins",
+          "group": "navigation"
+        },
+        {
+          "command": "portPlugin.filterOutPlugins",
+          "when": "view == endpoints && portPluginShowPlugins",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "portPlugin.openNewTabPort",
+          "when": "view == endpoints && viewItem == publicHttpsEndpointOnline || view == endpoints && viewItem == publicHttpPortOnline",
+          "group": "inline"
+        },
+        {
+          "command": "portPlugin.preview",
+          "when": "view == endpoints && viewItem == publicHttpsEndpointOnline",
+          "group": "inline"
+        },
+        {
+          "command": "portPlugin.copyClipboardUrl",
+          "when": "view == endpoints && viewItem == publicHttpEndpointOnline || view == endpoints && viewItem == publicHttpsEndpointOnline || view == endpoints && viewItem == publicPortOnline || view == endpoints && viewItem == publicDevfilePortOffline",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  }
+}
