@@ -28,4 +28,12 @@ if ! grep -Fq "${USER_ID}" /etc/passwd; then
     sed "s/\${HOME}/\/home\/che/g" > /etc/group
 fi
 
+# unpack node-modules if it does not exists
+if [ ! -d "/projects/che-code/code/node_modules" ]; then
+  echo "Unpacking node modules"
+  tar zxf "${HOME}/.node_modules.tgz" -C /projects/che-code/code
+fi
+
+
+
 tail -f /dev/null

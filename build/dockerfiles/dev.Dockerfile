@@ -47,7 +47,14 @@ RUN for f in "/bin/" "/home/che" "/etc/passwd" "/etc/group" "/projects" ; do\
 
 COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /bin/machine-exec
 COPY --chmod=755 /build/scripts/entrypoint-dev.sh /entrypoint.sh
+
 USER 1001
 ENTRYPOINT /entrypoint.sh
 WORKDIR /projects
 ENV PATH /home/che/.npm-global/bin/:$PATH
+
+# build che-code and keep node-modules folder
+RUN git clone --depth 1 https://github.com/che-incubator/che-code /tmp/che-code && \
+    cd /tmp/che-code && yarn && yarn && cd /tmp/che-code/code && yarn compile && \
+    tar zcf ${HOME}/.node-modules.tar.gz node_modules && rm -rf /tmp/che-code
+
