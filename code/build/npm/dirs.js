@@ -9,6 +9,8 @@ exports.dirs = [
 	'build',
 	'build/lib/watch',
 	'extensions',
+	'extensions/che-api',
+	'extensions/che-port',
 	'extensions/configuration-editing',
 	'extensions/css-language-features',
 	'extensions/css-language-features/server',

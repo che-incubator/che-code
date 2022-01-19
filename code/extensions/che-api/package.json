@@ -1,0 +1,75 @@
+{
+  "name": "api",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "publisher": "eclipse-che",
+  "license": "EPL-2.0",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "icon": "images/icon.png",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "gulp compile-extension:che-api",
+    "watch": "gulp watch-extension:che-api",
+    "vscode:prepublish": "npm run compile",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@devfile/api": "^2.2.0-alpha-1641413790",
+    "@kubernetes/client-node": "^0.16.1",
+    "fs-extra": "^10.0.0",
+    "inversify": "^6.0.1",
+    "js-yaml": "^4.1.0",
+    "reflect-metadata": "^0.1.13",
+    "vscode-nls": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^27.4.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "14.x",
+    "jest": "^27.4.7",
+    "ts-jest": "^27.1.2",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/che-incubator/che-code.git"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  }
+}
