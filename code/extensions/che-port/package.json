@@ -12,10 +12,6 @@
   "categories": [
     "Other"
   ],
-  "extensionKind": [
-    "ui",
-    "workspace"
-  ],
   "activationEvents": [
     "*"
   ],
@@ -36,12 +32,12 @@
   "dependencies": {
     "reflect-metadata": "^0.1.13",
     "fs-extra": "^10.0.0",
-    "jest": "27.3.1",
-    "ts-jest": "27.0.7",
     "vscode-nls": "^5.0.0",
     "@devfile/api": "^2.2.0-alpha-1641413790"
   },
   "devDependencies": {
+    "jest": "27.3.1",
+    "ts-jest": "27.0.7",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.4.0",
     "@types/js-yaml": "^4.0.5",
