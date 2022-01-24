@@ -35,7 +35,7 @@
     "ws": "8.2.3"
   },
   "optionalDependencies": {
-    "vscode-windows-registry": "1.0.4",
+    "@vscode/windows-registry": "1.0.5",
     "windows-process-tree": "^0.3.2"
   }
 }

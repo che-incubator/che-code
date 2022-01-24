@@ -31,7 +31,7 @@ import { ITerminalProfile, TerminalLocation, TerminalSettingId, TitleEventSource
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { PICK_WORKSPACE_FOLDER_COMMAND_ID } from 'vs/workbench/browser/actions/workspaceCommands';
 import { CLOSE_EDITOR_COMMAND_ID } from 'vs/workbench/browser/parts/editor/editorCommands';
-import { ResourceContextKey } from 'vs/workbench/common/resources';
+import { ResourceContextKey } from 'vs/workbench/common/contextkeys';
 import { FindInFilesCommand, IFindInFilesArgs } from 'vs/workbench/contrib/search/browser/searchActions';
 import { Direction, ICreateTerminalOptions, ITerminalGroupService, ITerminalInstance, ITerminalInstanceService, ITerminalService } from 'vs/workbench/contrib/terminal/browser/terminal';
 import { TerminalQuickAccessProvider } from 'vs/workbench/contrib/terminal/browser/terminalQuickAccess';
@@ -1918,8 +1918,8 @@ export function registerTerminalActions() {
 	registerAction2(class extends Action2 {
 		constructor() {
 			super({
-				id: TerminalCommandId.SelectDetectedLink,
-				title: { value: localize('workbench.action.terminal.selectDetectedLink', "Select Detected Link"), original: 'Select Detected Link' },
+				id: TerminalCommandId.OpenDetectedLink,
+				title: { value: localize('workbench.action.terminal.OpenDetectedLink', "Open Detected Link"), original: 'Open Detected Link' },
 				f1: true,
 				category,
 				precondition: ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated),
