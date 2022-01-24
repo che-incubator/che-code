@@ -1,16 +1,10 @@
 [
     {
         "from": "import \\* as crypto from 'crypto';",
-        "by": "import \\* as crypto from 'crypto';\\\nimport { RemoteTerminalMachineExecChannel } from './che/remoteTerminalMachineExecChannel';\\\nimport { getCheRedirectLocation } from './che/webClientServer';"
+        "by": "import \\* as crypto from 'crypto';\\\nimport { RemoteTerminalMachineExecChannel } from 'vs/server/che/remoteTerminalMachineExecChannel';"
     },
     {
         "from": "this._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(this._environmentService, this._logService, ptyService, this._productService));",
         "by": "if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {\\\n\t\t\t\tthis._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(this._environmentService, this._logService, ptyService, this._productService));\\\n\t\t\t} else {\\\n\t\t\t\tthis._socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(this._logService));\\\n\t\t\t}"
-    },
-    {
-        "from": "responseHeaders['Location'] = newLocation;",
-        "by": "responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
     }
-
-
 ]

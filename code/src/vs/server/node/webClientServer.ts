@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { getCheRedirectLocation } from './che/webClientServer';
+import { getCheRedirectLocation } from 'vs/server/che/webClientServer';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as url from 'url';
