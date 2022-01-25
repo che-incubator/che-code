@@ -68,15 +68,13 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
-          name: action_image_artifact_dev-pr
-          path: dev-image/
+          name: dev-image
       - name: Load dev Docker image
         run: |
-          ls -la dev-image/
-          docker load -i dev-image/dev-pr
+          docker load -i dev-pr.tgz
       - name: Docker Push
         run: |
-          export DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env.PR_NUMBER}}-amd64
+          export DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env.PR_NUMBER}}-dev-amd64
           docker tag dev-pr ${DEV_IMAGE_NAME}
           docker push ${DEV_IMAGE_NAME}
           echo "DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
