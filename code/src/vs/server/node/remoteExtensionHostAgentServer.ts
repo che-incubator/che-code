@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as crypto from 'crypto';
-import { RemoteTerminalMachineExecChannel } from 'vs/server/che/remoteTerminalMachineExecChannel';
+import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as net from 'net';
