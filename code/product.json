@@ -10,6 +10,7 @@
 	"serverLicense": [],
 	"serverLicensePrompt": "",
 	"serverApplicationName": "code-server-oss",
+	"serverDataFolderName": ".vscode-server-oss",
 	"win32DirName": "CheCode",
 	"win32NameVersion": "CheCode",
 	"win32RegValueName": "CheCode",

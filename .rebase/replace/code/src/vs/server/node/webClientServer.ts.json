@@ -1,0 +1,14 @@
+[
+    {
+        "from": "import \\* as fs from 'fs';",
+        "by": "import { getCheRedirectLocation } from 'vs/server/node/che/webClientServer';\\\nimport \\* as fs from 'fs';"
+    },
+    {
+        "from": "responseHeaders['Location'] = newLocation;",
+        "by": "responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
+    },
+    {
+        "from": "const newLocation = url.format({ pathname: '/', query: newQuery });",
+        "by": ""
+    }
+]

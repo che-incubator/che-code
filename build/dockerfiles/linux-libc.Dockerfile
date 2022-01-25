@@ -62,7 +62,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
 
-RUN chmod a+x /checode/out/vs/server/main.js \
+RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 ### Testing
@@ -90,7 +90,7 @@ RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-    ./resources/server/test/test-web-integration.sh --browser chromium
+    ./scripts/test-web-integration.sh --browser chromium
 
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
