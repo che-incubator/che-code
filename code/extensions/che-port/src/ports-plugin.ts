@@ -99,7 +99,7 @@ export class PortsPlugin {
       if (resultShow && resultShow.title === 'Open Link') {
         vscode.commands.executeCommand('mini-browser.openUrl', endpoint.url);
       } else if (resultShow && resultShow.title === 'Open In New Tab') {
-        vscode.commands.executeCommand('theia.open', endpoint.url);
+        vscode.commands.executeCommand('vscode.open', endpoint.url);
       }
     }
   }
@@ -208,9 +208,9 @@ export class PortsPlugin {
       const msg = `Process ${matchingEndpoint.name} is now listening on port ${matchingEndpoint.targetPort}. Open it ?`;
       const result = await vscode.window.showInformationMessage(msg, {}, ...interactions);
       if (result && result.title === 'Open In New Tab') {
-        vscode.commands.executeCommand('theia.open', matchingEndpoint.url);
+        vscode.commands.executeCommand('vscode.open', matchingEndpoint.url);
       } else if (result && result.title === 'Open In Preview') {
-        vscode.commands.executeCommand('mini-browser.openUrl', matchingEndpoint.url);
+        vscode.commands.executeCommand('simpleBrowser.show', matchingEndpoint.url);
       }
     } else {
       const desc = `A new process is now listening on port ${port.portNumber} but this port is not a current endpoint.
