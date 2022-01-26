@@ -58,7 +58,6 @@ RUN for f in "/mnt/rootfs/home/che" "/mnt/rootfs/etc/passwd" "/mnt/rootfs/etc/gr
 
 FROM scratch
 COPY --from=ubi-micro-build /mnt/rootfs/ /
-USER 1001
 ENV HOME=/home/che
 ENV NPM_CONFIG_PREFIX=/home/che/.npm-global
 ENV PATH /opt/nodejs/bin:/home/che/.npm-global/bin/:$PATH
@@ -67,4 +66,6 @@ WORKDIR /projects
 # build che-code and keep node-modules folder
 RUN git clone --depth 1 https://github.com/che-incubator/che-code /tmp/che-code && \
     cd /tmp/che-code && yarn && cd /tmp/che-code/code && yarn compile && \
-    tar zcf /home/che/.node_modules.tgz node_modules && rm -rf /tmp/che-code
+    tar zcf /home/che/.node_modules.tgz node_modules && rm -rf /tmp/che-code && \
+    chgrp -R 0 /home/che && chmod -R g+rwX /home/che
+USER 1001
