@@ -3,14 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AuthenticationSession } from 'vscode';
+declare module 'vscode' {
 
-/**
- * Represents a session of a currently logged in Microsoft user.
- */
-export interface MicrosoftAuthenticationSession extends AuthenticationSession {
-	/**
-	 * The id token.
-	 */
-	idToken?: string;
+	// https://github.com/microsoft/vscode/issues/130882
+
+	export interface TestItem {
+		/**
+		 * A string that should be used when comparing this item
+		 * with other items. When `falsy` the {@link TestItem.label label}
+		 * is used.
+		 */
+		sortText: string | undefined;
+	}
 }
