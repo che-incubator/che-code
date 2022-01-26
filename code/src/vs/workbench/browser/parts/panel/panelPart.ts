@@ -87,7 +87,18 @@ export abstract class BasePanelPart extends CompositePart<PaneComposite> impleme
 	}
 
 	get preferredWidth(): number | undefined {
-		return this.layoutService.dimension.width * 0.4;
+		const activeComposite = this.getActivePaneComposite();
+
+		if (!activeComposite) {
+			return;
+		}
+
+		const width = activeComposite.getOptimalWidth();
+		if (typeof width !== 'number') {
+			return;
+		}
+
+		return Math.max(width, 300);
 	}
 
 	//#endregion
@@ -242,6 +253,11 @@ export abstract class BasePanelPart extends CompositePart<PaneComposite> impleme
 
 				if (isActive) {
 					this.compositeBar.activateComposite(panel.id);
+
+					// Only try to open the panel if it has been created and visible
+					if (!activePanel && this.element && this.layoutService.isVisible(this.partId)) {
+						this.doOpenPanel(panel.id);
+					}
 				}
 			}
 		}

@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { hostname, release } from 'os';",
+        "by": "import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';\\\nimport { hostname, release } from 'os';"
+    },
+    {
+        "from": "socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService));",
+        "by": "if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {\\\n\t\t\t\tsocketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService));\\\n\t\t\t} else {\\\n\t\t\t\tsocketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(logService));\\\n\t\t\t}"
+    }
+]
