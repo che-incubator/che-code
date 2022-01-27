@@ -26,7 +26,7 @@ RUN cd /mnt/rootfs && ln -s /usr/bin/python2 ./usr/bin/python
 RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
 
 # Download nodejs required by VS Code
-RUN mkdir -p /mnt/rootfs/opt/nodejs && curl -sL https://nodejs.org/download/release/v14.16.0/node-v14.16.0-linux-x64.tar.gz | tar xzf - -C /mnt/rootfs/opt/nodejs --strip-components=1
+RUN mkdir -p /mnt/rootfs/opt/nodejs && curl -sL https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz | tar xzf - -C /mnt/rootfs/opt/nodejs --strip-components=1
 
 # setup home folder inside the new fs
 ENV HOME=/mnt/rootfs/home/che
