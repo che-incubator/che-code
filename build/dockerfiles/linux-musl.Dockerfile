@@ -7,7 +7,7 @@
 #
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:14.16.0-alpine3.13 as linux-musl-builder
+FROM docker.io/node:14.18.3-alpine3.15 as linux-musl-builder
 RUN apk add --update --no-cache \
     # Download some files
     curl \
