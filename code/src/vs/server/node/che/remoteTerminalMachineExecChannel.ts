@@ -158,7 +158,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 		}
 
 		this.logService.error(`RemoteTerminalChannel: unsupported command/${command}`);
-		return undefined;
+		return {};
 	}
 
 	listen<T>(ctx: RemoteAgentConnectionContext, event: string, arg?: any): Event<any> {
