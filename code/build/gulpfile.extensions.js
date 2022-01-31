@@ -32,7 +32,7 @@ const compilations = [
 	'authentication-proxy/tsconfig.json',
 	'che-api/tsconfig.json',
 	'che-port/tsconfig.json',
-	'che-project/tsconfig.json',
+	'che-on-start/tsconfig.json',
 	'configuration-editing/build/tsconfig.json',
 	'configuration-editing/tsconfig.json',
 	'css-language-features/client/tsconfig.json',
