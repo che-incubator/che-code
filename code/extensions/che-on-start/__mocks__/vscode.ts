@@ -1,4 +1,3 @@
-/* eslint-disable header/header */
 /*
  * Copyright (c) 2022 Red Hat, Inc.
  * All rights reserved. This program and the accompanying materials are made
@@ -9,6 +8,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
+/* eslint-disable header/header */
 /**
  * Mock of vscode module
  * @author Florent Benoit

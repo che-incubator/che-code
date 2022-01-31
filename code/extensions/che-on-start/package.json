@@ -1,5 +1,5 @@
 {
-  "name": "project",
+  "name": "on-start",
   "displayName": "%displayName%",
   "description": "%description%",
   "publisher": "eclipse-che",
@@ -23,8 +23,8 @@
   },
   "main": "./out/extension.js",
   "scripts": {
-    "compile": "gulp compile-extension:che-project",
-    "watch": "gulp watch-extension:che-project",
+    "compile": "gulp compile-extension:che-on-start",
+    "watch": "gulp watch-extension:che-on-start",
     "vscode:prepublish": "npm run compile",
     "test": "jest",
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
