@@ -24,3 +24,10 @@
 }
 
 /* icon rules are dynamically created by the platform theme service (see iconsStyleSheet.ts) */
+
+/* Add codicon for Eclipse Che */
+span.codicon.codicon-eclipse-che  {
+	background-image: url(./che/che-icon.svg);
+	width: 13px;
+	height: 13px;
+}

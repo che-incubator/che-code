@@ -33,6 +33,7 @@ const compilations = [
 	'che-api/tsconfig.json',
 	'che-port/tsconfig.json',
 	'che-on-start/tsconfig.json',
+	'che-remote/tsconfig.json',
 	'configuration-editing/build/tsconfig.json',
 	'configuration-editing/tsconfig.json',
 	'css-language-features/client/tsconfig.json',
