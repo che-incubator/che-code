@@ -1,4 +1,3 @@
-
 /**********************************************************************
  * Copyright (c) 2022 Red Hat, Inc.
  *
@@ -11,10 +10,9 @@
 
 /* eslint-disable header/header */
 
-import { DevfileService } from './devfile-service';
-import { WorkspaceService } from './workspace-service';
-
-export interface Api {
-    getDevfileService(): DevfileService;
-    getWorkspaceService(): WorkspaceService;
+export const WorkspaceService = Symbol('WorkspaceService');
+export interface WorkspaceService {
+    getNamespace(): Promise<string>;
+    getWorkspaceId(): Promise<string>;
+    stop(): Promise<void>;
 }
