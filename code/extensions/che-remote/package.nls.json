@@ -1,0 +1,7 @@
+{
+	"displayName": "Eclipse Che Remote",
+	"description": "Provides remoteIndicator commands",
+	"openDocumentationCommand": "Eclipse Che: Open Documentation",
+	"openDashboardCommand": "Eclipse Che: Open Dashboard",
+	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace"
+}

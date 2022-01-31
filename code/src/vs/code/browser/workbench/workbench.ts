@@ -17,6 +17,7 @@ import { isFolderToOpen, isWorkspaceToOpen } from 'vs/platform/windows/common/wi
 import { create, ICredentialsProvider, IURLCallbackProvider, IWorkbenchConstructionOptions, IWorkspace, IWorkspaceProvider } from 'vs/workbench/workbench.web.main';
 import { posix } from 'vs/base/common/path';
 import { ltrim } from 'vs/base/common/strings';
+import { getCheConfig } from 'vs/code/browser/workbench/che/workbench-che-config';
 
 interface ICredential {
 	service: string;
@@ -515,10 +516,13 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 	if (!configElement || !configElementAttribute) {
 		throw new Error('Missing web configuration element');
 	}
-	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents, workspaceUri?: UriComponents } = JSON.parse(configElementAttribute);
 
+	const cheConfig = getCheConfig();
+
+	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents, workspaceUri?: UriComponents } = JSON.parse(configElementAttribute);
 	 console.log('Creating workbench with config ', JSON.stringify({
 		...config,
+		...cheConfig,
 		settingsSyncOptions: config.settingsSyncOptions ? {
 			enabled: config.settingsSyncOptions.enabled,
 		} : undefined,
@@ -530,6 +534,7 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 	// Create workbench
 	create(document.body, {
 		...config,
+		...cheConfig,
 		settingsSyncOptions: config.settingsSyncOptions ? {
 			enabled: config.settingsSyncOptions.enabled,
 		} : undefined,
