@@ -29,4 +29,4 @@ else
 fi
 
 # Launch che with a custom connection-token
-./node out/server-main.js --port 3100 --connection-token eclipse-che
+./node out/server-main.js --port 3100 --without-connection-token
