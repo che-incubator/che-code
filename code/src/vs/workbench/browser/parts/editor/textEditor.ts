@@ -27,8 +27,10 @@ import { IEditorGroupsService, IEditorGroup } from 'vs/workbench/services/editor
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { ILogService } from 'vs/platform/log/common/log';
 import { ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { isEqual } from 'vs/base/common/resources';
+import { env } from 'vs/base/common/process';
 
 export interface IEditorConfiguration {
 	editor: object;
@@ -83,8 +85,10 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 
 	protected handleConfigurationChangeEvent(configuration?: IEditorConfiguration): void {
 		if (this.isVisible()) {
+			this.logConditional('TextEditor#handleConfigurationChangeEvent: visible, applying');
 			this.updateEditorConfiguration(configuration);
 		} else {
+			this.logConditional('TextEditor#handleConfigurationChangeEvent: NOT visible!. Input is: ' + this.input?.resource?.toString(true));
 			this.hasPendingConfigurationChange = true;
 		}
 	}
@@ -236,6 +240,8 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 	}
 
 	private updateEditorConfiguration(configuration?: IEditorConfiguration): void {
+		this.logConditional('TextEditor#updateEditorConfiguration: ' + JSON.stringify(configuration));
+
 		if (!configuration) {
 			const resource = this.getActiveResource();
 			if (resource) {
@@ -244,6 +250,7 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 		}
 
 		if (!this.editorControl || !configuration) {
+			this.logConditional('TextEditor#updateEditorConfiguration: return early');
 			return;
 		}
 
@@ -259,7 +266,19 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 
 		if (Object.keys(editorSettingsToApply).length > 0) {
 			this.lastAppliedEditorOptions = editorConfiguration;
+			this.logConditional('TextEditor#updateEditorConfiguration: passing onto code editor: ' + JSON.stringify(editorSettingsToApply));
 			this.editorControl.updateOptions(editorSettingsToApply);
+		} else {
+			this.logConditional('TextEditor#updateEditorConfiguration: no settings to apply');
+		}
+	}
+
+	private logConditional(msg: string): void {
+		// TODO@bpasero logging for https://github.com/microsoft/vscode/issues/141054
+		if (env['CI'] || env['BUILD_ARTIFACTSTAGINGDIRECTORY']) {
+			this.instantiationService.invokeFunction(accessor => {
+				accessor.get(ILogService).info(msg);
+			});
 		}
 	}
 
