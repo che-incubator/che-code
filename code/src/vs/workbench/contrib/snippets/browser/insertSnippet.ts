@@ -5,10 +5,10 @@
 
 import * as nls from 'vs/nls';
 import { registerEditorAction, ServicesAccessor, EditorAction } from 'vs/editor/browser/editorExtensions';
-import { ILanguageService } from 'vs/editor/common/services/language';
+import { ILanguageService } from 'vs/editor/common/languages/language';
 import { ICommandService, CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { ISnippetsService } from 'vs/workbench/contrib/snippets/browser/snippets.contribution';
-import { SnippetController2 } from 'vs/editor/contrib/snippet/snippetController2';
+import { SnippetController2 } from 'vs/editor/contrib/snippet/browser/snippetController2';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { Snippet, SnippetSource } from 'vs/workbench/contrib/snippets/browser/snippetsFile';

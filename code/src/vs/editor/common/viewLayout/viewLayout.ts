@@ -11,8 +11,8 @@ import { ScrollType } from 'vs/editor/common/editorCommon';
 import { IEditorConfiguration } from 'vs/editor/common/config/editorConfiguration';
 import { LinesLayout, IEditorWhitespace, IWhitespaceChangeAccessor } from 'vs/editor/common/viewLayout/linesLayout';
 import { IPartialViewLinesViewportData } from 'vs/editor/common/viewLayout/viewLinesViewportData';
-import { IViewLayout, IViewWhitespaceViewportData, Viewport } from 'vs/editor/common/viewModel/viewModel';
-import { ContentSizeChangedEvent } from 'vs/editor/common/viewModel/viewModelEventDispatcher';
+import { IViewLayout, IViewWhitespaceViewportData, Viewport } from 'vs/editor/common/viewModel';
+import { ContentSizeChangedEvent } from 'vs/editor/common/viewModelEventDispatcher';
 
 const SMOOTH_SCROLLING_TIME = 125;
 
@@ -83,7 +83,11 @@ class EditorScrollable extends Disposable {
 	constructor(smoothScrollDuration: number, scheduleAtNextAnimationFrame: (callback: () => void) => IDisposable) {
 		super();
 		this._dimensions = new EditorScrollDimensions(0, 0, 0, 0);
-		this._scrollable = this._register(new Scrollable(smoothScrollDuration, scheduleAtNextAnimationFrame));
+		this._scrollable = this._register(new Scrollable({
+			forceIntegerValues: true,
+			smoothScrollDuration,
+			scheduleAtNextAnimationFrame
+		}));
 		this.onDidScroll = this._scrollable.onScroll;
 	}
 

@@ -12,7 +12,7 @@ import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { ISearchService } from 'vs/workbench/services/search/common/search';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { QueryBuilder } from 'vs/workbench/contrib/search/common/queryBuilder';
+import { QueryBuilder } from 'vs/workbench/services/search/common/queryBuilder';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { XtermLinkMatcherHandler } from 'vs/workbench/contrib/terminal/browser/links/terminalLinkManager';
 import { TerminalBaseLinkProvider } from 'vs/workbench/contrib/terminal/browser/links/terminalBaseLinkProvider';
@@ -24,8 +24,7 @@ import { URI } from 'vs/base/common/uri';
 import { Schemas } from 'vs/base/common/network';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { XtermTerminal } from 'vs/workbench/contrib/terminal/browser/xterm/xtermTerminal';
-import { TerminalCapability } from 'vs/platform/terminal/common/terminal';
-import { ITerminalCapabilityStore } from 'vs/workbench/contrib/terminal/common/capabilities/capabilities';
+import { ITerminalCapabilityStore, TerminalCapability } from 'vs/workbench/contrib/terminal/common/capabilities/capabilities';
 
 const MAX_LENGTH = 2000;
 
@@ -156,7 +155,7 @@ export class TerminalWordLinkProvider extends TerminalBaseLinkProvider {
 			}
 		});
 		let matchLink = link;
-		if (this._capabilities.has(TerminalCapability.CwdDetection)) {
+		if (this._capabilities.has(TerminalCapability.CommandDetection)) {
 			matchLink = this._updateLinkWithRelativeCwd(y, link, pathSeparator) || link;
 		}
 		const sanitizedLink = matchLink.replace(/:\d+(:\d+)?$/, '');
@@ -193,7 +192,7 @@ export class TerminalWordLinkProvider extends TerminalBaseLinkProvider {
 	* of the particular link is used to narrow down the result for an exact file match, if possible.
 	*/
 	private _updateLinkWithRelativeCwd(y: number, link: string, pathSeparator: string): string | undefined {
-		const cwd = this._xterm.commandTracker.getCwdForLine(y);
+		const cwd = this._capabilities.get(TerminalCapability.CommandDetection)?.getCwdForLine(y);
 		if (!cwd) {
 			return undefined;
 		}

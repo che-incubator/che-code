@@ -7,7 +7,7 @@ import { asArray, coalesce, isNonEmptyArray } from 'vs/base/common/arrays';
 import { VSBuffer } from 'vs/base/common/buffer';
 import * as htmlContent from 'vs/base/common/htmlContent';
 import { DisposableStore } from 'vs/base/common/lifecycle';
-import * as marked from 'vs/base/common/marked/marked';
+import { marked } from 'vs/base/common/marked/marked';
 import { parse } from 'vs/base/common/marshalling';
 import { cloneAndChange } from 'vs/base/common/objects';
 import { isDefined, isEmptyObject, isNumber, isString, withNullAsUndefined } from 'vs/base/common/types';
@@ -20,7 +20,7 @@ import { ISelection } from 'vs/editor/common/core/selection';
 import { IContentDecorationRenderOptions, IDecorationOptions, IDecorationRenderOptions, IThemeDecorationRenderOptions } from 'vs/editor/common/editorCommon';
 import { EndOfLineSequence, TrackedRangeStickiness } from 'vs/editor/common/model';
 import * as modes from 'vs/editor/common/languages';
-import * as languageSelector from 'vs/editor/common/languages/languageSelector';
+import * as languageSelector from 'vs/editor/common/languageSelector';
 import { EditorResolution, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IMarkerData, IRelatedInformation, MarkerSeverity, MarkerTag } from 'vs/platform/markers/common/markers';
 import { ProgressLocation as MainProgressLocation } from 'vs/platform/progress/common/progress';
@@ -339,7 +339,7 @@ export namespace MarkdownString {
 		};
 		const renderer = new marked.Renderer();
 		renderer.link = collectUri;
-		renderer.image = href => collectUri(htmlContent.parseHrefAndDimensions(href).href);
+		renderer.image = href => typeof href === 'string' ? collectUri(htmlContent.parseHrefAndDimensions(href).href) : '';
 
 		marked(res.value, { renderer });
 
@@ -1174,7 +1174,8 @@ export namespace InlayHintLabelPart {
 			: part.tooltip;
 		if (modes.Command.is(part.command)) {
 			result.command = converter.fromInternal(part.command);
-		} else if (part.location) {
+		}
+		if (part.location) {
 			result.location = location.to(part.location);
 		}
 		return result;
@@ -1724,6 +1725,7 @@ export namespace TestItem {
 			tags: item.tags.map(t => TestTag.namespace(ctrlId, t.id)),
 			range: Range.from(item.range) || null,
 			description: item.description || null,
+			sortText: item.sortText || null,
 			error: item.error ? (MarkdownString.fromStrict(item.error) || null) : null,
 		};
 	}
@@ -1744,6 +1746,7 @@ export namespace TestItem {
 			canResolveChildren: false,
 			busy: false,
 			description: item.description || undefined,
+			sortText: item.sortText || undefined,
 		};
 	}
 
@@ -1752,6 +1755,7 @@ export namespace TestItem {
 		const testItem = new TestItemImpl(testId.controllerId, testId.localId, item.label, URI.revive(item.uri));
 		testItem.range = Range.to(item.range || undefined);
 		testItem.description = item.description || undefined;
+		testItem.sortText = item.sortText || undefined;
 		return testItem;
 	}
 

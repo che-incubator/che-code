@@ -12,10 +12,10 @@ import { IRange } from 'vs/editor/common/core/range';
 import * as modes from 'vs/editor/common/languages';
 import { ExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { extHostNamedCustomer } from 'vs/workbench/api/common/extHostCustomers';
+import { extHostNamedCustomer, IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
 import { ICommentInfo, ICommentService } from 'vs/workbench/contrib/comments/browser/commentService';
 import { CommentsPanel } from 'vs/workbench/contrib/comments/browser/commentsView';
-import { CommentProviderFeatures, ExtHostCommentsShape, ExtHostContext, IExtHostContext, MainContext, MainThreadCommentsShape, CommentThreadChanges, CommentChanges } from '../common/extHost.protocol';
+import { CommentProviderFeatures, ExtHostCommentsShape, ExtHostContext, MainContext, MainThreadCommentsShape, CommentThreadChanges, CommentChanges } from '../common/extHost.protocol';
 import { COMMENTS_VIEW_ID, COMMENTS_VIEW_TITLE } from 'vs/workbench/contrib/comments/browser/commentsTreeViewer';
 import { ViewContainer, IViewContainersRegistry, Extensions as ViewExtensions, ViewContainerLocation, IViewsRegistry, IViewsService, IViewDescriptorService } from 'vs/workbench/common/views';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
@@ -152,7 +152,7 @@ export class MainThreadCommentThread implements modes.CommentThread {
 				userName: comment.userName,
 				commentReactions: comment.commentReactions,
 				contextValue: comment.contextValue,
-				detail: comment.detail ? <Date | string>revive<Date | string>(comment.detail) : undefined,
+				timestamp: comment.timestamp ? <Date>revive<Date>(comment.timestamp) : undefined,
 				label: comment.label,
 				mode: comment.mode,
 				userIconPath: comment.userIconPath

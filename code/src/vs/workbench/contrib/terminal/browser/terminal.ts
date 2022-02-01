@@ -6,7 +6,7 @@
 import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
-import { FindReplaceState } from 'vs/editor/contrib/find/findState';
+import { FindReplaceState } from 'vs/editor/contrib/find/browser/findState';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IShellLaunchConfig, ITerminalDimensions, ITerminalLaunchError, ITerminalProfile, ITerminalTabLayoutInfoById, TerminalIcon, TitleEventSource, TerminalShellType, IExtensionTerminalProfile, TerminalLocation, ProcessPropertyType, IProcessPropertyMap } from 'vs/platform/terminal/common/terminal';
 import { INavigationMode, IRemoteTerminalAttachTarget, IStartExtensionTerminalRequest, ITerminalConfigHelper, ITerminalFont, ITerminalBackend, ITerminalProcessExtHostProxy, IRegisterContributedProfileArgs, IShellIntegration } from 'vs/workbench/contrib/terminal/common/terminal';
@@ -17,7 +17,6 @@ import { DeserializedTerminalEditorInput } from 'vs/workbench/contrib/terminal/b
 import { TerminalEditorInput } from 'vs/workbench/contrib/terminal/browser/terminalEditorInput';
 import { EditorGroupColumn } from 'vs/workbench/services/editor/common/editorGroupColumn';
 import { IKeyMods } from 'vs/platform/quickinput/common/quickInput';
-import { IMarker } from 'xterm';
 import { ITerminalCapabilityStore } from 'vs/workbench/contrib/terminal/common/capabilities/capabilities';
 
 export const ITerminalService = createDecorator<ITerminalService>('terminalService');
@@ -81,25 +80,13 @@ export interface IQuickPickTerminalObject {
 	keyMods: IKeyMods | undefined
 }
 
-export interface TerminalCommand {
-	command: string;
-	timestamp: number;
-	cwd?: string;
-	exitCode?: number;
-	marker?: IMarker;
-	getOutput(): string | undefined;
-}
-
 export interface ICommandTracker {
-	readonly commands: TerminalCommand[];
-	readonly cwds: string[];
 	scrollToPreviousCommand(): void;
 	scrollToNextCommand(): void;
 	selectToPreviousCommand(): void;
 	selectToNextCommand(): void;
 	selectToPreviousLine(): void;
 	selectToNextLine(): void;
-	getCwdForLine(line: number): string;
 	clearMarker(): void;
 }
 
@@ -218,8 +205,8 @@ export interface ITerminalService extends ITerminalInstanceHost {
 
 	resolveLocation(location?: ITerminalLocationOptions): TerminalLocation | undefined
 	setNativeDelegate(nativeCalls: ITerminalServiceNativeDelegate): void;
-	toggleDevTools(open?: boolean): Promise<void>;
 	handleNewRegisteredBackend(backend: ITerminalBackend): void;
+	toggleEscapeSequenceLogging(): Promise<void>;
 }
 export class TerminalLinkQuickPickEvent extends MouseEvent {
 
@@ -343,6 +330,7 @@ export interface ITerminalInstanceHost {
 	readonly onDidFocusInstance: Event<ITerminalInstance>;
 	readonly onDidChangeActiveInstance: Event<ITerminalInstance | undefined>;
 	readonly onDidChangeInstances: Event<void>;
+	readonly onDidChangeInstanceCapability: Event<ITerminalInstance>;
 
 	setActiveInstance(instance: ITerminalInstance): void;
 	/**
@@ -784,6 +772,8 @@ export interface ITerminalInstance {
 
 	toggleEscapeSequenceLogging(): Promise<boolean>;
 
+	setEscapeSequenceLogging(enable: boolean): void;
+
 	getInitialCwd(): Promise<string>;
 	getCwd(): Promise<string>;
 
@@ -879,11 +869,6 @@ export interface IXtermTerminal {
 	 * viewport.
 	 */
 	clearBuffer(): void;
-
-	/*
-	 * When process capabilites are updated, update the command tracker
-	 */
-	upgradeCommandTracker(): void;
 }
 
 export interface IRequestAddInstanceToGroupEvent {

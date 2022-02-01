@@ -5,22 +5,21 @@
 
 import * as assert from 'assert';
 import { IDisposable } from 'vs/base/common/lifecycle';
-import { IViewLineTokens } from 'vs/editor/common/model/tokens/lineTokens';
+import { IViewLineTokens } from 'vs/editor/common/tokens/lineTokens';
 import { Position } from 'vs/editor/common/core/position';
 import { IRange, Range } from 'vs/editor/common/core/range';
-import { EncodedTokenizationResult } from 'vs/editor/common/core/token';
 import { EndOfLinePreference } from 'vs/editor/common/model';
 import { TextModel } from 'vs/editor/common/model/textModel';
 import * as modes from 'vs/editor/common/languages';
 import { NullState } from 'vs/editor/common/languages/nullMode';
 import { MonospaceLineBreaksComputerFactory } from 'vs/editor/common/viewModel/monospaceLineBreaksComputer';
 import { ViewModelLinesFromProjectedModel } from 'vs/editor/common/viewModel/viewModelLines';
-import { ViewLineData } from 'vs/editor/common/viewModel/viewModel';
+import { ViewLineData } from 'vs/editor/common/viewModel';
 import { TestConfiguration } from 'vs/editor/test/browser/config/testConfiguration';
 import { EditorOption } from 'vs/editor/common/config/editorOptions';
 import { createTextModel } from 'vs/editor/test/common/testTextModel';
 import { ISimpleModel, IModelLineProjection, createModelLineProjection } from 'vs/editor/common/viewModel/modelLineProjection';
-import { ModelLineProjectionData } from 'vs/editor/common/viewModel/modelLineProjectionData';
+import { ModelLineProjectionData } from 'vs/editor/common/modelLineProjectionData';
 
 suite('Editor ViewModel - SplitLinesCollection', () => {
 	test('SplitLine', () => {
@@ -336,7 +335,7 @@ suite('SplitLinesCollection', () => {
 		const tokenizationSupport: modes.ITokenizationSupport = {
 			getInitialState: () => NullState,
 			tokenize: undefined!,
-			tokenizeEncoded: (line: string, hasEOL: boolean, state: modes.IState): EncodedTokenizationResult => {
+			tokenizeEncoded: (line: string, hasEOL: boolean, state: modes.IState): modes.EncodedTokenizationResult => {
 				let tokens = _tokens[_lineIndex++];
 
 				let result = new Uint32Array(2 * tokens.length);
@@ -346,7 +345,7 @@ suite('SplitLinesCollection', () => {
 						tokens[i].value << modes.MetadataConsts.FOREGROUND_OFFSET
 					);
 				}
-				return new EncodedTokenizationResult(result, state);
+				return new modes.EncodedTokenizationResult(result, state);
 			}
 		};
 		const LANGUAGE_ID = 'modelModeTest1';

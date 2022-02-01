@@ -82,7 +82,8 @@ jobs:
       - name: Docker Build
         run: |
           docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t dev-pr .
-      - name: Upload dev image
-        uses: ishworkh/docker-image-artifact-upload@v1
+          docker save dev-pr | gzip > dev-pr.tgz
+      - uses: actions/upload-artifact@v2
         with:
-          image: "dev-pr"
+          name: dev-image
+          path: dev-pr.tgz

@@ -8,17 +8,17 @@ import { localize } from 'vs/nls';
 import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { Action } from 'vs/base/common/actions';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { SyncActionDescriptor, MenuId, MenuRegistry, registerAction2, Action2 } from 'vs/platform/actions/common/actions';
+import { SyncActionDescriptor, MenuId, MenuRegistry, registerAction2, Action2, IAction2Options } from 'vs/platform/actions/common/actions';
 import { IWorkbenchActionRegistry, Extensions as WorkbenchExtensions, CATEGORIES } from 'vs/workbench/common/actions';
 import { IWorkbenchLayoutService, PanelAlignment, Parts, Position, positionToString } from 'vs/workbench/services/layout/browser/layoutService';
 import { ActivityAction, ToggleCompositePinnedAction, ICompositeBar } from 'vs/workbench/browser/parts/compositeBarActions';
 import { IActivity } from 'vs/workbench/common/activity';
-import { ActivePanelContext, PanelAlignmentContext, PanelMaximizedContext, PanelPositionContext, PanelVisibleContext } from 'vs/workbench/common/panel';
+import { PanelAlignmentContext, PanelMaximizedContext, PanelPositionContext, PanelVisibleContext } from 'vs/workbench/common/contextkeys';
 import { ContextKeyExpr, ContextKeyExpression } from 'vs/platform/contextkey/common/contextkey';
 import { Codicon } from 'vs/base/common/codicons';
 import { registerIcon } from 'vs/platform/theme/common/iconRegistry';
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
-import { ViewContainerLocationToString, ViewContainerLocation, IViewDescriptorService } from 'vs/workbench/common/views';
+import { ViewContainerLocationToString, ViewContainerLocation, IViewDescriptorService, IViewsService } from 'vs/workbench/common/views';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
@@ -124,10 +124,10 @@ export const PositionPanelActionConfigs: PanelActionConfig<Position>[] = [
 
 
 export const AlignPanelActionConfigs: PanelActionConfig<PanelAlignment>[] = [
-	createAlignmentPanelActionConfig(AlignPanelActionId.LEFT, 'View: Align Panel Left', localize('alignPanelLeft', 'Align Panel Left'), localize('alignPanelLeftShort', "Left"), 'left'),
-	createAlignmentPanelActionConfig(AlignPanelActionId.RIGHT, 'View: Align Panel Right', localize('alignPanelRight', 'Align Panel Right'), localize('alignPanelRightShort', "Right"), 'right'),
-	createAlignmentPanelActionConfig(AlignPanelActionId.CENTER, 'View: Center Panel', localize('alignPanelCenter', 'Center Panel'), localize('alignPanelCenterShort', "Center"), 'center'),
-	createAlignmentPanelActionConfig(AlignPanelActionId.JUSTIFY, 'View: Justify Panel', localize('alignPanelJustify', 'Justify Panel'), localize('alignPanelJustifyShort', "Justify"), 'justify'),
+	createAlignmentPanelActionConfig(AlignPanelActionId.LEFT, 'View: Set Panel Alignment to Left', localize('alignPanelLeft', 'Set Panel Alignment to Left'), localize('alignPanelLeftShort', "Left"), 'left'),
+	createAlignmentPanelActionConfig(AlignPanelActionId.RIGHT, 'View: Set Panel Alignment to Right', localize('alignPanelRight', 'Set Panel Alignment to Right'), localize('alignPanelRightShort', "Right"), 'right'),
+	createAlignmentPanelActionConfig(AlignPanelActionId.CENTER, 'View: Set Panel Alignment to Center', localize('alignPanelCenter', 'Set Panel Alignment to Center'), localize('alignPanelCenterShort', "Center"), 'center'),
+	createAlignmentPanelActionConfig(AlignPanelActionId.JUSTIFY, 'View: Set Panel Alignment to Justify', localize('alignPanelJustify', 'Set Panel Alignment to Justify'), localize('alignPanelJustifyShort', "Justify"), 'justify'),
 ];
 
 const alignmentByActionId = new Map(AlignPanelActionConfigs.map(config => [config.id, config.value]));
@@ -148,7 +148,7 @@ PositionPanelActionConfigs.forEach(positionPanelAction => {
 			const notificationService = accessor.get(INotificationService);
 			const commandService = accessor.get(ICommandService);
 
-			notificationService.warn(localize('deprecatedPanelMoveMessage', "Moving the panel with this command has been deprecated in favor of \"Move Views From Panel To Side Panel\" and \"Move Views From Side Panel To Panel\" for similar functionality."));
+			notificationService.warn(localize('deprecatedPanelMoveMessage', "Moving the panel with this command has been deprecated in favor of the \"Move Views From Panel To Side Panel\" and \"Move Views From Side Panel To Panel\" commands."));
 			if (positionPanelAction.value === Position.BOTTOM) {
 				commandService.executeCommand('workbench.action.moveSidePanelToPanel');
 			} else {
@@ -330,16 +330,26 @@ registerAction2(class extends Action2 {
 			category: CATEGORIES.View,
 			f1: true,
 			icon: maximizeIcon,
+			// the workbench grid currently prevents us from supporting panel maximization with non-center panel alignment
+			precondition: PanelAlignmentContext.isEqualTo('center'),
 			toggled: { condition: PanelMaximizedContext, icon: restoreIcon, tooltip: localize('minimizePanel', "Restore Panel Size") },
 			menu: [{
 				id: MenuId.PanelTitle,
 				group: 'navigation',
-				order: 1
+				order: 1,
+				// the workbench grid currently prevents us from supporting panel maximization with non-center panel alignment
+				when: PanelAlignmentContext.isEqualTo('center')
 			}]
 		});
 	}
 	run(accessor: ServicesAccessor) {
 		const layoutService = accessor.get(IWorkbenchLayoutService);
+		const notificationService = accessor.get(INotificationService);
+		if (layoutService.getPanelAlignment() !== 'center') {
+			notificationService.warn(localize('panelMaxNotSupported', "Maximizing the panel is only supported when it is center aligned."));
+			return;
+		}
+
 		if (!layoutService.isVisible(Parts.PANEL_PART)) {
 			layoutService.setPartHidden(false, Parts.PANEL_PART);
 			// If the panel is not already maximized, maximize it
@@ -383,7 +393,7 @@ MenuRegistry.appendMenuItems([
 			command: {
 				id: TogglePanelAction.ID,
 				title: localize({ key: 'miShowPanel', comment: ['&& denotes a mnemonic'] }, "Show &&Panel"),
-				toggled: ActivePanelContext
+				toggled: PanelVisibleContext
 			},
 			order: 5
 		}
@@ -394,7 +404,7 @@ MenuRegistry.appendMenuItems([
 			command: {
 				id: TogglePanelAction.ID,
 				title: localize({ key: 'miShowPanel', comment: ['&& denotes a mnemonic'] }, "Show &&Panel"),
-				toggled: ActivePanelContext
+				toggled: PanelVisibleContext
 			},
 			order: 4
 		}
@@ -412,12 +422,38 @@ MenuRegistry.appendMenuItems([
 	}
 ]);
 
+class MoveViewsBetweenPanelsAction extends Action2 {
+	constructor(private readonly source: ViewContainerLocation, private readonly destination: ViewContainerLocation, desc: Readonly<IAction2Options>) {
+		super(desc);
+	}
+
+	run(accessor: ServicesAccessor, ...args: any[]): void {
+		const viewDescriptorService = accessor.get(IViewDescriptorService);
+		const layoutService = accessor.get(IWorkbenchLayoutService);
+		const viewsService = accessor.get(IViewsService);
+
+		const srcContainers = viewDescriptorService.getViewContainersByLocation(this.source);
+		const destContainers = viewDescriptorService.getViewContainersByLocation(this.destination);
+
+		if (srcContainers.length) {
+			const activeViewContainer = viewsService.getVisibleViewContainer(this.source);
+
+			srcContainers.forEach(viewContainer => viewDescriptorService.moveViewContainerToLocation(viewContainer, this.destination));
+			layoutService.setPartHidden(false, this.destination === ViewContainerLocation.Panel ? Parts.PANEL_PART : Parts.AUXILIARYBAR_PART);
+
+			if (activeViewContainer && destContainers.length === 0) {
+				viewsService.openViewContainer(activeViewContainer.id, true);
+			}
+		}
+	}
+}
+
 // --- Move Panel Views To Side Panel
 
-export class MovePanelToSidePanelAction extends Action2 {
+export class MovePanelToSidePanelAction extends MoveViewsBetweenPanelsAction {
 	static readonly ID = 'workbench.action.movePanelToSidePanel';
 	constructor() {
-		super({
+		super(ViewContainerLocation.Panel, ViewContainerLocation.AuxiliaryBar, {
 			id: MovePanelToSidePanelAction.ID,
 			title: {
 				value: localize('movePanelToSidePanel', "Move Views From Panel To Side Panel"),
@@ -433,29 +469,17 @@ export class MovePanelToSidePanelAction extends Action2 {
 			}]
 		});
 	}
-	run(accessor: ServicesAccessor, ...args: any[]): void {
-		const viewDescriptorService = accessor.get(IViewDescriptorService);
-		const layoutService = accessor.get(IWorkbenchLayoutService);
-
-		const panelContainers = viewDescriptorService.getViewContainersByLocation(ViewContainerLocation.Panel);
-
-		if (panelContainers.length) {
-			panelContainers.forEach(viewContainer => viewDescriptorService.moveViewContainerToLocation(viewContainer, ViewContainerLocation.AuxiliaryBar));
-			layoutService.setPartHidden(false, Parts.AUXILIARYBAR_PART);
-		}
-	}
-
 }
 
 registerAction2(MovePanelToSidePanelAction);
 
 // --- Move Panel Views To Side Panel
 
-export class MoveSidePanelToPanelAction extends Action2 {
+export class MoveSidePanelToPanelAction extends MoveViewsBetweenPanelsAction {
 	static readonly ID = 'workbench.action.moveSidePanelToPanel';
 
 	constructor() {
-		super({
+		super(ViewContainerLocation.AuxiliaryBar, ViewContainerLocation.Panel, {
 			id: MoveSidePanelToPanelAction.ID,
 			title: {
 				value: localize('moveSidePanelToPanel', "Move Views From Side Panel To Panel"),
@@ -465,17 +489,5 @@ export class MoveSidePanelToPanelAction extends Action2 {
 			f1: true
 		});
 	}
-	run(accessor: ServicesAccessor, ...args: any[]): void {
-		const viewDescriptorService = accessor.get(IViewDescriptorService);
-		const layoutService = accessor.get(IWorkbenchLayoutService);
-
-		const auxiliaryBarContainers = viewDescriptorService.getViewContainersByLocation(ViewContainerLocation.AuxiliaryBar);
-
-		if (auxiliaryBarContainers.length) {
-			auxiliaryBarContainers.forEach(viewContainer => viewDescriptorService.moveViewContainerToLocation(viewContainer, ViewContainerLocation.Panel));
-			layoutService.setPartHidden(false, Parts.PANEL_PART);
-		}
-	}
-
 }
 registerAction2(MoveSidePanelToPanelAction);

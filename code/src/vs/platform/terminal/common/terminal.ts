@@ -89,7 +89,6 @@ export const enum TerminalSettingId {
 	WordSeparators = 'terminal.integrated.wordSeparators',
 	EnableFileLinks = 'terminal.integrated.enableFileLinks',
 	UnicodeVersion = 'terminal.integrated.unicodeVersion',
-	ExperimentalLinkProvider = 'terminal.integrated.experimentalLinkProvider',
 	LocalEchoLatencyThreshold = 'terminal.integrated.localEchoLatencyThreshold',
 	LocalEchoEnabled = 'terminal.integrated.localEchoEnabled',
 	LocalEchoExcludePrograms = 'terminal.integrated.localEchoExcludePrograms',
@@ -379,9 +378,9 @@ export interface IShellLaunchConfig {
 	name?: string;
 
 	/**
-	 * An string to follow the name of the terminal with, indicating a special kind of terminal
+	 * A string to follow the name of the terminal with, indicating the type of terminal
 	 */
-	description?: string;
+	type?: 'Task' | 'Local';
 
 	/**
 	 * The shell executable (bash, cmd, etc.).
@@ -546,32 +545,6 @@ export interface IProcessReadyEvent {
 	pid: number,
 	cwd: string,
 	requiresWindowsMode?: boolean
-}
-
-/**
- * Primarily driven by the shell integration feature, a terminal capability is the mechanism for
- * progressively enhancing various features that may not be supported in all terminals/shells.
- */
-export const enum TerminalCapability {
-	/**
-	 * The terminal can reliably detect the current working directory as soon as the change happens
-	 * within the buffer.
-	 */
-	CwdDetection,
-	/**
-	 * The terminal can reliably detect the current working directory when requested.
-	 */
-	NaiveCwdDetection,
-	/**
-	 * The terminal can reliably identify prompts, commands and command outputs within the buffer.
-	 */
-	CommandDetection,
-	/**
-	 * The terminal can often identify prompts, commands and command outputs within the buffer. It
-	 * may not be so good at remembering the position of commands that ran in the past. This state
-	 * may be enabled when something goes wrong or when using conpty for example.
-	 */
-	PartialCommandDetection
 }
 
 /**

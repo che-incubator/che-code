@@ -12,7 +12,7 @@ import { URI } from 'vs/base/common/uri';
 import { toFormattedString } from 'vs/base/common/jsonFormatter';
 import { ITextModel, ITextBufferFactory, DefaultEndOfLine, ITextBuffer } from 'vs/editor/common/model';
 import { IModelService } from 'vs/editor/common/services/model';
-import { ILanguageSelection, ILanguageService } from 'vs/editor/common/services/language';
+import { ILanguageSelection, ILanguageService } from 'vs/editor/common/languages/language';
 import { ITextModelContentProvider, ITextModelService } from 'vs/editor/common/services/resolverService';
 import * as nls from 'vs/nls';
 import { Extensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
@@ -66,11 +66,11 @@ import 'vs/workbench/contrib/notebook/browser/controller/executeActions';
 import 'vs/workbench/contrib/notebook/browser/controller/layoutActions';
 import 'vs/workbench/contrib/notebook/browser/controller/editActions';
 import 'vs/workbench/contrib/notebook/browser/controller/apiActions';
+import 'vs/workbench/contrib/notebook/browser/controller/foldingController';
 
 // Editor Contribution
 import 'vs/workbench/contrib/notebook/browser/contrib/clipboard/notebookClipboard';
 import 'vs/workbench/contrib/notebook/browser/contrib/find/findController';
-import 'vs/workbench/contrib/notebook/browser/contrib/fold/folding';
 import 'vs/workbench/contrib/notebook/browser/contrib/format/formatting';
 import 'vs/workbench/contrib/notebook/browser/contrib/gettingStarted/notebookGettingStarted';
 import 'vs/workbench/contrib/notebook/browser/contrib/layout/layoutActions';

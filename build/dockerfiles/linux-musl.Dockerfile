@@ -7,7 +7,7 @@
 #
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:14.16.0-alpine3.13 as linux-musl-builder
+FROM docker.io/node:14.18.3-alpine3.15 as linux-musl-builder
 RUN apk add --update --no-cache \
     # Download some files
     curl \
@@ -45,7 +45,7 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -
 RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
-RUN chmod a+x /checode/out/vs/server/main.js \
+RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # Compile test suites
@@ -64,7 +64,7 @@ RUN [[ $(uname -m) == "x86_64" ]] && \
 
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-alpine" \
-    ./resources/server/test/test-web-integration.sh --browser chromium
+    ./scripts/test-web-integration.sh --browser chromium
 
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-alpine" \

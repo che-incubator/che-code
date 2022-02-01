@@ -92,6 +92,83 @@
 		],
 		"code-import-patterns": [
 			"warn",
+			{
+				// imports that are allowed in all files of layers:
+				// - browser
+				// - electron-sandbox
+				// - electron-browser
+				"when": "hasBrowser",
+				"allow": [
+					"vs/css!./**/*"
+				]
+			},
+			{
+				// imports that are allowed in all files of layers:
+				// - node
+				// - electron-browser
+				// - electron-main
+				"when": "hasNode",
+				"allow": [
+					"@microsoft/applicationinsights-web",
+					"@parcel/watcher",
+					"@vscode/sqlite3",
+					"@vscode/vscode-languagedetection",
+					"@vscode/ripgrep",
+					"@vscode/iconv-lite-umd",
+					"applicationinsights",
+					"assert",
+					"child_process",
+					"console",
+					"cookie",
+					"crypto",
+					"electron",
+					"events",
+					"fs",
+					"graceful-fs",
+					"http",
+					"https",
+					"minimist",
+					"native-keymap",
+					"native-watchdog",
+					"net",
+					"node-pty",
+					"os",
+					"path",
+					"perf_hooks",
+					"spdlog",
+					"stream",
+					"string_decoder",
+					"tas-client-umd",
+					"tls",
+					"url",
+					"util",
+					"v8-inspect-profiler",
+					"vscode-proxy-agent",
+					"vscode-regexpp",
+					"vscode-textmate",
+					"windows-process-tree",
+					"worker_threads",
+					"xterm",
+					"xterm-addon-search",
+					"xterm-addon-serialize",
+					"xterm-addon-unicode11",
+					"xterm-addon-webgl",
+					"xterm-headless",
+					"yauzl",
+					"yazl",
+					"zlib"
+				]
+			},
+			{
+				// imports that are allowed in all /test/ files
+				"when": "test",
+				"allow": [
+					"assert",
+					"sinon",
+					"sinon-test"
+				]
+			},
+
 			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			// !!! Do not relax these rules !!!
 			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -154,37 +231,24 @@
 				]
 			},
 			{
+				"target": "src/vs/editor/contrib/*/~",
+				"restrictions": [
+					"vs/base/~",
+					"vs/base/parts/*/~",
+					"vs/platform/*/~",
+					"vs/editor/~",
+					"vs/editor/contrib/*/~"
+				]
+			},
+			{
 				"target": "src/vs/editor/standalone/~",
 				"restrictions": [
 					"vs/base/~",
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/standalone/~",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" }
-				]
-			},
-			{
-				"target": "src/vs/editor/contrib/*/test/**",
-				"layer": "browser",
-				"test": true,
-				"restrictions": [
-					"vs/base/~",
-					"vs/base/parts/*/~",
-					"vs/platform/*/~",
-					"vs/editor/~",
-					"vs/editor/contrib/**"
-				]
-			},
-			{
-				"target": "src/vs/editor/contrib/*/!(test){,/**}",
-				"layer": "browser",
-				"restrictions": [
-					"vs/base/~",
-					"vs/base/parts/*/~",
-					"vs/platform/*/~",
-					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}"
+					"vs/editor/contrib/*/~",
+					"vs/editor/standalone/~"
 				]
 			},
 			{
@@ -195,7 +259,7 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}"
+					"vs/editor/contrib/*/~"
 				]
 			},
 			{
@@ -215,7 +279,7 @@
 					"vs/base/~",
 					"vs/base/parts/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
+					"vs/editor/contrib/*/~",
 					"vs/editor/standalone/~",
 					"vs/editor/*"
 				]
@@ -227,15 +291,11 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
+					"vs/editor/contrib/*/~",
 					"vs/workbench/~",
 					"vs/workbench/services/*/~",
 					"assert",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" },
-					{ "when": "hasBrowser", "pattern": "vs/workbench/workbench.web.api" },
-					{ "when": "test", "pattern": "vscode" }, // TODO@layers
-					{ "when": "test", "pattern": "vs/workbench/api/~" }, // TODO@layers
-					{ "when": "test", "pattern": "vs/workbench/contrib/*/~" }, // TODO@layers
-					{ "when": "test", "pattern": "vs/workbench/workbench.desktop.main" } // TODO@layers
+					{ "when": "test", "pattern": "vs/workbench/contrib/*/~" } // TODO@layers
 				]
 			},
 			{
@@ -246,11 +306,11 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
+					"vs/editor/contrib/*/~",
 					"vs/workbench/api/~",
 					"vs/workbench/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/contrib/*/~",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" }
+					"vs/workbench/contrib/*/~"
 				]
 			},
 			{
@@ -260,11 +320,9 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
+					"vs/editor/contrib/*/~",
 					"vs/workbench/~",
-					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" },
-					{ "when": "hasBrowser", "pattern": "vs/workbench/workbench.web.api" },
 					{ "when": "test", "pattern": "vs/workbench/contrib/*/~" }, // TODO@layers
 					"tas-client-umd", // node module allowed even in /common/
 					"vscode-textmate", // node module allowed even in /common/
@@ -273,18 +331,17 @@
 				]
 			},
 			{
-				// TODO@layers `contrib/welcome` does its own special layering with sub-layers
-				"target": "src/vs/workbench/{contrib,contrib/welcome}/*/~",
+				"target": "src/vs/workbench/contrib/*/~",
 				"restrictions": [
 					"vs/base/~",
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
+					"vs/editor/contrib/*/~",
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" },
+					"vs/workbench/contrib/*/~",
 					{ "when": "hasBrowser", "pattern": "xterm" }, // node module allowed even in /browser/
 					{ "when": "hasBrowser", "pattern": "xterm-addon-*" }, // node module allowed even in /browser/
 					{ "when": "hasBrowser", "pattern": "vscode-textmate" } // node module allowed even in /browser/
@@ -297,14 +354,13 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
+					"vs/editor/contrib/*/~",
 					"vs/code/~",
-					{ "when": "hasBrowser", "pattern": "vs/editor/contrib/*/!(test){,/**}" },
-					{ "when": "hasBrowser", "pattern": "vs/workbench/workbench.web.api" }
+					{ "when": "hasBrowser", "pattern": "vs/workbench/workbench.web.main" }
 				]
 			},
 			{
-				"target": "src/vs/server/**",
-				"layer": "node",
+				"target": "src/vs/server/~",
 				"restrictions": [
 					"vs/base/~",
 					"vs/base/parts/*/~",
@@ -312,11 +368,8 @@
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
-					"vs/server/**",
-					"@vscode/*",
-					"@parcel/*",
-					"*" // node modules
+					"vs/workbench/contrib/*/~",
+					"vs/server/~"
 				]
 			},
 			{
@@ -327,12 +380,12 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
+					"vs/editor/contrib/*/~",
 					"vs/editor/editor.all",
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~"
+					"vs/workbench/contrib/*/~"
 				]
 			},
 			{
@@ -343,30 +396,13 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
+					"vs/editor/contrib/*/~",
 					"vs/editor/editor.all",
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
+					"vs/workbench/contrib/*/~",
 					"vs/workbench/workbench.common.main"
-				]
-			},
-			{
-				"target": "src/vs/workbench/workbench.web.api.ts",
-				"layer": "browser",
-				"restrictions": [
-					"vs/base/~",
-					"vs/base/parts/*/~",
-					"vs/platform/*/~",
-					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
-					"vs/editor/editor.all",
-					"vs/workbench/~",
-					"vs/workbench/api/~",
-					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
-					"vs/workbench/workbench.web.main"
 				]
 			},
 			{
@@ -377,12 +413,12 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
+					"vs/editor/contrib/*/~",
 					"vs/editor/editor.all",
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
+					"vs/workbench/contrib/*/~",
 					"vs/workbench/workbench.common.main",
 					"vs/workbench/workbench.sandbox.main"
 				]
@@ -395,18 +431,18 @@
 					"vs/base/parts/*/~",
 					"vs/platform/*/~",
 					"vs/editor/~",
-					"vs/editor/contrib/*/!(test){,/**}",
+					"vs/editor/contrib/*/~",
 					"vs/editor/editor.all",
 					"vs/workbench/~",
 					"vs/workbench/api/~",
 					"vs/workbench/services/*/~",
-					"vs/workbench/{contrib,contrib/welcome}/*/~",
+					"vs/workbench/contrib/*/~",
 					"vs/workbench/workbench.common.main",
 					"vs/workbench/workbench.sandbox.main"
 				]
 			},
 			{
-				"target": "src/vs/workbench/{workbench.desktop.main.nls.js,workbench.web.api.nls.js}",
+				"target": "src/vs/workbench/{workbench.desktop.main.nls.js,workbench.web.main.nls.js}",
 				"restrictions": []
 			},
 			{
@@ -418,7 +454,7 @@
 				"restrictions": []
 			},
 			{
-				"target": "src/{bootstrap-amd.js,bootstrap-fork.js,bootstrap-node.js,bootstrap-window.js,bootstrap.js,cli.js,main.js}",
+				"target": "src/{bootstrap-amd.js,bootstrap-fork.js,bootstrap-node.js,bootstrap-window.js,bootstrap.js,cli.js,main.js,server-cli.js,server-main.js}",
 				"restrictions": []
 			},
 			{

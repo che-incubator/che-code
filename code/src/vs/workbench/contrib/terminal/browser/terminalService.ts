@@ -11,7 +11,7 @@ import { dispose, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import { isMacintosh, isWeb } from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
-import { FindReplaceState } from 'vs/editor/contrib/find/findState';
+import { FindReplaceState } from 'vs/editor/contrib/find/browser/findState';
 import * as nls from 'vs/nls';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
@@ -22,7 +22,7 @@ import { iconForeground } from 'vs/platform/theme/common/colorRegistry';
 import { getIconRegistry } from 'vs/platform/theme/common/iconRegistry';
 import { ColorScheme } from 'vs/platform/theme/common/theme';
 import { IThemeService, Themable, ThemeIcon } from 'vs/platform/theme/common/themeService';
-import { VirtualWorkspaceContext } from 'vs/workbench/browser/contextkeys';
+import { VirtualWorkspaceContext } from 'vs/workbench/common/contextkeys';
 import { IEditableData, IViewsService } from 'vs/workbench/common/views';
 import { ICreateTerminalOptions, IRequestAddInstanceToGroupEvent, ITerminalEditorService, ITerminalExternalLinkProvider, ITerminalFindHost, ITerminalGroup, ITerminalGroupService, ITerminalInstance, ITerminalInstanceHost, ITerminalInstanceService, ITerminalLocationOptions, ITerminalService, ITerminalServiceNativeDelegate, TerminalConnectionState, TerminalEditorLocation } from 'vs/workbench/contrib/terminal/browser/terminal';
 import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/terminalConfigHelper';
@@ -53,6 +53,8 @@ export class TerminalService implements ITerminalService {
 	private _hostActiveTerminals: Map<ITerminalInstanceHost, ITerminalInstance | undefined> = new Map();
 
 	private _terminalEditorActive: IContextKey<boolean>;
+
+	private _escapeSequenceLoggingEnabled: boolean = false;
 
 	private _isShuttingDown: boolean = false;
 	private _backgroundedTerminalInstances: ITerminalInstance[] = [];
@@ -116,6 +118,8 @@ export class TerminalService implements ITerminalService {
 	get onDidChangeInstanceDimensions(): Event<ITerminalInstance> { return this._onDidChangeInstanceDimensions.event; }
 	private readonly _onDidMaxiumumDimensionsChange = new Emitter<ITerminalInstance>();
 	get onDidMaximumDimensionsChange(): Event<ITerminalInstance> { return this._onDidMaxiumumDimensionsChange.event; }
+	private readonly _onDidChangeInstanceCapability = new Emitter<ITerminalInstance>();
+	get onDidChangeInstanceCapability(): Event<ITerminalInstance> { return this._onDidChangeInstanceCapability.event; }
 	private readonly _onDidChangeInstances = new Emitter<void>();
 	get onDidChangeInstances(): Event<void> { return this._onDidChangeInstances.event; }
 	private readonly _onDidChangeInstanceTitle = new Emitter<ITerminalInstance | undefined>();
@@ -169,6 +173,7 @@ export class TerminalService implements ITerminalService {
 		this._forwardInstanceHostEvents(this._terminalEditorService);
 		this._terminalGroupService.onDidChangeActiveGroup(this._onDidChangeActiveGroup.fire, this._onDidChangeActiveGroup);
 		this._terminalInstanceService.onDidCreateInstance(instance => {
+			instance.setEscapeSequenceLogging(this._escapeSequenceLoggingEnabled);
 			this._initInstanceListeners(instance);
 			this._onDidCreateInstance.fire(instance);
 		});
@@ -293,6 +298,7 @@ export class TerminalService implements ITerminalService {
 			this._onDidFocusInstance.fire(instance);
 			this._evaluateActiveInstance(host, instance);
 		});
+		host.onDidChangeInstanceCapability(this._onDidChangeInstanceCapability.fire, this.onDidChangeInstanceCapability);
 		this._hostActiveTerminals.set(host, undefined);
 	}
 
@@ -447,6 +453,17 @@ export class TerminalService implements ITerminalService {
 		return reconnectCounter;
 	}
 
+	async toggleEscapeSequenceLogging(): Promise<void> {
+		if (this.instances.length === 0) {
+			return;
+		}
+		this._escapeSequenceLoggingEnabled = await this.instances[0].toggleEscapeSequenceLogging();
+		this._toggleDevTools(this._escapeSequenceLoggingEnabled);
+		for (let i = 1; i < this.instances.length; i++) {
+			this.instances[i].setEscapeSequenceLogging(this._escapeSequenceLoggingEnabled);
+		}
+	}
+
 	private _attachProcessLayoutListeners(): void {
 		this.onDidChangeActiveGroup(() => this._saveState());
 		this.onDidChangeActiveInstance(() => this._saveState());
@@ -555,13 +572,14 @@ export class TerminalService implements ITerminalService {
 		this._nativeDelegate = nativeDelegate;
 	}
 
-	async toggleDevTools(open?: boolean): Promise<void> {
+	private async _toggleDevTools(open?: boolean): Promise<void> {
 		if (open) {
 			this._nativeDelegate?.openDevTools();
 		} else {
 			this._nativeDelegate?.toggleDevTools();
 		}
 	}
+
 	private _shouldReviveProcesses(reason: ShutdownReason): boolean {
 		if (!this._configHelper.config.enablePersistentSessions) {
 			return false;
@@ -926,7 +944,7 @@ export class TerminalService implements ITerminalService {
 
 		const splitActiveTerminal = typeof options?.location === 'object' && 'splitActiveTerminal' in options.location ? options.location.splitActiveTerminal : typeof options?.location === 'object' ? 'parentTerminal' in options.location : false;
 
-		this._updateCwdForSplit(shellLaunchConfig, splitActiveTerminal, options);
+		this._resolveCwd(shellLaunchConfig, splitActiveTerminal, options);
 
 		// Launch the contributed profile
 		if (contributedProfile) {
@@ -972,7 +990,7 @@ export class TerminalService implements ITerminalService {
 		return this._createTerminal(shellLaunchConfig, location, options);
 	}
 
-	private async _updateCwdForSplit(shellLaunchConfig: IShellLaunchConfig, splitActiveTerminal: boolean, options?: ICreateTerminalOptions): Promise<void> {
+	private async _resolveCwd(shellLaunchConfig: IShellLaunchConfig, splitActiveTerminal: boolean, options?: ICreateTerminalOptions): Promise<void> {
 		let cwd = shellLaunchConfig.cwd;
 		if (!cwd) {
 			if (options?.cwd) {
@@ -1071,10 +1089,10 @@ export class TerminalService implements ITerminalService {
 		if (typeof shellLaunchConfig.cwd !== 'string' && shellLaunchConfig.cwd?.scheme === Schemas.file) {
 			if (VirtualWorkspaceContext.getValue(this._contextKeyService)) {
 				shellLaunchConfig.initialText = formatMessageForTerminal(nls.localize('localTerminalVirtualWorkspace', "⚠ : This shell is open to a {0}local{1} folder, NOT to the virtual folder", '\x1b[3m', '\x1b[23m'), true);
-				shellLaunchConfig.description = nls.localize('localTerminalDescription', "Local");
+				shellLaunchConfig.type = 'Local';
 			} else if (this._remoteAgentService.getConnection()) {
 				shellLaunchConfig.initialText = formatMessageForTerminal(nls.localize('localTerminalRemote', "⚠ : This shell is running on your {0}local{1} machine, NOT on the connected remote machine", '\x1b[3m', '\x1b[23m'), true);
-				shellLaunchConfig.description = nls.localize('localTerminalDescription', "Local");
+				shellLaunchConfig.type = 'Local';
 			}
 		}
 	}

@@ -7,12 +7,12 @@ import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { IReference, dispose, Disposable } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import { URI, UriComponents } from 'vs/base/common/uri';
-import { ITextModel } from 'vs/editor/common/model';
-import { IModelService, shouldSynchronizeModel } from 'vs/editor/common/services/model';
+import { ITextModel, shouldSynchronizeModel } from 'vs/editor/common/model';
+import { IModelService } from 'vs/editor/common/services/model';
 import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { IFileService, FileOperation } from 'vs/platform/files/common/files';
 import { MainThreadDocumentsAndEditors } from 'vs/workbench/api/browser/mainThreadDocumentsAndEditors';
-import { ExtHostContext, ExtHostDocumentsShape, IExtHostContext, MainThreadDocumentsShape } from 'vs/workbench/api/common/extHost.protocol';
+import { ExtHostContext, ExtHostDocumentsShape, MainThreadDocumentsShape } from 'vs/workbench/api/common/extHost.protocol';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { toLocalResource, extUri, IExtUri } from 'vs/base/common/resources';
@@ -21,6 +21,7 @@ import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity'
 import { Emitter } from 'vs/base/common/event';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
 import { ResourceMap } from 'vs/base/common/map';
+import { IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
 
 export class BoundModelReferenceCollection {
 

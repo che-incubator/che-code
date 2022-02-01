@@ -65,7 +65,7 @@ export class DevWorkspaceDevfileHandlerImpl implements DevfileHandler {
         exposure = EndpointExposure.FROM_DEVFILE_NONE;
       }
 
-      // category ? is is part of eclipse che-theia
+      // category ? is is part of eclipse che-code
       let category;
       const isPartOfCheCode =
         (exposedEndpoint.componentAttributes as any)?.['app.kubernetes.io/part-of'] === 'che-code.eclipse.org';

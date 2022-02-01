@@ -10,11 +10,10 @@ import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
-import { EncodedTokenizationResult } from 'vs/editor/common/core/token';
 import { ICommand, ICursorStateComputerData, IEditOperationBuilder } from 'vs/editor/common/editorCommon';
 import { EndOfLinePreference, EndOfLineSequence, ITextModel } from 'vs/editor/common/model';
 import { TextModel } from 'vs/editor/common/model/textModel';
-import { IState, ITokenizationSupport, MetadataConsts, StandardTokenType, TokenizationRegistry } from 'vs/editor/common/languages';
+import { EncodedTokenizationResult, IState, ITokenizationSupport, MetadataConsts, StandardTokenType, TokenizationRegistry } from 'vs/editor/common/languages';
 import { IndentAction, IndentationRule } from 'vs/editor/common/languages/languageConfiguration';
 import { LanguageConfigurationRegistry } from 'vs/editor/common/languages/languageConfigurationRegistry';
 import { NullState } from 'vs/editor/common/languages/nullMode';
@@ -23,8 +22,8 @@ import { IRelaxedTextModelCreationOptions, createTextModel, instantiateTextModel
 import { MockMode } from 'vs/editor/test/common/mocks/mockMode';
 import { javascriptOnEnterRules } from 'vs/editor/test/common/modes/supports/javascriptOnEnterRules';
 import { ViewModel } from 'vs/editor/common/viewModel/viewModelImpl';
-import { OutgoingViewModelEventKind } from 'vs/editor/common/viewModel/viewModelEventDispatcher';
-import { ILanguageService } from 'vs/editor/common/services/language';
+import { OutgoingViewModelEventKind } from 'vs/editor/common/viewModelEventDispatcher';
+import { ILanguageService } from 'vs/editor/common/languages/language';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { ModesRegistry } from 'vs/editor/common/languages/modesRegistry';
 
@@ -4977,7 +4976,7 @@ suite('autoClosingPairs', () => {
 	test('issue #132912: quotes should not auto-close if they are closing a string', () => {
 		const disposables = new DisposableStore();
 		const instantiationService = createCodeEditorServices(disposables);
-		const languageService = instantiationService.invokeFunction((accessor) => accessor.get(ILanguageService));
+		const languageService = instantiationService.get(ILanguageService);
 		const mode = disposables.add(new AutoClosingMode(languageService));
 		withTestCodeEditor(
 			disposables.add(instantiateTextModel(instantiationService, 'const t2 = `something ${t1}', mode.languageId)),

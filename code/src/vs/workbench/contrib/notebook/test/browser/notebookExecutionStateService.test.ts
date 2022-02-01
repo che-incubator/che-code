@@ -15,7 +15,7 @@ import { insertCellAtIndex } from 'vs/workbench/contrib/notebook/browser/control
 import { NotebookExecutionService } from 'vs/workbench/contrib/notebook/browser/notebookExecutionServiceImpl';
 import { NotebookExecutionStateService } from 'vs/workbench/contrib/notebook/browser/notebookExecutionStateServiceImpl';
 import { NotebookKernelService } from 'vs/workbench/contrib/notebook/browser/notebookKernelServiceImpl';
-import { NotebookViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/notebookViewModel';
+import { NotebookViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/notebookViewModelImpl';
 import { NotebookTextModel } from 'vs/workbench/contrib/notebook/common/model/notebookTextModel';
 import { CellEditType, CellKind, IOutputDto, NotebookCellMetadata } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { INotebookExecutionService } from 'vs/workbench/contrib/notebook/common/notebookExecutionService';
@@ -149,12 +149,8 @@ class TestNotebookKernel implements INotebookKernel {
 	preloadUris: URI[] = [];
 	preloadProvides: string[] = [];
 	supportedLanguages: string[] = [];
-	executeNotebookCellsRequest(): Promise<void> {
-		throw new Error('Method not implemented.');
-	}
-	cancelNotebookCellExecution(): Promise<void> {
-		throw new Error('Method not implemented.');
-	}
+	async executeNotebookCellsRequest(): Promise<void> { }
+	async cancelNotebookCellExecution(): Promise<void> { }
 
 	constructor(opts?: { languages?: string[], id?: string }) {
 		this.supportedLanguages = opts?.languages ?? [PLAINTEXT_LANGUAGE_ID];

@@ -11,17 +11,17 @@
 /* eslint-disable header/header */
 
 /**
- * Categorize the endpoint, by specifying if definition comes from a plug-ins
- * (meta.yaml devfile v1  definition) or from devfile itself
+ * Categorize the endpoint, by specifying if definition comes from a plug-in
+ * or from devfile itself
  */
 export enum EndpointCategory {
   /**
-   * Defined in a plug-in (like theia, etc.)
+   * Brought by che-code/che/devworkspace operator
    */
   PLUGINS,
 
   /**
-   * Defined in the user devfile (not linked through a chePlugin/cheEditor)
+   * Defined by the user in its devfile
    */
   USER,
 }

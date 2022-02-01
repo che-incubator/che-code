@@ -58,6 +58,12 @@ export interface ITerminalProfileResolverService {
 	createProfileFromShellAndShellArgs(shell?: unknown, shellArgs?: unknown): Promise<ITerminalProfile | string>;
 }
 
+/*
+ * When there were shell integration args injected
+ * and createProcess returns an error, this exit code will be used.
+ */
+export const ShellIntegrationExitCode = 633;
+
 export interface IRegisterContributedProfileArgs {
 	extensionIdentifier: string, id: string, title: string, options: ICreateContributedTerminalProfileOptions;
 }
@@ -263,7 +269,6 @@ export interface ITerminalConfiguration {
 	wordSeparators: string;
 	enableFileLinks: boolean;
 	unicodeVersion: '6' | '11';
-	experimentalLinkProvider: boolean;
 	localEchoLatencyThreshold: number;
 	localEchoExcludePrograms: ReadonlyArray<string>;
 	localEchoEnabled: 'auto' | 'on' | 'off';
@@ -321,11 +326,30 @@ export interface IRemoteTerminalAttachTarget {
 	fixedDimensions: IFixedTerminalDimensions | undefined;
 }
 
-// TODO: Replace IShellIntegration with ITerminalCapabilityStore
 export interface IShellIntegration {
 	capabilities: ITerminalCapabilityStore;
-	// TODO: Fire more fine-grained and stronger typed events
-	readonly onIntegratedShellChange: Event<{ type: string, value: string }>;
+}
+
+export interface ITerminalCommand {
+	command: string;
+	timestamp: number;
+	cwd?: string;
+	exitCode?: number;
+	marker?: IXtermMarker;
+	getOutput(): string | undefined;
+}
+
+/**
+ * A clone of the IMarker from xterm which cannot be imported from common
+ */
+export interface IXtermMarker {
+	readonly id: number;
+	readonly isDisposed: boolean;
+	readonly line: number;
+	dispose(): void;
+	onDispose: {
+		(listener: () => any): { dispose(): void };
+	}
 }
 
 export interface INavigationMode {
@@ -389,6 +413,7 @@ export interface ITerminalProcessManager extends IDisposable {
 	getLatency(): Promise<number>;
 	refreshProperty<T extends ProcessPropertyType>(type: T): Promise<IProcessPropertyMap[T]>;
 	updateProperty<T extends ProcessPropertyType>(property: T, value: IProcessPropertyMap[T]): void;
+	getBackendOS(): Promise<OperatingSystem>;
 }
 
 export const enum ProcessState {
@@ -453,7 +478,7 @@ export const enum TerminalCommandId {
 	KillAll = 'workbench.action.terminal.killAll',
 	QuickKill = 'workbench.action.terminal.quickKill',
 	ConfigureTerminalSettings = 'workbench.action.terminal.openSettings',
-	SelectDetectedLink = 'workbench.action.terminal.selectDetectedLink',
+	OpenDetectedLink = 'workbench.action.terminal.openDetectedLink',
 	OpenWordLink = 'workbench.action.terminal.openWordLink',
 	OpenFileLink = 'workbench.action.terminal.openFileLink',
 	OpenWebLink = 'workbench.action.terminal.openWebLink',
