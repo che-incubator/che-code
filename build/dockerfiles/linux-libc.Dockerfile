@@ -87,15 +87,19 @@ RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
     ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
 
+# use of retry and timeout
+COPY /build/scripts/helper/retry.sh /opt/app-root/src/retry.sh
+RUN chmod u+x /opt/app-root/src/retry.sh
+
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-    ./scripts/test-web-integration.sh --browser chromium
+    /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium
 
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-    yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+    /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
 
 # Store the content of the result
 FROM scratch as linux-libc-content
