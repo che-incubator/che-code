@@ -28,5 +28,9 @@ else
     cd /checode/checode-linux-libc || exit
 fi
 
-# Launch che with a custom connection-token
+# Set the default path to the serverDataFolderName
+# into a persistent volume
+export VSCODE_AGENT_FOLDER=/checode/remote
+
+# Launch che without connection-token, security is managed by Che
 ./node out/server-main.js --port 3100 --without-connection-token

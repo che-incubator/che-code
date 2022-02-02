@@ -1,8 +1,8 @@
 {
     "nameShort": "CheCode",
 	"nameLong": "CheCode",
-	"applicationName": "che-code",
-	"dataFolderName": ".che-code",
+	"serverApplicationName": "che-code",
+	"serverDataFolderName": ".che-code",
 	"win32MutexName": "che-code",
 	"licenseName": "EPL2-0",
 	"win32DirName": "CheCode",
