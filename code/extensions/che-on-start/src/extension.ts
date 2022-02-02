@@ -15,6 +15,12 @@ import * as vscode from 'vscode';
 export async function activate(_context: vscode.ExtensionContext): Promise<void> {
 
   const output = vscode.window.createOutputChannel('Che OnStart');
+
+  // if not in a che context, do nothing
+  if (!process.env.DEVWORKSPACE_ID) {
+    return;
+  }
+
   openTerminalIfNone(output);
   openProjectIfNone(output);
 

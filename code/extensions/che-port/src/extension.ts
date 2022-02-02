@@ -18,6 +18,11 @@ import { PortsPlugin } from './ports-plugin';
 let portsPlugin: PortsPlugin | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // if not in a che context, do nothing
+  if (!process.env.DEVWORKSPACE_ID) {
+    return;
+  }
+
   portsPlugin = new PortsPlugin(context);
   return portsPlugin.start();
 }
