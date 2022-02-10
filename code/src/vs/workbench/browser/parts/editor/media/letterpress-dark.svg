@@ -1,33 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 260 260" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
-    <g transform="matrix(1,0,0,1,-875,-1078)">
-        <g transform="matrix(1,0,0,1,0,999)">
-            <g transform="matrix(1,0,0,1,286,2.27374e-13)">
-                <g opacity="0.3">
-                    <g transform="matrix(1.06122,0,0,1.03704,-43.4898,-1044.78)">
-                        <path d="M841,1317L596,1317L596,1101L841,1101L841,1317ZM601.654,1106.79L601.654,1311.21L835.346,1311.21L835.346,1106.79L601.654,1106.79Z"/>
-                    </g>
-                    <g transform="matrix(1,0,0,1,1,-999)">
-                        <rect x="665" y="1100" width="18" height="216"/>
-                    </g>
-                    <g transform="matrix(1,0,0,1,0,-1000)">
-                        <rect x="701" y="1121" width="70" height="18"/>
-                    </g>
-                    <g transform="matrix(1,0,0,1,0,-860)">
-                        <rect x="701" y="1121" width="70" height="18"/>
-                    </g>
-                    <g transform="matrix(1.25714,0,0,1,-162.757,-965)">
-                        <rect x="701" y="1121" width="70" height="18"/>
-                    </g>
-                    <g transform="matrix(1.25714,0,0,1,-162.757,-930)">
-                        <rect x="701" y="1121" width="70" height="18"/>
-                    </g>
-                    <g transform="matrix(1.25714,0,0,1,-162.757,-895)">
-                        <rect x="701" y="1121" width="70" height="18"/>
-                    </g>
-                </g>
-            </g>
-        </g>
-    </g>
-</svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="clip-rule:evenodd;fill-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.4142" version="1.1" viewBox="0 0 260 260" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><metadata><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/><dc:title/></cc:Work></rdf:RDF></metadata>
+    
+<g transform="matrix(4.6931 0 0 4.6931 -33.349 -13.354)" fill="#fff" style="fill-opacity:.29804;fill:#000"><g transform="translate(4)" style="fill-opacity:.29804;fill:#000"><path transform="matrix(.21308 0 0 .21308 3.1058 2.8455)" d="m131.85 0.72461-112.63 65.234v129.53l112.63 65.234 112.64-65.234v-80.723l-112.64 64.766-84.883-48.809 84.883-48.809 42.707 24.404 69.93-40.361z" style="fill-opacity:.29804;fill:#000;stroke-width:4.6931"/></g></g></svg>

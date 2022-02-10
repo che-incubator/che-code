@@ -4,4 +4,4 @@
 
 ## Features
 
-This extension loads the correct project folder
+This extension provides commands for the remote authority

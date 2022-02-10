@@ -1,0 +1,4 @@
+{
+	"displayName": "Eclipse Che OnStart",
+	"description": "Perform actions at startup of a Che workspace: open a default project, open a default terminal, etc."
+}

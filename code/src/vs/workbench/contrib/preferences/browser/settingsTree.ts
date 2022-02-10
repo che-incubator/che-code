@@ -382,7 +382,7 @@ function getShowAddButtonList(dataElement: SettingsTreeSettingElement, listDispl
 	}
 }
 
-export function resolveSettingsTree(tocData: ITOCEntry<string>, coreSettingsGroups: ISettingsGroup[], logService: ILogService): { tree: ITOCEntry<ISetting>, leftoverSettings: Set<ISetting> } {
+export function resolveSettingsTree(tocData: ITOCEntry<string>, coreSettingsGroups: ISettingsGroup[], logService: ILogService): { tree: ITOCEntry<ISetting>; leftoverSettings: Set<ISetting> } {
 	const allSettings = getFlatSettings(coreSettingsGroups);
 	return {
 		tree: _resolveSettingsTree(tocData, allSettings, logService),
@@ -420,7 +420,7 @@ export async function createTocTreeForExtensionSettings(extensionService: IExten
 
 		const extensionId = group.extensionInfo!.id;
 		const extension = await extensionService.getExtension(extensionId);
-		const extensionName = extension!.displayName ?? extension!.name;
+		const extensionName = extension?.displayName ?? extension?.name ?? extensionId;
 
 		// Each group represents a single category of settings.
 		// If the extension author forgets to specify an id for the group,
@@ -625,7 +625,7 @@ interface ISettingExcludeItemTemplate extends ISettingItemTemplate<void> {
 }
 
 interface ISettingObjectItemTemplate extends ISettingItemTemplate<Record<string, unknown> | undefined> {
-	objectDropdownWidget?: ObjectSettingDropdownWidget,
+	objectDropdownWidget?: ObjectSettingDropdownWidget;
 	objectCheckboxWidget?: ObjectSettingCheckboxWidget;
 	validationErrorMessageElement: HTMLElement;
 }
@@ -779,7 +779,7 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		return syncIgnoredElement;
 	}
 
-	protected createDefaultOverrideIndicator(container: HTMLElement): { element: HTMLElement, label: SimpleIconLabel } {
+	protected createDefaultOverrideIndicator(container: HTMLElement): { element: HTMLElement; label: SimpleIconLabel } {
 		const defaultOverrideIndicator = DOM.append(container, $('span.setting-item-default-overridden'));
 		const defaultOverrideLabel = new SimpleIconLabel(defaultOverrideIndicator);
 		return { element: defaultOverrideIndicator, label: defaultOverrideLabel };
@@ -2130,8 +2130,8 @@ function cleanRenderedMarkdown(element: Node): void {
 }
 
 function fixSettingLinks(text: string, linkify = true): string {
-	return text.replace(/`#([^#]*)#`|'#([^#]*)#'/g, (match) => {
-		const settingKey = match.substring(2, match.length - 2);
+	return text.replace(/`#([^#]*)#`|'#([^#]*)#'/g, (match, backticksGroup, quotesGroup) => {
+		const settingKey: string = backticksGroup ?? quotesGroup;
 		const targetDisplayFormat = settingKeyToDisplayFormat(settingKey);
 		const targetName = `${targetDisplayFormat.category}: ${targetDisplayFormat.label}`;
 		return linkify ?

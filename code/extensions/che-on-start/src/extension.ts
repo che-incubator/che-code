@@ -13,7 +13,30 @@
 import * as vscode from 'vscode';
 
 export async function activate(_context: vscode.ExtensionContext): Promise<void> {
-  const output = vscode.window.createOutputChannel('Che Project');
+
+  const output = vscode.window.createOutputChannel('Che OnStart');
+
+  // if not in a che context, do nothing
+  if (!process.env.DEVWORKSPACE_ID) {
+    return;
+  }
+
+  openTerminalIfNone(output);
+  openProjectIfNone(output);
+
+}
+
+async function openTerminalIfNone(output: vscode.OutputChannel): Promise<void> {
+  // open a new terminal if there is none to always see a terminal
+  if (vscode.window.terminals.length === 0) {
+    output.appendLine('Opening a new terminal....');
+    const terminal = vscode.window.createTerminal('Terminal');
+    terminal.show();
+  }
+}
+
+async function openProjectIfNone(output: vscode.OutputChannel): Promise<void> {
+
   // check if there are projects already defined
   // if true, exit
   const projects = vscode.workspace.workspaceFolders;
@@ -30,7 +53,6 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
   } else {
     output.appendLine('no workspace found');
   }
-
 }
 
 /**
@@ -40,7 +62,7 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
  * if there is only one folder: if there is one code-workspace file inside, return it else return this unique folder
  * if there are more than one folder, create a eclipse-che.code-workspace file and return that folder
 */
-export async function getCheWorkspacePath(output: vscode.OutputChannel): Promise<vscode.Uri | undefined> {
+async function getCheWorkspacePath(output: vscode.OutputChannel): Promise<vscode.Uri | undefined> {
   if (process.env.PROJECTS_ROOT) {
       const projectsRoot = process.env.PROJECTS_ROOT;
       const projectsRootUri = vscode.Uri.file(projectsRoot);
