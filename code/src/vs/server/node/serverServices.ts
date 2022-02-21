@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';
+// import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';
 import { hostname, release } from 'os';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
