@@ -78,7 +78,7 @@ RUN [[ $(uname -m) == "x86_64" ]] &&  yarn playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
     ARCH=$(uname -m) && \
     yum install --nobest -y procps \
-        https://rpmfind.net/linux/epel/8/Everything/${ARCH}/Packages/e/epel-release-8-13.el8.noarch.rpm \
+        http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
         http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
         http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
 
