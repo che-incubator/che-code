@@ -16,7 +16,7 @@ RUN ARCH=$(uname -m) && yum install --installroot /mnt/rootfs libsecret curl mak
                  "https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm" \
                  procps vi nano \
                  "https://rpmfind.net/linux/centos/8-stream/BaseOS/${ARCH}/os/Packages/zsh-5.5.1-6.el8_1.2.x86_64.rpm" \
-                 "https://rpmfind.net/linux/epel/8/Everything/${ARCH}/Packages/e/epel-release-8-13.el8.noarch.rpm" \
+                 "http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm" \
                  "http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm" \
                  "http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm" \
                 libX11-devel libxkbcommon bash tar gzip rsync patch pkg-config glib2-devel coreutils-single glibc-minimal-langpack which util-linux-user --releasever 8 --nodocs -y && yum --installroot /mnt/rootfs clean all
