@@ -139,24 +139,22 @@ export interface IInitializedMarkupMessage extends BaseToWebviewMessage {
 	readonly type: 'initializedMarkup';
 }
 
+export interface ICodeBlockHighlightRequest {
+	readonly id: string;
+	readonly value: string;
+	readonly lang: string;
+}
+
 export interface IRenderedMarkupMessage extends BaseToWebviewMessage {
 	readonly type: 'renderedMarkup';
 	readonly cellId: string;
 	readonly html: string;
-	readonly codeBlocks: ReadonlyArray<{
-		readonly id: string;
-		readonly value: string;
-		readonly lang: string;
-	}>;
+	readonly codeBlocks: ReadonlyArray<ICodeBlockHighlightRequest>;
 }
 
-export interface ITelemetryFoundRenderedMarkdownMath extends BaseToWebviewMessage {
-	readonly type: 'telemetryFoundRenderedMarkdownMath';
-}
-
-export interface ITelemetryFoundUnrenderedMarkdownMath extends BaseToWebviewMessage {
-	readonly type: 'telemetryFoundUnrenderedMarkdownMath';
-	readonly latexDirective: string;
+export interface IRenderedCellOutputMessage extends BaseToWebviewMessage {
+	readonly type: 'renderedCellOutput';
+	readonly codeBlocks: ReadonlyArray<ICodeBlockHighlightRequest>;
 }
 
 export interface IClearMessage {
@@ -427,8 +425,7 @@ export type FromWebviewMessage = WebviewInitialized |
 	ICellDragEndMessage |
 	IInitializedMarkupMessage |
 	IRenderedMarkupMessage |
-	ITelemetryFoundRenderedMarkdownMath |
-	ITelemetryFoundUnrenderedMarkdownMath |
+	IRenderedCellOutputMessage |
 	IDidFindMessage |
 	IDidFindHighlightMessage;
 

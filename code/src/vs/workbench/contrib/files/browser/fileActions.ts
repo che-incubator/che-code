@@ -252,7 +252,7 @@ function getMoveToTrashMessage(distinctElements: ExplorerItem[]): { message: str
 		};
 	}
 
-	if (distinctElements[0].isDirectory) {
+	if (distinctElements[0].isDirectory && !distinctElements[0].isSymbolicLink) {
 		return { message: nls.localize('confirmMoveTrashMessageFolder', "Are you sure you want to delete '{0}' and its contents?", distinctElements[0].name), detail: '' };
 	}
 
@@ -1010,7 +1010,7 @@ export const pasteFileHandler = async (accessor: ServicesAccessor) => {
 			if (element.resource.toString() !== fileToPaste.toString() && resources.isEqualOrParent(element.resource, fileToPaste)) {
 				throw new Error(nls.localize('fileIsAncestor', "File to paste is an ancestor of the destination folder"));
 			}
-			const fileToPasteStat = await fileService.resolve(fileToPaste);
+			const fileToPasteStat = await fileService.stat(fileToPaste);
 
 			// Find target
 			let target: ExplorerItem;
