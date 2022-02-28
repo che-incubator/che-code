@@ -8,8 +8,7 @@
   "license": "MIT",
   "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
   "enabledApiProposals": [
-    "inlayHints",
-    "languageStatus",
+    "markdownStringBaseUri",
     "resolvers",
     "workspaceTrust"
   ],
@@ -36,10 +35,11 @@
     "Programming Languages"
   ],
   "dependencies": {
+    "@vscode/extension-telemetry": "0.4.6",
     "jsonc-parser": "^2.2.1",
     "semver": "5.5.1",
-    "@vscode/extension-telemetry": "0.4.6",
-    "vscode-nls": "^5.0.0"
+    "vscode-nls": "^5.0.0",
+    "vscode-uri": "^3.0.3"
   },
   "devDependencies": {
     "@types/node": "14.x",
@@ -785,6 +785,11 @@
           ],
           "default": "auto",
           "markdownDescription": "%typescript.preferences.quoteStyle%",
+          "markdownEnumDescriptions": [
+            "%typescript.preferences.quoteStyle.auto%",
+            "%typescript.preferences.quoteStyle.single%",
+            "%typescript.preferences.quoteStyle.double%"
+          ],
           "scope": "language-overridable"
         },
         "typescript.preferences.quoteStyle": {
@@ -796,6 +801,11 @@
           ],
           "default": "auto",
           "markdownDescription": "%typescript.preferences.quoteStyle%",
+          "markdownEnumDescriptions": [
+            "%typescript.preferences.quoteStyle.auto%",
+            "%typescript.preferences.quoteStyle.single%",
+            "%typescript.preferences.quoteStyle.double%"
+          ],
           "scope": "language-overridable"
         },
         "javascript.preferences.importModuleSpecifier": {
@@ -878,7 +888,7 @@
             "none"
           ],
           "markdownEnumDescriptions": [
-            "%typescript.preferences.jsxAttributeCompletionStyle.auto%",
+            "%javascript.preferences.jsxAttributeCompletionStyle.auto%",
             "%typescript.preferences.jsxAttributeCompletionStyle.braces%",
             "%typescript.preferences.jsxAttributeCompletionStyle.none%"
           ],
