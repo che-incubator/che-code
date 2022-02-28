@@ -1,7 +1,7 @@
 {
   "name": "che-code",
   "version": "1.65.0",
-  "distro": "ff9dca31105c2ca68ee21915683bafef73b1cab9",
+  "distro": "ef03753457af8baec386fedcaf6a6ae105b12ed8",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -97,7 +97,7 @@
   },
   "devDependencies": {
     "7zip": "0.0.6",
-    "@playwright/test": "1.19.2",
+    "@playwright/test": "1.18.0",
     "@types/applicationinsights": "0.20.0",
     "@types/cookie": "^0.3.3",
     "@types/copy-webpack-plugin": "^6.0.3",
