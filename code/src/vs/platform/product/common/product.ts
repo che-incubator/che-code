@@ -71,12 +71,6 @@ else {
 				serviceUrl: 'https://open-vsx.org/vscode/gallery',
 				itemUrl: 'https://open-vsx.org/vscode/item',
 			},
-			extensionAllowedProposedApi: [
-				'ms-vscode.vscode-js-profile-flame',
-				'ms-vscode.vscode-js-profile-table',
-				'GitHub.remotehub',
-				'GitHub.remotehub-insiders'
-			],
 		});
 	}
 }
