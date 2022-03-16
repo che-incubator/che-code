@@ -58,7 +58,7 @@ export interface IWorkingCopyHistoryEntry {
 	/**
 	 * Associated source with the history entry.
 	 */
-	readonly source: SaveSource;
+	source: SaveSource;
 }
 
 export interface IWorkingCopyHistoryEntryDescriptor {
@@ -91,9 +91,19 @@ export interface IWorkingCopyHistoryService {
 	onDidAddEntry: Event<IWorkingCopyHistoryEvent>;
 
 	/**
+	 * An event when entries are changed in the history.
+	 */
+	onDidChangeEntry: Event<IWorkingCopyHistoryEvent>;
+
+	/**
 	 * An event when entries are removed from the history.
 	 */
 	onDidRemoveEntry: Event<IWorkingCopyHistoryEvent>;
+
+	/**
+	 * An event when all entries are removed from the history.
+	 */
+	onDidRemoveAllEntries: Event<void>;
 
 	/**
 	 * Adds a new entry to the history for the given working copy
@@ -102,9 +112,19 @@ export interface IWorkingCopyHistoryService {
 	addEntry(descriptor: IWorkingCopyHistoryEntryDescriptor, token: CancellationToken): Promise<IWorkingCopyHistoryEntry | undefined>;
 
 	/**
+	 * Updates an entry in the local history if found.
+	 */
+	updateEntry(entry: IWorkingCopyHistoryEntry, properties: { source: SaveSource }, token: CancellationToken): Promise<void>;
+
+	/**
 	 * Removes an entry from the local history if found.
 	 */
 	removeEntry(entry: IWorkingCopyHistoryEntry, token: CancellationToken): Promise<boolean>;
+
+	/**
+	 * Removes all entries from all of local history.
+	 */
+	removeAll(token: CancellationToken): Promise<void>;
 
 	/**
 	 * Gets all history entries for the provided resource.
