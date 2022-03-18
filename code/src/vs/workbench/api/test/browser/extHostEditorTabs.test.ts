@@ -20,8 +20,8 @@ suite('ExtHostEditorTabs', function () {
 		isActive: true,
 		isDirty: true,
 		isPinned: true,
+		isPreview: false,
 		label: 'label1',
-		viewColumn: 0,
 	};
 
 	function createTabDto(dto?: Partial<IEditorTabDto>): IEditorTabDto {
@@ -54,7 +54,6 @@ suite('ExtHostEditorTabs', function () {
 			isDirty: true,
 			isPinned: true,
 			label: 'label1',
-			viewColumn: 0,
 		});
 
 		extHostEditorTabs.$acceptEditorTabModel([{
@@ -141,7 +140,6 @@ suite('ExtHostEditorTabs', function () {
 			isPinned: true,
 			label: 'label1',
 			editorId: 'default',
-			viewColumn: 0,
 		});
 
 		extHostEditorTabs.$acceptEditorTabModel([{
@@ -277,8 +275,7 @@ suite('ExtHostEditorTabs', function () {
 			isPinned: true,
 			label: 'label1',
 			input: { kind: TabInputKind.TextInput, uri: URI.parse('file://abc/AAA.txt') },
-			editorId: 'default',
-			viewColumn: 0,
+			editorId: 'default'
 		});
 
 		const tabDtoBBB = createTabDto({
@@ -288,8 +285,7 @@ suite('ExtHostEditorTabs', function () {
 			isPinned: true,
 			label: 'label1',
 			input: { kind: TabInputKind.TextInput, uri: URI.parse('file://abc/BBB.txt') },
-			editorId: 'default',
-			viewColumn: 0,
+			editorId: 'default'
 		});
 
 		// single dirty tab
@@ -364,8 +360,7 @@ suite('ExtHostEditorTabs', function () {
 			isDirty: true,
 			isPinned: true,
 			label: 'label1',
-			editorId: 'default',
-			viewColumn: 0,
+			editorId: 'default'
 		});
 
 		extHostEditorTabs.$acceptEditorTabModel([{
@@ -402,8 +397,7 @@ suite('ExtHostEditorTabs', function () {
 			isDirty: true,
 			isPinned: true,
 			label: 'label1',
-			editorId: 'default',
-			viewColumn: 0,
+			editorId: 'default'
 		});
 
 		extHostEditorTabs.$acceptEditorTabModel([{
@@ -427,5 +421,75 @@ suite('ExtHostEditorTabs', function () {
 		assert.ok(tab === changedTab);
 		assert.strictEqual(changedTab.label, 'NEW LABEL');
 
+	});
+
+	test('Active tab', function () {
+
+		const extHostEditorTabs = new ExtHostEditorTabs(
+			SingleProxyRPCProtocol(new class extends mock<MainThreadEditorTabsShape>() {
+				// override/implement $moveTab or $closeTab
+			})
+		);
+
+		const tab1: IEditorTabDto = createTabDto({
+			id: 'uniquestring',
+			isActive: true,
+			isDirty: true,
+			isPinned: true,
+			label: 'label1',
+		});
+
+		const tab2: IEditorTabDto = createTabDto({
+			isActive: false,
+			id: 'uniquestring2',
+		});
+
+		const tab3: IEditorTabDto = createTabDto({
+			isActive: false,
+			id: 'uniquestring3',
+		});
+
+		extHostEditorTabs.$acceptEditorTabModel([{
+			isActive: true,
+			viewColumn: 0,
+			groupId: 12,
+			tabs: [tab1, tab2, tab3]
+		}]);
+
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.length, 1);
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.map(g => g.tabs).flat().length, 3);
+
+		// Active tab is correct
+		assert.strictEqual(extHostEditorTabs.tabGroups.activeTabGroup?.activeTab, extHostEditorTabs.tabGroups.activeTabGroup?.tabs[0]);
+
+		// Switching active tab works
+		tab1.isActive = false;
+		tab2.isActive = true;
+		extHostEditorTabs.$acceptTabUpdate(12, tab1);
+		extHostEditorTabs.$acceptTabUpdate(12, tab2);
+		assert.strictEqual(extHostEditorTabs.tabGroups.activeTabGroup?.activeTab, extHostEditorTabs.tabGroups.activeTabGroup?.tabs[1]);
+
+		//Closing tabs out works
+		tab3.isActive = true;
+		extHostEditorTabs.$acceptEditorTabModel([{
+			isActive: true,
+			viewColumn: 0,
+			groupId: 12,
+			tabs: [tab3]
+		}]);
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.length, 1);
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.map(g => g.tabs).flat().length, 1);
+		assert.strictEqual(extHostEditorTabs.tabGroups.activeTabGroup?.activeTab, extHostEditorTabs.tabGroups.activeTabGroup?.tabs[0]);
+
+		// Closing out all tabs returns undefine active tab
+		extHostEditorTabs.$acceptEditorTabModel([{
+			isActive: true,
+			viewColumn: 0,
+			groupId: 12,
+			tabs: []
+		}]);
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.length, 1);
+		assert.strictEqual(extHostEditorTabs.tabGroups.groups.map(g => g.tabs).flat().length, 0);
+		assert.strictEqual(extHostEditorTabs.tabGroups.activeTabGroup?.activeTab, undefined);
 	});
 });

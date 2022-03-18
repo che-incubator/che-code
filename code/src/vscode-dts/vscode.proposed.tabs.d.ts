@@ -32,7 +32,7 @@ declare module 'vscode' {
 		constructor(uri: Uri, notebookType: string);
 	}
 
-	export class NotebookEditorDiffTabInput {
+	export class NotebookDiffEditorTabInput {
 		readonly original: Uri;
 		readonly modified: Uri;
 		readonly notebookType: string;
@@ -49,13 +49,12 @@ declare module 'vscode' {
 		readonly label: string;
 
 		/**
-		 * The column which the tab belongs to
+		 * The group which the tab belongs to
 		 */
-		// TODO@API point to TabGroup instead?
-		readonly viewColumn: ViewColumn;
+		readonly parentGroup: TabGroup;
 
 		// TODO@API NAME: optional
-		readonly input: TextTabInput | TextDiffTabInput | CustomEditorTabInput | NotebookEditorTabInput | NotebookEditorDiffTabInput | unknown;
+		readonly input: TextTabInput | TextDiffTabInput | CustomEditorTabInput | NotebookEditorTabInput | NotebookDiffEditorTabInput | unknown;
 
 		/**
 		 * Whether or not the tab is currently active
@@ -69,10 +68,14 @@ declare module 'vscode' {
 		readonly isDirty: boolean;
 
 		/**
-		 * Whether or not the tab is pinned
+		 * Whether or not the tab is pinned (pin icon is present)
 		 */
-		// TODO@API name: preview, see TextDocumentShowOptions
 		readonly isPinned: boolean;
+
+		/**
+		 * Whether or not the tab is in preview mode.
+		 */
+		readonly isPreview: boolean;
 	}
 
 	export namespace window {

@@ -9,7 +9,7 @@ import { IEditorTabDto, IEditorTabGroupDto, IExtHostEditorTabsShape, MainContext
 import { URI } from 'vs/base/common/uri';
 import { Emitter } from 'vs/base/common/event';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { CustomEditorTabInput, NotebookEditorDiffTabInput, NotebookEditorTabInput, TextDiffTabInput, TextTabInput, ViewColumn } from 'vs/workbench/api/common/extHostTypes';
+import { CustomEditorTabInput, NotebookDiffEditorTabInput, NotebookEditorTabInput, TextDiffTabInput, TextTabInput, ViewColumn } from 'vs/workbench/api/common/extHostTypes';
 import { IExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
 
 export interface IExtHostEditorTabs extends IExtHostEditorTabsShape {
@@ -25,10 +25,12 @@ class ExtHostEditorTab {
 	private _apiObject: vscode.Tab | undefined;
 	private _dto!: IEditorTabDto;
 	private _input: AnyTabInput | undefined;
+	private _parentGroup: ExtHostEditorTabGroup;
 	private readonly _activeTabIdGetter: () => string;
 
-	constructor(dto: IEditorTabDto, activeTabIdGetter: () => string) {
+	constructor(dto: IEditorTabDto, parentGroup: ExtHostEditorTabGroup, activeTabIdGetter: () => string) {
 		this._activeTabIdGetter = activeTabIdGetter;
+		this._parentGroup = parentGroup;
 		this.acceptDtoUpdate(dto);
 	}
 
@@ -53,8 +55,11 @@ class ExtHostEditorTab {
 				get isPinned() {
 					return that._dto.isDirty;
 				},
-				get viewColumn() {
-					return typeConverters.ViewColumn.to(that._dto.viewColumn);
+				get isPreview() {
+					return that._dto.isPreview;
+				},
+				get parentGroup() {
+					return that._parentGroup.apiObject;
 				}
 			};
 			this._apiObject = Object.freeze<vscode.Tab>(obj);
@@ -82,7 +87,7 @@ class ExtHostEditorTab {
 			case TabInputKind.NotebookInput:
 				return new NotebookEditorTabInput(URI.revive(this._dto.input.uri), this._dto.input.notebookType);
 			case TabInputKind.NotebookDiffInput:
-				return new NotebookEditorDiffTabInput(URI.revive(this._dto.input.original), URI.revive(this._dto.input.modified), this._dto.input.notebookType);
+				return new NotebookDiffEditorTabInput(URI.revive(this._dto.input.original), URI.revive(this._dto.input.modified), this._dto.input.notebookType);
 			default:
 				return undefined;
 		}
@@ -105,7 +110,7 @@ class ExtHostEditorTabGroup {
 			if (tabDto.isActive) {
 				this._activeTabId = tabDto.id;
 			}
-			this._tabs.push(new ExtHostEditorTab(tabDto, () => this.activeTabId()));
+			this._tabs.push(new ExtHostEditorTab(tabDto, this, () => this.activeTabId()));
 		}
 	}
 
