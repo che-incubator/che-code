@@ -275,6 +275,7 @@ export class MainThreadEditorTabs implements MainThreadEditorTabsShape {
 			this._createTabsModel();
 			return;
 		}
+		// Whether or not the tab has the pin icon (internally it's called sticky)
 		tab.isPinned = group.isSticky(editorIndex);
 		this._proxy.$acceptTabUpdate(groupId, tab);
 	}
@@ -382,7 +383,7 @@ export class MainThreadEditorTabs implements MainThreadEditorTabsShape {
 		}
 	}
 	//#region Messages received from Ext Host
-	$moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn): void {
+	$moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn, preserveFocus?: boolean): void {
 		const groupId = columnToEditorGroup(this._editorGroupsService, viewColumn);
 		const tabInfo = this._tabInfoLookup.get(tabId);
 		const tab = tabInfo?.tab;
@@ -414,7 +415,7 @@ export class MainThreadEditorTabs implements MainThreadEditorTabsShape {
 			return;
 		}
 		// Move the editor to the target group
-		sourceGroup.moveEditor(editorInput, targetGroup, { index, preserveFocus: true });
+		sourceGroup.moveEditor(editorInput, targetGroup, { index, preserveFocus });
 		return;
 	}
 

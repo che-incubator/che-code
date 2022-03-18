@@ -657,7 +657,7 @@ export type AnyInputDto = UnknownInputDto | TextInputDto | TextDiffInputDto | No
 
 export interface MainThreadEditorTabsShape extends IDisposable {
 	// manage tabs: move, close, rearrange etc
-	$moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn): void;
+	$moveTab(tabId: string, index: number, viewColumn: EditorGroupColumn, preserveFocus?: boolean): void;
 	$closeTab(tabIds: string[], preserveFocus?: boolean): Promise<void>;
 }
 
@@ -1722,7 +1722,7 @@ export interface ExtHostQuickOpenShape {
 }
 
 export interface ExtHostTelemetryShape {
-	$initializeTelemetryLevel(level: TelemetryLevel): void;
+	$initializeTelemetryLevel(level: TelemetryLevel, productConfig?: { usage: boolean; error: boolean }): void;
 	$onDidChangeTelemetryLevel(level: TelemetryLevel): void;
 }
 
