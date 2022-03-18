@@ -108,13 +108,12 @@ export class EndpointsTreeDataProvider implements vscode.TreeDataProvider<Endpoi
   }
 
   // update global context (like toggle mode for showing plugins)
-  async updateContext(treeView: vscode.TreeView<EndpointTreeNodeItem>, showPluginEndpoints: boolean): Promise<void> {
+  async updateContext(_treeView: vscode.TreeView<EndpointTreeNodeItem>, showPluginEndpoints: boolean): Promise<void> {
     this.showPluginEndpoints = showPluginEndpoints;
     // change context for the toggle icon
     vscode.commands.executeCommand('setContext', 'portPluginShowPlugins', this.showPluginEndpoints);
     // refresh tree
     this.refresh();
-    treeView.title = showPluginEndpoints.toString().replace(/[a-zA-Z]/g, ' ');
   }
 
   // Update the endpoints from ports-plugin
