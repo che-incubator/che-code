@@ -1015,7 +1015,7 @@ declare namespace monaco.editor {
 	 */
 	export function registerCommand(id: string, handler: (accessor: any, ...args: any[]) => void): IDisposable;
 
-	export type BuiltinTheme = 'vs' | 'vs-dark' | 'hc-black';
+	export type BuiltinTheme = 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
 
 	export interface IStandaloneThemeData {
 		base: BuiltinTheme;
@@ -1185,7 +1185,7 @@ declare namespace monaco.editor {
 		maxTokenizationLineLength?: number;
 		/**
 		 * Theme to be used for rendering.
-		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black'.
+		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black', 'hc-light'.
 		 * You can create custom themes via `monaco.editor.defineTheme`.
 		 * To switch a theme, use `monaco.editor.setTheme`.
 		 * **NOTE**: The theme might be overwritten if the OS is in high contrast mode, unless `autoDetectHighContrast` is set to false.
@@ -1218,7 +1218,7 @@ declare namespace monaco.editor {
 		language?: string;
 		/**
 		 * Initial theme to be used for rendering.
-		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black'.
+		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black', 'hc-light.
 		 * You can create custom themes via `monaco.editor.defineTheme`.
 		 * To switch a theme, use `monaco.editor.setTheme`.
 		 * **NOTE**: The theme might be overwritten if the OS is in high contrast mode, unless `autoDetectHighContrast` is set to false.
@@ -1249,7 +1249,7 @@ declare namespace monaco.editor {
 	export interface IStandaloneDiffEditorConstructionOptions extends IDiffEditorConstructionOptions {
 		/**
 		 * Initial theme to be used for rendering.
-		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black'.
+		 * The current out-of-the-box available themes are: 'vs' (default), 'vs-dark', 'hc-black', 'hc-light.
 		 * You can create custom themes via `monaco.editor.defineTheme`.
 		 * To switch a theme, use `monaco.editor.setTheme`.
 		 * **NOTE**: The theme might be overwritten if the OS is in high contrast mode, unless `autoDetectHighContrast` is set to false.
@@ -6271,9 +6271,14 @@ declare namespace monaco.languages {
 		 * The text can also be a snippet. In that case, a preview with default parameters is shown.
 		 * When accepting the suggestion, the full snippet is inserted.
 		*/
-		readonly text: string | {
+		readonly insertText: string | {
 			snippet: string;
 		};
+		/**
+		 * A text that is used to decide if this inline completion should be shown.
+		 * An inline completion is shown if the text to replace is a subword of the filter text.
+		 */
+		readonly filterText?: string;
 		/**
 		 * The range to replace.
 		 * Must begin and end on the same line.
