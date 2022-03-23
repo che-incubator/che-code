@@ -24,6 +24,14 @@ declare module 'vscode' {
 		constructor(uri: Uri, viewType: string);
 	}
 
+	export class TabKindWebview {
+		/**
+		 * The type of webview. Maps to {@linkcode WebviewPanel.viewType WebviewPanel's viewType}
+		 */
+		readonly viewType: string;
+		constructor(viewType: string);
+	}
+
 	export class TabKindNotebook {
 		readonly uri: Uri;
 		readonly notebookType: string;
@@ -35,6 +43,10 @@ declare module 'vscode' {
 		readonly modified: Uri;
 		readonly notebookType: string;
 		constructor(original: Uri, modified: Uri, notebookType: string);
+	}
+
+	export class TabKindTerminal {
+		constructor();
 	}
 
 	/**
@@ -55,7 +67,7 @@ declare module 'vscode' {
 		 * Defines the structure of the tab i.e. text, notebook, custom, etc.
 		 * Resource and other useful properties are defined on the tab kind.
 		 */
-		readonly kind: TabKindText | TabKindTextDiff | TabKindCustom | TabKindNotebook | TabKindNotebookDiff | unknown;
+		readonly kind: TabKindText | TabKindTextDiff | TabKindCustom | TabKindWebview | TabKindNotebook | TabKindNotebookDiff | TabKindTerminal | unknown;
 
 		/**
 		 * Whether or not the tab is currently active
@@ -93,14 +105,14 @@ declare module 'vscode' {
 		readonly isActive: boolean;
 
 		/**
-		 * The view column of the groups
+		 * The view column of the group
 		 */
 		readonly viewColumn: ViewColumn;
 
 		/**
-		 * The active tab within the group
+		 * The active tab in the group (this is the tab currently being rendered).
+		 * There can be one active tab per group. There can only be one active group.
 		 */
-		// TODO@API explain the relation between active tab groups and active tab
 		readonly activeTab: Tab | undefined;
 
 		/**
