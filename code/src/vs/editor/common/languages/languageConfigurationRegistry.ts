@@ -48,7 +48,14 @@ export interface ILanguageConfigurationService {
 	readonly _serviceBrand: undefined;
 
 	onDidChange: Event<LanguageConfigurationServiceChangeEvent>;
+
+	/**
+	 * @param priority Use a higher number for higher priority
+	 */
+	register(languageId: string, configuration: LanguageConfiguration, priority?: number): IDisposable;
+
 	getLanguageConfiguration(languageId: string): ResolvedLanguageConfiguration;
+
 }
 
 export class LanguageConfigurationServiceChangeEvent {
@@ -104,6 +111,10 @@ export class LanguageConfigurationService extends Disposable implements ILanguag
 			this.configurations.delete(e.languageId);
 			this.onDidChangeEmitter.fire(new LanguageConfigurationServiceChangeEvent(e.languageId));
 		}));
+	}
+
+	public register(languageId: string, configuration: LanguageConfiguration, priority?: number): IDisposable {
+		return LanguageConfigurationRegistry.register(languageId, configuration, priority);
 	}
 
 	public getLanguageConfiguration(languageId: string): ResolvedLanguageConfiguration {
@@ -201,50 +212,22 @@ export class LanguageConfigurationRegistryImpl {
 		const entries = this._entries.get(languageId);
 		return entries?.getResolvedConfiguration() || null;
 	}
+}
 
-	// begin Indent Rules
-
-	public getIndentRulesSupport(languageId: string): IndentRulesSupport | null {
-		const value = this.getLanguageConfiguration(languageId);
-		if (!value) {
-			return null;
-		}
-		return value.indentRulesSupport || null;
+export function getIndentationAtPosition(model: ITextModel, lineNumber: number, column: number): string {
+	const lineText = model.getLineContent(lineNumber);
+	let indentation = strings.getLeadingWhitespace(lineText);
+	if (indentation.length > column - 1) {
+		indentation = indentation.substring(0, column - 1);
 	}
+	return indentation;
+}
 
-	// end Indent Rules
-
-	// begin onEnter
-
-	public getIndentationAtPosition(model: ITextModel, lineNumber: number, column: number): string {
-		const lineText = model.getLineContent(lineNumber);
-		let indentation = strings.getLeadingWhitespace(lineText);
-		if (indentation.length > column - 1) {
-			indentation = indentation.substring(0, column - 1);
-		}
-		return indentation;
-	}
-
-	public getScopedLineTokens(model: ITextModel, lineNumber: number, columnNumber?: number): ScopedLineTokens {
-		model.forceTokenization(lineNumber);
-		const lineTokens = model.getLineTokens(lineNumber);
-		const column = (typeof columnNumber === 'undefined' ? model.getLineMaxColumn(lineNumber) - 1 : columnNumber - 1);
-		return createScopedLineTokens(lineTokens, column);
-	}
-
-	// end onEnter
-
-	public getBracketsSupport(languageId: string): RichEditBrackets | null {
-		const value = this.getLanguageConfiguration(languageId);
-		if (!value) {
-			return null;
-		}
-		return value.brackets || null;
-	}
-
-	public getColorizedBracketPairs(languageId: string): readonly CharacterPair[] {
-		return this.getLanguageConfiguration(languageId)?.characterPair.getColorizedBrackets() || [];
-	}
+export function getScopedLineTokens(model: ITextModel, lineNumber: number, columnNumber?: number): ScopedLineTokens {
+	model.forceTokenization(lineNumber);
+	const lineTokens = model.getLineTokens(lineNumber);
+	const column = (typeof columnNumber === 'undefined' ? model.getLineMaxColumn(lineNumber) - 1 : columnNumber - 1);
+	return createScopedLineTokens(lineTokens, column);
 }
 
 /**
