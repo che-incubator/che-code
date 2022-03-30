@@ -1,7 +1,7 @@
 {
   "name": "che-code",
   "version": "1.66.0",
-  "distro": "cc4bcaa1e521d5c5e7acb0f1f6d87e44f3030733",
+  "distro": "caf9297a0db36a7c5cd5c52fcd7f19791bab5eca",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -202,7 +202,7 @@
     "style-loader": "^1.0.0",
     "ts-loader": "^9.2.7",
     "tsec": "0.1.4",
-    "typescript": "^4.7.0-dev.20220316",
+    "typescript": "4.7.0-dev.20220323",
     "typescript-formatter": "7.1.0",
     "underscore": "^1.12.1",
     "util": "^0.12.4",
