@@ -13,6 +13,7 @@ exports.dirs = [
 	'extensions/che-port',
 	'extensions/che-on-start',
 	'extensions/che-remote',
+	'extensions/che-resource-monitor',
 	'extensions/configuration-editing',
 	'extensions/css-language-features',
 	'extensions/css-language-features/server',
