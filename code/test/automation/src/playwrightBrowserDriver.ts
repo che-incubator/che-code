@@ -38,7 +38,7 @@ export class PlaywrightDriver implements IDriver {
 	constructor(
 		private readonly application: playwright.Browser | playwright.ElectronApplication,
 		private readonly context: playwright.BrowserContext,
-		readonly page: playwright.Page, // TODO@bpasero make private again
+		private readonly page: playwright.Page,
 		private readonly serverPid: number | undefined,
 		private readonly options: LaunchOptions
 	) {
@@ -46,10 +46,6 @@ export class PlaywrightDriver implements IDriver {
 
 	async getWindowIds() {
 		return [1];
-	}
-
-	async capturePage() {
-		return '';
 	}
 
 	async startTracing(windowId: number, name: string): Promise<void> {
@@ -81,8 +77,14 @@ export class PlaywrightDriver implements IDriver {
 		}
 	}
 
-	async reloadWindow(windowId: number) {
-		await this.page.reload();
+	async takeScreenshot(name: string): Promise<void> {
+		try {
+			const persistPath = join(this.options.logsPath, `playwright-screenshot-${PlaywrightDriver.traceCounter++}-${name.replace(/\s+/g, '-')}.png`);
+
+			await measureAndLog(this.page.screenshot({ path: persistPath, type: 'png' }), 'takeScreenshot', this.options.logger);
+		} catch (error) {
+			// Ignore
+		}
 	}
 
 	async exitApplication() {
