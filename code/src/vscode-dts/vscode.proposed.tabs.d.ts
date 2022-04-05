@@ -53,8 +53,8 @@ declare module 'vscode' {
 
 	/**
 	 * Represents a tab within a {@link TabGroup group of tabs}.
-	 * Tabs are merely the grapihcal repesentation within the editor area.
-	 * A backing editor is not a gurantee.
+	 * Tabs are merely the graphical representation within the editor area.
+	 * A backing editor is not a guarantee.
 	 */
 	export interface Tab {
 
@@ -131,6 +131,7 @@ declare module 'vscode' {
 		/**
 		 * All the groups within the group container
 		 */
+		// TODO@API name, back to `all`, keep xyzTabGroup
 		readonly groups: readonly TabGroup[];
 
 		/**
@@ -149,6 +150,7 @@ declare module 'vscode' {
 		 * An {@link Event event} which fires when a {@link Tab tabs} have changed.
 		 */
 		readonly onDidChangeTabs: Event<readonly Tab[]>;
+		// readonly onDidChangeTabs: Event<{ opened: readonly Tab[], closed: readonly Tab[], changed: readonly Tab[] }>;
 
 		/**
 		 * Closes the tab. This makes the tab object invalid and the tab
@@ -159,7 +161,7 @@ declare module 'vscode' {
 		 * @param preserveFocus When `true` focus will remain in its current position. If `false` it will jump to the next tab.
 		 * @returns A promise that resolves to `true` when all tabs have been closed
 		 */
-		close(tab: Tab | Tab[], preserveFocus?: boolean): Thenable<boolean>;
+		close(tab: Tab | readonly Tab[], preserveFocus?: boolean): Thenable<boolean>;
 
 		/**
 		 * Closes the tab group. This makes the tab group object invalid and the tab group
@@ -168,7 +170,7 @@ declare module 'vscode' {
 		 * @param preserveFocus When `true` focus will remain in its current position.
 		 * @returns A promise that resolves to `true` when all tab groups have been closed
 		 */
-		close(tabGroup: TabGroup | TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
+		close(tabGroup: TabGroup | readonly TabGroup[], preserveFocus?: boolean): Thenable<boolean>;
 
 		/**
 		 * Moves a tab to the given index within the column.
