@@ -1,4 +1,3 @@
-
 /**********************************************************************
  * Copyright (c) 2022 Red Hat, Inc.
  *
@@ -11,12 +10,17 @@
 
 /* eslint-disable header/header */
 
-import { DevfileService } from './devfile-service';
-import { WorkspaceService } from './workspace-service';
-import { GithubService } from './github-service';
+export interface GithubUser {
+    login: string;
+    id: number;
+    name: string;
+    email: string;
+}
 
-export interface Api {
-    getDevfileService(): DevfileService;
-    getWorkspaceService(): WorkspaceService;
-    getGithubService(): GithubService;
+export const GithubService = Symbol('GithubService');
+
+export interface GithubService {
+    getToken(): Promise<string>;
+
+    getUser(): Promise<GithubUser>;
 }

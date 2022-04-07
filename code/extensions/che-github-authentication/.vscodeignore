@@ -1,4 +1,3 @@
-.gitignore
 src/**
 !src/common/config.json
 out/**

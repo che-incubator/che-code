@@ -1,4 +1,3 @@
-
 /**********************************************************************
  * Copyright (c) 2022 Red Hat, Inc.
  *
@@ -11,12 +10,18 @@
 
 /* eslint-disable header/header */
 
-import { DevfileService } from './devfile-service';
-import { WorkspaceService } from './workspace-service';
-import { GithubService } from './github-service';
+//@ts-check
 
-export interface Api {
-    getDevfileService(): DevfileService;
-    getWorkspaceService(): WorkspaceService;
-    getGithubService(): GithubService;
-}
+'use strict';
+
+const withDefaults = require('../shared.webpack.config');
+
+module.exports = withDefaults({
+    context: __dirname,
+    resolve: {
+        mainFields: ['module', 'main'],
+    },
+    entry: {
+        extension: './src/extension.ts',
+    },
+});

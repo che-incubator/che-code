@@ -1,6 +1,6 @@
-# GitHub Authentication for Visual Studio Code
+# Eclipse Che GitHub Authentication
 
-**Notice:** This extension is bundled with Visual Studio Code. It can be disabled but not uninstalled.
+**Notice:** This extension is bundled with Eclipse Che. It can be disabled but not uninstalled.
 
 ## Features
 
