@@ -1,5 +1,5 @@
 {
-  "name": "che-github-authentication",
+  "name": "github-authentication",
   "displayName": "%displayName%",
   "description": "%description%",
   "publisher": "vscode",
@@ -12,8 +12,13 @@
   "categories": [
     "Other"
   ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "activationEvents": [
-    "onAuthenticationRequest:github"
+    "onAuthenticationRequest:github",
+    "onAuthenticationRequest:github-enterprise"
   ],
   "capabilities": {
     "virtualWorkspaces": true,
@@ -26,10 +31,25 @@
       {
         "label": "GitHub",
         "id": "github"
+      },
+      {
+        "label": "GitHub Enterprise",
+        "id": "github-enterprise"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "GitHub Enterprise Authentication Provider",
+      "properties": {
+        "github-enterprise.uri": {
+          "type": "string",
+          "description": "URI of your GitHub Enterprise Instance"
+        }
+      }
+    }
   },
+  "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
   "main": "./out/extension.js",
+  "browser": "./dist/browser/extension.js",
   "scripts": {
     "compile": "gulp compile-extension:github-authentication",
     "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
@@ -52,29 +72,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
-  },
-  "extensionDependencies": [
-    "eclipse-che.api"
-  ],
-  "jest": {
-    "collectCoverage": true,
-    "collectCoverageFrom": [
-      "src/**/*.ts"
-    ],
-    "coverageDirectory": "./coverage",
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "modulePathIgnorePatterns": [
-      "<rootDir>/dist"
-    ],
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json"
-    ]
   }
 }
