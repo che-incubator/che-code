@@ -99,7 +99,7 @@ import { DiskFileSystemProviderClient, LOCAL_FILE_SYSTEM_CHANNEL_NAME } from 'vs
 import { InspectProfilingService as V8InspectProfilingService } from 'vs/platform/profiling/node/profilingService';
 import { IV8InspectProfilingService } from 'vs/platform/profiling/common/profiling';
 import { IExtensionsScannerService } from 'vs/platform/extensionManagement/common/extensionsScannerService';
-import { ExtensionsScannerService } from 'vs/platform/extensionManagement/electron-sandbox/extensionsScannerService';
+import { ExtensionsScannerService } from 'vs/platform/extensionManagement/node/extensionsScannerService';
 
 class SharedProcessMain extends Disposable {
 
@@ -148,7 +148,7 @@ class SharedProcessMain extends Disposable {
 			const logService = accessor.get(ILogService);
 
 			// Log info
-			logService.trace('sharedProcess configuration', JSON.stringify(this.configuration));
+			logService.info('sharedProcess configuration', JSON.stringify(this.configuration));
 
 			// Channels
 			this.initChannels(accessor);
