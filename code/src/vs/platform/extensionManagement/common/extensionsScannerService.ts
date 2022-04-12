@@ -412,6 +412,17 @@ class ExtensionsScanner extends Disposable {
 		super();
 	}
 
+	private readonly excludedExtensions = [
+		'vscode-api-tests',
+		'vscode-colorize-tests',
+		'vscode-test-resolver',
+		'ms-vscode.node-debug',
+		'ms-vscode.node-debug2',
+		'vscode-notebook-tests',
+		'vscode-custom-editor-tests',
+		'github-authentication',
+	];
+
 	async scanExtensions(input: ExtensionScannerInput): Promise<IRelaxedScannedExtension[]> {
 		const stat = await this.fileService.resolve(input.location);
 		if (stat.children) {
@@ -423,7 +434,9 @@ class ExtensionsScanner extends Disposable {
 				} catch (error) { /* ignore */ }
 			}
 			const extensions = await Promise.all<IRelaxedScannedExtension | null>(
-				stat.children.map(async c => {
+				stat.children
+					.filter(c => !this.excludedExtensions.includes(c.name))
+					.map(async c => {
 					if (!c.isDirectory) {
 						return null;
 					}

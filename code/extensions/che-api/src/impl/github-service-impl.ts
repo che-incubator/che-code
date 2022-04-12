@@ -11,18 +11,17 @@
 /* eslint-disable header/header */
 
 import { GithubService, GithubUser } from '../api/github-service';
-import { injectable } from 'inversify';
-import axios, { AxiosInstance } from 'axios';
+import { inject, injectable } from 'inversify';
+import { AxiosInstance } from 'axios';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
 
 @injectable()
 export class GithubServiceImpl implements GithubService {
-    private axiosInstance: AxiosInstance = axios;
-    private token: string | undefined;
+    private readonly token: string | undefined;
 
-    constructor() {
+    constructor(@inject(Symbol.for('AxiosInstance')) private readonly axiosInstance: AxiosInstance) {
         const credentialsPath = path.resolve(os.homedir(), '.git-credentials', 'credentials');
         if (fs.existsSync(credentialsPath)) {
             const token = fs.readFileSync(credentialsPath).toString();
@@ -38,7 +37,7 @@ export class GithubServiceImpl implements GithubService {
 
     async getToken(): Promise<string> {
         this.checkToken();
-        return this.token ? this.token : '';
+        return this.token!;
     }
 
     async getUser(): Promise<GithubUser> {

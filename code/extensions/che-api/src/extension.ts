@@ -24,6 +24,7 @@ import { WorkspaceService } from './api/workspace-service';
 import { K8sWorkspaceServiceImpl } from './impl/k8s-workspace-service-impl';
 import { GithubService } from './api/github-service';
 import { GithubServiceImpl } from './impl/github-service-impl';
+import * as axios from 'axios';
 
 
 export async function activate(_extensionContext: vscode.ExtensionContext): Promise<Api> {
@@ -35,6 +36,7 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
     container.bind(K8SServiceImpl).toSelf().inSingletonScope();
     container.bind(K8SService).to(K8SServiceImpl).inSingletonScope();
     container.bind(K8sDevWorkspaceEnvVariables).toSelf().inSingletonScope();
+    container.bind(Symbol.for('AxiosInstance')).toConstantValue(axios);
     container.bind(GithubServiceImpl).toSelf().inSingletonScope();
     container.bind(GithubService).to(GithubServiceImpl).inSingletonScope();
 
