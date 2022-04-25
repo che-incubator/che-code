@@ -32,5 +32,9 @@ fi
 # into a persistent volume
 export VSCODE_AGENT_FOLDER=/checode/remote
 
+if [ -z "$CODE_HOST" ]; then
+  CODE_HOST="127.0.0.1"
+fi
+
 # Launch che without connection-token, security is managed by Che
-./node out/server-main.js --port 3100 --without-connection-token
+./node out/server-main.js --host ${CODE_HOST} --port 3100 --without-connection-token
