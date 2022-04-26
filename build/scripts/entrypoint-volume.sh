@@ -37,4 +37,4 @@ if [ -z "$CODE_HOST" ]; then
 fi
 
 # Launch che without connection-token, security is managed by Che
-./node out/server-main.js --host ${CODE_HOST} --port 3100 --without-connection-token
+./node out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
