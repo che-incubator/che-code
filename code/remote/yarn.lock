@@ -919,10 +919,10 @@ ws@8.2.3:
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.2.3.tgz#63a56456db1b04367d0b721a0b80cae6d8becbba"
   integrity sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==
 
-xterm-addon-search@0.9.0-beta.23:
-  version "0.9.0-beta.23"
-  resolved "https://registry.yarnpkg.com/xterm-addon-search/-/xterm-addon-search-0.9.0-beta.23.tgz#3f568afaddbb2cb9bb13a80deada6a3715a10172"
-  integrity sha512-kKOyOf+9ERam6IGjV5LTQJTIL6HaiecZkMcrckMY9fUyH53+kknNMfGoBmMgDXWTe8WjBdyTtiqr120koDUKVQ==
+xterm-addon-search@0.9.0-beta.25:
+  version "0.9.0-beta.25"
+  resolved "https://registry.yarnpkg.com/xterm-addon-search/-/xterm-addon-search-0.9.0-beta.25.tgz#c0923197f64793821ae8b4dfd30e19b411c8e7a7"
+  integrity sha512-Z6Gd6JN1jcUyQ1iB9yBtPBzNsnPv6DXAxNnJXqFvIznfx0FmXx85FL5SunsH0/uoXre5UwqI+SWc/ON3CkKeUQ==
 
 xterm-addon-serialize@0.7.0-beta.12:
   version "0.7.0-beta.12"
