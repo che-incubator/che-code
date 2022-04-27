@@ -51,45 +51,54 @@ export function getPathLabel(resource: URI, formatting: IPathLabelFormatting): s
 	const pathLib = os === OperatingSystem.Windows ? win32 : posix;
 	const extUriLib = os === OperatingSystem.Linux ? extUri : extUriIgnorePathCase;
 
-	// return early if we can resolve a relative path label from the root
-	if (rootProvider) {
-		const baseResource = rootProvider.getWorkspaceFolder(resource);
-		if (baseResource) {
-			const hasMultipleRoots = rootProvider.getWorkspace().folders.length > 1;
+	let pathLabel: string | undefined = undefined;
 
-			let pathLabel: string;
-			if (extUriLib.isEqual(baseResource.uri, resource)) {
+	// figure out relative path if we can by using root provider
+	if (rootProvider) {
+		const folder = rootProvider.getWorkspaceFolder(resource);
+		if (folder) {
+			if (extUriLib.isEqual(folder.uri, resource)) {
 				pathLabel = ''; // no label if paths are identical
 			} else {
-				pathLabel = extUriLib.relativePath(baseResource.uri, resource) ?? '';
-
-				// normalize
-				if (pathLabel) {
-					pathLabel = pathLib.normalize(pathLabel);
-				}
+				pathLabel = extUriLib.relativePath(folder.uri, resource) ?? '';
 			}
 
-			if (hasMultipleRoots) {
-				const rootName = baseResource.name ? baseResource.name : extUriLib.basename(baseResource.uri);
+			// normalize
+			if (pathLabel) {
+				pathLabel = pathLib.normalize(pathLabel);
+			}
+
+			if (rootProvider.getWorkspace().folders.length > 1) {
+				const rootName = folder.name ? folder.name : extUriLib.basename(folder.uri);
 				pathLabel = pathLabel ? `${rootName} • ${pathLabel}` : rootName; // always show root basename if there are multiple
 			}
-
-			return pathLabel;
 		}
 	}
 
-	// normalize
-	let res = pathLib.normalize(resource.fsPath);
-
-	// Windows: normalize drive letter
-	res = normalizeDriveLetter(res, os === OperatingSystem.Windows);
-
-	// macOS/Linux: tildify
-	if (os !== OperatingSystem.Windows && userHomeProvider?.userHome) {
-		res = tildify(res, userHomeProvider.userHome.fsPath, os);
+	// return early if we can resolve a relative path label from the root
+	if (typeof pathLabel === 'string') {
+		return pathLabel;
 	}
 
-	return res;
+	// otherwise we start with the absolute path and apply some normalization
+	else {
+		pathLabel = resource.fsPath;
+	}
+
+	// macOS/Linux: tildify with provided user home directory
+	if (os !== OperatingSystem.Windows && userHomeProvider?.userHome) {
+		pathLabel = tildify(pathLabel, userHomeProvider.userHome.fsPath, os);
+	}
+
+	// apply target OS standard path separators
+	if (os === OperatingSystem.Windows) {
+		pathLabel = pathLabel.replace(/\//g, '\\');
+	} else {
+		pathLabel = pathLabel.replace(/\\/g, '/');
+	}
+
+	// normalize
+	return pathLib.normalize(normalizeDriveLetter(pathLabel, os === OperatingSystem.Windows));
 }
 
 export function getBaseLabel(resource: URI | string): string;
