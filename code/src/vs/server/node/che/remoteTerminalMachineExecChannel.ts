@@ -138,7 +138,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 					machineName: resolvedShellLaunchConfig.name,
 					workspaceId: '1234',
 				},
-				cmd: commandLine,
+				cmd: ['sh', '-c', commandLine],
 				tty: true,
 				cwd: cwdUri?.path,
 			};
