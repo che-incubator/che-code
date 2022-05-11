@@ -26,7 +26,7 @@ export function setup() {
 
 		describe('Shell integration', function () {
 			(process.platform === 'win32' ? describe.skip : describe)('Decorations', function () {
-				describe('Should show default icons', function () {
+				describe.skip('Should show default icons', function () {
 					it('Placeholder', async () => {
 						await terminal.createTerminal();
 						await terminal.assertCommandDecorations({ placeholder: 1, success: 0, error: 0 });
@@ -42,7 +42,7 @@ export function setup() {
 						await terminal.assertCommandDecorations({ placeholder: 1, success: 0, error: 1 });
 					});
 				});
-				describe('Custom configuration', function () {
+				describe.skip('Custom configuration', function () {
 					it('Should update and show custom icons', async () => {
 						await terminal.createTerminal();
 						await terminal.assertCommandDecorations({ placeholder: 1, success: 0, error: 0 });
