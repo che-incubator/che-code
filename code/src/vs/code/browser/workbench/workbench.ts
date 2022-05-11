@@ -193,6 +193,10 @@ class LocalStorageURLCallbackProvider extends Disposable implements IURLCallback
 	private checkCallbacksTimeout: unknown | undefined = undefined;
 	private onDidChangeLocalStorageDisposable: IDisposable | undefined;
 
+	constructor(private readonly _callbackRoute: string) {
+		super();
+	}
+
 	create(options: Partial<UriComponents> = {}): URI {
 		const id = ++LocalStorageURLCallbackProvider.REQUEST_ID;
 		const queryParams: string[] = [`vscode-reqid=${id}`];
@@ -216,7 +220,7 @@ class LocalStorageURLCallbackProvider extends Disposable implements IURLCallback
 			this.startListening();
 		}
 
-		return URI.parse(window.location.href).with({ path: '/callback', query: queryParams.join('&') });
+		return URI.parse(window.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });
 	}
 
 	private startListening(): void {
@@ -495,7 +499,7 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 	}
 
 	const cheConfig = getCheConfig();
-	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents } = JSON.parse(configElementAttribute);
+	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
 	console.log('Creating workbench with config ', JSON.stringify({
 		...config,
 		...cheConfig,
@@ -503,8 +507,8 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 			enabled: config.settingsSyncOptions.enabled,
 		} : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
-		urlCallbackProvider: new LocalStorageURLCallbackProvider(),
-		credentialsProvider: new LocalStorageCredentialsProvider()
+		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
+		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageCredentialsProvider() // with a remote, we don't use a local credentials provider
 	}, undefined, 2));
 
 	// Create workbench
@@ -515,7 +519,7 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 			enabled: config.settingsSyncOptions.enabled,
 		} : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
-		urlCallbackProvider: new LocalStorageURLCallbackProvider(),
+		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
 		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageCredentialsProvider() // with a remote, we don't use a local credentials provider
 	});
 })();
