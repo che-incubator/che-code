@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';
+// import { RemoteTerminalMachineExecChannel } from 'vs/server/node/che/remoteTerminalMachineExecChannel';
 import { hostname, release } from 'os';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
@@ -189,11 +189,11 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		socketServer.registerChannel('telemetry', telemetryChannel);
 
 		socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService));
-		if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {
-			socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService));
-		} else {
-			socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(logService));
-		}
+		// if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {
+		// 	socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService));
+		// } else {
+		// 	socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(logService));
+		// }
 
 		const remoteFileSystemChannel = new RemoteAgentFileSystemProviderChannel(logService, environmentService);
 		socketServer.registerChannel(REMOTE_FILE_SYSTEM_CHANNEL_NAME, remoteFileSystemChannel);
