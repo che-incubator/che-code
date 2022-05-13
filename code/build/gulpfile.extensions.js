@@ -32,6 +32,7 @@ const extensionsPath = path.join(path.dirname(__dirname), 'extensions');
 const compilations = [
 	'authentication-proxy/tsconfig.json',
 	'che-api/tsconfig.json',
+	'che-commands/tsconfig.json',
 	'che-port/tsconfig.json',
 	'che-on-start/tsconfig.json',
 	'che-remote/tsconfig.json',

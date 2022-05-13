@@ -10,6 +10,7 @@ exports.dirs = [
 	'build/lib/watch',
 	'extensions',
 	'extensions/che-api',
+	'extensions/che-commands',
 	'extensions/che-port',
 	'extensions/che-on-start',
 	'extensions/che-remote',
