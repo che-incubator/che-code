@@ -438,14 +438,18 @@ export class MultiCursorSession {
 		return new Selection(previousMatch.range.startLineNumber, previousMatch.range.startColumn, previousMatch.range.endLineNumber, previousMatch.range.endColumn);
 	}
 
-	public selectAll(): FindMatch[] {
+	public selectAll(searchScope: Range[] | null): FindMatch[] {
 		if (!this._editor.hasModel()) {
 			return [];
 		}
 
 		this.findController.highlightFindOptions();
 
-		return this._editor.getModel().findMatches(this.searchText, true, false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
+		const editorModel = this._editor.getModel();
+		if (searchScope) {
+			return editorModel.findMatches(this.searchText, searchScope, false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
+		}
+		return editorModel.findMatches(this.searchText, true, false, this.matchCase, this.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
 	}
 }
 
@@ -617,9 +621,12 @@ export class MultiCursorSelectionController extends Disposable implements IEdito
 		// - and the search string is non-empty
 		// - and we're searching for a regex
 		if (findState.isRevealed && findState.searchString.length > 0 && findState.isRegex) {
-
-			matches = this._editor.getModel().findMatches(findState.searchString, true, findState.isRegex, findState.matchCase, findState.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
-
+			const editorModel = this._editor.getModel();
+			if (findState.searchScope) {
+				matches = editorModel.findMatches(findState.searchString, findState.searchScope, findState.isRegex, findState.matchCase, findState.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
+			} else {
+				matches = editorModel.findMatches(findState.searchString, true, findState.isRegex, findState.matchCase, findState.wholeWord ? this._editor.getOption(EditorOption.wordSeparators) : null, false, Constants.MAX_SAFE_SMALL_INTEGER);
+			}
 		} else {
 
 			this._beginSessionIfNeeded(findController);
@@ -627,20 +634,7 @@ export class MultiCursorSelectionController extends Disposable implements IEdito
 				return;
 			}
 
-			matches = this._session.selectAll();
-		}
-
-		if (findState.searchScope) {
-			const states = findState.searchScope;
-			let inSelection: FindMatch[] | null = [];
-			matches.forEach((match) => {
-				states.forEach((state) => {
-					if (match.range.endLineNumber <= state.endLineNumber && match.range.startLineNumber >= state.startLineNumber) {
-						inSelection!.push(match);
-					}
-				});
-			});
-			matches = inSelection;
+			matches = this._session.selectAll(findState.searchScope);
 		}
 
 		if (matches.length > 0) {
@@ -1097,6 +1091,84 @@ function getValueInRange(model: ITextModel, range: Range, toLowerCase: boolean):
 	return (toLowerCase ? text.toLowerCase() : text);
 }
 
+export class FocusNextCursor extends EditorAction {
+	constructor() {
+		super({
+			id: 'editor.action.focusNextCursor',
+			label: nls.localize('mutlicursor.focusNextCursor', "Focus Next Cursor"),
+			description: {
+				description: nls.localize('mutlicursor.focusNextCursor.description', "Focuses the next cursor"),
+				args: [],
+			},
+			alias: 'Focus Next Cursor',
+			precondition: undefined
+		});
+	}
+
+	public run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void {
+		if (!editor.hasModel()) {
+			return;
+		}
+
+		const viewModel = editor._getViewModel();
+
+		if (viewModel.cursorConfig.readOnly) {
+			return;
+		}
+
+		viewModel.model.pushStackElement();
+		const previousCursorState = Array.from(viewModel.getCursorStates());
+		const firstCursor = previousCursorState.shift();
+		if (!firstCursor) {
+			return;
+		}
+		previousCursorState.push(firstCursor);
+
+		viewModel.setCursorStates(args.source, CursorChangeReason.Explicit, previousCursorState);
+		viewModel.revealPrimaryCursor(args.source, true);
+		announceCursorChange(previousCursorState, viewModel.getCursorStates());
+	}
+}
+
+export class FocusPreviousCursor extends EditorAction {
+	constructor() {
+		super({
+			id: 'editor.action.focusPreviousCursor',
+			label: nls.localize('mutlicursor.focusPreviousCursor', "Focus Previous Cursor"),
+			description: {
+				description: nls.localize('mutlicursor.focusPreviousCursor.description', "Focuses the previous cursor"),
+				args: [],
+			},
+			alias: 'Focus Previous Cursor',
+			precondition: undefined
+		});
+	}
+
+	public run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void {
+		if (!editor.hasModel()) {
+			return;
+		}
+
+		const viewModel = editor._getViewModel();
+
+		if (viewModel.cursorConfig.readOnly) {
+			return;
+		}
+
+		viewModel.model.pushStackElement();
+		const previousCursorState = Array.from(viewModel.getCursorStates());
+		const firstCursor = previousCursorState.pop();
+		if (!firstCursor) {
+			return;
+		}
+		previousCursorState.unshift(firstCursor);
+
+		viewModel.setCursorStates(args.source, CursorChangeReason.Explicit, previousCursorState);
+		viewModel.revealPrimaryCursor(args.source, true);
+		announceCursorChange(previousCursorState, viewModel.getCursorStates());
+	}
+}
+
 registerEditorContribution(MultiCursorSelectionController.ID, MultiCursorSelectionController);
 registerEditorContribution(SelectionHighlighter.ID, SelectionHighlighter);
 
@@ -1111,3 +1183,5 @@ registerEditorAction(SelectHighlightsAction);
 registerEditorAction(CompatChangeAll);
 registerEditorAction(InsertCursorAtEndOfLineSelected);
 registerEditorAction(InsertCursorAtTopOfLineSelected);
+registerEditorAction(FocusNextCursor);
+registerEditorAction(FocusPreviousCursor);

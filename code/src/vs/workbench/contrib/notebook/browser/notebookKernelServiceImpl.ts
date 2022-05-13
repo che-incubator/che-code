@@ -196,7 +196,16 @@ export class NotebookKernelService extends Disposable implements INotebookKernel
 
 	getSelectedOrSuggestedKernel(notebook: INotebookTextModel): INotebookKernel | undefined {
 		const info = this.getMatchingKernel(notebook);
-		return info.selected ?? (info.all.length === 1 ? info.all[0] : undefined);
+		if (info.selected) {
+			return info.selected;
+		}
+
+		const preferred = info.all.filter(kernel => this._kernels.get(kernel.id)?.notebookPriorities.get(notebook.uri) === 2 /* vscode.NotebookControllerPriority.Preferred */);
+		if (preferred.length === 1) {
+			return preferred[0];
+		}
+
+		return info.all.length === 1 ? info.all[0] : undefined;
 	}
 
 	// default kernel for notebookType
@@ -221,6 +230,15 @@ export class NotebookKernelService extends Disposable implements INotebookKernel
 				this._notebookBindings.delete(key);
 			}
 			this._onDidChangeNotebookKernelBinding.fire({ notebook: notebook.uri, oldKernel, newKernel: kernel.id });
+			this._persistMementos();
+		}
+	}
+
+	preselectKernelForNotebook(kernel: INotebookKernel, notebook: INotebookTextModelLike): void {
+		const key = NotebookTextModelLikeId.str(notebook);
+		const oldKernel = this._notebookBindings.get(key);
+		if (oldKernel !== kernel?.id) {
+			this._notebookBindings.set(key, kernel.id);
 			this._persistMementos();
 		}
 	}

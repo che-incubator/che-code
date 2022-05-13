@@ -83,6 +83,7 @@ import 'vs/workbench/services/extensionRecommendations/common/extensionIgnoredRe
 import 'vs/workbench/services/extensionRecommendations/common/workspaceExtensionsConfig';
 import 'vs/workbench/services/notification/common/notificationService';
 import 'vs/workbench/services/userDataSync/common/userDataSyncUtil';
+import 'vs/workbench/services/profiles/common/profileService';
 import 'vs/workbench/services/remote/common/remoteExplorerService';
 import 'vs/workbench/services/workingCopy/common/workingCopyService';
 import 'vs/workbench/services/workingCopy/common/workingCopyFileService';
@@ -96,8 +97,8 @@ import 'vs/workbench/services/hover/browser/hoverService';
 import 'vs/workbench/services/assignment/common/assignmentService';
 import 'vs/workbench/services/outline/browser/outlineService';
 import 'vs/workbench/services/languageDetection/browser/languageDetectionWorkerServiceImpl';
-
 import 'vs/editor/common/services/languageFeaturesService';
+
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
 import { GlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionEnablementService';
@@ -269,6 +270,9 @@ import 'vs/workbench/contrib/snippets/browser/tabCompletion';
 // Formatter Help
 import 'vs/workbench/contrib/format/browser/format.contribution';
 
+// Inlay Hint Accessibility
+import 'vs/workbench/contrib/inlayHints/browser/inlayHintsAccessibilty';
+
 // Themes
 import 'vs/workbench/contrib/themes/browser/themes.contribution';
 
@@ -285,7 +289,6 @@ import 'vs/workbench/contrib/surveys/browser/languageSurveys.contribution';
 
 // Welcome
 import 'vs/workbench/contrib/welcomeOverlay/browser/welcomeOverlay';
-import 'vs/workbench/contrib/welcomePage/browser/welcomePage.contribution';
 import 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution';
 import 'vs/workbench/contrib/welcomeWalkthrough/browser/walkThrough.contribution';
 import 'vs/workbench/contrib/welcomeViews/common/viewsWelcome.contribution';
@@ -301,6 +304,9 @@ import 'vs/workbench/contrib/typeHierarchy/browser/typeHierarchy.contribution';
 import 'vs/workbench/contrib/codeEditor/browser/outline/documentSymbolsOutline';
 import 'vs/workbench/contrib/outline/browser/outline.contribution';
 
+// Language Detection
+import 'vs/workbench/contrib/languageDetection/browser/languageDetection.contribution';
+
 // Language Status
 import 'vs/workbench/contrib/languageStatus/browser/languageStatus.contribution';
 
@@ -313,11 +319,17 @@ import 'vs/workbench/contrib/feedback/browser/feedback.contribution';
 // User Data Sync
 import 'vs/workbench/contrib/userDataSync/browser/userDataSync.contribution';
 
+// Profiles
+import 'vs/workbench/contrib/profiles/common/profiles.contribution';
+
 // Code Actions
 import 'vs/workbench/contrib/codeActions/browser/codeActions.contribution';
 
 // Timeline
 import 'vs/workbench/contrib/timeline/browser/timeline.contribution';
+
+// Local History
+import 'vs/workbench/contrib/localHistory/browser/localHistory.contribution';
 
 // Workspace
 import 'vs/workbench/contrib/workspace/browser/workspace.contribution';
@@ -330,5 +342,8 @@ import 'vs/workbench/contrib/list/browser/list.contribution';
 
 // Audio Cues
 import 'vs/workbench/contrib/audioCues/browser/audioCues.contribution';
+
+// Drop into editor
+import 'vs/workbench/contrib/dropIntoEditor/browser/dropIntoEditor.contibution';
 
 //#endregion

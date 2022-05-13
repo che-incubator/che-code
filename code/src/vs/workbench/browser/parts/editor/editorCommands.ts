@@ -35,6 +35,8 @@ import { SideBySideEditor } from 'vs/workbench/browser/parts/editor/sideBySideEd
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { IEditorResolverService } from 'vs/workbench/services/editor/common/editorResolverService';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
+import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
+import { extname } from 'vs/base/common/resources';
 
 export const CLOSE_SAVED_EDITORS_COMMAND_ID = 'workbench.action.closeUnmodifiedEditors';
 export const CLOSE_EDITORS_IN_GROUP_COMMAND_ID = 'workbench.action.closeEditorsInGroup';
@@ -552,17 +554,27 @@ function registerOpenEditorAPICommands(): void {
 		}
 	});
 
-	CommandsRegistry.registerCommand(API_OPEN_DIFF_EDITOR_COMMAND_ID, async function (accessor: ServicesAccessor, originalResource: UriComponents, modifiedResource: UriComponents, label?: string, columnAndOptions?: [EditorGroupColumn?, ITextEditorOptions?], context?: IOpenEvent<unknown>) {
+	CommandsRegistry.registerCommand(API_OPEN_DIFF_EDITOR_COMMAND_ID, async function (accessor: ServicesAccessor, originalResource: UriComponents, modifiedResource: UriComponents, labelAndOrDescription?: string | { label: string; description: string }, columnAndOptions?: [EditorGroupColumn?, ITextEditorOptions?], context?: IOpenEvent<unknown>) {
 		const editorService = accessor.get(IEditorService);
 		const editorGroupService = accessor.get(IEditorGroupsService);
 
 		const [columnArg, optionsArg] = columnAndOptions ?? [];
 		const [options, column] = mixinContext(context, optionsArg, columnArg);
 
+		let label: string | undefined = undefined;
+		let description: string | undefined = undefined;
+		if (typeof labelAndOrDescription === 'string') {
+			label = labelAndOrDescription;
+		} else if (labelAndOrDescription) {
+			label = labelAndOrDescription.label;
+			description = labelAndOrDescription.description;
+		}
+
 		await editorService.openEditor({
 			original: { resource: URI.revive(originalResource) },
 			modified: { resource: URI.revive(modifiedResource) },
 			label,
+			description,
 			options
 		}, columnToEditorGroup(editorGroupService, column));
 	});
@@ -737,7 +749,7 @@ export function splitEditor(editorGroupService: IEditorGroupsService, direction:
 
 	// Copy the editor to the new group, else create an empty group
 	if (editorToCopy && !editorToCopy.hasCapability(EditorInputCapabilities.Singleton)) {
-		sourceGroup.copyEditor(editorToCopy, newGroup);
+		sourceGroup.copyEditor(editorToCopy, newGroup, { preserveFocus: context?.preserveFocus });
 	}
 
 	// Focus
@@ -804,7 +816,7 @@ function registerCloseEditorCommands() {
 					.map(editor => typeof editor.editorIndex === 'number' ? group.getEditorByIndex(editor.editorIndex) : group.activeEditor))
 					.filter(editor => !keepStickyEditors || !group.isSticky(editor));
 
-				return group.closeEditors(editorsToClose);
+				await group.closeEditors(editorsToClose, { preserveFocus: context?.preserveFocus });
 			}
 		}));
 	}
@@ -832,7 +844,8 @@ function registerCloseEditorCommands() {
 		handler: (accessor, resourceOrContext?: URI | IEditorCommandsContext, context?: IEditorCommandsContext) => {
 			return Promise.all(getEditorsContext(accessor, resourceOrContext, context).groups.map(async group => {
 				if (group) {
-					return group.closeAllEditors({ excludeSticky: true });
+					await group.closeAllEditors({ excludeSticky: true });
+					return;
 				}
 			}));
 		}
@@ -869,7 +882,7 @@ function registerCloseEditorCommands() {
 		handler: (accessor, resourceOrContext?: URI | IEditorCommandsContext, context?: IEditorCommandsContext) => {
 			return Promise.all(getEditorsContext(accessor, resourceOrContext, context).groups.map(async group => {
 				if (group) {
-					return group.closeEditors({ savedOnly: true, excludeSticky: true });
+					await group.closeEditors({ savedOnly: true, excludeSticky: true }, { preserveFocus: context?.preserveFocus });
 				}
 			}));
 		}
@@ -897,7 +910,7 @@ function registerCloseEditorCommands() {
 						}
 					}
 
-					return group.closeEditors(editorsToClose);
+					await group.closeEditors(editorsToClose, { preserveFocus: context?.preserveFocus });
 				}
 			}));
 		}
@@ -917,7 +930,7 @@ function registerCloseEditorCommands() {
 					group.pinEditor(group.activeEditor);
 				}
 
-				return group.closeEditors({ direction: CloseDirection.RIGHT, except: editor, excludeSticky: true });
+				await group.closeEditors({ direction: CloseDirection.RIGHT, except: editor, excludeSticky: true }, { preserveFocus: context?.preserveFocus });
 			}
 		}
 	});
@@ -931,6 +944,7 @@ function registerCloseEditorCommands() {
 			const editorGroupService = accessor.get(IEditorGroupsService);
 			const editorService = accessor.get(IEditorService);
 			const editorResolverService = accessor.get(IEditorResolverService);
+			const telemetryService = accessor.get(ITelemetryService);
 
 			const { group, editor } = resolveCommandsContext(editorGroupService, getCommandsContext(resourceOrContext, context));
 
@@ -952,6 +966,27 @@ function registerCloseEditorCommands() {
 					options: resolvedEditor.options
 				}
 			]);
+
+			type WorkbenchEditorReopenClassification = {
+				scheme: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
+				ext: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
+				from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
+				to: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
+			};
+
+			type WorkbenchEditorReopenEvent = {
+				scheme: string;
+				ext: string;
+				from: string;
+				to: string;
+			};
+
+			telemetryService.publicLog2<WorkbenchEditorReopenEvent, WorkbenchEditorReopenClassification>('workbenchEditorReopen', {
+				scheme: editor.resource?.scheme ?? '',
+				ext: editor.resource ? extname(editor.resource) : '',
+				from: editor.editorId ?? '',
+				to: resolvedEditor.editor.editorId ?? ''
+			});
 
 			// Make sure it becomes active too
 			await resolvedEditor.group.openEditor(resolvedEditor.editor);
@@ -1027,7 +1062,7 @@ function registerSplitEditorInGroupCommands(): void {
 		constructor() {
 			super({
 				id: SPLIT_EDITOR_IN_GROUP,
-				title: localize('splitEditorInGroup', "Split Editor in Group"),
+				title: { value: localize('splitEditorInGroup', "Split Editor in Group"), original: 'Split Editor in Group' },
 				category: CATEGORIES.View,
 				precondition: ActiveEditorCanSplitInGroupContext,
 				f1: true,
@@ -1073,7 +1108,7 @@ function registerSplitEditorInGroupCommands(): void {
 		constructor() {
 			super({
 				id: JOIN_EDITOR_IN_GROUP,
-				title: localize('joinEditorInGroup', "Join Editor in Group"),
+				title: { value: localize('joinEditorInGroup', "Join Editor in Group"), original: 'Join Editor in Group' },
 				category: CATEGORIES.View,
 				precondition: SideBySideEditorActiveContext,
 				f1: true,
@@ -1093,7 +1128,7 @@ function registerSplitEditorInGroupCommands(): void {
 		constructor() {
 			super({
 				id: TOGGLE_SPLIT_EDITOR_IN_GROUP,
-				title: localize('toggleJoinEditorInGroup', "Toggle Split Editor in Group"),
+				title: { value: localize('toggleJoinEditorInGroup', "Toggle Split Editor in Group"), original: 'Toggle Split Editor in Group' },
 				category: CATEGORIES.View,
 				precondition: ContextKeyExpr.or(ActiveEditorCanSplitInGroupContext, SideBySideEditorActiveContext),
 				f1: true
@@ -1115,7 +1150,7 @@ function registerSplitEditorInGroupCommands(): void {
 		constructor() {
 			super({
 				id: TOGGLE_SPLIT_EDITOR_IN_GROUP_LAYOUT,
-				title: localize('toggleSplitEditorInGroupLayout', "Toggle Split Editor in Group Layout"),
+				title: { value: localize('toggleSplitEditorInGroupLayout', "Toggle Split Editor in Group Layout"), original: 'Toggle Split Editor in Group Layout' },
 				category: CATEGORIES.View,
 				precondition: SideBySideEditorActiveContext,
 				f1: true
@@ -1143,7 +1178,7 @@ function registerFocusSideEditorsCommands(): void {
 		constructor() {
 			super({
 				id: FOCUS_FIRST_SIDE_EDITOR,
-				title: localize('focusLeftSideEditor', "Focus First Side in Active Editor"),
+				title: { value: localize('focusLeftSideEditor', "Focus First Side in Active Editor"), original: 'Focus First Side in Active Editor' },
 				category: CATEGORIES.View,
 				precondition: ContextKeyExpr.or(SideBySideEditorActiveContext, TextCompareEditorActiveContext),
 				f1: true
@@ -1166,7 +1201,7 @@ function registerFocusSideEditorsCommands(): void {
 		constructor() {
 			super({
 				id: FOCUS_SECOND_SIDE_EDITOR,
-				title: localize('focusRightSideEditor', "Focus Second Side in Active Editor"),
+				title: { value: localize('focusRightSideEditor', "Focus Second Side in Active Editor"), original: 'Focus Second Side in Active Editor' },
 				category: CATEGORIES.View,
 				precondition: ContextKeyExpr.or(SideBySideEditorActiveContext, TextCompareEditorActiveContext),
 				f1: true
@@ -1189,7 +1224,7 @@ function registerFocusSideEditorsCommands(): void {
 		constructor() {
 			super({
 				id: FOCUS_OTHER_SIDE_EDITOR,
-				title: localize('focusOtherSideEditor', "Focus Other Side in Active Editor"),
+				title: { value: localize('focusOtherSideEditor', "Focus Other Side in Active Editor"), original: 'Focus Other Side in Active Editor' },
 				category: CATEGORIES.View,
 				precondition: ContextKeyExpr.or(SideBySideEditorActiveContext, TextCompareEditorActiveContext),
 				f1: true
@@ -1254,7 +1289,7 @@ function registerOtherEditorCommands(): void {
 		constructor() {
 			super({
 				id: TOGGLE_LOCK_GROUP_COMMAND_ID,
-				title: localize('toggleEditorGroupLock', "Toggle Editor Group Lock"),
+				title: { value: localize('toggleEditorGroupLock', "Toggle Editor Group Lock"), original: 'Toggle Editor Group Lock' },
 				category: CATEGORIES.View,
 				precondition: MultipleEditorGroupsContext,
 				f1: true
@@ -1269,7 +1304,7 @@ function registerOtherEditorCommands(): void {
 		constructor() {
 			super({
 				id: LOCK_GROUP_COMMAND_ID,
-				title: localize('lockEditorGroup', "Lock Editor Group"),
+				title: { value: localize('lockEditorGroup', "Lock Editor Group"), original: 'Lock Editor Group' },
 				category: CATEGORIES.View,
 				precondition: ContextKeyExpr.and(MultipleEditorGroupsContext, ActiveEditorGroupLockedContext.toNegated()),
 				f1: true
@@ -1284,7 +1319,7 @@ function registerOtherEditorCommands(): void {
 		constructor() {
 			super({
 				id: UNLOCK_GROUP_COMMAND_ID,
-				title: localize('unlockEditorGroup', "Unlock Editor Group"),
+				title: { value: localize('unlockEditorGroup', "Unlock Editor Group"), original: 'Unlock Editor Group' },
 				precondition: ContextKeyExpr.and(MultipleEditorGroupsContext, ActiveEditorGroupLockedContext),
 				category: CATEGORIES.View,
 				f1: true

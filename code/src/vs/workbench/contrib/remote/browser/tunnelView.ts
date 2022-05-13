@@ -21,7 +21,8 @@ import { Disposable, IDisposable, toDisposable, MutableDisposable, dispose, Disp
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { IconLabel } from 'vs/base/browser/ui/iconLabel/iconLabel';
 import { ActionRunner, IAction } from 'vs/base/common/actions';
-import { IMenuService, MenuId, MenuRegistry, ILocalizedString } from 'vs/platform/actions/common/actions';
+import { IMenuService, MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
+import { ILocalizedString } from 'vs/platform/action/common/action';
 import { createAndFillInContextMenuActions, createAndFillInActionBarActions, createActionViewItem } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IRemoteExplorerService, TunnelModel, makeAddress, TunnelType, ITunnelItem, Tunnel, TUNNEL_VIEW_ID, parseAddress, CandidatePort, TunnelEditId, mapHasAddressLocalhostOrAllInterfaces, Attributes, TunnelSource } from 'vs/workbench/services/remote/common/remoteExplorerService';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
@@ -100,7 +101,8 @@ export class TunnelViewModel implements ITunnelViewModel {
 			id: TunnelPrivacyId.Private,
 			themeIcon: privatePortIcon.id,
 			label: nls.localize('tunnelPrivacy.private', "Private")
-		}
+		},
+		strip: () => undefined
 	};
 
 	constructor(
@@ -259,7 +261,7 @@ class LocalAddressColumn implements ITableColumn<ITunnelItem, ActionBarCell> {
 
 			const markdown = new MarkdownString('', true);
 			const uri = localAddress.startsWith('http') ? localAddress : `http://${localAddress}`;
-			return markdown.appendMarkdown(`[Follow link](${uri}) (${clickLabel})`);
+			return markdown.appendLink(uri, 'Follow link').appendMarkdown(` (${clickLabel})`);
 		};
 	}
 }
@@ -414,6 +416,31 @@ class ActionBarRenderer extends Disposable implements ITableRenderer<ActionBarCe
 		}));
 	}
 
+	private tunnelContext(tunnel: ITunnelItem): ITunnelItem {
+		let context: ITunnelItem | undefined;
+		if (tunnel instanceof TunnelItem) {
+			context = tunnel.strip();
+		}
+		if (!context) {
+			context = {
+				tunnelType: tunnel.tunnelType,
+				remoteHost: tunnel.remoteHost,
+				remotePort: tunnel.remotePort,
+				localAddress: tunnel.localAddress,
+				protocol: tunnel.protocol,
+				localUri: tunnel.localUri,
+				localPort: tunnel.localPort,
+				name: tunnel.name,
+				closeable: tunnel.closeable,
+				source: tunnel.source,
+				privacy: tunnel.privacy,
+				processDescription: tunnel.processDescription,
+				label: tunnel.label
+			};
+		}
+		return context;
+	}
+
 	renderActionBarItem(element: ActionBarCell, templateData: IActionBarTemplateData): void {
 		templateData.label.element.style.display = 'flex';
 		templateData.label.setLabel(element.label, undefined,
@@ -423,7 +450,7 @@ class ActionBarRenderer extends Disposable implements ITableRenderer<ActionBarCe
 					: element.tooltip,
 				extraClasses: element.menuId === MenuId.TunnelLocalAddressInline ? ['ports-view-actionbar-cell-localaddress'] : undefined
 			});
-		templateData.actionBar.context = element.tunnel;
+		templateData.actionBar.context = this.tunnelContext(element.tunnel);
 		templateData.container.style.paddingLeft = '10px';
 		const context: [string, any][] =
 			[
@@ -563,6 +590,29 @@ class TunnelItem implements ITunnelItem {
 			tunnel.privacy,
 			remoteExplorerService,
 			tunnelService);
+	}
+
+	/**
+	 * Removes all non-serializable properties from the tunnel
+	 * @returns A new TunnelItem without any services
+	 */
+	public strip(): TunnelItem | undefined {
+		return new TunnelItem(
+			this.tunnelType,
+			this.remoteHost,
+			this.remotePort,
+			this.source,
+			this.hasRunningProcess,
+			this.protocol,
+			this.localUri,
+			this.localAddress,
+			this.localPort,
+			this.closeable,
+			this.name,
+			this.runningProcess,
+			this.pid,
+			this._privacy
+		);
 	}
 
 	constructor(
@@ -1691,7 +1741,8 @@ MenuRegistry.appendMenuItem(MenuId.TunnelLocalAddressInline, ({
 export const portWithRunningProcessForeground = registerColor('ports.iconRunningProcessForeground', {
 	light: STATUS_BAR_HOST_NAME_BACKGROUND,
 	dark: STATUS_BAR_HOST_NAME_BACKGROUND,
-	hc: STATUS_BAR_HOST_NAME_BACKGROUND
+	hcDark: STATUS_BAR_HOST_NAME_BACKGROUND,
+	hcLight: STATUS_BAR_HOST_NAME_BACKGROUND
 }, nls.localize('portWithRunningProcess.foreground', "The color of the icon for a port that has an associated running process."));
 
 registerThemingParticipant((theme, collector) => {

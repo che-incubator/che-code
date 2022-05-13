@@ -58,7 +58,7 @@ else {
 	// Running out of sources
 	if (Object.keys(product).length === 0) {
 		Object.assign(product, {
-			version: '1.65.0-dev',
+			version: '1.67.0-dev',
 			nameShort: 'Code - OSS Dev',
 			nameLong: 'Code - OSS Dev',
 			applicationName: 'code-oss',
@@ -71,12 +71,6 @@ else {
 				serviceUrl: 'https://open-vsx.org/vscode/gallery',
 				itemUrl: 'https://open-vsx.org/vscode/item',
 			},
-			extensionAllowedProposedApi: [
-				'ms-vscode.vscode-js-profile-flame',
-				'ms-vscode.vscode-js-profile-table',
-				'GitHub.remotehub',
-				'GitHub.remotehub-insiders'
-			],
 		});
 	}
 }

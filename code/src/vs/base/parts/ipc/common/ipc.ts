@@ -522,7 +522,7 @@ export class ChannelClient implements IChannelClient, IDisposable {
 			},
 			listen(event: string, arg: any) {
 				if (that.isDisposed) {
-					return Promise.reject(errors.canceled());
+					return Event.None;
 				}
 				return that.requestEvent(channelName, event, arg);
 			}
@@ -1109,7 +1109,7 @@ export namespace ProxyChannel {
 		properties?: Map<string, unknown>;
 	}
 
-	export function toService<T>(channel: IChannel, options?: ICreateProxyServiceOptions): T {
+	export function toService<T extends object>(channel: IChannel, options?: ICreateProxyServiceOptions): T {
 		const disableMarshalling = options && options.disableMarshalling;
 
 		return new Proxy({}, {

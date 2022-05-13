@@ -9,20 +9,18 @@ import { IActiveCodeEditor } from 'vs/editor/browser/editorBrowser';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
 import { InlineCompletionTriggerKind } from 'vs/editor/common/languages';
-import { ILanguageConfigurationService } from 'vs/editor/common/languages/languageConfigurationRegistry';
-import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
-import { GhostText, GhostTextWidgetModel } from 'vs/editor/contrib/inlineCompletions/browser/ghostText';
+import { GhostText, GhostTextReplacement, GhostTextWidgetModel } from 'vs/editor/contrib/inlineCompletions/browser/ghostText';
 import { InlineCompletionsModel, SynchronizedInlineCompletionsCache, TrackedInlineCompletions } from 'vs/editor/contrib/inlineCompletions/browser/inlineCompletionsModel';
 import { SuggestWidgetPreviewModel } from 'vs/editor/contrib/inlineCompletions/browser/suggestWidgetPreviewModel';
 import { createDisposableRef } from 'vs/editor/contrib/inlineCompletions/browser/utils';
-import { ICommandService } from 'vs/platform/commands/common/commands';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 
 export abstract class DelegatingModel extends Disposable implements GhostTextWidgetModel {
 	private readonly onDidChangeEmitter = new Emitter<void>();
 	public readonly onDidChange = this.onDidChangeEmitter.event;
 
 	private hasCachedGhostText = false;
-	private cachedGhostText: GhostText | undefined;
+	private cachedGhostText: GhostText | GhostTextReplacement | undefined;
 
 	private readonly currentModelRef = this._register(new MutableDisposable<IReference<GhostTextWidgetModel>>());
 	protected get targetModel(): GhostTextWidgetModel | undefined {
@@ -43,7 +41,7 @@ export abstract class DelegatingModel extends Disposable implements GhostTextWid
 		this.onDidChangeEmitter.fire();
 	}
 
-	public get ghostText(): GhostText | undefined {
+	public get ghostText(): GhostText | GhostTextReplacement | undefined {
 		if (!this.hasCachedGhostText) {
 			this.cachedGhostText = this.currentModelRef.value?.object?.ghostText;
 			this.hasCachedGhostText = true;
@@ -69,8 +67,8 @@ export abstract class DelegatingModel extends Disposable implements GhostTextWid
 */
 export class GhostTextModel extends DelegatingModel implements GhostTextWidgetModel {
 	public readonly sharedCache = this._register(new SharedInlineCompletionCache());
-	public readonly suggestWidgetAdapterModel = this._register(new SuggestWidgetPreviewModel(this.editor, this.sharedCache, this.languageFeaturesService));
-	public readonly inlineCompletionsModel = this._register(new InlineCompletionsModel(this.editor, this.sharedCache, this.commandService, this.languageConfigurationService, this.languageFeaturesService));
+	public readonly suggestWidgetAdapterModel = this._register(this.instantiationService.createInstance(SuggestWidgetPreviewModel, this.editor, this.sharedCache));
+	public readonly inlineCompletionsModel = this._register(this.instantiationService.createInstance(InlineCompletionsModel, this.editor, this.sharedCache));
 
 	public get activeInlineCompletionsModel(): InlineCompletionsModel | undefined {
 		if (this.targetModel === this.inlineCompletionsModel) {
@@ -81,9 +79,7 @@ export class GhostTextModel extends DelegatingModel implements GhostTextWidgetMo
 
 	constructor(
 		private readonly editor: IActiveCodeEditor,
-		@ICommandService private readonly commandService: ICommandService,
-		@ILanguageConfigurationService private readonly languageConfigurationService: ILanguageConfigurationService,
-		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
 		super();
 
@@ -151,8 +147,8 @@ export class SharedInlineCompletionCache extends Disposable {
 		triggerKind: InlineCompletionTriggerKind
 	) {
 		this.cache.value = new SynchronizedInlineCompletionsCache(
-			editor,
 			completionsSource,
+			editor,
 			() => this.onDidChangeEmitter.fire(),
 			triggerKind
 		);

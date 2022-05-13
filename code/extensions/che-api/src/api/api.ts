@@ -13,8 +13,10 @@
 
 import { DevfileService } from './devfile-service';
 import { WorkspaceService } from './workspace-service';
+import { GithubService } from './github-service';
 
 export interface Api {
     getDevfileService(): DevfileService;
     getWorkspaceService(): WorkspaceService;
+    getGithubService(): GithubService;
 }

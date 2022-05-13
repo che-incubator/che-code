@@ -28,7 +28,6 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { PreferredGroup } from 'vs/workbench/services/editor/common/editorService';
 import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
 import { Emitter } from 'vs/base/common/event';
-import { IFileService } from 'vs/platform/files/common/files';
 
 interface RegisteredEditor {
 	globPattern: string | glob.IRelativePattern;
@@ -66,8 +65,7 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@ILogService private readonly logService: ILogService,
-		@IFileService private readonly fileService: IFileService
+		@ILogService private readonly logService: ILogService
 	) {
 		super();
 		// Read in the cache on statup
@@ -160,10 +158,6 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 			throw new Error(`Calling resolve editor when resolution is explicitly disabled!`);
 		}
 
-		// We ask the file service to activate a provider for the scheme in case
-		// anyone depends on that provider being available
-		await this.fileService.activateProvider(resource.scheme);
-
 		if (untypedEditor.options?.override === EditorResolution.PICK) {
 			const picked = await this.doPickEditor(untypedEditor);
 			// If the picker was cancelled we will stop resolving the editor
@@ -222,7 +216,7 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 		if (input) {
 			this.sendEditorResolutionTelemetry(input.editor);
 			if (input.editor.editorId !== selectedEditor.editorInfo.id) {
-				console.warn(`Editor ID Mismatch: ${input.editor.editorId} !== ${selectedEditor.editorInfo.id}. This will cause bugs. Please ensure editorInput.editorId matches the registered id`);
+				this.logService.warn(`Editor ID Mismatch: ${input.editor.editorId} !== ${selectedEditor.editorInfo.id}. This will cause bugs. Please ensure editorInput.editorId matches the registered id`);
 			}
 			return { ...input, group };
 		}
@@ -752,7 +746,9 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 
 	private sendEditorResolutionTelemetry(chosenInput: EditorInput): void {
 		type editorResolutionClassification = {
-			viewType: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
+			viewType: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'The id of the editor opened. Used to gain an undertsanding of what editors are most popular' };
+			owner: 'lramos15';
+			comment: 'An event that fires when an editor type is picked';
 		};
 		type editorResolutionEvent = {
 			viewType: string;

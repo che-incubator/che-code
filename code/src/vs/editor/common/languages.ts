@@ -75,10 +75,11 @@ export const enum StandardTokenType {
  *     1098 7654 3210 9876 5432 1098 7654 3210
  * - -------------------------------------------
  *     xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx
- *     bbbb bbbb bfff ffff ffFF FFTT LLLL LLLL
+ *     bbbb bbbb ffff ffff fFFF FBTT LLLL LLLL
  * - -------------------------------------------
  *  - L = LanguageId (8 bits)
  *  - T = StandardTokenType (2 bits)
+ *  - B = Balanced bracket (1 bit)
  *  - F = FontStyle (4 bits)
  *  - f = foreground color (9 bits)
  *  - b = background color (9 bits)
@@ -88,14 +89,15 @@ export const enum StandardTokenType {
 export const enum MetadataConsts {
 	LANGUAGEID_MASK = 0b00000000000000000000000011111111,
 	TOKEN_TYPE_MASK = 0b00000000000000000000001100000000,
-	FONT_STYLE_MASK = 0b00000000000000000011110000000000,
-	FOREGROUND_MASK = 0b00000000011111111100000000000000,
-	BACKGROUND_MASK = 0b11111111100000000000000000000000,
+	BALANCED_BRACKETS_MASK = 0b00000000000000000000010000000000,
+	FONT_STYLE_MASK = 0b00000000000000000111100000000000,
+	FOREGROUND_MASK = 0b00000000111111111000000000000000,
+	BACKGROUND_MASK = 0b11111111000000000000000000000000,
 
-	ITALIC_MASK = 0b00000000000000000000010000000000,
-	BOLD_MASK = 0b00000000000000000000100000000000,
-	UNDERLINE_MASK = 0b00000000000000000001000000000000,
-	STRIKETHROUGH_MASK = 0b00000000000000000010000000000000,
+	ITALIC_MASK = 0b00000000000000000000100000000000,
+	BOLD_MASK = 0b00000000000000000001000000000000,
+	UNDERLINE_MASK = 0b00000000000000000010000000000000,
+	STRIKETHROUGH_MASK = 0b00000000000000000100000000000000,
 
 	// Semantic tokens cannot set the language id, so we can
 	// use the first 8 bits for control purposes
@@ -108,9 +110,10 @@ export const enum MetadataConsts {
 
 	LANGUAGEID_OFFSET = 0,
 	TOKEN_TYPE_OFFSET = 8,
-	FONT_STYLE_OFFSET = 10,
-	FOREGROUND_OFFSET = 14,
-	BACKGROUND_OFFSET = 23
+	BALANCED_BRACKETS_OFFSET = 10,
+	FONT_STYLE_OFFSET = 11,
+	FOREGROUND_OFFSET = 15,
+	BACKGROUND_OFFSET = 24
 }
 
 /**
@@ -124,6 +127,10 @@ export class TokenMetadata {
 
 	public static getTokenType(metadata: number): StandardTokenType {
 		return (metadata & MetadataConsts.TOKEN_TYPE_MASK) >>> MetadataConsts.TOKEN_TYPE_OFFSET;
+	}
+
+	public static containsBalancedBrackets(metadata: number): boolean {
+		return (metadata & MetadataConsts.BALANCED_BRACKETS_MASK) !== 0;
 	}
 
 	public static getFontStyle(metadata: number): FontStyle {
@@ -673,6 +680,10 @@ export interface CompletionItem {
 	 * A command that should be run upon acceptance of this item.
 	 */
 	command?: Command;
+	/**
+	 * @internal
+	 */
+	extensionId?: ExtensionIdentifier;
 
 	/**
 	 * @internal
@@ -786,8 +797,24 @@ export interface InlineCompletion {
 	 * The text to insert.
 	 * If the text contains a line break, the range must end at the end of a line.
 	 * If existing text should be replaced, the existing text must be a prefix of the text to insert.
+	 *
+	 * The text can also be a snippet. In that case, a preview with default parameters is shown.
+	 * When accepting the suggestion, the full snippet is inserted.
 	*/
-	readonly text: string;
+	readonly insertText: string | { snippet: string };
+
+	/**
+	 * A text that is used to decide if this inline completion should be shown.
+	 * An inline completion is shown if the text to replace is a subword of the filter text.
+	 */
+	readonly filterText?: string;
+
+	/**
+	 * An optional array of additional text edits that are applied when
+	 * selecting this completion. Edits must not overlap with the main edit
+	 * nor with themselves.
+	 */
+	readonly additionalTextEdits?: ISingleEditOperation[];
 
 	/**
 	 * The range to replace.
@@ -806,6 +833,10 @@ export interface InlineCompletion {
 
 export interface InlineCompletions<TItem extends InlineCompletion = InlineCompletion> {
 	readonly items: readonly TItem[];
+	/**
+	 * A list of commands associated with the inline completions of this list.
+	 */
+	readonly commands?: Command[];
 }
 
 export interface InlineCompletionsProvider<T extends InlineCompletions = InlineCompletions> {
@@ -1277,6 +1308,11 @@ export interface DocumentSymbolProvider {
 
 export type TextEdit = { range: IRange; text: string; eol?: model.EndOfLineSequence };
 
+export interface SnippetTextEdit {
+	range: IRange;
+	snippet: string;
+}
+
 /**
  * Interface used to format a model
  */
@@ -1586,37 +1622,6 @@ export interface RenameProvider {
 	resolveRenameLocation?(model: model.ITextModel, position: Position, token: CancellationToken): ProviderResult<RenameLocation & Rejection>;
 }
 
-/**
- * @internal
- */
-export interface AuthenticationSession {
-	id: string;
-	accessToken: string;
-	account: {
-		label: string;
-		id: string;
-	};
-	scopes: ReadonlyArray<string>;
-	idToken?: string;
-}
-
-/**
- * @internal
- */
-export interface AuthenticationSessionsChangeEvent {
-	added: ReadonlyArray<AuthenticationSession>;
-	removed: ReadonlyArray<AuthenticationSession>;
-	changed: ReadonlyArray<AuthenticationSession>;
-}
-
-/**
- * @internal
- */
-export interface AuthenticationProviderInformation {
-	id: string;
-	label: string;
-}
-
 export interface Command {
 	id: string;
 	title: string;
@@ -1675,7 +1680,13 @@ export enum CommentThreadCollapsibleState {
 	Expanded = 1
 }
 
-
+/**
+ * @internal
+ */
+export enum CommentThreadState {
+	Unresolved = 0,
+	Resolved = 1
+}
 
 /**
  * @internal
@@ -1698,24 +1709,27 @@ export interface CommentInput {
 /**
  * @internal
  */
-export interface CommentThread {
+export interface CommentThread<T = IRange> {
+	isDocumentCommentThread(): this is CommentThread<IRange>;
 	commentThreadHandle: number;
 	controllerHandle: number;
 	extensionId?: string;
 	threadId: string;
 	resource: string | null;
-	range: IRange;
+	range: T;
 	label: string | undefined;
 	contextValue: string | undefined;
 	comments: Comment[] | undefined;
 	onDidChangeComments: Event<Comment[] | undefined>;
 	collapsibleState?: CommentThreadCollapsibleState;
+	state?: CommentThreadState;
 	canReply: boolean;
 	input?: CommentInput;
 	onDidChangeInput: Event<CommentInput | undefined>;
-	onDidChangeRange: Event<IRange>;
+	onDidChangeRange: Event<T>;
 	onDidChangeLabel: Event<string | undefined>;
 	onDidChangeCollasibleState: Event<CommentThreadCollapsibleState | undefined>;
+	onDidChangeState: Event<CommentThreadState | undefined>;
 	onDidChangeCanReply: Event<boolean>;
 	isDisposed: boolean;
 }
@@ -1775,27 +1789,27 @@ export interface Comment {
 	readonly commentReactions?: CommentReaction[];
 	readonly label?: string;
 	readonly mode?: CommentMode;
-	readonly timestamp?: Date;
+	readonly timestamp?: string;
 }
 
 /**
  * @internal
  */
-export interface CommentThreadChangedEvent {
+export interface CommentThreadChangedEvent<T> {
 	/**
 	 * Added comment threads.
 	 */
-	readonly added: CommentThread[];
+	readonly added: CommentThread<T>[];
 
 	/**
 	 * Removed comment threads.
 	 */
-	readonly removed: CommentThread[];
+	readonly removed: CommentThread<T>[];
 
 	/**
 	 * Changed comment threads.
 	 */
-	readonly changed: CommentThread[];
+	readonly changed: CommentThread<T>[];
 }
 
 export interface CodeLens {
@@ -1817,7 +1831,6 @@ export interface CodeLensProvider {
 
 
 export enum InlayHintKind {
-	Other = 0,
 	Type = 1,
 	Parameter = 2,
 }
@@ -1833,8 +1846,9 @@ export interface InlayHintLabelPart {
 export interface InlayHint {
 	label: string | InlayHintLabelPart[];
 	tooltip?: string | IMarkdownString;
+	textEdits?: TextEdit[];
 	position: IPosition;
-	kind: InlayHintKind;
+	kind?: InlayHintKind;
 	paddingLeft?: boolean;
 	paddingRight?: boolean;
 }
@@ -1968,4 +1982,24 @@ export enum ExternalUriOpenerPriority {
 	Option = 1,
 	Default = 2,
 	Preferred = 3,
+}
+
+/**
+ * @internal
+ */
+export interface IDataTransferItem {
+	asString(): Thenable<string>;
+	value: any;
+}
+
+/**
+ * @internal
+ */
+export type IDataTransfer = Map<string, IDataTransferItem>;
+
+/**
+ * @internal
+ */
+export interface DocumentOnDropEditProvider {
+	provideDocumentOnDropEdits(model: model.ITextModel, position: IPosition, dataTransfer: IDataTransfer, token: CancellationToken): ProviderResult<SnippetTextEdit>;
 }

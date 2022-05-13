@@ -36,7 +36,7 @@ export class WorkspaceTags implements IWorkbenchContribution {
 		@IProductService private readonly productService: IProductService,
 		@INativeHostService private readonly nativeHostService: INativeHostService
 	) {
-		if (this.telemetryService.telemetryLevel === TelemetryLevel.USAGE) {
+		if (this.telemetryService.telemetryLevel.value === TelemetryLevel.USAGE) {
 			this.report();
 		}
 	}
@@ -126,14 +126,7 @@ export class WorkspaceTags implements IWorkbenchContribution {
 	private reportRemotes(workspaceUris: URI[]): void {
 		Promise.all<string[]>(workspaceUris.map(workspaceUri => {
 			return this.workspaceTagsService.getHashedRemotesFromUri(workspaceUri, true);
-		})).then(hashedRemotes => {
-			/* __GDPR__
-					"workspace.hashedRemotes" : {
-						"remotes" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-					}
-				*/
-			this.telemetryService.publicLog('workspace.hashedRemotes', { remotes: hashedRemotes });
-		}, onUnexpectedError);
+		})).then(() => { }, onUnexpectedError);
 	}
 
 	/* __GDPR__FRAGMENT__
@@ -229,10 +222,6 @@ export class WorkspaceTags implements IWorkbenchContribution {
 				if (['DIRECT', 'PROXY', 'HTTPS', 'SOCKS', 'EMPTY'].indexOf(type) === -1) {
 					type = 'UNKNOWN';
 				}
-				type ResolveProxyStatsClassification = {
-					type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				};
-				this.telemetryService.publicLog2<{ type: String }, ResolveProxyStatsClassification>('resolveProxy.stats', { type });
 			}).then(undefined, onUnexpectedError);
 	}
 }

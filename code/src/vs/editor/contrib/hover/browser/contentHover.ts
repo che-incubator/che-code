@@ -171,6 +171,10 @@ export class ContentHoverController extends Disposable {
 		return this._widget.isColorPickerVisible;
 	}
 
+	public containsNode(node: Node): boolean {
+		return this._widget.getDomNode().contains(node);
+	}
+
 	private _addLoadingMessage(result: IHoverPart[]): IHoverPart[] {
 		if (this._computer.anchor) {
 			for (const participant of this._participants) {
@@ -520,6 +524,12 @@ class ContentHoverComputer implements IHoverComputer<IHoverPart> {
 
 		const model = editor.getModel();
 		const lineNumber = anchor.range.startLineNumber;
+
+		if (lineNumber > model.getLineCount()) {
+			// invalid line
+			return [];
+		}
+
 		const maxColumn = model.getLineMaxColumn(lineNumber);
 		return editor.getLineDecorations(lineNumber).filter((d) => {
 			if (d.options.isWholeLine) {

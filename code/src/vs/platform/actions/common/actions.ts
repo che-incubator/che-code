@@ -9,48 +9,13 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { Iterable } from 'vs/base/common/iterator';
 import { DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { LinkedList } from 'vs/base/common/linkedList';
-import { UriDto } from 'vs/base/common/types';
-import { URI } from 'vs/base/common/uri';
+import { ICommandAction, ICommandActionTitle, Icon, ILocalizedString } from 'vs/platform/action/common/action';
 import { CommandsRegistry, ICommandHandlerDescription, ICommandService } from 'vs/platform/commands/common/commands';
 import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { SyncDescriptor, SyncDescriptor0 } from 'vs/platform/instantiation/common/descriptors';
 import { BrandedService, createDecorator, IConstructorSignature, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingRule, IKeybindings, KeybindingsRegistry } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
-
-export interface ILocalizedString {
-	/**
-	 * The localized value of the string.
-	 */
-	value: string;
-	/**
-	 * The original (non localized value of the string)
-	 */
-	original: string;
-}
-
-export interface ICommandActionTitle extends ILocalizedString {
-	/**
-	 * The title with a mnemonic designation. && precedes the mnemonic.
-	 */
-	mnemonicTitle?: string;
-}
-
-export type Icon = { dark?: URI; light?: URI } | ThemeIcon;
-
-export interface ICommandAction {
-	id: string;
-	title: string | ICommandActionTitle;
-	shortTitle?: string | ICommandActionTitle;
-	category?: string | ILocalizedString;
-	tooltip?: string | ILocalizedString;
-	icon?: Icon;
-	source?: string;
-	precondition?: ContextKeyExpression;
-	toggled?: ContextKeyExpression | { condition: ContextKeyExpression; icon?: Icon; tooltip?: string; title?: string | ILocalizedString };
-}
-
-export type ISerializableCommandAction = UriDto<ICommandAction>;
 
 export interface IMenuItem {
 	command: ICommandAction;
@@ -89,6 +54,7 @@ export class MenuId {
 	static readonly DebugVariablesContext = new MenuId('DebugVariablesContext');
 	static readonly DebugWatchContext = new MenuId('DebugWatchContext');
 	static readonly DebugToolBar = new MenuId('DebugToolBar');
+	static readonly DebugToolBarStop = new MenuId('DebugToolBarStop');
 	static readonly EditorContext = new MenuId('EditorContext');
 	static readonly SimpleEditorContext = new MenuId('SimpleEditorContext');
 	static readonly EditorContextCopy = new MenuId('EditorContextCopy');
@@ -101,6 +67,9 @@ export class MenuId {
 	static readonly ExplorerContext = new MenuId('ExplorerContext');
 	static readonly ExtensionContext = new MenuId('ExtensionContext');
 	static readonly GlobalActivity = new MenuId('GlobalActivity');
+	static readonly TitleMenu = new MenuId('TitleMenu');
+	static readonly TitleMenuQuickPick = new MenuId('TitleMenuQuickPick');
+	static readonly LayoutControlMenuSubmenu = new MenuId('LayoutControlMenuSubmenu');
 	static readonly LayoutControlMenu = new MenuId('LayoutControlMenu');
 	static readonly MenubarMainMenu = new MenuId('MenubarMainMenu');
 	static readonly MenubarAppearanceMenu = new MenuId('MenubarAppearanceMenu');
@@ -113,6 +82,7 @@ export class MenuId {
 	static readonly MenubarLayoutMenu = new MenuId('MenubarLayoutMenu');
 	static readonly MenubarNewBreakpointMenu = new MenuId('MenubarNewBreakpointMenu');
 	static readonly MenubarPanelAlignmentMenu = new MenuId('MenubarPanelAlignmentMenu');
+	static readonly MenubarPanelPositionMenu = new MenuId('MenubarPanelPositionMenu');
 	static readonly MenubarPreferencesMenu = new MenuId('MenubarPreferencesMenu');
 	static readonly MenubarRecentMenu = new MenuId('MenubarRecentMenu');
 	static readonly MenubarSelectionMenu = new MenuId('MenubarSelectionMenu');
@@ -175,8 +145,10 @@ export class MenuId {
 	static readonly TimelineItemContext = new MenuId('TimelineItemContext');
 	static readonly TimelineTitle = new MenuId('TimelineTitle');
 	static readonly TimelineTitleContext = new MenuId('TimelineTitleContext');
+	static readonly TimelineFilterSubMenu = new MenuId('TimelineFilterSubMenu');
 	static readonly AccountsContext = new MenuId('AccountsContext');
 	static readonly PanelTitle = new MenuId('PanelTitle');
+	static readonly AuxiliaryBarTitle = new MenuId('AuxiliaryBarTitle');
 	static readonly TerminalInstanceContext = new MenuId('TerminalInstanceContext');
 	static readonly TerminalEditorInstanceContext = new MenuId('TerminalEditorInstanceContext');
 	static readonly TerminalNewDropdownContext = new MenuId('TerminalNewDropdownContext');

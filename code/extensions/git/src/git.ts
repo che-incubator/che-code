@@ -7,12 +7,13 @@ import { promises as fs, exists, realpath } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as cp from 'child_process';
+import { fileURLToPath } from 'url';
 import * as which from 'which';
 import { EventEmitter } from 'events';
 import * as iconv from '@vscode/iconv-lite-umd';
 import * as filetype from 'file-type';
 import { assign, groupBy, IDisposable, toDisposable, dispose, mkdirp, readBytes, detectUnicodeEncoding, Encoding, onceEvent, splitInChunks, Limiter, Versions, isWindows } from './util';
-import { CancellationToken, Progress, Uri } from 'vscode';
+import { CancellationToken, ConfigurationChangeEvent, Progress, Uri, workspace } from 'vscode';
 import { detectEncoding } from './encoding';
 import { Ref, RefType, Branch, Remote, ForcePushMode, GitErrorCodes, LogOptions, Change, Status, CommitOptions, BranchQuery } from './api/git';
 import * as byline from 'byline';
@@ -367,6 +368,7 @@ export class Git {
 	readonly userAgent: string;
 	readonly version: string;
 	private env: any;
+	private commandsToLog: string[] = [];
 
 	private _onOutput = new EventEmitter();
 	get onOutput(): EventEmitter { return this._onOutput; }
@@ -376,13 +378,25 @@ export class Git {
 		this.version = options.version;
 		this.userAgent = options.userAgent;
 		this.env = options.env || {};
+
+		const onConfigurationChanged = (e?: ConfigurationChangeEvent) => {
+			if (e !== undefined && !e.affectsConfiguration('git.commandsToLog')) {
+				return;
+			}
+
+			const config = workspace.getConfiguration('git');
+			this.commandsToLog = config.get<string[]>('commandsToLog', []);
+		};
+
+		workspace.onDidChangeConfiguration(onConfigurationChanged, this);
+		onConfigurationChanged();
 	}
 
 	compareGitVersionTo(version: string): -1 | 0 | 1 {
 		return Versions.compare(Versions.fromString(this.version), Versions.fromString(version));
 	}
 
-	open(repository: string, dotGit: string): Repository {
+	open(repository: string, dotGit: { path: string; commonPath?: string }): Repository {
 		return new Repository(this, repository, dotGit);
 	}
 
@@ -455,7 +469,7 @@ export class Git {
 	}
 
 	async getRepositoryRoot(repositoryPath: string): Promise<string> {
-		const result = await this.exec(repositoryPath, ['rev-parse', '--show-toplevel'], { log: false });
+		const result = await this.exec(repositoryPath, ['rev-parse', '--show-toplevel']);
 
 		// Keep trailing spaces which are part of the directory name
 		const repoPath = path.normalize(result.stdout.trimLeft().replace(/[\r\n]+$/, ''));
@@ -466,6 +480,7 @@ export class Git {
 			const repoUri = Uri.file(repoPath);
 			const pathUri = Uri.file(repositoryPath);
 			if (repoUri.authority.length !== 0 && pathUri.authority.length === 0) {
+				// eslint-disable-next-line code-no-look-behind-regex
 				let match = /(?<=^\/?)([a-zA-Z])(?=:\/)/.exec(pathUri.path);
 				if (match !== null) {
 					const [, letter] = match;
@@ -494,15 +509,25 @@ export class Git {
 		return repoPath;
 	}
 
-	async getRepositoryDotGit(repositoryPath: string): Promise<string> {
-		const result = await this.exec(repositoryPath, ['rev-parse', '--git-dir']);
-		let dotGitPath = result.stdout.trim();
+	async getRepositoryDotGit(repositoryPath: string): Promise<{ path: string; commonPath?: string }> {
+		const result = await this.exec(repositoryPath, ['rev-parse', '--git-dir', '--git-common-dir']);
+		let [dotGitPath, commonDotGitPath] = result.stdout.split('\n').map(r => r.trim());
 
 		if (!path.isAbsolute(dotGitPath)) {
 			dotGitPath = path.join(repositoryPath, dotGitPath);
 		}
+		dotGitPath = path.normalize(dotGitPath);
 
-		return path.normalize(dotGitPath);
+		if (commonDotGitPath) {
+			if (!path.isAbsolute(commonDotGitPath)) {
+				commonDotGitPath = path.join(repositoryPath, commonDotGitPath);
+			}
+			commonDotGitPath = path.normalize(commonDotGitPath);
+
+			return { path: dotGitPath, commonPath: commonDotGitPath !== dotGitPath ? commonDotGitPath : undefined };
+		}
+
+		return { path: dotGitPath };
 	}
 
 	async exec(cwd: string, args: string[], options: SpawnOptions = {}): Promise<IExecutionResult<string>> {
@@ -516,7 +541,16 @@ export class Git {
 
 	stream(cwd: string, args: string[], options: SpawnOptions = {}): cp.ChildProcess {
 		options = assign({ cwd }, options || {});
-		return this.spawn(args, options);
+		const child = this.spawn(args, options);
+
+		if (options.log !== false) {
+			const startTime = Date.now();
+			child.on('exit', (_) => {
+				this.log(`> git ${args.join(' ')} [${Date.now() - startTime}ms]\n`);
+			});
+		}
+
+		return child;
 	}
 
 	private async _exec(args: string[], options: SpawnOptions = {}): Promise<IExecutionResult<string>> {
@@ -534,8 +568,15 @@ export class Git {
 		const bufferResult = await exec(child, options.cancellationToken);
 
 		if (options.log !== false) {
+			// command
 			this.log(`> git ${args.join(' ')} [${Date.now() - startTime}ms]\n`);
 
+			// stdout
+			if (bufferResult.stdout.length > 0 && args.find(a => this.commandsToLog.includes(a))) {
+				this.log(`${bufferResult.stdout}\n`);
+			}
+
+			// stderr
 			if (bufferResult.stderr.length > 0) {
 				this.log(`${bufferResult.stderr}\n`);
 			}
@@ -585,11 +626,25 @@ export class Git {
 			GIT_PAGER: 'cat'
 		});
 
-		if (options.cwd) {
-			options.cwd = sanitizePath(options.cwd);
+		const cwd = this.getCwd(options);
+		if (cwd) {
+			options.cwd = sanitizePath(cwd);
 		}
 
 		return cp.spawn(this.path, args, options);
+	}
+
+	private getCwd(options: SpawnOptions): string | undefined {
+		const cwd = options.cwd;
+		if (typeof cwd === 'undefined' || typeof cwd === 'string') {
+			return cwd;
+		}
+
+		if (cwd.protocol === 'file:') {
+			return fileURLToPath(cwd);
+		}
+
+		return undefined;
 	}
 
 	private log(output: string): void {
@@ -818,7 +873,7 @@ export class Repository {
 	constructor(
 		private _git: Git,
 		private repositoryRoot: string,
-		readonly dotGit: string
+		readonly dotGit: { path: string; commonPath?: string }
 	) { }
 
 	get git(): Git {
@@ -1813,11 +1868,17 @@ export class Repository {
 		}
 	}
 
-	getStatus(opts?: { limit?: number; ignoreSubmodules?: boolean }): Promise<{ status: IFileStatus[]; statusLength: number; didHitLimit: boolean }> {
+	getStatus(opts?: { limit?: number; ignoreSubmodules?: boolean; untrackedChanges?: 'mixed' | 'separate' | 'hidden' }): Promise<{ status: IFileStatus[]; statusLength: number; didHitLimit: boolean }> {
 		return new Promise<{ status: IFileStatus[]; statusLength: number; didHitLimit: boolean }>((c, e) => {
 			const parser = new GitStatusParser();
 			const env = { GIT_OPTIONAL_LOCKS: '0' };
-			const args = ['status', '-z', '-u'];
+			const args = ['status', '-z'];
+
+			if (opts?.untrackedChanges === 'hidden') {
+				args.push('-uno');
+			} else {
+				args.push('-uall');
+			}
 
 			if (opts?.ignoreSubmodules) {
 				args.push('--ignore-submodules');
@@ -1992,8 +2053,10 @@ export class Repository {
 		if (this._git.compareGitVersionTo('1.9.0') === -1) {
 			args.push('--format=%(refname)%00%(upstream:short)%00%(objectname)');
 			supportsAheadBehind = false;
-		} else {
+		} else if (this._git.compareGitVersionTo('2.16.0') === -1) {
 			args.push('--format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)');
+		} else {
+			args.push('--format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref)');
 		}
 
 		if (/^refs\/(head|remotes)\//i.test(name)) {
@@ -2004,7 +2067,7 @@ export class Repository {
 
 		const result = await this.exec(args);
 		const branches: Branch[] = result.stdout.trim().split('\n').map<Branch | undefined>(line => {
-			let [branchName, upstream, ref, status] = line.trim().split('\0');
+			let [branchName, upstream, ref, status, remoteName, upstreamRef] = line.trim().split('\0');
 
 			if (branchName.startsWith('refs/heads/')) {
 				branchName = branchName.substring(11);
@@ -2021,8 +2084,8 @@ export class Repository {
 					type: RefType.Head,
 					name: branchName,
 					upstream: upstream ? {
-						name: upstream.substring(index + 1),
-						remote: upstream.substring(0, index)
+						name: upstreamRef ? upstreamRef.substring(11) : upstream.substring(index + 1),
+						remote: remoteName ? remoteName : upstream.substring(0, index)
 					} : undefined,
 					commit: ref || undefined,
 					ahead: Number(ahead) || 0,

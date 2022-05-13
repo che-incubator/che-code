@@ -164,6 +164,7 @@
 							"delete",
 							"discover",
 							"dispose",
+							"drop",
 							"edit",
 							"end",
 							"expand",
@@ -193,6 +194,7 @@
 				"src/**/*.ts"
 			],
 			"rules": {
+				"code-no-look-behind-regex": "warn",
 				"code-import-patterns": [
 					"warn",
 					{
@@ -449,6 +451,7 @@
 							"vs/workbench/~",
 							"vs/workbench/services/*/~",
 							"vs/workbench/contrib/*/~",
+							"vscode-notebook-renderer", // Type only import
 							{
 								"when": "hasBrowser",
 								"pattern": "xterm"

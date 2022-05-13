@@ -1,0 +1,80 @@
+{
+  "name": "che-github-authentication",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "publisher": "vscode",
+  "license": "MIT",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.41.0"
+  },
+  "icon": "images/icon.png",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onAuthenticationRequest:github"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {
+    "authentication": [
+      {
+        "label": "GitHub",
+        "id": "github"
+      }
+    ]
+  },
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "gulp compile-extension:github-authentication",
+    "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
+    "watch": "gulp watch-extension:github-authentication",
+    "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "node-fetch": "2.6.7",
+    "uuid": "8.1.0",
+    "@vscode/extension-telemetry": "0.4.10",
+    "vscode-nls": "^5.0.0",
+    "vscode-tas-client": "^0.1.31"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/node-fetch": "^2.5.7",
+    "@types/uuid": "8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/che-incubator/che-code.git"
+  },
+  "extensionDependencies": [
+    "eclipse-che.api"
+  ],
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/dist"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  }
+}

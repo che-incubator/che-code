@@ -52,7 +52,21 @@ function getLanguageServiceHost(scriptKind: ts.ScriptKind) {
 				};
 			},
 			getCurrentDirectory: () => '',
-			getDefaultLibFileName: (_options: ts.CompilerOptions) => 'es6'
+			getDefaultLibFileName: (_options: ts.CompilerOptions) => 'es6',
+			readFile: (path: string, _encoding?: string | undefined): string | undefined => {
+				if (path === currentTextDocument.uri) {
+					return currentTextDocument.getText();
+				} else {
+					return libs.loadLibrary(path);
+				}
+			},
+			fileExists: (path: string): boolean => {
+				if (path === currentTextDocument.uri) {
+					return true;
+				} else {
+					return !!libs.loadLibrary(path);
+				}
+			}
 		};
 		return ts.createLanguageService(host);
 	});
@@ -87,7 +101,7 @@ export function getJavaScriptMode(documentRegions: LanguageModelCache<HTMLDocume
 			const languageService = await host.getLanguageService(jsDocument);
 			const syntaxDiagnostics: ts.Diagnostic[] = languageService.getSyntacticDiagnostics(jsDocument.uri);
 			const semanticDiagnostics = languageService.getSemanticDiagnostics(jsDocument.uri);
-			return syntaxDiagnostics.concat(semanticDiagnostics).map((diag: ts.Diagnostic): Diagnostic => {
+			return syntaxDiagnostics.concat(semanticDiagnostics).filter(d => d.code !== 1108).map((diag: ts.Diagnostic): Diagnostic => {
 				return {
 					range: convertRange(jsDocument, diag),
 					severity: DiagnosticSeverity.Error,
@@ -360,7 +374,7 @@ export function getJavaScriptMode(documentRegions: LanguageModelCache<HTMLDocume
 		async getSemanticTokens(document: TextDocument): Promise<SemanticTokenData[]> {
 			const jsDocument = jsDocuments.get(document);
 			const jsLanguageService = await host.getLanguageService(jsDocument);
-			return getSemanticTokens(jsLanguageService, jsDocument, jsDocument.uri);
+			return [...getSemanticTokens(jsLanguageService, jsDocument, jsDocument.uri)];
 		},
 		getSemanticTokenLegend(): { types: string[]; modifiers: string[] } {
 			return getSemanticTokenLegend();

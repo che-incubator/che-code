@@ -7,7 +7,7 @@
 #
 
 # https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-53 as linux-libc-builder
+FROM registry.access.redhat.com/ubi8/nodejs-16:1-18 as linux-libc-builder
 
 USER root
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
@@ -37,7 +37,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     fi; } \
     && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum \
-    && npm install -g yarn@1.22.10
+    && npm install -g yarn@1.22.17
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \

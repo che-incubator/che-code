@@ -104,6 +104,15 @@ export class Position {
 		return false;
 	}
 
+	static of(obj: vscode.Position): Position {
+		if (obj instanceof Position) {
+			return obj;
+		} else if (this.isPosition(obj)) {
+			return new Position(obj.line, obj.character);
+		}
+		throw new Error('Invalid argument, is NOT a position-like object');
+	}
+
 	private _line: number;
 	private _character: number;
 
@@ -245,6 +254,16 @@ export class Range {
 			&& Position.isPosition((<Range>thing.end));
 	}
 
+	static of(obj: vscode.Range): Range {
+		if (obj instanceof Range) {
+			return obj;
+		}
+		if (this.isRange(obj)) {
+			return new Range(obj.start, obj.end);
+		}
+		throw new Error('Invalid argument, is NOT a range-like object');
+	}
+
 	protected _start: Position;
 	protected _end: Position;
 
@@ -256,18 +275,19 @@ export class Range {
 		return this._end;
 	}
 
+	constructor(start: vscode.Position, end: vscode.Position);
 	constructor(start: Position, end: Position);
 	constructor(startLine: number, startColumn: number, endLine: number, endColumn: number);
-	constructor(startLineOrStart: number | Position, startColumnOrEnd: number | Position, endLine?: number, endColumn?: number) {
+	constructor(startLineOrStart: number | Position | vscode.Position, startColumnOrEnd: number | Position | vscode.Position, endLine?: number, endColumn?: number) {
 		let start: Position | undefined;
 		let end: Position | undefined;
 
 		if (typeof startLineOrStart === 'number' && typeof startColumnOrEnd === 'number' && typeof endLine === 'number' && typeof endColumn === 'number') {
 			start = new Position(startLineOrStart, startColumnOrEnd);
 			end = new Position(endLine, endColumn);
-		} else if (startLineOrStart instanceof Position && startColumnOrEnd instanceof Position) {
-			start = startLineOrStart;
-			end = startColumnOrEnd;
+		} else if (Position.isPosition(startLineOrStart) && Position.isPosition(startColumnOrEnd)) {
+			start = Position.of(startLineOrStart);
+			end = Position.of(startColumnOrEnd);
 		}
 
 		if (!start || !end) {
@@ -284,12 +304,12 @@ export class Range {
 	}
 
 	contains(positionOrRange: Position | Range): boolean {
-		if (positionOrRange instanceof Range) {
-			return this.contains(positionOrRange._start)
-				&& this.contains(positionOrRange._end);
+		if (Range.isRange(positionOrRange)) {
+			return this.contains(positionOrRange.start)
+				&& this.contains(positionOrRange.end);
 
-		} else if (positionOrRange instanceof Position) {
-			if (positionOrRange.isBefore(this._start)) {
+		} else if (Position.isPosition(positionOrRange)) {
+			if (Position.of(positionOrRange).isBefore(this._start)) {
 				return false;
 			}
 			if (this._end.isBefore(positionOrRange)) {
@@ -403,9 +423,9 @@ export class Selection extends Range {
 		if (typeof anchorLineOrAnchor === 'number' && typeof anchorColumnOrActive === 'number' && typeof activeLine === 'number' && typeof activeColumn === 'number') {
 			anchor = new Position(anchorLineOrAnchor, anchorColumnOrActive);
 			active = new Position(activeLine, activeColumn);
-		} else if (anchorLineOrAnchor instanceof Position && anchorColumnOrActive instanceof Position) {
-			anchor = anchorLineOrAnchor;
-			active = anchorColumnOrActive;
+		} else if (Position.isPosition(anchorLineOrAnchor) && Position.isPosition(anchorColumnOrActive)) {
+			anchor = Position.of(anchorLineOrAnchor);
+			active = Position.of(anchorColumnOrActive);
 		}
 
 		if (!anchor || !active) {
@@ -575,6 +595,17 @@ export class TextEdit {
 			newText: this.newText,
 			newEol: this._newEol
 		};
+	}
+}
+
+export class SnippetTextEdit implements vscode.SnippetTextEdit {
+
+	range: vscode.Range;
+	snippet: vscode.SnippetString;
+
+	constructor(range: Range, snippet: SnippetString) {
+		this.range = range;
+		this.snippet = snippet;
 	}
 }
 
@@ -893,9 +924,9 @@ export class Location {
 
 		if (!rangeOrPosition) {
 			//that's OK
-		} else if (rangeOrPosition instanceof Range) {
-			this.range = rangeOrPosition;
-		} else if (rangeOrPosition instanceof Position) {
+		} else if (Range.isRange(rangeOrPosition)) {
+			this.range = Range.of(rangeOrPosition);
+		} else if (Position.isPosition(rangeOrPosition)) {
 			this.range = new Range(rangeOrPosition, rangeOrPosition);
 		} else {
 			throw new Error('Illegal argument');
@@ -1353,6 +1384,14 @@ export class MarkdownString implements vscode.MarkdownString {
 		this.#delegate.supportHtml = value;
 	}
 
+	get baseUri(): vscode.Uri | undefined {
+		return this.#delegate.baseUri;
+	}
+
+	set baseUri(value: vscode.Uri | undefined) {
+		this.#delegate.baseUri = value;
+	}
+
 	appendText(value: string): vscode.MarkdownString {
 		this.#delegate.appendText(value);
 		return this;
@@ -1416,7 +1455,6 @@ export enum SignatureHelpTriggerKind {
 
 
 export enum InlayHintKind {
-	Other = 0,
 	Type = 1,
 	Parameter = 2,
 }
@@ -1424,13 +1462,13 @@ export enum InlayHintKind {
 @es5ClassCompat
 export class InlayHintLabelPart {
 
-	label: string;
+	value: string;
 	tooltip?: string | vscode.MarkdownString;
 	location?: Location;
 	command?: vscode.Command;
 
-	constructor(label: string) {
-		this.label = label;
+	constructor(value: string) {
+		this.value = value;
 	}
 }
 
@@ -1440,13 +1478,14 @@ export class InlayHint implements vscode.InlayHint {
 	label: string | InlayHintLabelPart[];
 	tooltip?: string | vscode.MarkdownString;
 	position: Position;
+	textEdits?: TextEdit[];
 	kind?: vscode.InlayHintKind;
 	paddingLeft?: boolean;
 	paddingRight?: boolean;
 
-	constructor(label: string | InlayHintLabelPart[], position: Position, kind?: vscode.InlayHintKind) {
-		this.label = label;
+	constructor(position: Position, label: string | InlayHintLabelPart[], kind?: vscode.InlayHintKind) {
 		this.position = position;
+		this.label = label;
 		this.kind = kind;
 	}
 }
@@ -1556,23 +1595,59 @@ export class CompletionList {
 @es5ClassCompat
 export class InlineSuggestion implements vscode.InlineCompletionItem {
 
-	text: string;
+	insertText?: string | SnippetString;
+
+	filterText?: string;
+
+	/**
+	 * @deprecated Use `insertText` instead. Will be removed eventually.
+	*/
+	text?: string;
+
 	range?: Range;
 	command?: vscode.Command;
 
-	constructor(text: string, range?: Range, command?: vscode.Command) {
-		this.text = text;
+	constructor(insertText: string | SnippetString, range?: Range, command?: vscode.Command) {
+		this.insertText = insertText;
 		this.range = range;
 		this.command = command;
 	}
 }
 
+/**
+ * @deprecated Return an array of inline completion items directly. Will be removed eventually.
+*/
 @es5ClassCompat
 export class InlineSuggestions implements vscode.InlineCompletionList {
 	items: vscode.InlineCompletionItem[];
 
 	constructor(items: vscode.InlineCompletionItem[]) {
 		this.items = items;
+	}
+}
+
+@es5ClassCompat
+export class InlineSuggestionNew implements vscode.InlineCompletionItemNew {
+	insertText: string;
+	range?: Range;
+	command?: vscode.Command;
+
+	constructor(insertText: string, range?: Range, command?: vscode.Command) {
+		this.insertText = insertText;
+		this.range = range;
+		this.command = command;
+	}
+}
+
+@es5ClassCompat
+export class InlineSuggestionsNew implements vscode.InlineCompletionListNew {
+	items: vscode.InlineCompletionItemNew[];
+
+	commands: vscode.Command[] | undefined;
+
+	constructor(items: vscode.InlineCompletionItemNew[], commands?: vscode.Command[]) {
+		this.items = items;
+		this.commands = commands;
 	}
 }
 
@@ -1768,7 +1843,7 @@ export class TerminalProfile implements vscode.TerminalProfile {
 		public options: vscode.TerminalOptions | vscode.ExtensionTerminalOptions
 	) {
 		if (typeof options !== 'object') {
-			illegalArgument('options');
+			throw illegalArgument('options');
 		}
 	}
 }
@@ -2313,24 +2388,24 @@ export enum TreeItemCollapsibleState {
 }
 
 @es5ClassCompat
-export class TreeDataTransferItem {
+export class DataTransferItem {
 	async asString(): Promise<string> {
-		return JSON.stringify(this.value);
+		return typeof this.value === 'string' ? this.value : JSON.stringify(this.value);
 	}
 
 	constructor(public readonly value: any) { }
 }
 
 @es5ClassCompat
-export class TreeDataTransfer<T extends TreeDataTransferItem = TreeDataTransferItem> {
-	private readonly _items: Map<string, T> = new Map();
-	get(mimeType: string): T | undefined {
+export class DataTransfer {
+	private readonly _items: Map<string, DataTransferItem> = new Map();
+	get(mimeType: string): DataTransferItem | undefined {
 		return this._items.get(mimeType);
 	}
-	set(mimeType: string, value: T): void {
+	set(mimeType: string, value: DataTransferItem): void {
 		this._items.set(mimeType, value);
 	}
-	forEach(callbackfn: (value: T, key: string) => void): void {
+	forEach(callbackfn: (value: DataTransferItem, key: string) => void): void {
 		this._items.forEach(callbackfn);
 	}
 }
@@ -2551,6 +2626,11 @@ export enum InlineCompletionTriggerKind {
 	Explicit = 1,
 }
 
+export enum InlineCompletionTriggerKindNew {
+	Invoke = 0,
+	Automatic = 1,
+}
+
 @es5ClassCompat
 export class InlineValueText implements vscode.InlineValueText {
 	readonly range: Range;
@@ -2695,6 +2775,11 @@ export enum CommentThreadCollapsibleState {
 export enum CommentMode {
 	Editing = 0,
 	Preview = 1
+}
+
+export enum CommentThreadState {
+	Unresolved = 0,
+	Resolved = 1
 }
 
 //#endregion
@@ -2954,6 +3039,12 @@ export enum QuickPickItemKind {
 	Default = 0,
 }
 
+export enum InputBoxValidationSeverity {
+	Info = 1,
+	Warning = 2,
+	Error = 3
+}
+
 export enum ExtensionKind {
 	UI = 1,
 	Workspace = 2
@@ -3000,7 +3091,8 @@ export class ColorTheme implements vscode.ColorTheme {
 export enum ColorThemeKind {
 	Light = 1,
 	Dark = 2,
-	HighContrast = 3
+	HighContrast = 3,
+	HighContrastLight = 4
 }
 
 //#endregion Theming
@@ -3163,7 +3255,7 @@ export class NotebookCellOutputItem {
 		return new NotebookCellOutputItem(bytes, mime);
 	}
 
-	static json(value: any, mime: string = 'application/json'): NotebookCellOutputItem {
+	static json(value: any, mime: string = 'text/x-json'): NotebookCellOutputItem {
 		const rawStr = JSON.stringify(value, undefined, '\t');
 		return NotebookCellOutputItem.text(rawStr, mime);
 	}
@@ -3526,3 +3618,34 @@ export class TypeHierarchyItem {
 		this.selectionRange = selectionRange;
 	}
 }
+
+//#region Tab Inputs
+
+export class TextTabInput {
+	constructor(readonly uri: URI) { }
+}
+
+export class TextDiffTabInput {
+	constructor(readonly original: URI, readonly modified: URI) { }
+}
+
+export class CustomEditorTabInput {
+	constructor(readonly uri: URI, readonly viewType: string) { }
+}
+
+export class WebviewEditorTabInput {
+	constructor(readonly viewType: string) { }
+}
+
+export class NotebookEditorTabInput {
+	constructor(readonly uri: URI, readonly notebookType: string) { }
+}
+
+export class NotebookDiffEditorTabInput {
+	constructor(readonly original: URI, readonly modified: URI, readonly notebookType: string) { }
+}
+
+export class TerminalEditorTabInput {
+	constructor() { }
+}
+//#endregion

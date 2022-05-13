@@ -41,6 +41,7 @@ export interface IProductConfiguration {
 
 	readonly win32AppUserModelId?: string;
 	readonly win32MutexName?: string;
+	readonly win32RegValueName?: string;
 	readonly applicationName: string;
 	readonly embedderIdentifier?: string;
 
@@ -51,7 +52,6 @@ export interface IProductConfiguration {
 
 	readonly downloadUrl?: string;
 	readonly updateUrl?: string;
-	readonly webEndpointUrl?: string;
 	readonly webEndpointUrlTemplate?: string;
 	readonly webviewContentExternalBaseUrlTemplate?: string;
 	readonly target?: string;
@@ -92,6 +92,8 @@ export interface IProductConfiguration {
 		readonly productName: string;
 	};
 
+	readonly removeTelemetryMachineId?: boolean;
+	readonly enabledTelemetryLevels?: { error: boolean; usage: boolean };
 	readonly enableTelemetry?: boolean;
 	readonly openToWelcomeMainPage?: boolean;
 	readonly aiConfig?: {
@@ -119,7 +121,7 @@ export interface IProductConfiguration {
 	readonly privacyStatementUrl?: string;
 	readonly showTelemetryOptOut?: boolean;
 
-	readonly serverGreeting: string[];
+	readonly serverGreeting?: string[];
 	readonly serverLicense?: string[];
 	readonly serverLicensePrompt?: string;
 	readonly serverApplicationName: string;
@@ -139,8 +141,7 @@ export interface IProductConfiguration {
 	readonly extensionKind?: { readonly [extensionId: string]: ('ui' | 'workspace' | 'web')[] };
 	readonly extensionPointExtensionKind?: { readonly [extensionPointId: string]: ('ui' | 'workspace' | 'web')[] };
 	readonly extensionSyncedKeys?: { readonly [extensionId: string]: string[] };
-	/** @deprecated */
-	readonly extensionAllowedProposedApi?: readonly string[];
+
 	readonly extensionEnabledApiProposals?: { readonly [extensionId: string]: string[] };
 	readonly extensionUntrustedWorkspaceSupport?: { readonly [extensionId: string]: ExtensionUntrustedWorkspaceSupport };
 	readonly extensionVirtualWorkspacesSupport?: { readonly [extensionId: string]: ExtensionVirtualWorkspaceSupport };
@@ -153,7 +154,7 @@ export interface IProductConfiguration {
 	readonly darwinUniversalAssetId?: string;
 }
 
-export type ImportantExtensionTip = { name: string; languages?: string[]; pattern?: string; isExtensionPack?: boolean };
+export type ImportantExtensionTip = { name: string; languages?: string[]; pattern?: string; isExtensionPack?: boolean; whenNotInstalled?: string[] };
 
 export interface IAppCenterConfiguration {
 	readonly 'win32-ia32': string;
@@ -166,14 +167,14 @@ export interface IConfigBasedExtensionTip {
 	configPath: string;
 	configName: string;
 	configScheme?: string;
-	recommendations: IStringDictionary<{ name: string; remotes?: string[]; important?: boolean; isExtensionPack?: boolean }>;
+	recommendations: IStringDictionary<{ name: string; remotes?: string[]; important?: boolean; isExtensionPack?: boolean; whenNotInstalled?: string[] }>;
 }
 
 export interface IExeBasedExtensionTip {
 	friendlyName: string;
 	windowsPath?: string;
 	important?: boolean;
-	recommendations: IStringDictionary<{ name: string; important?: boolean; isExtensionPack?: boolean }>;
+	recommendations: IStringDictionary<{ name: string; important?: boolean; isExtensionPack?: boolean; whenNotInstalled?: string[] }>;
 }
 
 export interface IRemoteExtensionTip {

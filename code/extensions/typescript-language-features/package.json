@@ -8,8 +8,6 @@
   "license": "MIT",
   "aiKey": "AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217",
   "enabledApiProposals": [
-    "inlayHints",
-    "languageStatus",
     "resolvers",
     "workspaceTrust"
   ],
@@ -36,13 +34,14 @@
     "Programming Languages"
   ],
   "dependencies": {
+    "@vscode/extension-telemetry": "0.4.10",
     "jsonc-parser": "^2.2.1",
     "semver": "5.5.1",
-    "@vscode/extension-telemetry": "0.4.6",
-    "vscode-nls": "^5.0.0"
+    "vscode-nls": "^5.0.0",
+    "vscode-uri": "^3.0.3"
   },
   "devDependencies": {
-    "@types/node": "14.x",
+    "@types/node": "16.x",
     "@types/semver": "^5.5.0"
   },
   "scripts": {
@@ -66,6 +65,7 @@
     "onCommand:_typescript.configurePlugin",
     "onCommand:_typescript.learnMoreAboutRefactorings",
     "onCommand:typescript.fileReferences",
+    "onCommand:typescript.goToSourceDefinition",
     "onTaskType:typescript",
     "onLanguage:jsonc"
   ],
@@ -637,6 +637,46 @@
             "%format.semicolons.remove%"
           ]
         },
+        "js/ts.implicitProjectConfig.module": {
+          "type": "string",
+          "markdownDescription": "%configuration.implicitProjectConfig.module%",
+          "default": "ESNext",
+          "enum": [
+            "CommonJS",
+            "AMD",
+            "System",
+            "UMD",
+            "ES6",
+            "ES2015",
+            "ES2020",
+            "ESNext",
+            "None",
+            "ES2022",
+            "Node12",
+            "NodeNext"
+          ],
+          "scope": "window"
+        },
+        "js/ts.implicitProjectConfig.target": {
+          "type": "string",
+          "default": "ES2020",
+          "markdownDescription": "%configuration.implicitProjectConfig.target%",
+          "enum": [
+            "ES3",
+            "ES5",
+            "ES6",
+            "ES2015",
+            "ES2016",
+            "ES2017",
+            "ES2018",
+            "ES2019",
+            "ES2020",
+            "ES2021",
+            "ES2022",
+            "ESNext"
+          ],
+          "scope": "window"
+        },
         "javascript.implicitProjectConfig.checkJs": {
           "type": "boolean",
           "default": false,
@@ -749,7 +789,9 @@
         },
         "typescript.locale": {
           "type": "string",
+          "default": "auto",
           "enum": [
+            "auto",
             "de",
             "es",
             "en",
@@ -785,6 +827,11 @@
           ],
           "default": "auto",
           "markdownDescription": "%typescript.preferences.quoteStyle%",
+          "markdownEnumDescriptions": [
+            "%typescript.preferences.quoteStyle.auto%",
+            "%typescript.preferences.quoteStyle.single%",
+            "%typescript.preferences.quoteStyle.double%"
+          ],
           "scope": "language-overridable"
         },
         "typescript.preferences.quoteStyle": {
@@ -796,6 +843,11 @@
           ],
           "default": "auto",
           "markdownDescription": "%typescript.preferences.quoteStyle%",
+          "markdownEnumDescriptions": [
+            "%typescript.preferences.quoteStyle.auto%",
+            "%typescript.preferences.quoteStyle.single%",
+            "%typescript.preferences.quoteStyle.double%"
+          ],
           "scope": "language-overridable"
         },
         "javascript.preferences.importModuleSpecifier": {
@@ -878,7 +930,7 @@
             "none"
           ],
           "markdownEnumDescriptions": [
-            "%typescript.preferences.jsxAttributeCompletionStyle.auto%",
+            "%javascript.preferences.jsxAttributeCompletionStyle.auto%",
             "%typescript.preferences.jsxAttributeCompletionStyle.braces%",
             "%typescript.preferences.jsxAttributeCompletionStyle.none%"
           ],
@@ -1129,6 +1181,12 @@
           "default": true,
           "description": "%configuration.suggest.classMemberSnippets.enabled%",
           "scope": "resource"
+        },
+        "typescript.suggest.objectLiteralMethodSnippets.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%configuration.suggest.objectLiteralMethodSnippets.enabled%",
+          "scope": "resource"
         }
       }
     },
@@ -1171,6 +1229,11 @@
       {
         "command": "typescript.findAllFileReferences",
         "title": "%typescript.findAllFileReferences%",
+        "category": "TypeScript"
+      },
+      {
+        "command": "typescript.goToSourceDefinition",
+        "title": "%typescript.goToSourceDefinition%",
         "category": "TypeScript"
       }
     ],
@@ -1223,6 +1286,32 @@
         {
           "command": "typescript.findAllFileReferences",
           "when": "tsSupportsFileReferences && typescript.isManagedFile"
+        },
+        {
+          "command": "typescript.goToSourceDefinition",
+          "when": "tsSupportsSourceDefinition && typescript.isManagedFile"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "typescript.goToSourceDefinition",
+          "when": "tsSupportsSourceDefinition && resourceLangId == typescript",
+          "group": "navigation@9"
+        },
+        {
+          "command": "typescript.goToSourceDefinition",
+          "when": "tsSupportsSourceDefinition && resourceLangId == typescriptreact",
+          "group": "navigation@9"
+        },
+        {
+          "command": "typescript.goToSourceDefinition",
+          "when": "tsSupportsSourceDefinition && resourceLangId == javascript",
+          "group": "navigation@9"
+        },
+        {
+          "command": "typescript.goToSourceDefinition",
+          "when": "tsSupportsSourceDefinition && resourceLangId == javascriptreact",
+          "group": "navigation@9"
         }
       ],
       "explorer/context": [

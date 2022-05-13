@@ -26,15 +26,18 @@ import { assertNoRpc, poll } from '../utils';
 		await config.update('gpuAcceleration', 'off', ConfigurationTarget.Global);
 		// Disable env var relaunch for tests to prevent terminals relaunching themselves
 		await config.update('environmentChangesRelaunch', false, ConfigurationTarget.Global);
+		await config.update('shellIntegration.enabled', false);
 	});
 
 	suite('Terminal', () => {
 		let disposables: Disposable[] = [];
 
-		teardown(() => {
+		teardown(async () => {
 			assertNoRpc();
 			disposables.forEach(d => d.dispose());
 			disposables.length = 0;
+			const config = workspace.getConfiguration('terminal.integrated');
+			await config.update('shellIntegration.enabled', undefined);
 		});
 
 		test('sendText immediately after createTerminal should not throw', async () => {
@@ -666,8 +669,8 @@ import { assertNoRpc, poll } from '../utils';
 			});
 		});
 
-		suite('environmentVariableCollection', () => {
-			test.skip('should have collection variables apply to terminals immediately after setting', async () => {
+		(process.platform === 'win32' ? suite.skip : suite)('environmentVariableCollection', () => {
+			test('should have collection variables apply to terminals immediately after setting', async () => {
 				// Setup collection and create terminal
 				const collection = extensionContext.environmentVariableCollection;
 				disposables.push({ dispose: () => collection.clear() });
@@ -712,7 +715,7 @@ import { assertNoRpc, poll } from '../utils';
 				});
 			});
 
-			test.skip('should have collection variables apply to environment variables that don\'t exist', async () => {
+			test('should have collection variables apply to environment variables that don\'t exist', async () => {
 				// Setup collection and create terminal
 				const collection = extensionContext.environmentVariableCollection;
 				disposables.push({ dispose: () => collection.clear() });
@@ -798,7 +801,7 @@ import { assertNoRpc, poll } from '../utils';
 				});
 			});
 
-			test.skip('should respect deleting entries', async () => {
+			test('should respect deleting entries', async () => {
 				// Setup collection and create terminal
 				const collection = extensionContext.environmentVariableCollection;
 				disposables.push({ dispose: () => collection.clear() });

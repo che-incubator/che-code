@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { refineServiceDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { IPath } from 'vs/platform/windows/common/windows';
+import { IPath } from 'vs/platform/window/common/window';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { URI } from 'vs/base/common/uri';
 
@@ -39,6 +39,7 @@ export interface IWorkbenchEnvironmentService extends IEnvironmentService {
 	// --- Development
 	readonly debugRenderer: boolean;
 	readonly logExtensionHostCommunication?: boolean;
+	readonly enableSmokeTestDriver?: boolean;
 
 	// --- Editors to open
 	readonly filesToOpenOrCreate?: IPath[] | undefined;

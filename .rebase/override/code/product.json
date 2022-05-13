@@ -12,5 +12,17 @@
 	"win32ShellNameShort": "CheC&ode",
 	"darwinBundleIdentifier": "org.eclipse.che.code",
 	"linuxIconName": "org.eclipse.che.code",
-	"urlProtocol": "checode"
+	"urlProtocol": "checode",
+	"extensionEnabledApiProposals": {
+		"genuitecllc.codetogether": [
+			"fileSearchProvider",
+			"findTextInFiles",
+			"terminalDataWriteEvent",
+			"terminalDimensions",
+			"terminalLocation",
+			"terminalNameChangeEvent",
+			"testObserver",
+			"textSearchProvider"
+		]
+	}
 }

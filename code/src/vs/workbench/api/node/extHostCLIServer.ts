@@ -7,10 +7,10 @@ import { createRandomIPCHandle } from 'vs/base/parts/ipc/node/ipc.net';
 import * as http from 'http';
 import * as fs from 'fs';
 import { IExtHostCommands } from 'vs/workbench/api/common/extHostCommands';
-import { IWindowOpenable, IOpenWindowOptions } from 'vs/platform/windows/common/windows';
+import { IWindowOpenable, IOpenWindowOptions } from 'vs/platform/window/common/window';
 import { URI } from 'vs/base/common/uri';
-import { hasWorkspaceFileExtension } from 'vs/platform/workspaces/common/workspaces';
 import { ILogService } from 'vs/platform/log/common/log';
+import { hasWorkspaceFileExtension } from 'vs/platform/workspace/common/workspace';
 
 export interface OpenCommandPipeArgs {
 	type: 'open';
@@ -81,7 +81,7 @@ export class CLIServerBase {
 	private onRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
 		const sendResponse = (statusCode: number, returnObj: any) => {
 			res.writeHead(statusCode, { 'content-type': 'application/json' });
-			res.end(JSON.stringify(returnObj), (err?: any) => err && this.logService.error(err));
+			res.end(JSON.stringify(returnObj || null), (err?: any) => err && this.logService.error(err));
 		};
 
 		const chunks: string[] = [];

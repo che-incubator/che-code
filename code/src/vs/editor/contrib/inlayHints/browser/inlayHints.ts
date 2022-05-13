@@ -9,8 +9,10 @@ import { DisposableStore } from 'vs/base/common/lifecycle';
 import { IPosition, Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
 import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
-import { InlayHint, InlayHintList, InlayHintsProvider } from 'vs/editor/common/languages';
+import { InlayHint, InlayHintList, InlayHintsProvider, Command } from 'vs/editor/common/languages';
 import { ITextModel } from 'vs/editor/common/model';
+import { Schemas } from 'vs/base/common/network';
+import { URI } from 'vs/base/common/uri';
 
 export class InlayHintAnchor {
 	constructor(readonly range: Range, readonly direction: 'before' | 'after') { }
@@ -137,8 +139,8 @@ export class InlayHintsFragments {
 			return new Range(line, word.startColumn, line, word.endColumn);
 		}
 
-		model.tokenizeIfCheap(line);
-		const tokens = model.getLineTokens(line);
+		model.tokenization.tokenizeIfCheap(line);
+		const tokens = model.tokenization.getLineTokens(line);
 		const offset = position.column - 1;
 		const idx = tokens.findTokenIndexAtOffset(offset);
 
@@ -160,4 +162,12 @@ export class InlayHintsFragments {
 
 		return new Range(line, start + 1, line, end + 1);
 	}
+}
+
+export function asCommandLink(command: Command): string {
+	return URI.from({
+		scheme: Schemas.command,
+		path: command.id,
+		query: command.arguments && encodeURIComponent(JSON.stringify(command.arguments))
+	}).toString();
 }
