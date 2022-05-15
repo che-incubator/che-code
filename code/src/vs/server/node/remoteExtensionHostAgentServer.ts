@@ -11,6 +11,7 @@ import { performance } from 'perf_hooks';
 import * as url from 'url';
 import { LoaderStats } from 'vs/base/common/amd';
 import { VSBuffer } from 'vs/base/common/buffer';
+import { CharCode } from 'vs/base/common/charCode';
 import { onUnexpectedError, setUnexpectedErrorHandler } from 'vs/base/common/errors';
 import { isEqualOrParent } from 'vs/base/common/extpath';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
@@ -29,13 +30,14 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { ConnectionType, ConnectionTypeRequest, ErrorMessage, HandshakeMessage, IRemoteExtensionHostStartParams, ITunnelConnectionStartParams, SignRequest } from 'vs/platform/remote/common/remoteAgentConnection';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
+import { getRemoteServerRootPath } from 'vs/platform/remote/common/remoteHosts';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionHostConnection } from 'vs/server/node/extensionHostConnection';
 import { ManagementConnection } from 'vs/server/node/remoteExtensionManagement';
 import { determineServerConnectionToken, requestHasValidConnectionToken as httpRequestHasValidConnectionToken, ServerConnectionToken, ServerConnectionTokenParseError, ServerConnectionTokenType } from 'vs/server/node/serverConnectionToken';
 import { IServerEnvironmentService, ServerParsedArgs } from 'vs/server/node/serverEnvironmentService';
 import { setupServerServices, SocketServer } from 'vs/server/node/serverServices';
-import { serveError, serveFile, WebClientServer } from 'vs/server/node/webClientServer';
+import { CacheControl, serveError, serveFile, WebClientServer } from 'vs/server/node/webClientServer';
 
 const SHUTDOWN_TIMEOUT = 5 * 60 * 1000;
 
@@ -61,6 +63,8 @@ export class RemoteExtensionHostAgentServer extends Disposable implements IServe
 	private readonly _webClientServer: WebClientServer | null;
 	private readonly _webEndpointOriginChecker = WebEndpointOriginChecker.create(this._productService);
 
+	private readonly _serverRootPath: string;
+
 	private shutdownTimer: NodeJS.Timer | undefined;
 
 	constructor(
@@ -75,6 +79,7 @@ export class RemoteExtensionHostAgentServer extends Disposable implements IServe
 	) {
 		super();
 
+		this._serverRootPath = getRemoteServerRootPath(_productService);
 		this._extHostConnections = Object.create(null);
 		this._managementConnections = Object.create(null);
 		this._allReconnectionTokens = new Set<string>();
@@ -97,10 +102,15 @@ export class RemoteExtensionHostAgentServer extends Disposable implements IServe
 		}
 
 		const parsedUrl = url.parse(req.url, true);
-		const pathname = parsedUrl.pathname;
+		let pathname = parsedUrl.pathname;
 
 		if (!pathname) {
 			return serveError(req, res, 400, `Bad request.`);
+		}
+
+		// for now accept all paths, with or without server root path
+		if (pathname.startsWith(this._serverRootPath) && pathname.charCodeAt(this._serverRootPath.length) === CharCode.Slash) {
+			pathname = pathname.substring(this._serverRootPath.length);
 		}
 
 		// Version
@@ -151,8 +161,7 @@ export class RemoteExtensionHostAgentServer extends Disposable implements IServe
 			if (requestOrigin && this._webEndpointOriginChecker.matches(requestOrigin)) {
 				responseHeaders['Access-Control-Allow-Origin'] = requestOrigin;
 			}
-
-			return serveFile(this._logService, req, res, filePath, responseHeaders);
+			return serveFile(filePath, CacheControl.ETAG, this._logService, req, res, responseHeaders);
 		}
 
 		// workbench web UI
@@ -746,6 +755,8 @@ export async function createServer(address: string | net.AddressInfo | null, arg
 		const telemetryService = accessor.get(ITelemetryService);
 
 		type ServerStartClassification = {
+			owner: 'alexdima';
+			comment: 'The server has started up';
 			startTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
 			startedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
 			codeLoadedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
