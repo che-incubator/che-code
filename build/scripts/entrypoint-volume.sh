@@ -11,6 +11,14 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
+# Boilerplate code for arbitrary user support
+if ! whoami &> /dev/null; then
+  if [ -w /etc/passwd ]; then
+    echo "${USER_NAME:-user}:x:$(id -u):0:${USER_NAME:-user} user:${HOME}:/bin/bash" >> /etc/passwd
+    echo "${USER_NAME:-user}:x:$(id -u):" >> /etc/group
+  fi
+fi
+
 # list checode
 ls -la /checode/
 
