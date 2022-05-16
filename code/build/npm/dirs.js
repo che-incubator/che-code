@@ -7,7 +7,6 @@
 exports.dirs = [
 	'',
 	'build',
-	'build/lib/watch',
 	'extensions',
 	'extensions/che-api',
 	'extensions/che-port',
