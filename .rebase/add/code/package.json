@@ -1,8 +1,10 @@
 {
     "dependencies": {
-        "ws": "8.2.3"
+        "ws": "8.2.3",
+        "js-yaml": "^4.1.0"
     },
     "devDependencies": {
-        "@types/ws": "8.2.0"
+        "@types/ws": "8.2.0",
+        "@types/js-yaml": "^4.0.5"
     }
 }

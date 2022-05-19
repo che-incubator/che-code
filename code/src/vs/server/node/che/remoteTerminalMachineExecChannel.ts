@@ -9,17 +9,77 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
+import * as os from 'os';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IServerChannel } from 'vs/base/parts/ipc/common/ipc';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ILogService } from 'vs/platform/log/common/log';
+import { createURITransformer } from 'vs/workbench/api/node/uriTransformer';
+import * as terminalEnvironment from 'vs/workbench/contrib/terminal/common/terminalEnvironment';
 import { IProcessDataEvent, IShellLaunchConfigDto, ITerminalProfile } from 'vs/platform/terminal/common/terminal';
-import { ICreateTerminalProcessResult } from 'vs/workbench/contrib/terminal/common/remoteTerminalChannel';
+import { IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
+import { ICreateTerminalProcessResult, IWorkspaceFolderData } from 'vs/workbench/contrib/terminal/common/remoteTerminalChannel';
+import { buildUserEnvironment } from 'vs/server/node/extensionHostConnection';
 import * as WS from 'ws';
+import * as path from 'path';
 import { URI } from 'vs/base/common/uri';
 import { DeferredPromise } from 'vs/base/common/async';
+import * as jsYaml from 'js-yaml';
+import { Promises } from 'vs/base/node/pfs';
+import { AbstractVariableResolverService } from 'vs/workbench/services/configurationResolver/common/variableResolver';
+import * as platform from 'vs/base/common/platform';
+import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IServerEnvironmentService } from '../serverEnvironmentService';
 
+class CustomVariableResolver extends AbstractVariableResolverService {
+	constructor(
+		env: platform.IProcessEnvironment,
+		workspaceFolders: IWorkspaceFolder[],
+		activeFileResource: URI | undefined,
+		resolvedVariables: { [name: string]: string },
+		extensionService: IExtensionManagementService,
+	) {
+		super({
+			getFolderUri: (folderName: string): URI | undefined => {
+				const found = workspaceFolders.filter(f => f.name === folderName);
+				if (found && found.length > 0) {
+					return found[0].uri;
+				}
+				return undefined;
+			},
+			getWorkspaceFolderCount: (): number => {
+				return workspaceFolders.length;
+			},
+			getConfigurationValue: (folderUri: URI, section: string): string | undefined => {
+				return resolvedVariables[`config:${section}`];
+			},
+			getExecPath: (): string | undefined => {
+				return env['VSCODE_EXEC_PATH'];
+			},
+			getAppRoot: (): string | undefined => {
+				return env['VSCODE_CWD'];
+			},
+			getFilePath: (): string | undefined => {
+				if (activeFileResource) {
+					return path.normalize(activeFileResource.fsPath);
+				}
+				return undefined;
+			},
+			getSelectedText: (): string | undefined => {
+				return resolvedVariables['selectedText'];
+			},
+			getLineNumber: (): string | undefined => {
+				return resolvedVariables['lineNumber'];
+			},
+			getExtension: async id => {
+				const installed = await extensionService.getInstalled();
+				const found = installed.find(e => e.identifier.id === id);
+				return found && { extensionLocation: found.location };
+			},
+		}, undefined, Promise.resolve(os.homedir()), Promise.resolve(env));
+	}
+}
 
 /**
  * Handle the channel for the remote terminal using machine exec
@@ -45,7 +105,9 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 
 	private deferredContainers = new DeferredPromise<string[]>();
 
-	constructor(private readonly logService: ILogService) {
+	constructor(private readonly serverEnvironmentService: IServerEnvironmentService,
+		private extensionManagementService: IExtensionManagementService,
+		private readonly logService: ILogService) {
 		this.machineExecWebSocket = new ReconnectingWebSocket('ws://localhost:3333/connect', this.terminals, this.terminalIds, this._onProcessData, this._onProcessReady, this._onProcessExit, this.deferredContainers);
 	}
 
@@ -115,7 +177,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 		// @see ICreateTerminalProcessArguments
 		if (command === '$createProcess') {
 			const newId = this.id++;
-
+			const uriTransformer = createURITransformer(ctx.remoteAuthority);
 			const resolvedShellLaunchConfig: IShellLaunchConfigDto = args.shellLaunchConfig;
 			const createProcessResult: ICreateTerminalProcessResult = {
 				persistentTerminalId: newId,
@@ -130,9 +192,28 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 					commandLine.push(resolvedShellLaunchConfig.args);
 				}
 			}
+		
+			// Get the initial cwd
+			const reviveWorkspaceFolder = (workspaceData: IWorkspaceFolderData): IWorkspaceFolder => {
+				return {
+					uri: URI.revive(uriTransformer.transformIncoming(workspaceData.uri)),
+					name: workspaceData.name,
+					index: workspaceData.index,
+					toResource: () => {
+						throw new Error('Not implemented');
+					}
+				};
+			};
+			const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, false, this.serverEnvironmentService, this.logService);
 
-			const cwdUri = (typeof resolvedShellLaunchConfig.cwd === 'string') ? URI.parse(resolvedShellLaunchConfig.cwd) : URI.revive(resolvedShellLaunchConfig.cwd);
+			const workspaceFolders = args.workspaceFolders.map(reviveWorkspaceFolder);
+			const activeWorkspaceFolder = args.activeWorkspaceFolder ? reviveWorkspaceFolder(args.activeWorkspaceFolder) : undefined;
+			const activeFileResource = args.activeFileResource ? URI.revive(uriTransformer.transformIncoming(args.activeFileResource)) : undefined;
+			const customVariableResolver = new CustomVariableResolver(baseEnv, workspaceFolders, activeFileResource, args.resolvedVariables, this.extensionManagementService);
 
+			const variableResolver = terminalEnvironment.createVariableResolver(activeWorkspaceFolder, process.env, customVariableResolver);
+			const initialCwd = await terminalEnvironment.getCwd( args.shellLaunchConfig, os.homedir(), variableResolver, activeWorkspaceFolder?.uri, args.configuration['terminal.integrated.cwd'], this.logService);
+			resolvedShellLaunchConfig.cwd = initialCwd;
 			const openTerminalMachineExecCall = {
 				identifier: {
 					machineName: resolvedShellLaunchConfig.name,
@@ -140,7 +221,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 				},
 				cmd: commandLine,
 				tty: true,
-				cwd: cwdUri?.path,
+				cwd: resolvedShellLaunchConfig.cwd,
 			};
 
 			const jsonCommand = {
@@ -224,7 +305,7 @@ export class ReconnectingWebSocket {
 			this.schedulePing();
 		});
 
-		this.ws.on('message', (data: WS.Data) => {
+		this.ws.on('message', async (data: WS.Data) => {
 			try {
 				const message = JSON.parse(data.toString());
 
@@ -259,7 +340,17 @@ export class ReconnectingWebSocket {
 				// handle list of containers result
 				if (message.id === this.LIST_CONTAINERS_ID) {
 					// resolve with container attribute of containerInfo
-					this.deferredContainers.complete(message.result.map((containerInfo: any) => containerInfo.container));
+					const remoteContainers: string[] = message.result.map((containerInfo: any) => containerInfo.container);
+
+					// read the original devfile to find the components that we want to have
+					const originalDevworkspaceContent = await Promises.readFile(path.join('/devworkspace-metadata/', 'original.devworkspace.yaml'), 'utf-8');
+					const devFileContent = jsYaml.load(originalDevworkspaceContent) as any;
+					// search all component with a container
+					const devfileComponents = devFileContent.components || [];
+					const inDevfileComponentNames = devfileComponents.filter((component:any) => component.container).map((component :any)=> component.name)
+					// keep only one that are inside the devfile
+					const filteredContainers = remoteContainers.filter(containerName => inDevfileComponentNames.includes(containerName));
+					this.deferredContainers.complete(filteredContainers);
 					return;
 				}
 

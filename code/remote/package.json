@@ -32,7 +32,8 @@
     "xterm-headless": "4.19.0-beta.49",
     "yauzl": "^2.9.2",
     "yazl": "^2.4.3",
-    "ws": "8.2.3"
+    "ws": "8.2.3",
+    "js-yaml": "^4.1.0"
   },
   "optionalDependencies": {
     "@vscode/windows-registry": "1.0.6",
