@@ -191,7 +191,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		if (process.env.DEVWORKSPACE_NAMESPACE === undefined) {
 				socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService, extensionManagementService));
 			} else {
-				socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(logService));
+				socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalMachineExecChannel(environmentService, extensionManagementService, logService));
 			}
 
 		const remoteFileSystemChannel = new RemoteAgentFileSystemProviderChannel(logService, environmentService);

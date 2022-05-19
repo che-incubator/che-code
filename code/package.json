@@ -175,6 +175,7 @@
     "istanbul-lib-report": "^3.0.0",
     "istanbul-lib-source-maps": "^4.0.0",
     "istanbul-reports": "^3.0.0",
+    "js-yaml": "^4.1.0",
     "lazy.js": "^0.4.2",
     "merge-options": "^1.0.1",
     "mime": "^1.4.1",
@@ -213,7 +214,8 @@
     "webpack-stream": "^6.1.2",
     "xml2js": "^0.4.17",
     "yaserver": "^0.2.0",
-    "@types/ws": "8.2.0"
+    "@types/ws": "8.2.0",
+    "@types/js-yaml": "^4.0.5"
   },
   "repository": {
     "type": "git",
