@@ -66,6 +66,14 @@ RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 ### Testing
+# Compile tests
+RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
+	compile-extension:markdown-language-features \
+	compile-extension:typescript-language-features \
+	compile-extension:emmet \
+	compile-extension:git \
+	compile-extension:ipynb \
+	compile-extension-media
 
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile

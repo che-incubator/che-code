@@ -85,7 +85,7 @@ function assertEditsEqual(actualEdit: MdWorkspaceEdit, ...expectedEdits: Readonl
 	}
 }
 
-suite('markdown: rename', () => {
+suite.skip('markdown: rename', () => {
 
 	setup(async () => {
 		// the tests make the assumption that link providers are already registered

@@ -19,7 +19,6 @@
 			"findTextInFiles",
 			"terminalDataWriteEvent",
 			"terminalDimensions",
-			"terminalLocation",
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"

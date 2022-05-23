@@ -42,12 +42,22 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine \
     && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node
 
+RUN 
 RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
+# Compile tests
+RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
+	compile-extension:markdown-language-features \
+	compile-extension:typescript-language-features \
+	compile-extension:emmet \
+	compile-extension:git \
+	compile-extension:ipynb \
+	compile-extension-media
+          
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
 RUN [[ $(uname -m) == "x86_64" ]] && yarn --cwd test/smoke compile && yarn --cwd test/integration/browser compile
@@ -64,7 +74,11 @@ RUN [[ $(uname -m) == "x86_64" ]] && yarn playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
+    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+    ls -la /checode-compilation/extensions/vscode-api-tests/ && \
+    ls -la /checode-compilation/extensions/vscode-api-tests/out/
+
+
 
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
