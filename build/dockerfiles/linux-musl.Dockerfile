@@ -64,15 +64,19 @@ RUN [[ $(uname -m) == "x86_64" ]] && yarn playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
+    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+    ls -la /checode-compilation/extensions/vscode-api-tests/ && \
+    ls -la /checode-compilation/extensions/vscode-api-tests/out/
+
+
 
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-  timeout 5m ./scripts/test-web-integration.sh --browser chromium
+    retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium
 
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+    retry -v -t 3 -s 2 -- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
 
 FROM scratch as linux-musl-content
 COPY --from=linux-musl-builder /checode /checode-linux-musl
