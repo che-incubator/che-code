@@ -9,6 +9,7 @@ exports.dirs = [
 	'build',
 	'extensions',
 	'extensions/che-api',
+	'extensions/che-commands',
 	'extensions/che-port',
 	'extensions/che-on-start',
 	'extensions/che-remote',
