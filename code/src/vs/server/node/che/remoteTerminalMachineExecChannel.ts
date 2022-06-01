@@ -114,7 +114,6 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 
 
 	async call<T>(ctx: RemoteAgentConnectionContext, command: string, args?: any, cancellationToken?: CancellationToken): Promise<any> {
-		this.logService.info('RemoteTerminalChannel: args', args);
 		// provide default shell to be like bash
 		if ('$getDefaultSystemShell' === command) {
 			return '/bin/bash';
@@ -194,8 +193,6 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 					commandLine.push(resolvedShellLaunchConfig.args);
 				}
 			}
-
-			this.logService.info('RemoteTerminalChannel: resolvedShellLaunchConfig', resolvedShellLaunchConfig);
 
 			let machineExecComponent, machineExecCwd;
 
