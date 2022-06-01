@@ -31,6 +31,7 @@ import { AbstractVariableResolverService } from 'vs/workbench/services/configura
 import * as platform from 'vs/base/common/platform';
 import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IServerEnvironmentService } from '../serverEnvironmentService';
+import { isUriComponents } from 'vs/platform/terminal/common/terminalProfiles';
 
 class CustomVariableResolver extends AbstractVariableResolverService {
 	constructor(
@@ -113,6 +114,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 
 
 	async call<T>(ctx: RemoteAgentConnectionContext, command: string, args?: any, cancellationToken?: CancellationToken): Promise<any> {
+		this.logService.info('RemoteTerminalChannel: args', args);
 		// provide default shell to be like bash
 		if ('$getDefaultSystemShell' === command) {
 			return '/bin/bash';
@@ -192,36 +194,59 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 					commandLine.push(resolvedShellLaunchConfig.args);
 				}
 			}
-		
-			// Get the initial cwd
-			const reviveWorkspaceFolder = (workspaceData: IWorkspaceFolderData): IWorkspaceFolder => {
-				return {
-					uri: URI.revive(uriTransformer.transformIncoming(workspaceData.uri)),
-					name: workspaceData.name,
-					index: workspaceData.index,
-					toResource: () => {
-						throw new Error('Not implemented');
-					}
+
+			this.logService.info('RemoteTerminalChannel: resolvedShellLaunchConfig', resolvedShellLaunchConfig);
+
+			let machineExecComponent, machineExecCwd;
+
+			const componentParam = ' --component'
+			const cmdIndex = commandLine.findIndex(item => item?.includes(componentParam));
+			if (cmdIndex > -1) {
+				const taskCommandLine = commandLine[cmdIndex];
+				const startIndex = taskCommandLine?.indexOf(componentParam)!;
+				// In case of a request for running a task,
+				// Che target component name is provided as a command line argument.
+				machineExecComponent = taskCommandLine?.substring(startIndex + componentParam.length + 1);
+				commandLine.splice(cmdIndex, 1, taskCommandLine?.substring(0, startIndex));
+
+				if (isUriComponents(resolvedShellLaunchConfig.cwd)) {
+					machineExecCwd = resolvedShellLaunchConfig.cwd.path;
+				}
+			} else {
+				// In case of a request for starting a terminal session,
+				// terminal profile name already contains Che target component.
+				machineExecComponent = resolvedShellLaunchConfig.name;
+
+				// Get the initial cwd
+				const reviveWorkspaceFolder = (workspaceData: IWorkspaceFolderData): IWorkspaceFolder => {
+					return {
+						uri: URI.revive(uriTransformer.transformIncoming(workspaceData.uri)),
+						name: workspaceData.name,
+						index: workspaceData.index,
+						toResource: () => {
+							throw new Error('Not implemented');
+						}
+					};
 				};
-			};
-			const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, false, this.serverEnvironmentService, this.logService);
+				const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, false, this.serverEnvironmentService, this.logService);
 
-			const workspaceFolders = args.workspaceFolders.map(reviveWorkspaceFolder);
-			const activeWorkspaceFolder = args.activeWorkspaceFolder ? reviveWorkspaceFolder(args.activeWorkspaceFolder) : undefined;
-			const activeFileResource = args.activeFileResource ? URI.revive(uriTransformer.transformIncoming(args.activeFileResource)) : undefined;
-			const customVariableResolver = new CustomVariableResolver(baseEnv, workspaceFolders, activeFileResource, args.resolvedVariables, this.extensionManagementService);
+				const workspaceFolders = args.workspaceFolders.map(reviveWorkspaceFolder);
+				const activeWorkspaceFolder = args.activeWorkspaceFolder ? reviveWorkspaceFolder(args.activeWorkspaceFolder) : undefined;
+				const activeFileResource = args.activeFileResource ? URI.revive(uriTransformer.transformIncoming(args.activeFileResource)) : undefined;
+				const customVariableResolver = new CustomVariableResolver(baseEnv, workspaceFolders, activeFileResource, args.resolvedVariables, this.extensionManagementService);
 
-			const variableResolver = terminalEnvironment.createVariableResolver(activeWorkspaceFolder, process.env, customVariableResolver);
-			const initialCwd = await terminalEnvironment.getCwd( args.shellLaunchConfig, os.homedir(), variableResolver, activeWorkspaceFolder?.uri, args.configuration['terminal.integrated.cwd'], this.logService);
-			resolvedShellLaunchConfig.cwd = initialCwd;
+				const variableResolver = terminalEnvironment.createVariableResolver(activeWorkspaceFolder, process.env, customVariableResolver);
+				machineExecCwd = await terminalEnvironment.getCwd( args.shellLaunchConfig, os.homedir(), variableResolver, activeWorkspaceFolder?.uri, args.configuration['terminal.integrated.cwd'], this.logService);
+			}
+
 			const openTerminalMachineExecCall = {
 				identifier: {
-					machineName: resolvedShellLaunchConfig.name,
+					machineName: machineExecComponent,
 					workspaceId: '1234',
 				},
 				cmd: commandLine,
 				tty: true,
-				cwd: resolvedShellLaunchConfig.cwd,
+				cwd: machineExecCwd,
 			};
 
 			const jsonCommand = {
