@@ -78,7 +78,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 
 		command = command + ` --component ${component}`;
 		const execution = new vscode.ShellExecution(command, { cwd: expandEnvVariables(workdir) });
-		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'eclipse-che.commands', execution);
+		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution);
 		return task;
 	}
 }
