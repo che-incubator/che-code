@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8/nodejs-14
-FROM registry.access.redhat.com/ubi8/nodejs-16:1-18 as linux-libc-builder
+# https://catalog.redhat.com/software/containers/ubi8/nodejs-16/615aee9fc739c0a4123a87e1?container-tabs=overview
+FROM registry.access.redhat.com/ubi8/nodejs-16:1-37.1652296488 as linux-libc-builder
 
 USER root
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
