@@ -1,6 +1,6 @@
 {
   "name": "che-code",
-  "version": "1.68.0",
+  "version": "1.69.0",
   "distro": "2966cd72fc1a3a5fb89bf2d85a1a66e56206961a",
   "author": {
     "name": "Microsoft Corporation"
@@ -93,7 +93,8 @@
     "xterm-headless": "4.19.0-beta.58",
     "yauzl": "^2.9.2",
     "yazl": "^2.4.3",
-    "ws": "8.2.3"
+    "ws": "8.2.3",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "7zip": "0.0.6",
@@ -175,7 +176,6 @@
     "istanbul-lib-report": "^3.0.0",
     "istanbul-lib-source-maps": "^4.0.0",
     "istanbul-reports": "^3.0.0",
-    "js-yaml": "^4.1.0",
     "lazy.js": "^0.4.2",
     "merge-options": "^1.0.1",
     "mime": "^1.4.1",
