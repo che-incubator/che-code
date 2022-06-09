@@ -34,7 +34,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 
 		const cheTasks: vscode.Task[] = devfileCommands!
 			.filter(command => command.exec?.commandLine)
-			.map(command => this.createCheTask(command.id, command.exec?.commandLine!, command.exec?.workingDir!, command.exec?.component!));
+			.map(command => this.createCheTask(command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!));
 		return cheTasks;
 	}
 
