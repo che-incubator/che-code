@@ -244,6 +244,8 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 				cmd: commandLine,
 				tty: true,
 				cwd: machineExecCwd,
+				cols: args.cols,
+				rows: args.rows
 			};
 
 			const jsonCommand = {
@@ -258,6 +260,27 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 			}
 
 			return createProcessResult;
+		}
+
+		if (command === '$resize') {
+			const resizeTerminalMachineExecCall = {
+				id: args[0],
+				cols: args[1],
+				rows: args[2]
+			};
+
+			const jsonCommand = {
+				jsonrpc: '2.0',
+				method: 'resize',
+				params: resizeTerminalMachineExecCall,
+				id: -1
+			};
+
+			if (this.machineExecWebSocket) {
+				this.machineExecWebSocket.send(JSON.stringify(jsonCommand));
+			}
+
+			return undefined;
 		}
 
 		this.logService.error(`RemoteTerminalChannel: unsupported command/${command}`);
@@ -376,19 +399,22 @@ export class ReconnectingWebSocket {
 					return;
 				}
 
-				// connect to the embedded machine-exec
-				const wsTerminal = new WS(`ws://localhost:3333/attach/${message.result}`);
+				// machine-exec responds a number of the created terminal session
+				if (Number.isFinite(message.result)) {
+					// connect to the embedded machine-exec
+					const wsTerminal = new WS(`ws://localhost:3333/attach/${message.result}`);
 
-				this.terminalIds.set(message.result, message.id);
-				this.terminals.set(message.id, wsTerminal);
+					this.terminalIds.set(message.result, message.id);
+					this.terminals.set(message.id, wsTerminal);
 
-				// the shell is ready
-				this.onProcessReady.fire({ id: message.id, event: { pid: message.id, cwd: '' } });
+					// the shell is ready
+					this.onProcessReady.fire({ id: message.id, event: { pid: message.id, cwd: '' } });
 
-				// redirect everything to the client
-				wsTerminal.on('message', (data: WS.Data) => {
-					this.onProcessData.fire({ id: message.id, event: data.toString() });
-				});
+					// redirect everything to the client
+					wsTerminal.on('message', (data: WS.Data) => {
+						this.onProcessData.fire({ id: message.id, event: data.toString() });
+					});
+				}
 			} catch (e) {
 				console.error('Unable to parse result', e);
 			}
