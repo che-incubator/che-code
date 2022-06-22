@@ -7,17 +7,19 @@ import * as assert from 'assert';
 import 'mocha';
 import * as vscode from 'vscode';
 import { MdReferencesProvider, MdVsCodeReferencesProvider } from '../languageFeatures/references';
+import { MdTableOfContentsProvider } from '../tableOfContents';
 import { noopToken } from '../util/cancellation';
 import { InMemoryDocument } from '../util/inMemoryDocument';
 import { MdWorkspaceContents } from '../workspaceContents';
 import { createNewMarkdownEngine } from './engine';
 import { InMemoryWorkspaceMarkdownDocuments } from './inMemoryWorkspace';
+import { nulLogger } from './nulLogging';
 import { joinLines, workspacePath } from './util';
 
 
-function getReferences(doc: InMemoryDocument, pos: vscode.Position, workspaceContents: MdWorkspaceContents) {
+function getReferences(doc: InMemoryDocument, pos: vscode.Position, workspace: MdWorkspaceContents) {
 	const engine = createNewMarkdownEngine();
-	const computer = new MdReferencesProvider(engine, workspaceContents);
+	const computer = new MdReferencesProvider(engine, workspace, new MdTableOfContentsProvider(engine, workspace, nulLogger), nulLogger);
 	const provider = new MdVsCodeReferencesProvider(computer);
 	return provider.provideReferences(doc, pos, { includeDeclaration: true }, noopToken);
 }
