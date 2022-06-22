@@ -56,7 +56,8 @@ RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
 	compile-extension:emmet \
 	compile-extension:git \
 	compile-extension:ipynb \
-	compile-extension-media
+	compile-extension-media \
+    compile-extension:configuration-editing
           
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
