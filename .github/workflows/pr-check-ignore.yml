@@ -9,6 +9,7 @@
 
 # The workflow allows to pass the mandatory pr-check.yaml in case
 # of the changes made in the files that aren't related to the build.
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
 name: Pull Request Check
 
 on:
