@@ -79,5 +79,6 @@ Upstream VS Code changes may bring a breakage to Che-Code. In this case, the [`r
 2. `git remote add upstream-code https://github.com/microsoft/vscode`
 3. `git fetch upstream-code main`
 4. `./rebase.sh`
-5. Fix the conflicts or other errors and open a PR with your changes.
+5. Patches are applied using `.rebase` directory, sometimes it requires some update there.
+6. Fix the conflicts or other errors and open a PR with your changes.
 
