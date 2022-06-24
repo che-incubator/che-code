@@ -10,7 +10,13 @@
 name: Pull Request Check
 
 # Trigger the workflow on pull request
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+      - 'build/**'
+      - 'code/**'
+      - 'package.json'
+      - 'yarn.lock'
 
 jobs:
 
