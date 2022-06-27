@@ -73,3 +73,14 @@ For a main branch:
 $ git diff upstream-code/main main:code
 ```
 
+## How to fix the [`rebase-insiders`](https://github.com/che-incubator/che-code/actions/workflows/rebase-insiders.yml) Workflow?
+Upstream VS Code changes may bring a breakage to Che-Code. In this case, the [`rebase-insiders`](https://github.com/che-incubator/che-code/actions/workflows/rebase-insiders.yml) Workflow run is failed. To fix it, follow the steps below:
+1. Checkout to a new branch, e.g.`fix-rebase`.
+2. Fetch the latest changes from the upstream:
+```
+git remote add upstream-code https://github.com/microsoft/vscode
+git fetch upstream-code main
+```
+3. `./rebase.sh`
+4. Fix the conflicts or other errors. **Note**, that`./rebase.sh` script also apllies the patches from the [`.rebase`](https://github.com/che-incubator/che-code/tree/main/.rebase) directory. Sometimes, it also requires some updates there.
+5. Open a PR with your changes.
