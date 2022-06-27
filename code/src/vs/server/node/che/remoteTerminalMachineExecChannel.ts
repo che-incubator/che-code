@@ -225,7 +225,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 						}
 					};
 				};
-				const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, false, this.serverEnvironmentService, this.logService);
+				const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, this.serverEnvironmentService, this.logService);
 
 				const workspaceFolders = args.workspaceFolders.map(reviveWorkspaceFolder);
 				const activeWorkspaceFolder = args.activeWorkspaceFolder ? reviveWorkspaceFolder(args.activeWorkspaceFolder) : undefined;

@@ -38,7 +38,7 @@ export interface ReferenceHref {
 export type LinkHref = ExternalHref | InternalHref | ReferenceHref;
 
 
-function parseLink(
+function resolveLink(
 	document: ITextDocument,
 	link: string,
 ): ExternalHref | InternalHref | undefined {
@@ -83,6 +83,16 @@ function parseLink(
 
 	if (!resourceUri) {
 		return undefined;
+	}
+
+	// If we are in a notebook cell, resolve relative to notebook instead
+	if (resourceUri.scheme === Schemes.notebookCell) {
+		const notebook = vscode.workspace.notebookDocuments
+			.find(notebook => notebook.getCells().some(cell => cell.document === document));
+
+		if (notebook) {
+			resourceUri = resourceUri.with({ scheme: notebook.uri.scheme });
+		}
 	}
 
 	return {
@@ -144,7 +154,7 @@ function extractDocumentLink(
 	const linkStart = document.positionAt(offset);
 	const linkEnd = document.positionAt(offset + link.length);
 	try {
-		const linkTarget = parseLink(document, link);
+		const linkTarget = resolveLink(document, link);
 		if (!linkTarget) {
 			return undefined;
 		}
@@ -220,7 +230,7 @@ const linkPattern = new RegExp(
 /**
 * Matches `[text][ref]` or `[shorthand]`
 */
-const referenceLinkPattern = /(^|[^\]\\])(?:(?:(\[((?:\\\]|[^\]])+)\]\[\s*?)([^\s\]]*?)\]|\[\s*?([^\s\]]*?)\])(?![\:\(]))/gm;
+const referenceLinkPattern = /(^|[^\]\\])(?:(?:(\[((?:\\\]|[^\]])+)\]\[\s*?)([^\s\]]*?)\]|\[\s*?([^\s\\\]]*?)\])(?![\:\(]))/gm;
 
 /**
  * Matches `<http://example.com>`
@@ -323,7 +333,7 @@ export class MdLinkComputer {
 
 		for (const match of text.matchAll(autoLinkPattern)) {
 			const link = match[1];
-			const linkTarget = parseLink(document, link);
+			const linkTarget = resolveLink(document, link);
 			if (linkTarget) {
 				const offset = (match.index ?? 0) + 1;
 				const linkStart = document.positionAt(offset);
@@ -352,12 +362,17 @@ export class MdLinkComputer {
 			let linkStart: vscode.Position;
 			let linkEnd: vscode.Position;
 			let reference = match[4];
-			if (reference) { // [text][ref]
+			if (reference === '') { // [ref][],
+				reference = match[3];
+				const offset = ((match.index ?? 0) + match[1].length) + 1;
+				linkStart = document.positionAt(offset);
+				linkEnd = document.positionAt(offset + reference.length);
+			} else if (reference) { // [text][ref]
 				const pre = match[2];
 				const offset = ((match.index ?? 0) + match[1].length) + pre.length;
 				linkStart = document.positionAt(offset);
 				linkEnd = document.positionAt(offset + reference.length);
-			} else if (match[5]) { // [ref][], [ref]
+			} else if (match[5]) { // [ref]
 				reference = match[5];
 				const offset = ((match.index ?? 0) + match[1].length) + 1;
 				linkStart = document.positionAt(offset);
@@ -421,7 +436,7 @@ export class MdLinkComputer {
 			if (noLinkRanges.contains(hrefRange.start)) {
 				continue;
 			}
-			const target = parseLink(document, text);
+			const target = resolveLink(document, text);
 			if (target) {
 				yield {
 					kind: 'definition',
@@ -526,6 +541,8 @@ export class MdVsCodeLinkProvider implements vscode.DocumentLinkProvider {
 				return documentLink;
 			}
 			case 'reference': {
+				// We only render reference links in the editor if they are actually defined.
+				// This matches how reference links are rendered by markdown-it.
 				const def = definitionSet.lookup(link.href.ref);
 				if (def) {
 					const documentLink = new vscode.DocumentLink(
