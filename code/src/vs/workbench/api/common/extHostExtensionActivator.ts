@@ -170,6 +170,9 @@ export class ExtensionsActivator implements IDisposable {
 	private readonly _externalExtensionsMap: Map<string, ExtensionIdentifier>;
 	private readonly _host: IExtensionsActivatorHost;
 	private readonly _operations: Map<string, ActivationOperation>;
+	private readonly _excludedDependencies = [
+		'vscode.github-authentication',
+	];
 	/**
 	 * A map of already activated events to speed things up if the same activation event is triggered multiple times.
 	 */
@@ -269,7 +272,9 @@ export class ExtensionsActivator implements IDisposable {
 		const deps: ActivationOperation[] = [];
 		const depIds = (typeof currentExtension.extensionDependencies === 'undefined' ? [] : currentExtension.extensionDependencies);
 		for (const depId of depIds) {
-
+			if (this._excludedDependencies.includes(depId)) {
+				continue;
+			}
 			if (this._resolvedExtensionsSet.has(ExtensionIdentifier.toKey(depId))) {
 				// This dependency is already resolved
 				continue;
