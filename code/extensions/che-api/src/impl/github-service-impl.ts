@@ -14,13 +14,14 @@ import { GithubService, GithubUser } from '../api/github-service';
 import { inject, injectable } from 'inversify';
 import { AxiosInstance } from 'axios';
 import * as fs from 'fs-extra';
+import * as path from 'path';
 
 @injectable()
 export class GithubServiceImpl implements GithubService {
     private readonly token: string | undefined;
 
     constructor(@inject(Symbol.for('AxiosInstance')) private readonly axiosInstance: AxiosInstance) {
-        const credentialsPath = '/.git-credentials/credentials';
+        const credentialsPath = path.resolve('/.git-credentials', 'credentials');
         if (fs.existsSync(credentialsPath)) {
             const token = fs.readFileSync(credentialsPath).toString();
             this.token = token.substring(token.lastIndexOf(':') + 1, token.indexOf('@'));

@@ -11,6 +11,7 @@ import { ExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { ExtensionActivationReason, MissingExtensionDependency } from 'vs/workbench/services/extensions/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { Barrier } from 'vs/base/common/async';
+import { excludedExtensions } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 
 /**
  * Represents the source code (module) of an extension.
@@ -170,9 +171,6 @@ export class ExtensionsActivator implements IDisposable {
 	private readonly _externalExtensionsMap: Map<string, ExtensionIdentifier>;
 	private readonly _host: IExtensionsActivatorHost;
 	private readonly _operations: Map<string, ActivationOperation>;
-	private readonly _excludedDependencies = [
-		'vscode.github-authentication',
-	];
 	/**
 	 * A map of already activated events to speed things up if the same activation event is triggered multiple times.
 	 */
@@ -272,7 +270,7 @@ export class ExtensionsActivator implements IDisposable {
 		const deps: ActivationOperation[] = [];
 		const depIds = (typeof currentExtension.extensionDependencies === 'undefined' ? [] : currentExtension.extensionDependencies);
 		for (const depId of depIds) {
-			if (this._excludedDependencies.includes(depId)) {
+			if (excludedExtensions.includes(depId.substring('vscode.'.length))) {
 				continue;
 			}
 			if (this._resolvedExtensionsSet.has(ExtensionIdentifier.toKey(depId))) {
