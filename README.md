@@ -84,3 +84,7 @@ git fetch upstream-code main
 3. `./rebase.sh`
 4. Fix the conflicts or other errors. **Note**, that`./rebase.sh` script also apllies the patches from the [`.rebase`](https://github.com/che-incubator/che-code/tree/main/.rebase) directory. Sometimes, it also requires some updates there.
 5. Open a PR with your changes.
+
+# License
+
+- [Eclipse Public License 2.0](LICENSE)
