@@ -23,7 +23,8 @@ fi
 ls -la /checode/
 
 # Start the machine-exec component in background
-nohup /checode/bin/machine-exec --url '0.0.0.0:3333' &
+export MACHINE_EXEC_PORT=3333
+nohup /checode/bin/machine-exec --url "0.0.0.0:${MACHINE_EXEC_PORT}" &
 sleep 5
 
 # Start the checode component based on musl or libc

@@ -12,6 +12,7 @@
 
 import * as k8s from '@kubernetes/client-node';
 import { inject, injectable } from 'inversify';
+import { AxiosInstance } from "axios";
 import { K8SServiceImpl } from './k8s-service-impl';
 import { K8sDevWorkspaceEnvVariables } from './k8s-devworkspace-env-variables';
 import { WorkspaceService } from '../api/workspace-service';
@@ -23,6 +24,9 @@ export class K8sWorkspaceServiceImpl implements WorkspaceService {
   
     @inject(K8sDevWorkspaceEnvVariables)
     private env!: K8sDevWorkspaceEnvVariables;
+
+    @inject(Symbol.for('AxiosInstance'))
+    private axiosInstance!: AxiosInstance;
   
     public async getNamespace(): Promise<string> {
       return this.env.getWorkspaceNamespace();
@@ -30,6 +34,15 @@ export class K8sWorkspaceServiceImpl implements WorkspaceService {
   
     public async getWorkspaceId(): Promise<string> {
       return this.env.getWorkspaceId();
+    }
+
+    public async updateWorkspaceActivity(): Promise<void> {
+      if (!process.env.MACHINE_EXEC_PORT) {
+        throw new Error('Environment variable MACHINE_EXEC_PORT not found.');
+      }
+
+      const requestUrl = `http://127.0.0.1:${process.env.MACHINE_EXEC_PORT}/activity/tick`;
+      await this.axiosInstance.post(requestUrl);
     }
   
    // stopping the workspace is changing the started state to false
@@ -63,5 +76,4 @@ export class K8sWorkspaceServiceImpl implements WorkspaceService {
         options
       );
     }
-  
   }
