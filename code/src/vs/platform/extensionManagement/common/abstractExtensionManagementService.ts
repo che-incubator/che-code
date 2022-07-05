@@ -25,6 +25,7 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { excludedExtensions } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 
 export interface IInstallExtensionTask {
 	readonly identifier: IExtensionIdentifier;
@@ -170,6 +171,9 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				try {
 					const allDepsAndPackExtensionsToInstall = await this.getAllDepsAndPackExtensionsToInstall(installExtensionTask.identifier, manifest, !!options.installOnlyNewlyAddedFromExtensionPack, !!options.installPreReleaseVersion, options.profileLocation);
 					for (const { gallery, manifest } of allDepsAndPackExtensionsToInstall) {
+						if (excludedExtensions.includes(gallery.name)) {
+							continue;
+						}
 						installExtensionHasDependents = installExtensionHasDependents || !!manifest.extensionDependencies?.some(id => areSameExtensions({ id }, installExtensionTask.identifier));
 						const key = ExtensionKey.create(gallery).toString();
 						if (this.installingExtensions.has(key)) {
