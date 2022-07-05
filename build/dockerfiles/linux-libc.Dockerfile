@@ -10,6 +10,16 @@
 FROM registry.access.redhat.com/ubi8/nodejs-16:1-37.1652296488 as linux-libc-builder
 
 USER root
+
+# Export GITHUB_TOKEN into environment variable
+ARG GITHUB_TOKEN=''
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
+
+# Unset GITHUB_TOKEN environment variable if it is empty.
+# This is needed for some tools which use this variable and will fail with 401 Unauthorized error if it is invalid.
+# For example, vscode ripgrep downloading is an example of such case.
+RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
+
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
