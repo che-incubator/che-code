@@ -27,14 +27,14 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
 
 }
 
-async function openTerminalIfNone(output: vscode.OutputChannel): Promise<void> {
-  // open a new terminal if there is none to always see a terminal
-  if (vscode.window.terminals.length === 0) {
-    output.appendLine('Opening a new terminal....');
-    const terminal = vscode.window.createTerminal('Terminal');
-    terminal.show();
-  }
-}
+// async function openTerminalIfNone(output: vscode.OutputChannel): Promise<void> {
+//   // open a new terminal if there is none to always see a terminal
+//   if (vscode.window.terminals.length === 0) {
+//     output.appendLine('Opening a new terminal....');
+//     const terminal = vscode.window.createTerminal('Terminal');
+//     terminal.show();
+//   }
+// }
 
 async function openProjectIfNone(output: vscode.OutputChannel): Promise<void> {
 
