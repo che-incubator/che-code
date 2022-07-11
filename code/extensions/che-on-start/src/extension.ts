@@ -21,7 +21,8 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
     return;
   }
 
-  openTerminalIfNone(output);
+  // disable terminal auto-opening until https://github.com/eclipse/che/issues/21537 is fixed
+  // openTerminalIfNone(output);
   openProjectIfNone(output);
 
 }
