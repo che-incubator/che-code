@@ -43,6 +43,8 @@ const BUILD_TARGETS = [
 	{ platform: 'darwin', arch: 'arm64' },
 	{ platform: 'linux', arch: 'ia32' },
 	{ platform: 'linux', arch: 'x64' },
+	{ platform: 'linux', arch: 'ppc64' },
+	{ platform: 'linux', arch: 's390x' },
 	{ platform: 'linux', arch: 'armhf' },
 	{ platform: 'linux', arch: 'arm64' },
 	{ platform: 'alpine', arch: 'arm64' },
