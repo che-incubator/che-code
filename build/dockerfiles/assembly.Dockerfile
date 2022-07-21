@@ -9,7 +9,7 @@
 # Grab content from previously build images
 FROM linux-libc-amd64 as linux-libc-content
 FROM linux-musl-amd64 as linux-musl-content
-FROM quay.io/eclipse/che-machine-exec:7.39.1 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.51.0 as machine-exec
 
 FROM registry.access.redhat.com/ubi8/ubi:8.5-214 AS ubi-builder
 RUN mkdir -p /mnt/rootfs
