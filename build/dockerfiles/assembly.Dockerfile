@@ -11,7 +11,7 @@ FROM linux-libc-amd64 as linux-libc-content
 FROM linux-musl-amd64 as linux-musl-content
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
-FROM quay.io/eclipse/che-machine-exec:7.39.1 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.51.0 as machine-exec
 
 # https://registry.access.redhat.com/ubi8
 FROM registry.access.redhat.com/ubi8/ubi:8.5-214 AS ubi-builder
