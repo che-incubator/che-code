@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM quay.io/eclipse/che-machine-exec:7.42.0 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.51.0 as machine-exec
 
 FROM registry.access.redhat.com/ubi8/ubi:8.5-214 AS ubi-micro-build
 RUN mkdir -p /mnt/rootfs
