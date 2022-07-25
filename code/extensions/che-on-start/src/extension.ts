@@ -22,19 +22,19 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
   }
 
   // disable terminal auto-opening until https://github.com/eclipse/che/issues/21537 is fixed
-  // openTerminalIfNone(output);
+  openTerminalIfNone(output);
   openProjectIfNone(output);
 
 }
 
-// async function openTerminalIfNone(output: vscode.OutputChannel): Promise<void> {
-//   // open a new terminal if there is none to always see a terminal
-//   if (vscode.window.terminals.length === 0) {
-//     output.appendLine('Opening a new terminal....');
-//     const terminal = vscode.window.createTerminal('Terminal');
-//     terminal.show();
-//   }
-// }
+async function openTerminalIfNone(output: vscode.OutputChannel): Promise<void> {
+  // open a new terminal if there is none to always see a terminal
+  if (vscode.window.terminals.length === 0) {
+    output.appendLine('Opening a new terminal....');
+    const terminal = vscode.window.createTerminal('Terminal');
+    terminal.show();
+  }
+}
 
 async function openProjectIfNone(output: vscode.OutputChannel): Promise<void> {
 
@@ -121,5 +121,5 @@ async function getCheWorkspacePath(output: vscode.OutputChannel): Promise<vscode
 
 
 export function deactivate(): void {
-  
+
 }
