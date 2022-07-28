@@ -21,6 +21,6 @@ export const GithubService = Symbol('GithubService');
 
 export interface GithubService {
     getToken(): Promise<string>;
-
     getUser(): Promise<GithubUser>;
+    getTokenScopes(token: string): Promise<string[]>;
 }

@@ -12,6 +12,7 @@
 
 import * as vscode from 'vscode';
 import { v4 } from 'uuid';
+import { AuthenticationSession } from 'vscode';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
@@ -26,7 +27,25 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const onDidChangeSessions = new vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
     vscode.authentication.registerAuthenticationProvider('github', 'GitHub', {
         onDidChangeSessions: onDidChangeSessions.event,
-        getSessions: async () => sessions,
+        getSessions: async sessionScopes => {
+            const filteredSessions: AuthenticationSession[] = [];
+            for (const session of sessions) {
+                try {
+                    const tokenScopes: string[] = await githubService.getTokenScopes(session.accessToken);
+                    if (sessionScopes && sessionScopes.every(sessionScope => tokenScopes.some(
+                      tokenScope =>
+                        sessionScope === tokenScope
+                        // compare partial scope with a full group scope e.g. "read:user" with "user".
+                        || sessionScope.includes(tokenScope + ':')
+                        || sessionScope.includes(':' + tokenScope)))) {
+                        filteredSessions.push(session);
+                    }
+                } catch (e) {
+                    console.warn(e.message);
+                }
+            }
+            return filteredSessions;
+        },
         createSession: async (scopes: string[]) => {
             let token = '';
             try {
