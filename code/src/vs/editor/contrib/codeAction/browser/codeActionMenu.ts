@@ -141,7 +141,7 @@ class CodeMenuRenderer implements IListRenderer<ICodeActionMenuItem, ICodeAction
 		if (!isDocumentation) {
 			const updateLabel = () => {
 				const [accept, preview] = this.acceptKeybindings;
-				data.root.title = localize({ key: 'label', comment: ['placeholders are keybindings, e.g "F2 to Refactor, Shift+F2 to Preview"'] }, "{0} to Rename, {1} to Preview", this.keybindingService.lookupKeybinding(accept)?.getLabel(), this.keybindingService.lookupKeybinding(preview)?.getLabel());
+				data.root.title = localize({ key: 'label', comment: ['placeholders are keybindings, e.g "F2 to Refactor, Shift+F2 to Preview"'] }, "{0} to Refactor, {1} to Preview", this.keybindingService.lookupKeybinding(accept)?.getLabel(), this.keybindingService.lookupKeybinding(preview)?.getLabel());
 				// data.root.title = this.keybindingService.lookupKeybinding(accept)?.getLabel() + ' to Refactor, ' + this.keybindingService.lookupKeybinding(preview)?.getLabel() + ' to Preview';
 			};
 			updateLabel();
@@ -161,7 +161,7 @@ export class CodeActionMenu extends Disposable implements IEditorContribution {
 	private _ctxMenuWidgetVisible: IContextKey<boolean>;
 	private viewItems: ICodeActionMenuItem[] = [];
 	private focusedEnabledItem: number | undefined;
-	private currSelectedItem: number = 0;
+	private currSelectedItem: number | undefined;
 	private hasSeperator: boolean = false;
 	private block?: HTMLElement;
 
@@ -213,21 +213,24 @@ export class CodeActionMenu extends Disposable implements IEditorContribution {
 			e.elements.forEach(element => {
 				if (element.isEnabled) {
 					element.action.run();
+					this.hideCodeActionWidget();
 				}
 			});
-			this.hideCodeActionWidget();
 		}
 	}
 
-
 	private _onListHover(e: IListMouseEvent<ICodeActionMenuItem>): void {
 		if (!e.element) {
+			this.currSelectedItem = undefined;
 			this.codeActionList.value?.setFocus([]);
 		} else {
 			if (e.element?.isEnabled) {
 				this.codeActionList.value?.setFocus([e.element.index]);
 				this.focusedEnabledItem = this.viewItems.indexOf(e.element);
 				this.currSelectedItem = e.element.index;
+			} else {
+				this.currSelectedItem = undefined;
+				this.codeActionList.value?.setFocus([e.element.index]);
 			}
 		}
 	}
@@ -318,7 +321,7 @@ export class CodeActionMenu extends Disposable implements IEditorContribution {
 
 		// List selection
 		if (this.viewItems.length < 1 || this.viewItems.every(item => item.isDocumentation)) {
-			this.currSelectedItem = 0;
+			this.currSelectedItem = undefined;
 		} else {
 			this.focusedEnabledItem = 0;
 			this.currSelectedItem = this.viewItems[0].index;
@@ -391,7 +394,9 @@ export class CodeActionMenu extends Disposable implements IEditorContribution {
 	}
 
 	public onEnterSet() {
-		this.codeActionList.value?.setSelection([this.currSelectedItem]);
+		if (typeof this.currSelectedItem === 'number') {
+			this.codeActionList.value?.setSelection([this.currSelectedItem]);
+		}
 	}
 
 	override dispose() {
@@ -403,7 +408,7 @@ export class CodeActionMenu extends Disposable implements IEditorContribution {
 		this.options = [];
 		this.viewItems = [];
 		this.focusedEnabledItem = 0;
-		this.currSelectedItem = 0;
+		this.currSelectedItem = undefined;
 		this.hasSeperator = false;
 		this._contextViewService.hideContextView({ source: this });
 	}
