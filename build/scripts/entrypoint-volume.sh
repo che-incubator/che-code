@@ -45,5 +45,26 @@ if [ -z "$CODE_HOST" ]; then
   CODE_HOST="127.0.0.1"
 fi
 
+# First, check if OPENVSX_REGISTRY_URL environment variable is defined
+# If it is, then it means CheServer has a way to provide this information
+if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
+
+  # now check if it's empty, in that case we use Plugin Registry OpenVSX
+  if [ -z "$OPENVSX_REGISTRY_URL" ]; then
+    # remove the suffix /v3 from this variable
+    CHE_PLUGIN_REGISTRY_ROOT_URL=${CHE_PLUGIN_REGISTRY_URL%/v3}
+
+    # Use OpenVSX of the plug-in registry
+    OPENVSX_URL="$CHE_PLUGIN_REGISTRY_ROOT_URL/openvsx/vscode"
+  else
+    # Use OpenVSX URL provided by the env variable
+    OPENVSX_URL="$OPENVSX_REGISTRY_URL"
+  fi
+  echo "using OPENVSX_URL=$OPENVSX_URL"
+  sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_URL}/gallery\"|" product.json
+  sed -i -r -e "s|\"itemUrl\": \"..*\"|\"itemUrl\": \"${OPENVSX_URL}/item\"|" product.json
+  sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
+fi
+
 # Launch che without connection-token, security is managed by Che
 ./node out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
