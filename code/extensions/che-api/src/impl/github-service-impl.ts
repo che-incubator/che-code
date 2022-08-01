@@ -46,4 +46,12 @@ export class GithubServiceImpl implements GithubService {
         });
         return result.data;
     }
+
+    async getTokenScopes(token: string): Promise<string[]> {
+        this.checkToken();
+        const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return result.headers['x-oauth-scopes'].split(', ');
+    }
 }
