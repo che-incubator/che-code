@@ -107,6 +107,28 @@ apply_code_remote_package_changes() {
   git add code/remote/package.json > /dev/null 2>&1
 }
 
+# Apply changes on $1 package.json file
+# A path to the file should be passed, for example: code/build/package.json 
+apply_package_changes_by_path() {
+  local filePath="$1"
+  
+  if [ -z "$filePath" ]; then
+     echo "Can not apply changes for package.json file - the path was not passed"
+     exit 1;
+  fi
+
+  echo "  ⚙️ reworking $filePath..."
+  
+  # reset the file from what is upstream
+  git checkout --theirs $filePath > /dev/null 2>&1
+  
+  # now apply again the changes
+  override_json_file $filePath
+  
+  # resolve the change
+  git add $filePath > /dev/null 2>&1
+}
+
 # Apply changes on code/remote/yarn.lock file
 apply_code_remote_yarn_lock_changes() {
 
@@ -196,6 +218,10 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
+    elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
+      apply_package_changes_by_path "code/build/package.json"
+    elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
+      apply_package_changes_by_path "code/extensions/package.json"
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
     elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then
