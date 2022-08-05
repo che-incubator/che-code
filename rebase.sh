@@ -29,7 +29,11 @@ override_json_file() {
   fi
   
   # and now, add the values (not overriding)
-  jq "${INDENT[@]}" -s '.[1] * .[0]' ".rebase/add/$filename" "$filename.tmp" > "$filename"
+  local addFile=".rebase/add/$filename"
+  if [ -f "$addFile" ]; then
+    echo "  ⚙️  adding values from $addFile..."
+    jq "${INDENT[@]}" -s '.[1] * .[0]' "$addFile" "$filename.tmp" > "$filename"
+  fi
   
   # delete previous file
   rm "$filename.tmp"
