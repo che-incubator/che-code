@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { app, BrowserWindow, BrowserWindowConstructorOptions, Display, Event, nativeImage, NativeImage, Point, Rectangle, screen, SegmentedControlSegment, systemPreferences, TouchBar, TouchBarSegmentedControl } from 'electron';
+import { app, BrowserWindow, BrowserWindowConstructorOptions, Display, Event, nativeImage, NativeImage, Rectangle, screen, SegmentedControlSegment, systemPreferences, TouchBar, TouchBarSegmentedControl } from 'electron';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
@@ -42,6 +42,7 @@ import { Color } from 'vs/base/common/color';
 import { IPolicyService } from 'vs/platform/policy/common/policy';
 import { IUserDataProfile, IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { revive } from 'vs/base/common/marshalling';
+import { IStateMainService } from 'vs/platform/state/electron-main/state';
 import product from 'vs/platform/product/common/product';
 
 export interface IWindowCreationOptions {
@@ -83,6 +84,8 @@ const enum ReadyState {
 
 export class CodeWindow extends Disposable implements ICodeWindow {
 
+	private static readonly windowControlHeightStateStorageKey = 'windowControlHeight';
+
 	//#region Events
 
 	private readonly _onWillLoad = this._register(new Emitter<ILoadEvent>());
@@ -118,8 +121,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 
 	get openedWorkspace(): IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | undefined { return this._config?.workspace; }
 
-	private _profile: IUserDataProfile | undefined;
-	get profile(): IUserDataProfile | undefined { if (!this._profile) { this._profile = revive(this._config?.profiles.current); } return this._profile; }
+	get profile(): IUserDataProfile | undefined { return this.config ? this.userDataProfilesService.getProfile(this.config.workspace ?? 'empty-window', revive(this.config.profiles.current)) : undefined; }
 
 	get remoteAuthority(): string | undefined { return this._config?.remoteAuthority; }
 
@@ -140,9 +142,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 
 	private representedFilename: string | undefined;
 	private documentEdited: boolean | undefined;
-
-	private customTrafficLightPosition: boolean | undefined;
-	private defaultTrafficLightPosition: Point | undefined;
 
 	private readonly whenReadyCallbacks: { (window: ICodeWindow): void }[] = [];
 
@@ -173,7 +172,8 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
 		@IProductService private readonly productService: IProductService,
 		@IProtocolMainService private readonly protocolMainService: IProtocolMainService,
-		@IWindowsMainService private readonly windowsMainService: IWindowsMainService
+		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
+		@IStateMainService private readonly stateMainService: IStateMainService
 	) {
 		super();
 
@@ -291,11 +291,15 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 			this._id = this._win.id;
 
 			if (isMacintosh && useCustomTitleStyle) {
-				this.updateTrafficLightPosition(); // adjust traffic light position depending on command center
+				this._win.setSheetOffset(22); // offset dialogs by the height of the custom title bar if we have any
 			}
 
-			if (isMacintosh && useCustomTitleStyle) {
-				this._win.setSheetOffset(22); // offset dialogs by the height of the custom title bar if we have any
+			// Update the window controls immediately based on cached values
+			if (useCustomTitleStyle && ((isWindows && useWindowControlsOverlay(this.configurationService, this.environmentMainService)) || isMacintosh)) {
+				const cachedWindowControlHeight = this.stateMainService.getItem<number>((CodeWindow.windowControlHeightStateStorageKey));
+				if (cachedWindowControlHeight) {
+					this.updateWindowControls({ height: cachedWindowControlHeight });
+				}
 			}
 
 			// Windows Custom System Context Menu
@@ -347,17 +351,18 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 			// to open the window has a larger resolution than the primary display, the window will not size
 			// correctly unless we set the bounds again (https://github.com/microsoft/vscode/issues/74872)
 			//
+			// Extended to cover Windows as well as Mac (https://github.com/microsoft/vscode/issues/146499)
+			//
 			// However, when running with native tabs with multiple windows we cannot use this workaround
 			// because there is a potential that the new window will be added as native tab instead of being
 			// a window on its own. In that case calling setBounds() would cause https://github.com/microsoft/vscode/issues/75830
-			if (isMacintosh && hasMultipleDisplays && (!useNativeTabs || BrowserWindow.getAllWindows().length === 1)) {
+			if ((isMacintosh || isWindows) && hasMultipleDisplays && (!useNativeTabs || BrowserWindow.getAllWindows().length === 1)) {
 				if ([this.windowState.width, this.windowState.height, this.windowState.x, this.windowState.y].every(value => typeof value === 'number')) {
-					const ensuredWindowState = this.windowState as Required<IWindowState>;
 					this._win.setBounds({
-						width: ensuredWindowState.width,
-						height: ensuredWindowState.height,
-						x: ensuredWindowState.x,
-						y: ensuredWindowState.y
+						width: this.windowState.width,
+						height: this.windowState.height,
+						x: this.windowState.x,
+						y: this.windowState.y
 					});
 				}
 			}
@@ -401,7 +406,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 	}
 
 	setRepresentedFilename(filename: string): void {
-		if (isMacintosh && !this.customTrafficLightPosition) { // TODO@electron https://github.com/electron/electron/issues/34822
+		if (isMacintosh) {
 			this._win.setRepresentedFilename(filename);
 		} else {
 			this.representedFilename = filename;
@@ -409,7 +414,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 	}
 
 	getRepresentedFilename(): string | undefined {
-		if (isMacintosh && !this.customTrafficLightPosition) { // TODO@electron https://github.com/electron/electron/issues/34822
+		if (isMacintosh) {
 			return this._win.getRepresentedFilename();
 		}
 
@@ -786,9 +791,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 			this.setMenuBarVisibility(newMenuBarVisibility);
 		}
 
-		// Traffic Lights
-		this.updateTrafficLightPosition(e);
-
 		// Proxy
 		let newHttpProxy = (this.configurationService.getValue<string>('http.proxy') || '').trim()
 			|| (process.env['https_proxy'] || process.env['HTTPS_PROXY'] || process.env['http_proxy'] || process.env['HTTP_PROXY'] || '').trim() // Not standardized.
@@ -956,7 +958,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		configuration.editSessionId = this.environmentMainService.editSessionId; // set latest edit session id
 		configuration.profiles = {
 			all: this.userDataProfilesService.profiles,
-			current: this.userDataProfilesService.getProfile(configuration.workspace ?? 'empty-window'),
+			current: this.profile || this.userDataProfilesService.defaultProfile,
 		};
 
 		// Load config
@@ -1060,6 +1062,28 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		}
 
 		return state;
+	}
+
+	updateWindowControls(options: { height?: number; backgroundColor?: string; foregroundColor?: string }): void {
+
+		// Cache the height for speeds lookups on startup
+		if (options.height) {
+			this.stateMainService.setItem((CodeWindow.windowControlHeightStateStorageKey), options.height);
+		}
+
+		// Windows: window control overlay (WCO)
+		if (isWindows) {
+			this._win.setTitleBarOverlay({
+				color: options.backgroundColor?.trim() === '' ? undefined : options.backgroundColor,
+				symbolColor: options.foregroundColor?.trim() === '' ? undefined : options.foregroundColor,
+				height: options.height ? options.height - 1 : undefined // account for window border
+			});
+		}
+
+		// macOS: traffic lights
+		else if (isMacintosh && options.height !== undefined) {
+			this._win.setTrafficLightPosition({ x: 7, y: (options.height - 15) / 2 }); // 15px is the height of the traffic lights
+		}
 	}
 
 	private restoreWindowState(state?: IWindowState): [IWindowState, boolean? /* has multiple displays */] {
@@ -1346,36 +1370,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		}
 	}
 
-	private updateTrafficLightPosition(e?: IConfigurationChangeEvent): void {
-		if (!isMacintosh) {
-			return; // only applies to macOS
-		}
-
-		const commandCenterSettingKey = 'window.commandCenter';
-		if (e && !e.affectsConfiguration(commandCenterSettingKey)) {
-			return;
-		}
-
-		const useCustomTitleStyle = getTitleBarStyle(this.configurationService) === 'custom';
-		if (!useCustomTitleStyle) {
-			return; // only applies with custom title bar
-		}
-
-		const useCustomTrafficLightPosition = this.configurationService.getValue<boolean>(commandCenterSettingKey);
-		if (useCustomTrafficLightPosition) {
-			if (!this.defaultTrafficLightPosition) {
-				this.defaultTrafficLightPosition = this._win.getTrafficLightPosition(); // remember default to restore later
-			}
-			this._win.setTrafficLightPosition({ x: 7, y: 10 });
-		} else {
-			if (this.defaultTrafficLightPosition) {
-				this._win.setTrafficLightPosition(this.defaultTrafficLightPosition);
-			}
-		}
-
-		this.customTrafficLightPosition = useCustomTrafficLightPosition;
-	}
-
 	handleTitleDoubleClick(): void {
 
 		// Respect system settings on mac with regards to title click on windows title
@@ -1408,9 +1402,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 	}
 
 	close(): void {
-		if (this._win) {
-			this._win.close();
-		}
+		this._win?.close();
 	}
 
 	sendWhenReady(channel: string, token: CancellationToken, ...args: any[]): void {
