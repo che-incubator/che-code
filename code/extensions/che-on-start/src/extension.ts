@@ -21,7 +21,6 @@ export async function activate(_context: vscode.ExtensionContext): Promise<void>
     return;
   }
 
-  // disable terminal auto-opening until https://github.com/eclipse/che/issues/21537 is fixed
   openTerminalIfNone(output);
   openProjectIfNone(output);
 
@@ -121,5 +120,5 @@ async function getCheWorkspacePath(output: vscode.OutputChannel): Promise<vscode
 
 
 export function deactivate(): void {
-
+  
 }
