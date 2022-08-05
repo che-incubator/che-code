@@ -114,6 +114,8 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 
 
 	async call<T>(ctx: RemoteAgentConnectionContext, command: string, args?: any, cancellationToken?: CancellationToken): Promise<any> {
+		this.logService.debug('RemoteTerminalMachineExecChannel#call: ', ctx, command, args);
+
 		// provide default shell to be like bash
 		if ('$getDefaultSystemShell' === command) {
 			return '/bin/bash';
@@ -288,6 +290,7 @@ export class RemoteTerminalMachineExecChannel implements IServerChannel<RemoteAg
 	}
 
 	listen<T>(ctx: RemoteAgentConnectionContext, event: string, arg?: any): Event<any> {
+		this.logService.debug('RemoteTerminalMachineExecChannel#listen: ', ctx, event, arg);
 
 		if (event === '$onProcessDataEvent') {
 			return this.onProcessData;
