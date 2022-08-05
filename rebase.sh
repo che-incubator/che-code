@@ -20,19 +20,25 @@ override_json_file() {
   local filename=$1
   local formattingOption=${2:-}
   
-  # now apply override settings
-  jq --slurpfile override ".rebase/override/$filename" '. + $override[0]' "$filename" > "$filename.tmp"
-  
   INDENT=("--indent" "2")
   if [[ "$formattingOption" == "tab" ]]; then
     INDENT=("--tab")
+  fi
+
+  # now apply override settings
+  local overrideFile=".rebase/override/$filename"
+  if [ -f "$overrideFile" ]; then
+    echo "  ⚙️  applying override settings from $overrideFile..."
+    jq "${INDENT[@]}" -s '.[0] * .[1]' "$filename" "$overrideFile" > "$filename.tmp"
+    cat "$filename.tmp" > "$filename"
   fi
   
   # and now, add the values (not overriding)
   local addFile=".rebase/add/$filename"
   if [ -f "$addFile" ]; then
     echo "  ⚙️  adding values from $addFile..."
-    jq "${INDENT[@]}" -s '.[1] * .[0]' "$addFile" "$filename.tmp" > "$filename"
+    jq "${INDENT[@]}" -s '.[1] * .[0]' "$addFile" "$filename" > "$filename.tmp"
+    cat "$filename.tmp" > "$filename"
   fi
   
   # delete previous file
