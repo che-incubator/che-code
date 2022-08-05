@@ -10,7 +10,6 @@
 name: image-publish-insiders
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
 
