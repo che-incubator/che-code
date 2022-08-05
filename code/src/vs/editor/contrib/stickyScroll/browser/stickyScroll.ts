@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
+import { Disposable, DisposableStore, dispose } from 'vs/base/common/lifecycle';
 import { IActiveCodeEditor, ICodeEditor, IOverlayWidget, IOverlayWidgetPosition } from 'vs/editor/browser/editorBrowser';
 import { registerEditorContribution } from 'vs/editor/browser/editorExtensions';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
@@ -11,7 +11,7 @@ import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeat
 import { OutlineModel, OutlineElement } from 'vs/editor/contrib/documentSymbols/browser/outlineModel';
 import { CancellationToken, CancellationTokenSource, } from 'vs/base/common/cancellation';
 import * as dom from 'vs/base/browser/dom';
-import { EditorOption } from 'vs/editor/common/config/editorOptions';
+import { EditorLayoutInfo, EditorOption, RenderLineNumbersType } from 'vs/editor/common/config/editorOptions';
 import { createStringBuilder } from 'vs/editor/common/core/stringBuilder';
 import { RenderLineInput, renderViewLine } from 'vs/editor/common/viewLayout/viewLineRenderer';
 import { SymbolKind } from 'vs/editor/common/languages';
@@ -19,6 +19,7 @@ import { LineDecoration } from 'vs/editor/common/viewLayout/lineDecorations';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { IModelTokensChangedEvent } from 'vs/editor/common/textModelEvents';
 import { Position } from 'vs/editor/common/core/position';
+import 'vs/css!./stickyScroll';
 import { Range } from 'vs/editor/common/core/range';
 
 class StickyScrollController extends Disposable implements IEditorContribution {
@@ -64,10 +65,20 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 			this._sessionStore.add(this._editor.onDidScrollChange(() => this._update(false)));
 			this._sessionStore.add(this._editor.onDidChangeHiddenAreas(() => this._update(true)));
 			this._sessionStore.add(this._editor.onDidChangeModelTokens((e) => this._onTokensChange(e)));
+			this._sessionStore.add(this._editor.onDidLayoutChange(() => this._onDidResize()));
 			this._sessionStore.add(this._editor.onDidChangeModelContent(() => this._updateSoon.schedule()));
 			this._sessionStore.add(this._languageFeaturesService.documentSymbolProvider.onDidChange(() => this._update(true)));
+			const lineNumberOption = this._editor.getOption(EditorOption.lineNumbers);
+			if (lineNumberOption.renderType === RenderLineNumbersType.Relative) {
+				this._sessionStore.add(this._editor.onDidChangeCursorPosition(() => this._update(false)));
+			}
 			this._update(true);
 		}
+	}
+
+	private _onDidResize() {
+		const width = this._editor.getLayoutInfo().width - this._editor.getLayoutInfo().minimap.minimapCanvasOuterWidth - this._editor.getLayoutInfo().verticalScrollbarWidth;
+		this.stickyScrollWidget.getDomNode().style.width = `${width}px`;
 	}
 
 	private _needsUpdate(event: IModelTokensChangedEvent) {
@@ -130,7 +141,11 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 			if (kind === SymbolKind.Class || kind === SymbolKind.Constructor || kind === SymbolKind.Function || kind === SymbolKind.Interface || kind === SymbolKind.Method || kind === SymbolKind.Module) {
 				currentStartLine = outlineElement?.symbol.range.startLineNumber as number;
 				currentEndLine = outlineElement?.symbol.range.endLineNumber as number;
-				this._ranges.push([currentStartLine, currentEndLine, depth]);
+				if (currentEndLine > currentStartLine) {
+					this._ranges.push([currentStartLine, currentEndLine - 1, depth]);
+				} else {
+					this._ranges.push([currentStartLine, currentEndLine, depth]);
+				}
 				depth--;
 			}
 			if (outlineElement.parent instanceof OutlineElement) {
@@ -160,7 +175,7 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 						this._findLineRanges(outline, 0);
 					}
 				}
-				this._ranges = this._ranges.sort(function (a, b) {
+				this._ranges.sort(function (a, b) {
 					if (a[0] !== b[0]) {
 						return a[0] - b[0];
 					} else if (a[1] !== b[1]) {
@@ -169,17 +184,27 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 						return a[2] - b[2];
 					}
 				});
-				let previous: number[] = [];
-				for (const [index, arr] of this._ranges.entries()) {
-					const [start, end, _depth] = arr;
-					if (previous[0] === start && previous[1] === end) {
-						this._ranges.splice(index, 1);
+
+				const startLinesConsidered: Set<number[]> = new Set();
+				this._ranges = this._ranges.filter(arr => {
+					if (!this._containsArray(startLinesConsidered, arr)) {
+						startLinesConsidered.add(arr);
+						return true;
 					} else {
-						previous = arr;
+						return false;
 					}
-				}
+				});
 			}
 		}
+	}
+
+	private _containsArray(set: Set<number[]>, array: number[]) {
+		for (const arr of set) {
+			if (arr.toString() === array.toString()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private _renderStickyScroll() {
@@ -193,13 +218,11 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 			return;
 		}
 		const scrollTop = this._editor.getScrollTop();
-
 		this.stickyScrollWidget.emptyRootNode();
-		const beginningLinesConsidered: Set<number> = new Set<number>();
 
-		for (const [index, arr] of this._ranges.entries()) {
+		for (const arr of this._ranges) {
 			const [start, end, depth] = arr;
-			if (end - start > 0 && model.getLineContent(start) !== '') {
+			if (end - start > 0) {
 				const topOfElementAtDepth = (depth - 1) * lineHeight;
 				const bottomOfElementAtDepth = depth * lineHeight;
 
@@ -207,18 +230,12 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 				const topOfEndLine = this._editor.getTopForLineNumber(end) - scrollTop;
 				const bottomOfEndLine = this._editor.getBottomForLineNumber(end) - scrollTop;
 
-				if (!beginningLinesConsidered.has(start)) {
-					if (topOfElementAtDepth >= topOfEndLine - 1 && topOfElementAtDepth < bottomOfEndLine - 2) {
-						beginningLinesConsidered.add(start);
-						this.stickyScrollWidget.pushCodeLine(new StickyScrollCodeLine(start, depth, this._editor, -1, bottomOfEndLine - bottomOfElementAtDepth));
-						break;
-					}
-					else if (bottomOfElementAtDepth > bottomOfBeginningLine && bottomOfElementAtDepth < bottomOfEndLine - 1) {
-						beginningLinesConsidered.add(start);
-						this.stickyScrollWidget.pushCodeLine(new StickyScrollCodeLine(start, depth, this._editor, 0, 0));
-					}
-				} else {
-					this._ranges.splice(index, 1);
+				if (topOfElementAtDepth >= topOfEndLine - 1 && topOfElementAtDepth < bottomOfEndLine - 2) {
+					this.stickyScrollWidget.pushCodeLine(new StickyScrollCodeLine(start, depth, this._editor, -1, bottomOfEndLine - bottomOfElementAtDepth));
+					break;
+				}
+				else if (bottomOfElementAtDepth > bottomOfBeginningLine && bottomOfElementAtDepth < bottomOfEndLine - 1) {
+					this.stickyScrollWidget.pushCodeLine(new StickyScrollCodeLine(start, depth, this._editor, 0, 0));
 				}
 			}
 		}
@@ -233,12 +250,18 @@ class StickyScrollController extends Disposable implements IEditorContribution {
 
 const _ttPolicy = window.trustedTypes?.createPolicy('stickyScrollViewLayer', { createHTML: value => value });
 
-class StickyScrollCodeLine {
+class StickyScrollCodeLine extends Disposable {
 
 	public readonly effectiveLineHeight: number = 0;
 
-	constructor(private readonly _lineNumber: number, private readonly _depth: number, private readonly _editor: IActiveCodeEditor,
-		private readonly _zIndex: number, private readonly _relativePosition: number) {
+	constructor(
+		private readonly _lineNumber: number,
+		private readonly _depth: number,
+		private readonly _editor: IActiveCodeEditor,
+		private readonly _zIndex: number,
+		private readonly _relativePosition: number
+	) {
+		super();
 		this.effectiveLineHeight = this._editor.getOption(EditorOption.lineHeight) + this._relativePosition;
 	}
 
@@ -252,6 +275,10 @@ class StickyScrollCodeLine {
 		const viewModel = this._editor._getViewModel();
 		const viewLineNumber = viewModel.coordinatesConverter.convertModelPositionToViewPosition(new Position(this._lineNumber, 1)).lineNumber;
 		const lineRenderingData = viewModel.getViewLineRenderingData(viewLineNumber);
+		const layoutInfo = this._editor.getLayoutInfo();
+		const width = layoutInfo.width - layoutInfo.minimap.minimapCanvasOuterWidth - layoutInfo.verticalScrollbarWidth;
+		const minimapSide = this._editor.getOption(EditorOption.minimap).side;
+		const lineHeight = this._editor.getOption(EditorOption.lineHeight);
 
 		let actualInlineDecorations: LineDecoration[];
 		try {
@@ -260,11 +287,15 @@ class StickyScrollCodeLine {
 			actualInlineDecorations = [];
 		}
 
-		const renderLineInput: RenderLineInput = new RenderLineInput(true, true, lineRenderingData.content, lineRenderingData.continuesWithWrappedLine,
-			lineRenderingData.isBasicASCII, lineRenderingData.containsRTL, 0, lineRenderingData.tokens, actualInlineDecorations, lineRenderingData.tabSize,
-			lineRenderingData.startVisibleColumn, 1, 1, 1, 100, 'none', true, true, null);
+		const renderLineInput: RenderLineInput =
+			new RenderLineInput(true, true, lineRenderingData.content,
+				lineRenderingData.continuesWithWrappedLine,
+				lineRenderingData.isBasicASCII, lineRenderingData.containsRTL, 0,
+				lineRenderingData.tokens, actualInlineDecorations,
+				lineRenderingData.tabSize, lineRenderingData.startVisibleColumn,
+				1, 1, 1, 500, 'none', true, true, null);
 
-		const sb = createStringBuilder(400);
+		const sb = createStringBuilder(2000);
 		renderViewLine(renderLineInput, sb);
 
 		let newLine;
@@ -275,52 +306,41 @@ class StickyScrollCodeLine {
 		}
 
 		const lineHTMLNode = document.createElement('span');
-		lineHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-		lineHTMLNode.style.overflow = 'hidden';
-		lineHTMLNode.style.whiteSpace = 'nowrap';
-		lineHTMLNode.style.display = 'inline-block';
-		lineHTMLNode.style.lineHeight = this._editor.getOption(EditorOption.lineHeight).toString() + 'px';
+		lineHTMLNode.className = 'sticky-line';
+		lineHTMLNode.style.lineHeight = `${lineHeight}px`;
 		lineHTMLNode.innerHTML = newLine as string;
 
 		const lineNumberHTMLNode = document.createElement('span');
-		lineNumberHTMLNode.style.width = this._editor.getLayoutInfo().contentLeft.toString() + 'px';
-		lineNumberHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-		lineNumberHTMLNode.style.color = 'var(--vscode-editorLineNumber-foreground)';
-		lineNumberHTMLNode.style.display = 'inline-block';
-		lineNumberHTMLNode.style.lineHeight = this._editor.getOption(EditorOption.lineHeight).toString() + 'px';
+		lineNumberHTMLNode.className = 'sticky-line';
+		lineNumberHTMLNode.style.lineHeight = `${lineHeight}px`;
+		if (minimapSide === 'left') {
+			lineNumberHTMLNode.style.width = `${layoutInfo.contentLeft - layoutInfo.minimap.minimapCanvasOuterWidth}px`;
+		} else if (minimapSide === 'right') {
+			lineNumberHTMLNode.style.width = `${layoutInfo.contentLeft}px`;
+		}
 
 		const innerLineNumberHTML = document.createElement('span');
-		innerLineNumberHTML.innerText = this._lineNumber.toString();
-		innerLineNumberHTML.style.paddingLeft = this._editor.getLayoutInfo().lineNumbersLeft.toString() + 'px';
-		innerLineNumberHTML.style.width = this._editor.getLayoutInfo().lineNumbersWidth.toString() + 'px';
-		innerLineNumberHTML.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-		innerLineNumberHTML.style.textAlign = 'right';
-		innerLineNumberHTML.style.float = 'left';
-		innerLineNumberHTML.style.lineHeight = this._editor.getOption(EditorOption.lineHeight).toString() + 'px';
+		const lineNumberOption = this._editor.getOption(EditorOption.lineNumbers);
+		if (lineNumberOption.renderType === RenderLineNumbersType.On || lineNumberOption.renderType === RenderLineNumbersType.Interval && this._lineNumber % 10 === 0) {
+			innerLineNumberHTML.innerText = this._lineNumber.toString();
+		} else if (lineNumberOption.renderType === RenderLineNumbersType.Relative) {
+			innerLineNumberHTML.innerText = Math.abs(this._lineNumber - this._editor.getPosition().lineNumber).toString();
+		}
+		innerLineNumberHTML.className = 'sticky-line-number';
+		innerLineNumberHTML.style.lineHeight = `${lineHeight}px`;
+		innerLineNumberHTML.style.width = `${layoutInfo.lineNumbersWidth}px`;
+		if (minimapSide === 'left') {
+			innerLineNumberHTML.style.paddingLeft = `${layoutInfo.lineNumbersLeft - layoutInfo.minimap.minimapCanvasOuterWidth}px`;
+		} else if (minimapSide === 'right') {
+			innerLineNumberHTML.style.paddingLeft = `${layoutInfo.lineNumbersLeft}px`;
+		}
 		lineNumberHTMLNode.appendChild(innerLineNumberHTML);
 
-		root.onclick = e => {
+		this._register(dom.addDisposableListener(root, 'click', e => {
 			e.stopPropagation();
 			e.preventDefault();
 			this._editor.revealPosition({ lineNumber: this._lineNumber - this._depth + 1, column: 1 });
-		};
-
-		root.onmouseover = e => {
-			innerLineNumberHTML.style.background = `var(--vscode-editorStickyScrollHover-background)`;
-			lineHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScrollHover-background)`;
-			lineNumberHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScrollHover-background)`;
-			root.style.backgroundColor = `var(--vscode-editorStickyScrollHover-background)`;
-			innerLineNumberHTML.style.cursor = `pointer`;
-			lineHTMLNode.style.cursor = `pointer`;
-			root.style.cursor = `pointer`;
-			lineNumberHTMLNode.style.cursor = `pointer`;
-		};
-		root.onmouseleave = e => {
-			innerLineNumberHTML.style.background = `var(--vscode-editorStickyScroll-background)`;
-			lineHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-			lineNumberHTMLNode.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-			root.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-		};
+		}));
 
 		this._editor.applyFontInfo(lineHTMLNode);
 		this._editor.applyFontInfo(innerLineNumberHTML);
@@ -329,18 +349,15 @@ class StickyScrollCodeLine {
 		root.appendChild(lineHTMLNode);
 
 		root.style.zIndex = this._zIndex.toString();
-		root.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
-		root.style.overflow = 'hidden';
-		root.style.whiteSpace = 'nowrap';
-		root.style.width = '100%';
-		root.style.lineHeight = this._editor.getOption(EditorOption.lineHeight).toString() + 'px';
-		root.style.height = this._editor.getOption(EditorOption.lineHeight).toString() + 'px';
+		root.className = 'sticky-line-root';
+		root.style.lineHeight = `${lineHeight}px`;
+		root.style.width = `${width}px`;
+		root.style.height = `${lineHeight}px`;
 
 		// Special case for last line of sticky scroll
 		if (this._relativePosition) {
 			root.style.position = 'relative';
 			root.style.top = this._relativePosition + 'px';
-			root.style.width = '100%';
 		}
 		return root;
 	}
@@ -350,11 +367,14 @@ class StickyScrollWidget implements IOverlayWidget {
 
 	private readonly arrayOfCodeLines: StickyScrollCodeLine[] = [];
 	private readonly rootDomNode: HTMLElement = document.createElement('div');
+	private readonly layoutInfo: EditorLayoutInfo;
 
 	constructor(public readonly _editor: ICodeEditor) {
+		this.layoutInfo = this._editor.getLayoutInfo();
 		this.rootDomNode = document.createElement('div');
-		this.rootDomNode.style.width = '100%';
-		this.rootDomNode.style.boxShadow = `var(--vscode-scrollbar-shadow) 0 6px 6px -6px`;
+		this.rootDomNode.className = 'sticky-widget';
+		const width = this.layoutInfo.width - this.layoutInfo.minimap.minimapCanvasOuterWidth - this.layoutInfo.verticalScrollbarWidth;
+		this.rootDomNode.style.width = `${width}px`;
 	}
 
 	get codeLineCount() {
@@ -383,6 +403,7 @@ class StickyScrollWidget implements IOverlayWidget {
 	}
 
 	emptyRootNode() {
+		dispose(this.arrayOfCodeLines);
 		this.arrayOfCodeLines.length = 0;
 		dom.clearNode(this.rootDomNode);
 	}
@@ -392,8 +413,12 @@ class StickyScrollWidget implements IOverlayWidget {
 	}
 
 	getDomNode(): HTMLElement {
-		this.rootDomNode.style.zIndex = '2';
-		this.rootDomNode.style.backgroundColor = `var(--vscode-editorStickyScroll-background)`;
+		const minimapSide = this._editor.getOption(EditorOption.minimap).side;
+		if (minimapSide === 'left') {
+			this.rootDomNode.style.marginLeft = this._editor.getLayoutInfo().minimap.minimapCanvasOuterWidth + 'px';
+		} else if (minimapSide === 'right') {
+			this.rootDomNode.style.marginLeft = '0px';
+		}
 		return this.rootDomNode;
 	}
 
