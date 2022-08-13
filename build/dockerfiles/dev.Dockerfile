@@ -7,7 +7,7 @@
 #
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
-FROM quay.io/eclipse/che-machine-exec:7.51.0 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.52.0 as machine-exec
 
 # https://registry.access.redhat.com/ubi8/ubi
 FROM registry.access.redhat.com/ubi8/ubi:8.6-855 AS ubi-micro-build
