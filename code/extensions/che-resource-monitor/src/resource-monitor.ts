@@ -158,7 +158,6 @@ export class ResourceMonitor {
       if (element.cpuLimit) {
         cpuLimit += element.cpuLimit;
       }
-      console.log('>>>>>>>>>>', element.memoryUsed, element.memoryLimit, element.cpuUsed, element.cpuLimit);
       // if a container uses more than 90% of limited memory, show it in status bar with warning color
       if (element.memoryLimit && element.cpuLimit && element.memoryUsed && element.cpuUsed && element.memoryUsed / element.memoryLimit > 0.9) {
         color = this.WARNING_COLOR;
@@ -192,7 +191,7 @@ export class ResourceMonitor {
       used = Math.floor(memoryUsed / unit);
       limited = Math.floor(memoryLimit / unit);
     }
-    return `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}% $(pulse) CPU: ${cpuUsed}/${limited} m ${cpuPct}%`;
+    return `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}% $(pulse) CPU: ${cpuUsed}/${cpuLimit} m ${cpuPct}%`;
   }
 
   showDetailedInfo(): void {
