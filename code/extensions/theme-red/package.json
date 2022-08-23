@@ -1,25 +1,31 @@
 {
-  "name": "theme-red",
-  "displayName": "%displayName%",
-  "description": "%description%",
-  "version": "1.0.0",
-  "publisher": "vscode",
-  "license": "MIT",
-  "engines": {
-    "vscode": "*"
-  },
-  "contributes": {
-    "themes": [
-      {
-        "id": "Red",
-        "label": "%themeLabel%",
-        "uiTheme": "vs-dark",
-        "path": "./themes/Red-color-theme.json"
-      }
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/microsoft/vscode.git"
-  }
+	"name": "theme-red",
+	"displayName": "%displayName%",
+	"description": "%description%",
+	"version": "1.0.0",
+	"publisher": "vscode",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"contributes": {
+		"themes": [
+			{
+				"id": "Red",
+				"label": "%themeLabel%",
+				"uiTheme": "vs-dark",
+				"path": "./themes/Red-color-theme.json"
+			}
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/microsoft/vscode.git"
+	},
+	"__metadata": {
+		"id": "59195b5f-14ae-406d-9758-523571e514fb",
+		"publisherDisplayName": null,
+		"publisherId": "9156ae8e-c2fd-4dab-9232-54bbce5b1621",
+		"isPreReleaseVersion": false
+	}
 }

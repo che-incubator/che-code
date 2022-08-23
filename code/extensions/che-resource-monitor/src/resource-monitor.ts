@@ -141,6 +141,7 @@ export class ResourceMonitor {
     let memTotal = 0;
     let memUsed = 0;
     let cpuUsed = 0;
+    let cpuLimit = 0;
     let text = '';
     let color = this.DEFAULT_COLOR;
     let tooltip = this.DEFAULT_TOOLTIP;
@@ -154,17 +155,21 @@ export class ResourceMonitor {
       if (element.cpuUsed) {
         cpuUsed += element.cpuUsed;
       }
+      if (element.cpuLimit) {
+        cpuLimit += element.cpuLimit;
+      }
+      console.log('>>>>>>>>>>', element.memoryUsed, element.memoryLimit, element.cpuUsed, element.cpuLimit);
       // if a container uses more than 90% of limited memory, show it in status bar with warning color
-      if (element.memoryLimit && element.memoryUsed && element.memoryUsed / element.memoryLimit > 0.9) {
+      if (element.memoryLimit && element.cpuLimit && element.memoryUsed && element.cpuUsed && element.memoryUsed / element.memoryLimit > 0.9) {
         color = this.WARNING_COLOR;
         tooltip = `${element.name} container`;
-        text = this.buildStatusBarMessage(element.memoryUsed, element.memoryLimit, element.cpuUsed);
+        text = this.buildStatusBarMessage(element.memoryUsed, element.memoryLimit, element.cpuUsed, element.cpuLimit);
       }
     });
 
     // show workspace resources in total
     if (color === this.DEFAULT_COLOR) {
-      text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed);
+      text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed, cpuLimit);
     }
 
     this.statusBarItem.text = text;
@@ -172,13 +177,14 @@ export class ResourceMonitor {
     this.statusBarItem.tooltip = tooltip;
   }
 
-  buildStatusBarMessage(memoryUsed: number, memoryLimit: number, cpuUsaed: number | undefined): string {
+  buildStatusBarMessage(memoryUsed: number, memoryLimit: number, cpuUsed: number, cpuLimit: number): string {
     const unitId = memoryLimit > Units.G ? 'GB' : 'MB';
     const unit = memoryLimit > Units.G ? Units.G : Units.M;
 
     let used: number | string;
     let limited: number | string;
     const memPct = Math.floor((memoryUsed / memoryLimit) * 100);
+    const cpuPct = Math.floor((cpuUsed / cpuLimit) * 100);
     if (unit === Units.G) {
       used = (memoryUsed / unit).toFixed(2);
       limited = (memoryLimit / unit).toFixed(2);
@@ -186,11 +192,7 @@ export class ResourceMonitor {
       used = Math.floor(memoryUsed / unit);
       limited = Math.floor(memoryLimit / unit);
     }
-    let message = `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}%`;
-    if (cpuUsaed) {
-      message = `${message} $(pulse) CPU: ${cpuUsaed} m`;
-    }
-    return message;
+    return `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}% $(pulse) CPU: ${cpuUsed}/${limited} m ${cpuPct}%`;
   }
 
   showDetailedInfo(): void {
