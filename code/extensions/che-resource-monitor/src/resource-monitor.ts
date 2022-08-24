@@ -29,7 +29,8 @@ export class ResourceMonitor {
   private METRICS_REQUEST_URL = `${this.METRICS_SERVER_ENDPOINT}namespaces/`;
   private WARNING_COLOR = '#FFCC00';
   private DEFAULT_COLOR = '#FFFFFF';
-  private DEFAULT_TOOLTIP = 'Workspace resources';
+  private DEFAULT_TOOLTIP = 'Workspace resources usage. Click for details';
+  private DISCONECTED_TOOLTIP = 'Metrics server is not running';
   private MONITOR_BANNED = '$(ban) Resources';
   private MONITOR_WAIT_METRICS = 'Waiting metrics...';
 
@@ -116,6 +117,7 @@ export class ResourceMonitor {
         this.warningMessage = `Resource monitor won't be displayed. Cannot read metrics: ${response.data}.`;
         this.statusBarItem.command = SHOW_WARNING_MESSAGE_COMMAND;
       }
+      this.statusBarItem.tooltip = this.DISCONECTED_TOOLTIP;
       return this.containers;
     }
     this.statusBarItem.command = SHOW_RESOURCES_INFORMATION_COMMAND;
