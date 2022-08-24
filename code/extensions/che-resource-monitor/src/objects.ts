@@ -14,6 +14,8 @@ export interface Container {
   name: string;
   cpuLimit?: number;
   memoryLimit?: number;
+  cpuRequest?: number;
+  memoryRequest?: number;
   cpuUsed?: number;
   memoryUsed?: number;
 }

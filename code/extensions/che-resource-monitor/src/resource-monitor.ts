@@ -30,7 +30,7 @@ export class ResourceMonitor {
   private WARNING_COLOR = '#FFCC00';
   private DEFAULT_COLOR = '#FFFFFF';
   private DEFAULT_TOOLTIP = 'Workspace resources usage. Click for details';
-  private DISCONECTED_TOOLTIP = 'Metrics server is not running';
+  private DISCONNECTED_TOOLTIP = 'Metrics server is not running';
   private MONITOR_BANNED = '$(ban) Resources';
   private MONITOR_WAIT_METRICS = 'Waiting metrics...';
 
@@ -86,7 +86,9 @@ export class ResourceMonitor {
       this.containers.push({
         name: element.name,
         cpuLimit: convertToMilliCPU(element.resources?.limits?.cpu),
+        cpuRequest: convertToMilliCPU(element.resources?.requests?.cpu),
         memoryLimit: convertToBytes(element.resources?.limits?.memory),
+        memoryRequest: convertToBytes(element.resources?.requests?.memory),
       });
     });
     return this.containers;
@@ -117,7 +119,7 @@ export class ResourceMonitor {
         this.warningMessage = `Resource monitor won't be displayed. Cannot read metrics: ${response.data}.`;
         this.statusBarItem.command = SHOW_WARNING_MESSAGE_COMMAND;
       }
-      this.statusBarItem.tooltip = this.DISCONECTED_TOOLTIP;
+      this.statusBarItem.tooltip = this.DISCONNECTED_TOOLTIP;
       return this.containers;
     }
     this.statusBarItem.command = SHOW_RESOURCES_INFORMATION_COMMAND;
@@ -164,13 +166,13 @@ export class ResourceMonitor {
       if (element.memoryLimit && element.cpuLimit && element.memoryUsed && element.cpuUsed && element.memoryUsed / element.memoryLimit > 0.9) {
         color = this.WARNING_COLOR;
         tooltip = `${element.name} container`;
-        text = this.buildStatusBarMessage(element.memoryUsed, element.memoryLimit, element.cpuUsed, element.cpuLimit);
+        text = this.buildStatusBarMessage(element);
       }
     });
 
     // show workspace resources in total
     if (color === this.DEFAULT_COLOR) {
-      text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed, cpuLimit);
+      text = this.buildStatusBarMessage({ name: 'name', memoryRequest: 1, memoryUsed: memUsed, cpuRequest: 2, cpuLimit, memoryLimit: memTotal, cpuUsed });
     }
 
     this.statusBarItem.text = text;
@@ -178,22 +180,23 @@ export class ResourceMonitor {
     this.statusBarItem.tooltip = tooltip;
   }
 
-  buildStatusBarMessage(memoryUsed: number, memoryLimit: number, cpuUsed: number, cpuLimit: number): string {
-    const unitId = memoryLimit > Units.G ? 'GB' : 'MB';
-    const unit = memoryLimit > Units.G ? Units.G : Units.M;
+  buildStatusBarMessage(container: Container): string {
+    console.log('>>>>>>' + JSON.stringify(container));
+    const unitId = container.memoryLimit! > Units.G ? 'GB' : 'MB';
+    const unit = container.memoryLimit! > Units.G ? Units.G : Units.M;
 
     let used: number | string;
     let limited: number | string;
-    const memPct = Math.floor((memoryUsed / memoryLimit) * 100);
-    const cpuPct = Math.floor((cpuUsed / cpuLimit) * 100);
+    const memPct = Math.floor((container.memoryUsed! / container.memoryLimit!) * 100);
+    const cpuPct = Math.floor((container.cpuUsed! / container.cpuLimit!) * 100);
     if (unit === Units.G) {
-      used = (memoryUsed / unit).toFixed(2);
-      limited = (memoryLimit / unit).toFixed(2);
+      used = (container.memoryUsed! / unit).toFixed(2);
+      limited = (container.memoryLimit! / unit).toFixed(2);
     } else {
-      used = Math.floor(memoryUsed / unit);
-      limited = Math.floor(memoryLimit / unit);
+      used = Math.floor(container.memoryUsed! / unit);
+      limited = Math.floor(container.memoryLimit! / unit);
     }
-    return `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}% $(pulse) CPU: ${cpuUsed}/${cpuLimit} m ${cpuPct}%`;
+    return `$(ellipsis) Mem: ${used}/${limited} ${unitId} ${memPct}% $(pulse) CPU: ${container.cpuUsed!}/${container.cpuLimit!} m ${cpuPct}%`;
   }
 
   showDetailedInfo(): void {
