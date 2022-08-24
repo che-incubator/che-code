@@ -180,7 +180,7 @@ export class ResourceMonitor {
 
     // show workspace resources in total
     if (color === this.DEFAULT_COLOR) {
-      text = this.buildStatusBarMessage({ name: 'name', memoryRequest: memRequest, memoryUsed: memUsed, cpuRequest: 2, cpuLimit, memoryLimit: memTotal, cpuUsed });
+      text = this.buildStatusBarMessage({ name: 'name', memoryRequest: memRequest, memoryUsed: memUsed, cpuRequest, cpuLimit, memoryLimit: memTotal, cpuUsed });
     }
 
     this.statusBarItem.text = text;
