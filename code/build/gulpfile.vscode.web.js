@@ -12,6 +12,7 @@ const util = require('./lib/util');
 const task = require('./lib/task');
 const common = require('./lib/optimize');
 const product = require('../product.json');
+const workbenchConfig = require('../src/vs/code/browser/workbench/che/workbench-config.json');
 const rename = require('gulp-rename');
 const filter = require('gulp-filter');
 const _ = require('underscore');
@@ -122,6 +123,23 @@ const createVSCodeWebBuiltinExtensionsPatcher = (extensionsRoot) => {
 	return result;
 };
 
+const createWorkbenchConfigurationPatcher = (workbenchConfig) => {
+	/**
+	 * @param content {string} The contens of the file
+	 * @param path {string} The absolute file path, always using `/`, even on Windows
+	 */
+	const result = (content, path) => {
+		// (3) Patch workbench configuration
+		if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
+			const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
+			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
+		}
+
+		return content;
+	};
+	return result;
+};
+
 /**
  * @param patchers {((content:string, path: string)=>string)[]}
  */
@@ -142,9 +160,11 @@ const combineContentPatchers = (...patchers) => {
 /**
  * @param extensionsRoot {string} The location where extension will be read from
  * @param {object} product The parsed product.json file contents
+ * @param {object} workbenchConfig The parsed workbench-config.json file contents
  */
-const createVSCodeWebFileContentMapper = (extensionsRoot, product) => {
+const createVSCodeWebFileContentMapper = (extensionsRoot, product, workbenchConfig) => {
 	return combineContentPatchers(
+		createWorkbenchConfigurationPatcher(workbenchConfig),
 		createVSCodeWebProductConfigurationPatcher(product),
 		createVSCodeWebBuiltinExtensionsPatcher(extensionsRoot)
 	);
@@ -163,7 +183,7 @@ const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
 		out: 'out-vscode-web',
 		inlineAmdImages: true,
 		bundleInfo: undefined,
-		fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product)
+		fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product, workbenchConfig)
 	})
 ));
 

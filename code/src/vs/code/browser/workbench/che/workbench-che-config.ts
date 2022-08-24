@@ -13,28 +13,44 @@
 import { ColorScheme } from 'vs/platform/theme/common/theme';
 import { IInitialColorTheme, IWindowIndicator, IWorkbenchConstructionOptions } from 'vs/workbench/workbench.web.main';
 
+/**
+ * Built time configuration (do NOT modify the value below)
+ * Modify workbench-config.json file to apply a change for the configuration 
+ */
+const workbenchConfiguration = { /*BUILD->INSERT_WORKBENCH_CONFIGURATION*/ } as IWorkbenchConstructionOptions;
+
+const windowIndicator: IWindowIndicator = {
+    label: `$(eclipse-che) Eclipse Che`,
+    tooltip: 'Eclipse Che'
+};
+
+const statusBarColorCustomizations: { [colorId: string]: string } = {
+    // use colors from che logo: yellow/#FDB940 and blue/#525C86
+    'statusBarItem.remoteBackground': '#FDB940',
+    'statusBarItem.remoteForeground': '#525C86',
+}
+
+const configurationDefaults: Record<string, any> = {
+    'workbench.colorTheme': 'Dark',
+    'workbench.colorCustomizations': statusBarColorCustomizations
+}
+
+const initialColorTheme: IInitialColorTheme = {
+    themeType: ColorScheme.DARK,
+    colors: statusBarColorCustomizations
+}
+
+// the configuration should be applied if built time configuration is not handled 
+// the values are the same as in the workbench-config.json file
+const defaultWorkbenchConfiguration = {
+    windowIndicator,
+    configurationDefaults,
+    initialColorTheme
+};
+
 export function getCheConfig(): IWorkbenchConstructionOptions {
-
-    const windowIndicator: IWindowIndicator = {
-        label: `$(eclipse-che) Eclipse Che`,
-        tooltip: 'Eclipse Che'
-    };
-
-    const statusBarColorCustomizations: { [colorId: string]: string } = {
-        // use colors from che logo: yellow/#FDB940 and blue/#525C86
-        'statusBarItem.remoteBackground': '#FDB940',
-        'statusBarItem.remoteForeground': '#525C86',
+    if (Object.keys(workbenchConfiguration).length === 0) {
+        Object.assign(workbenchConfiguration, defaultWorkbenchConfiguration);
     }
-
-    const configurationDefaults: Record<string, any> = {
-        'workbench.colorTheme': 'Dark',
-        'workbench.colorCustomizations': statusBarColorCustomizations
-    }
-
-    const initialColorTheme: IInitialColorTheme = {
-        themeType: ColorScheme.DARK,
-        colors: statusBarColorCustomizations
-    }
-
-    return { windowIndicator, configurationDefaults, initialColorTheme };
+    return workbenchConfiguration;
 }

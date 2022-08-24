@@ -12,6 +12,7 @@ const util = require('./lib/util');
 const task = require('./lib/task');
 const common = require('./lib/optimize');
 const product = require('../product.json');
+const workbenchConfig = require('../src/vs/code/browser/workbench/che/workbench-config.json');
 const rename = require('gulp-rename');
 const replace = require('gulp-replace');
 const filter = require('gulp-filter');
@@ -368,7 +369,7 @@ function tweakProductForServerWeb(product) {
 			out: `out-vscode-${type}`,
 			inlineAmdImages: true,
 			bundleInfo: undefined,
-			fileContentMapper: createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product)
+			fileContentMapper: createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product, workbenchConfig)
 		})
 	));
 
