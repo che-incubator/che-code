@@ -1,0 +1,20 @@
+{
+	"windowIndicator": {
+		"label": "$(eclipse-che) Eclipse Che",
+		"tooltip": "Eclipse Che"
+	},
+	"configurationDefaults": {
+		"workbench.colorTheme": "Dark",
+		"workbench.colorCustomizations": {
+			"statusBarItem.remoteBackground": "#FDB940",
+			"statusBarItem.remoteForeground": "#525C86"
+		}
+	},
+	"initialColorTheme": {
+		"themeType": "dark",
+		"colors": {
+			"statusBarItem.remoteBackground": "#FDB940",
+			"statusBarItem.remoteForeground": "#525C86"
+		}
+	}
+}
