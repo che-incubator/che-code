@@ -142,6 +142,7 @@ export class ResourceMonitor {
   }
 
   updateStatusBar(): void {
+    let name = '';
     let memTotal = 0;
     let memRequest = 0;
     let memUsed = 0;
@@ -170,6 +171,7 @@ export class ResourceMonitor {
       if (element.memoryRequest) {
         memRequest += element.memoryRequest;
       }
+      name = element.name;
       // if a container uses more than 90% of limited memory, show it in status bar with warning color
       if (element.memoryLimit && element.cpuLimit && element.memoryUsed && element.cpuUsed && element.memoryUsed / element.memoryLimit > 0.9) {
         color = this.WARNING_COLOR;
@@ -180,7 +182,7 @@ export class ResourceMonitor {
 
     // show workspace resources in total
     if (color === this.DEFAULT_COLOR) {
-      text = this.buildStatusBarMessage({ name: 'name', memoryRequest: memRequest, memoryUsed: memUsed, cpuRequest, cpuLimit, memoryLimit: memTotal, cpuUsed });
+      text = this.buildStatusBarMessage({ name, memoryRequest: memRequest, memoryUsed: memUsed, cpuRequest, cpuLimit, memoryLimit: memTotal, cpuUsed });
     }
 
     this.statusBarItem.text = text;
