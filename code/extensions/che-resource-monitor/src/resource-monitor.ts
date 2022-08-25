@@ -221,8 +221,7 @@ export class ResourceMonitor {
 
       items.push(<vscode.QuickPickItem>{
         label: element.name,
-        detail: `Mem (MB): ${memUsed} (Used) / ${memRequest} (Request) / ${memLimited} (Limited)
-        \nCPU : ${cpuUsed}m (Used) / ${cpuRequest}m (Request) / ${cpuLimited} (Limited)`,
+        detail: `Mem (MB): ${memUsed} (Used) / ${memRequest} (Request) / ${memLimited} (Limited) | CPU : ${cpuUsed}m (Used) / ${cpuRequest}m (Request) / ${cpuLimited} (Limited)`,
       });
     });
     vscode.window.showQuickPick(items, {});
