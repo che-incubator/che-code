@@ -213,13 +213,15 @@ export class ResourceMonitor {
     const items: vscode.QuickPickItem[] = [];
     this.containers.forEach(element => {
       const memUsed = element.memoryUsed ? Math.floor(element.memoryUsed / Units.M) : '';
+      const memRequest = element.memoryRequest ? Math.floor(element.memoryRequest / Units.M) : '';
       const memLimited = element.memoryLimit ? Math.floor(element.memoryLimit / Units.M) : '';
       const cpuUsed = element.cpuUsed;
+      const cpuRequest = element.cpuRequest;
       const cpuLimited = element.cpuLimit ? `${element.cpuLimit}m` : 'not set';
 
       items.push(<vscode.QuickPickItem>{
         label: element.name,
-        detail: `Mem (MB): ${memUsed} (Used) / ${memLimited} (Limited) | CPU : ${cpuUsed}m (Used) / ${cpuLimited} (Limited)`,
+        detail: `Mem (MB): ${memUsed} (Used) / ${memRequest} (Request) / ${memLimited} (Limited) | CPU : ${cpuUsed}m (Used) / ${cpuRequest}m (Request) / ${cpuLimited} (Limited)`,
       });
     });
     vscode.window.showQuickPick(items, {});
