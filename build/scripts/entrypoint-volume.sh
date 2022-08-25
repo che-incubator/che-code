@@ -58,7 +58,7 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
     OPENVSX_URL="$CHE_PLUGIN_REGISTRY_ROOT_URL/openvsx/vscode"
   else
     # Use OpenVSX URL provided by the env variable
-    OPENVSX_URL="$OPENVSX_REGISTRY_URL"
+    OPENVSX_URL="$OPENVSX_REGISTRY_URL/vscode"
   fi
   echo "using OPENVSX_URL=$OPENVSX_URL"
   sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_URL}/gallery\"|" product.json
