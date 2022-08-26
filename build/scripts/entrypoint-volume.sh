@@ -52,18 +52,21 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   # now check if it's empty, in that case we use Plugin Registry OpenVSX
   if [ -z "$OPENVSX_REGISTRY_URL" ]; then
     # remove the suffix /v3 from this variable
-    CHE_PLUGIN_REGISTRY_ROOT_URL=${CHE_PLUGIN_REGISTRY_INTERNAL_URL%/v3}
+    CHE_PLUGIN_REGISTRY_ROOT_INTERNAL_URL=${CHE_PLUGIN_REGISTRY_INTERNAL_URL%/v3}
+    CHE_PLUGIN_REGISTRY_ROOT_EXTERNAL_URL=${CHE_PLUGIN_REGISTRY_URL%/v3}
 
     # Use OpenVSX of the plug-in registry
-    OPENVSX_URL="$CHE_PLUGIN_REGISTRY_ROOT_URL/openvsx/vscode"
+    OPENVSX_INTERNAL_URL="$CHE_PLUGIN_REGISTRY_ROOT_INTERNAL_URL/openvsx/vscode"
+    OPENVSX_EXTERNAL_URL="$CHE_PLUGIN_REGISTRY_ROOT_EXTERNAL_URL/openvsx/vscode"
   else
     # Use OpenVSX URL provided by the env variable
-    OPENVSX_URL="$OPENVSX_REGISTRY_URL/vscode"
+    OPENVSX_EXTERNAL_URL="$OPENVSX_REGISTRY_URL/vscode"
+    OPENVSX_INTERNAL_URL="$OPENVSX_EXTERNAL_URL"
   fi
   echo "using OPENVSX_URL=$OPENVSX_URL"
-  sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_URL}/gallery\"|" product.json
-  sed -i -r -e "s|\"itemUrl\": \"..*\"|\"itemUrl\": \"${OPENVSX_URL}/item\"|" product.json
-  sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
+  sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_INTERNAL_URL}/gallery\"|" product.json
+  sed -i -r -e "s|\"itemUrl\": \"..*\"|\"itemUrl\": \"${OPENVSX_INTERNAL_URL}/item\"|" product.json
+  sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_EXTERNAL_URL}/gallery\",itemUrl:\"${OPENVSX_EXTERNAL_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
 fi
 
 # Launch che without connection-token, security is managed by Che
