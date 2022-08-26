@@ -52,7 +52,7 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   # now check if it's empty, in that case we use Plugin Registry OpenVSX
   if [ -z "$OPENVSX_REGISTRY_URL" ]; then
     # remove the suffix /v3 from this variable
-    CHE_PLUGIN_REGISTRY_ROOT_URL=${CHE_PLUGIN_REGISTRY_URL%/v3}
+    CHE_PLUGIN_REGISTRY_ROOT_URL=${CHE_PLUGIN_REGISTRY_INTERNAL_URL%/v3}
 
     # Use OpenVSX of the plug-in registry
     OPENVSX_URL="$CHE_PLUGIN_REGISTRY_ROOT_URL/openvsx/vscode"
