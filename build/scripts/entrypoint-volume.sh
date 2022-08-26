@@ -63,7 +63,8 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
     OPENVSX_EXTERNAL_URL="$OPENVSX_REGISTRY_URL/vscode"
     OPENVSX_INTERNAL_URL="$OPENVSX_EXTERNAL_URL"
   fi
-  echo "using OPENVSX_URL=$OPENVSX_URL"
+  echo "using OPENVSX_INTERNAL_URL=$OPENVSX_INTERNAL_URL"
+  echo "using OPENVSX_EXTERNAL_URL=$OPENVSX_EXTERNAL_URL"
   sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_INTERNAL_URL}/gallery\"|" product.json
   sed -i -r -e "s|\"itemUrl\": \"..*\"|\"itemUrl\": \"${OPENVSX_INTERNAL_URL}/item\"|" product.json
   sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_EXTERNAL_URL}/gallery\",itemUrl:\"${OPENVSX_EXTERNAL_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
