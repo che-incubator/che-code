@@ -66,5 +66,11 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
 fi
 
+# Check if we have a custom CA certificate
+if [ -f /tmp/che/secret/ca.crt ]; then
+  echo "Adding custom CA certificate"
+  export NODE_EXTRA_CA_CERTS=/tmp/che/secret/ca.crt
+fi
+
 # Launch che without connection-token, security is managed by Che
 ./node out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
