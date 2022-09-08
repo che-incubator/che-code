@@ -98,15 +98,15 @@ git fetch upstream-code main
  
 There is an ability to apply branding for some UI elements. The original data can be overridden by execution [branding.sh script](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh). The script expects that the branding resources are placed in the [branding folder](https://github.com/che-incubator/che-code/tree/main/branding). 
 
-The crucial one is: `product.json` file. 
+The crucial one is: `branding/product.json` file. 
 The values defined in the `branding/product.json` file overwrite [default ones](https://github.com/che-incubator/che-code/blob/main/code/product.json). 
 Also the file serves data mapping for provided branding resources.
 
 Example of the `branding/product.json` file:
 ```
 {
-	"nameShort": "Visual Studio Code - Open Source",
-	"nameLong": "Red Hat OpenShift Dev Spaces - Visual Studio Code - Open Source IDE container",
+	"nameShort": "VS Code - Open Source",
+	"nameLong": "Red Hat OpenShift Dev Spaces with Microsoft Visual Studio Code - Open Source IDE",
 	"icons": {
 		"favicon": {
 			"universal": "icons/favicon.ico"
@@ -142,10 +142,10 @@ Example of the `branding/product.json` file:
 - `codiconCssFilePath` - the codicon css file path, should contain css styles for `codicon`s, content of the file is appended to [the coressponding css file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/base/browser/ui/codicons/codicon/codicon.css), please see an example of the content [here](https://github.com/che-incubator/che-code/blob/803b864e8411bd57d617dabddfd8a132fac6c743/code/src/vs/base/browser/ui/codicons/codicon/codicon.css#L29-L33)
 
 Please note:
--  it's expected that all paths in the `branding/product.json` file are relative to the `branding` folder. 
+-  All paths in the `branding/product.json` file must be relative to the `branding` folder. 
 For example, `workbenchConfigFilePath` field has `anyFolder/myConfigFiles/workbench-config.json` value. 
 It means that the config file can be found by the path: `che-code/branding/anyFolder/myConfigFiles/workbench-config.json`
-- At the moment the [branding.sh script](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) is not run automatically (at building project, for example), it should be integrated in the project workflow.
+- At the moment the [branding.sh script](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) is not run automatically when building this project. It needs to be integrated into the build process of the [downstream branded project or product](https://github.com/redhat-developer/devspaces-images/blob/devspaces-3-rhel-8/devspaces-code/build/scripts/sync.sh#L96).
 
 # License
 
