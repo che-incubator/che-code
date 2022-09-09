@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [ 'musl', 'libc' ]
+        dist: [ 'musl' ]
         arch: ['amd64']
     runs-on: ubuntu-20.04
     steps:
@@ -43,10 +43,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Download linux-libc-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: "linux-libc-amd64"
+      # - name: Download linux-libc-amd64 image
+      #   uses: ishworkh/docker-image-artifact-download@v1
+      #   with:
+      #     image: "linux-libc-amd64"
       - name: Download linux-musl image
         uses: ishworkh/docker-image-artifact-download@v1
         with:

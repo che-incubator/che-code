@@ -7,7 +7,7 @@
 #
 
 # Grab content from previously build images
-FROM linux-libc-amd64 as linux-libc-content
+# FROM linux-libc-amd64 as linux-libc-content
 FROM linux-musl-amd64 as linux-musl-content
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
@@ -22,7 +22,7 @@ RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/
 WORKDIR /mnt/rootfs
 
 COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl
-COPY --from=linux-libc-content --chown=0:0 /checode-linux-libc /mnt/rootfs/checode-linux-libc
+# COPY --from=linux-libc-content --chown=0:0 /checode-linux-libc /mnt/rootfs/checode-linux-libc
 
 RUN mkdir -p /mnt/rootfs/projects && mkdir -p /mnt/rootfs/home/che && mkdir -p /mnt/rootfs/bin/
 RUN cat /mnt/rootfs/etc/passwd | sed s#root:x.*#root:x:\${USER_ID}:\${GROUP_ID}::\${HOME}:/bin/bash#g > /mnt/rootfs/home/che/.passwd.template \
