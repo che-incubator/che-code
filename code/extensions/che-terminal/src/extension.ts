@@ -101,8 +101,7 @@ class MachineExec {
 	createTerminalSession(component: string, commandLine: string, dimensions?: vscode.TerminalDimensions): Promise<WS> {
 		const createTerminalSessionCall = {
 			identifier: {
-				machineName: component,
-				workspaceId: '1234',
+				machineName: component
 			},
 			cmd: commandLine ? ['sh', '-c', commandLine] : 'sh',
 			tty: true,
@@ -115,7 +114,7 @@ class MachineExec {
 			jsonrpc: '2.0',
 			method: 'create',
 			params: createTerminalSessionCall,
-			id: -1
+			id: 1
 		};
 
 		this.connection.send(JSON.stringify(jsonCommand));
