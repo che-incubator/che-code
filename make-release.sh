@@ -121,18 +121,3 @@ if [[ $TAG_RELEASE -eq 1 ]]; then
   git tag "${VERSION}"
   git push origin "${VERSION}"
 fi
-
-# now update ${BASEBRANCH} to the new version
-git checkout "${BASEBRANCH}"
-
-# change VERSION file + commit change into ${BASEBRANCH} branch
-if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then
-  # bump the y digit, if it is a major release
-  [[ $BRANCH =~ ^([0-9]+)\.([0-9]+)\.x ]] && BASE=${BASH_REMATCH[1]}; NEXT=${BASH_REMATCH[2]}; (( NEXT=NEXT+1 )) # for BRANCH=7.10.x, get BASE=7, NEXT=11
-  NEXT_VERSION_Y="${BASE}.${NEXT}.0-${NEXT_TAG_NAME}"
-  bump_version "${NEXT_VERSION_Y}" "${BASEBRANCH}"
-fi
-# bump the z digit
-[[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]] && BASE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"; NEXT="${BASH_REMATCH[3]}"; (( NEXT=NEXT+1 )) # for VERSION=7.7.1, get BASE=7.7, NEXT=2
-NEXT_VERSION_Z="${BASE}.${NEXT}-${NEXT_TAG_NAME}"
-bump_version "${NEXT_VERSION_Z}" "${BRANCH}"
