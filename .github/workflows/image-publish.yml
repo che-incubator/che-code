@@ -13,7 +13,8 @@ on:
   push:
     branches: 
       - main
-      - '7.*.*'
+    tags:
+      - '^7\.[0-9]+\.[0-9]+$'
 
 jobs:
   build:
