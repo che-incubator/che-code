@@ -7,14 +7,13 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-name: image-publish-insiders
+name: image-publish
 
 on:
   push:
     branches: 
       - main
-    tags:
-      - '^7\.[0-9]+\.[0-9]+$'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -77,8 +76,24 @@ jobs:
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           if [[ ${{ env.BRANCH_NAME }} == main ]]; then
             docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:insiders -t quay.io/che-incubator/che-code:next -t quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} .
-          else if [[ ${{ env.BRANCH_NAME }} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then
+          elif [[ ${{ env.BRANCH_NAME }} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then
             docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:${{env.BRANCH_NAME}}  . 
+          fi
+      - name: Create failure MM message
+        if: ${{ failure() }} || {{ github.ref != 'refs/heads/main'}}
+        run: |
+          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
+      - name: Create success MM message
+        if: ${{ github.ref != 'refs/heads/main'}}
+        run: |
+          echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json
+      - name: Send MM message
+        if: ${{ success() }} || ${{ failure() }} || ${{ github.ref != 'refs/heads/main'}}
+        uses: mattermost/action-mattermost-notify@1.1.0
+        env:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_CHANNEL: eclipse-che-releases
+          MATTERMOST_USERNAME: che-bot
   dev:
     name: dev
     runs-on: ubuntu-20.04
@@ -96,18 +111,4 @@ jobs:
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --push -t quay.io/che-incubator/che-code-dev:insiders -t quay.io/che-incubator/che-code-dev:next -t quay.io/che-incubator/che-code-dev:insiders-${SHORT_SHA1} .
-      - name: Create failure MM message
-        if: ${{ failure() }} || {{ github.ref == 'refs/heads/main'}}
-        run: |
-          echo "{\"text\":\":no_entry_sign: Che Code ${{ github.event.inputs.version }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
-      - name: Create success MM message
-        if: ${{ github.ref == 'refs/heads/main'}}
-        run: |
-          echo "{\"text\":\":white_check_mark: Che Code ${{ github.event.inputs.version }} has been released: https://quay.io/che-incubator/che-code:${{ github.event.inputs.version }}\"}" > mattermost.json
-      - name: Send MM message
-        if: ${{ success() }} || ${{ failure() }} || ${{ github.ref == 'refs/heads/main'}}
-        uses: mattermost/action-mattermost-notify@1.1.0
-        env:
-          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          MATTERMOST_CHANNEL: eclipse-che-releases
-          MATTERMOST_USERNAME: che-bot
+
