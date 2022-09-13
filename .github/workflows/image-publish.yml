@@ -80,6 +80,7 @@ jobs:
     name: release-finish
     needs: [build, assembly]
     runs-on: ubuntu-20.04
+    # don't notify for cancelled builds
     if: (success() || failure()) && github.ref != 'refs/heads/main'
     steps:
       - name: Create failure MM message
@@ -90,6 +91,7 @@ jobs:
         run: |
           echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json
       - name: Send MM message
+        # don't notify for cancelled builds
         if: success() || failure()
         uses: mattermost/action-mattermost-notify@1.1.0
         env:
