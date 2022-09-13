@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Red Hat, Inc.
+# Copyright (c) 2021-2022 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,11 +7,14 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-name: image-publish-insiders
+name: image-publish
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+    tags:
+      - '7.*.*'
 
 jobs:
 
@@ -42,6 +45,10 @@ jobs:
     needs: build
     runs-on: ubuntu-20.04
     steps:
+      - name: Set variables:
+        run: |
+          BRANCH_NAME=${{ github.ref }}
+          echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
       - name: Download linux-libc-amd64 image
@@ -64,10 +71,37 @@ jobs:
       - name: Docker Build and Push
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:insiders -t quay.io/che-incubator/che-code:next -t quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} .
+          if [[ ${{ env.BRANCH_NAME }} == main ]]; then
+            docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:insiders -t quay.io/che-incubator/che-code:next -t quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} .
+          elif [[ ${{ env.BRANCH_NAME }} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then
+            docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --push -t quay.io/che-incubator/che-code:${{env.BRANCH_NAME}}  . 
+          fi
+  release-finish:
+    name: release-finish
+    needs: [build, assembly]
+    runs-on: ubuntu-20.04
+    # don't notify for cancelled builds
+    if: (success() || failure()) && github.ref != 'refs/heads/main'
+    steps:
+      - name: Create failure MM message
+        if: failure()
+        run: |
+          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
+      - name: Create success MM message
+        run: |
+          echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json
+      - name: Send MM message
+        # don't notify for cancelled builds
+        if: success() || failure()
+        uses: mattermost/action-mattermost-notify@1.1.0
+        env:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_CHANNEL: eclipse-che-releases
+          MATTERMOST_USERNAME: che-bot
   dev:
     name: dev
     runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -81,3 +115,4 @@ jobs:
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --push -t quay.io/che-incubator/che-code-dev:insiders -t quay.io/che-incubator/che-code-dev:next -t quay.io/che-incubator/che-code-dev:insiders-${SHORT_SHA1} .
+
