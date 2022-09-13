@@ -9,8 +9,8 @@
 #
 
 # Release process automation script.
-# Used to create branch/tag, update VERSION files
-# and and trigger release by force pushing changes to the release branch
+# Used to create a branch, update the version in package.json, and push a tag
+# Once the tag is created, image-publish.yml will be triggered to build the container image.
 
 # set to 1 to actually tag the changes to the release branch
 TAG_RELEASE=0
