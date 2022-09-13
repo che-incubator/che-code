@@ -45,7 +45,7 @@ jobs:
     needs: build
     runs-on: ubuntu-20.04
     steps:
-      - name: Set variables:
+      - name: Set variables
         run: |
           BRANCH_NAME=${{ github.ref }}
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
@@ -78,7 +78,7 @@ jobs:
           fi
   release-finish:
     name: release-finish
-    needs: [build, assembly]
+    needs: [build, assemble]
     runs-on: ubuntu-20.04
     # don't notify for cancelled builds
     if: (success() || failure()) && github.ref != 'refs/heads/main'
