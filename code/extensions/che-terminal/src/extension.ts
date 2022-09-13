@@ -14,8 +14,7 @@ import * as vscode from 'vscode';
 import * as WS from 'ws';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	const machineExecChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che machine-exec');
-	const terminalsChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che Terminal');
+	const machineExecChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che terminal');
 
 	// Create a WebSocket connection to the machine-exec component.
 	const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
@@ -24,12 +23,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	const disposable = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:tools', () => {
-		const pty = new MachineExecPTY(machineExecConnection, 'tools', '', terminalsChannel);
+		const pty = new MachineExecPTY(machineExecConnection, 'tools', '', machineExecChannel);
 		vscode.window.createTerminal({ name: 'tools component', pty }).show();
 	});
 
 	const disposable2 = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:dev', () => {
-		const pty = new MachineExecPTY(machineExecConnection, 'dev', '', terminalsChannel);
+		const pty = new MachineExecPTY(machineExecConnection, 'dev', '', machineExecChannel);
 		vscode.window.createTerminal({ name: 'dev component', pty }).show();
 	});
 
@@ -48,7 +47,7 @@ class MachineExecPTY implements vscode.Pseudoterminal {
 		private devWorkspaceComponent: string,
 		private commandLine: string,
 		private channel: vscode.OutputChannel) {
-		this.machineExec = new MachineExec(machineExecConnection);
+		this.machineExec = new MachineExec(machineExecConnection, channel);
 	}
 
 	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
@@ -60,7 +59,7 @@ class MachineExecPTY implements vscode.Pseudoterminal {
 	onDidChangeName?: vscode.Event<string> | undefined;
 
 	async open(initialDimensions: vscode.TerminalDimensions | undefined): Promise<void> {
-		this.channel.appendLine(`new terminal opened with the dimentions: ${initialDimensions}`);
+		this.channel.appendLine(`new terminal opened with the dimentions: ${initialDimensions?.columns}, ${initialDimensions?.rows}`);
 
 		this.terminalConnection = await this.machineExec.createTerminalSession(this.devWorkspaceComponent, this.commandLine, initialDimensions);
 
@@ -82,14 +81,14 @@ class MachineExecPTY implements vscode.Pseudoterminal {
 	}
 
 	setDimensions?(dimensions: vscode.TerminalDimensions): void {
-		this.channel.appendLine(`the dimentions changed: ${dimensions}`);
+		this.channel.appendLine(`the dimentions changed: ${dimensions.columns}, ${dimensions.rows}`);
 		// send the new dimensions to machine-exec
 	}
 }
 
 class MachineExec {
 
-	constructor(private connection: WS) { }
+	constructor(private connection: WS, private channel: vscode.OutputChannel) { }
 
 	/**
 	 * Requests the machine-exec component to create a new terminal session on the specified component.
@@ -103,7 +102,7 @@ class MachineExec {
 			identifier: {
 				machineName: component
 			},
-			cmd: commandLine ? ['sh', '-c', commandLine] : 'sh',
+			cmd: commandLine ? ['sh', '-c', commandLine] : [],
 			tty: true,
 			cwd: '',
 			cols: dimensions ? dimensions.columns : 100,
@@ -114,10 +113,12 @@ class MachineExec {
 			jsonrpc: '2.0',
 			method: 'create',
 			params: createTerminalSessionCall,
-			id: 1
+			id: 0
 		};
 
-		this.connection.send(JSON.stringify(jsonCommand));
+		const command = JSON.stringify(jsonCommand);
+		this.channel.appendLine(command);
+		this.connection.send(command);
 
 		return new Promise(resolve => {
 			this.connection.on('message', (data: WS.Data) => {
