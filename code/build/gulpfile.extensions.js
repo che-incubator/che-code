@@ -74,7 +74,6 @@ const compilations = [
 	'typescript-language-features/tsconfig.json',
 	'vscode-api-tests/tsconfig.json',
 	'vscode-colorize-tests/tsconfig.json',
-	'vscode-notebook-tests/tsconfig.json',
 	'vscode-test-resolver/tsconfig.json'
 ];
 

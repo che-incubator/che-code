@@ -49,7 +49,6 @@ exports.dirs = [
 	'extensions/typescript-language-features',
 	'extensions/vscode-api-tests',
 	'extensions/vscode-colorize-tests',
-	'extensions/vscode-notebook-tests',
 	'extensions/vscode-test-resolver',
 	'remote',
 	'remote/web',
