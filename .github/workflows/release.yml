@@ -28,6 +28,8 @@ jobs:
       -
         name: "Checkout Che Code source code"
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
       -
         name: "Setup Node"
         uses: actions/setup-node@v2
@@ -57,5 +59,17 @@ jobs:
           git config --global user.name "Mykhailo Kuznietsov"
           git config --global user.email "mkuznets@redhat.com"
           git config --global pull.rebase true
-          export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_GITHUB_TOKEN }}
+          export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
           /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --tag-release
+      - name: Create failure MM message
+        if: failure()
+        run: |
+          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
+      - name: Send MM message
+        # only notify for failure, success message will be sent at the end of image-publish job
+        if: failure()
+        uses: mattermost/action-mattermost-notify@1.1.0
+        env:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_CHANNEL: eclipse-che-releases
+          MATTERMOST_USERNAME: che-bot

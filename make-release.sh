@@ -43,13 +43,17 @@ bump_version () {
   BUMP_BRANCH=$2
 
   git checkout "${BUMP_BRANCH}"
-
+  if [[ $(grep version package.json | awk -F \" '{print $4}') == ${NEXT_VERSION} ]]; then
+    echo "Next project version is already present in package.json"
+    git checkout "${CURRENT_BRANCH}"
+    return
+  fi
   echo "Updating project version to ${NEXT_VERSION}"
-  npm --no-git-tag-version version --allow-same-version $NEXT_VERSION
+  npm --no-git-tag-version version --allow-same-version ${NEXT_VERSION}
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
     COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
-    git commit -asm "${COMMIT_MSG}"
+    git commit -asm "${COMMIT_MSG}" || true
     git pull origin "${BUMP_BRANCH}"
 
     set +e
@@ -105,7 +109,7 @@ fi
 
 set -e
 
-npm --no-git-tag-version version --allow-same-version "${VER}"
+npm --no-git-tag-version version --allow-same-version "${VERSION}"
 
 # commit change into branch
 if [[ ${NOCOMMIT} -eq 0 ]]; then
@@ -125,6 +129,7 @@ fi
 
 # now update ${BASEBRANCH} to the new version
 git checkout "${BASEBRANCH}"
+
 
 # change VERSION file + commit change into ${BASEBRANCH} branch
 if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then

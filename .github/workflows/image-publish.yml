@@ -83,6 +83,10 @@ jobs:
     # don't notify for cancelled builds
     if: (success() || failure()) && github.ref != 'refs/heads/main'
     steps:
+      - name: Set variables
+        run: |
+          BRANCH_NAME=${{ github.ref }}
+          echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Create failure MM message
         if: failure()
         run: |
