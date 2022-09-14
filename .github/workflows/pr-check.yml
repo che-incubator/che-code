@@ -73,17 +73,17 @@ jobs:
         with:
           name: pull-request-sha
           path: PR_SHA
-  dev:
-    name: dev
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Docker Build
-        run: |
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t dev-pr .
-          docker save dev-pr | gzip > dev-pr.tgz
-      - uses: actions/upload-artifact@v2
-        with:
-          name: dev-image
-          path: dev-pr.tgz
+  # dev:
+  #   name: dev
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #     - name: Docker Build
+  #       run: |
+  #         docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t dev-pr .
+  #         docker save dev-pr | gzip > dev-pr.tgz
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: dev-image
+  #         path: dev-pr.tgz

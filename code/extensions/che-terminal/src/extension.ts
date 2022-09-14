@@ -121,7 +121,7 @@ class MachineExec {
 		this.connection.send(command);
 
 		return new Promise(resolve => {
-			this.connection.on('message', (data: WS.Data) => {
+			this.connection.once('message', (data: WS.Data) => {
 				console.log(data.toString());
 				const message = JSON.parse(data.toString());
 				const sessionID = message.result;
