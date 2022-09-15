@@ -88,9 +88,9 @@ jobs:
           BRANCH_NAME=${{ github.ref }}
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Create failure MM message
-        if: failure()
+        if: contains(join(needs.*.result, ','), 'failure')
         run: |
-          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
+          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml\"}" > mattermost.json
       - name: Create success MM message
         run: |
           echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json

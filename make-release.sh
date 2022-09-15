@@ -130,7 +130,6 @@ fi
 # now update ${BASEBRANCH} to the new version
 git checkout "${BASEBRANCH}"
 
-
 # change VERSION file + commit change into ${BASEBRANCH} branch
 if [[ "${BASEBRANCH}" != "${BRANCH}" ]]; then
   # bump the y digit, if it is a major release
