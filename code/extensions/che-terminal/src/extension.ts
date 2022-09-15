@@ -16,7 +16,7 @@ import * as WS from 'ws';
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const machineExecChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che terminal');
 
-	// Create a WebSocket connection to the machine-exec component.
+	// Create a WebSocket connection to the machine-exec server.
 	const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
 	machineExecConnection.on('message', (data: WS.Data) => {
 		machineExecChannel.appendLine(data.toString());
@@ -27,77 +27,147 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.window.createTerminal({ name: 'tools component', pty }).show();
 	});
 
-	const disposable2 = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:dev', () => {
-		const pty = new MachineExecPTY(machineExecConnection, 'dev', '', machineExecChannel);
-		vscode.window.createTerminal({ name: 'dev component', pty }).show();
+	const disposable2 = vscode.commands.registerCommand('che-machine-exec-support.executeCommand:tools', () => {
+		const pty = new MachineExecPTY(machineExecConnection, 'tools', 'ls /etc', machineExecChannel);
+		vscode.window.createTerminal({ name: 'tools component', pty }).show();
 	});
 
 	context.subscriptions.push(disposable, disposable2);
 }
 
+/**
+ * VS Code PTY that communicates with the terminal sessions managed by machine-exec server.
+ */
 class MachineExecPTY implements vscode.Pseudoterminal {
 
 	private writeEmitter = new vscode.EventEmitter<string>();
+	private closeEmitter = new vscode.EventEmitter<number | void>();
 
-	private terminalConnection: WS | undefined;
+	/**
+	 * Remote terminal session that VS Code PTY is connected to.
+	 */
+	private terminalSession: TerminalSession | undefined;
 
-	private machineExec: MachineExec;
+	private machineExecServer: MachineExecClient;
 
 	constructor(machineExecConnection: WS,
 		private devWorkspaceComponent: string,
 		private commandLine: string,
 		private channel: vscode.OutputChannel) {
-		this.machineExec = new MachineExec(machineExecConnection, channel);
+		this.machineExecServer = new MachineExecClient(machineExecConnection, channel);
 	}
 
 	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
 
 	onDidOverrideDimensions?: vscode.Event<vscode.TerminalDimensions | undefined> | undefined;
 
-	onDidClose?: vscode.Event<number | void> | undefined;
+	onDidClose?: vscode.Event<number | void> = this.closeEmitter.event;
 
 	onDidChangeName?: vscode.Event<string> | undefined;
 
 	async open(initialDimensions: vscode.TerminalDimensions | undefined): Promise<void> {
 		this.channel.appendLine(`new terminal opened with the dimentions: ${initialDimensions?.columns}, ${initialDimensions?.rows}`);
 
-		this.terminalConnection = await this.machineExec.createTerminalSession(this.devWorkspaceComponent, this.commandLine, initialDimensions);
+		this.terminalSession = await this.machineExecServer.createTerminalSession(this.devWorkspaceComponent, this.commandLine, initialDimensions);
 
-		if (this.terminalConnection) {
-			this.terminalConnection.on('message', (data: WS.Data) => {
-				this.writeEmitter.fire(data.toString());
-			});
-		}
+		this.terminalSession.onOutput(e => this.writeEmitter.fire(e));
+		this.terminalSession.onExit(e => this.closeEmitter.fire(e));
 	}
 
 	close(): void {
 		this.channel.appendLine('terminal closed');
+		this.terminalSession?.send('\x03');
 	}
 
 	handleInput?(data: string): void {
-		if (this.terminalConnection) {
-			this.terminalConnection.send(data);
-		}
+		this.terminalSession?.send(data);
 	}
 
 	setDimensions?(dimensions: vscode.TerminalDimensions): void {
 		this.channel.appendLine(`the dimentions changed: ${dimensions.columns}, ${dimensions.rows}`);
-		// send the new dimensions to machine-exec
+		this.terminalSession?.resize(dimensions);
 	}
 }
 
-class MachineExec {
+class TerminalSession {
+
+	/** The established connection for this terminal session. */
+	private terminalConnection: WS;
+
+	private onOutputEmitter = new vscode.EventEmitter<string>();
+
+	private onExitEmitter = new vscode.EventEmitter<number>();
+
+	/**
+	 *
+	 * @param id the terminal session ID
+	 * @param machineExecConnection the established WebSocket connection
+	 */
+	constructor(private id: number, private machineExecConnection: WS) {
+		this.terminalConnection = new WS(`ws://localhost:3333/attach/${id}`);
+
+		this.terminalConnection.on('message', (data: WS.Data) => {
+			this.onOutputEmitter.fire(data.toString());
+		});
+
+		machineExecConnection.on('message', (data: WS.Data) => {
+			const message = JSON.parse(data.toString());
+			if (message.method === 'onExecExit' && message.params.id === id) {
+				this.onExitEmitter.fire(0);
+			}
+			if (message.method === 'onExecError' && message.params.id === id) {
+				this.onExitEmitter.fire(1);
+			}
+		});
+	}
+
+	/** An event that when fired signals about an output data. */
+	get onOutput(): vscode.Event<string> {
+		return this.onOutputEmitter.event;
+	}
+
+	/** An event that when fired signals that the remote terminal session is ended. */
+	get onExit(): vscode.Event<number> {
+		return this.onExitEmitter.event;
+	}
+
+	send(data: string): void {
+		this.terminalConnection.send(data);
+	}
+
+	resize(dimensions: vscode.TerminalDimensions): void {
+		const resizeTerminalSessionCall = {
+			id: this.id,
+			cols: dimensions.columns,
+			rows: dimensions.rows
+		};
+
+		const jsonCommand = {
+			jsonrpc: '2.0',
+			method: 'resize',
+			params: resizeTerminalSessionCall,
+			id: 0
+		};
+
+		const command = JSON.stringify(jsonCommand);
+		this.machineExecConnection.send(command);
+	}
+}
+
+/** Client for the machine-exec server. */
+class MachineExecClient {
 
 	constructor(private connection: WS, private channel: vscode.OutputChannel) { }
 
 	/**
-	 * Requests the machine-exec component to create a new terminal session on the specified component.
+	 * Requests the machine-exec server to create a new terminal session to the specified component.
+	 *
 	 * @param component
 	 * @param commandLine
 	 * @param dimensions
 	 * @returns a WebSocket connection to communicate with the created terminal session
 	 */
-	createTerminalSession(component: string, commandLine: string, dimensions?: vscode.TerminalDimensions): Promise<WS> {
+	createTerminalSession(component: string, commandLine: string, dimensions?: vscode.TerminalDimensions): Promise<TerminalSession> {
 		const createTerminalSessionCall = {
 			identifier: {
 				machineName: component
@@ -122,11 +192,10 @@ class MachineExec {
 
 		return new Promise(resolve => {
 			this.connection.once('message', (data: WS.Data) => {
-				console.log(data.toString());
 				const message = JSON.parse(data.toString());
 				const sessionID = message.result;
 				if (Number.isFinite(sessionID)) {
-					resolve(new WS(`ws://localhost:3333/attach/${sessionID}`));
+					resolve(new TerminalSession(sessionID, this.connection));
 				}
 			});
 		});

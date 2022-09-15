@@ -26,11 +26,11 @@
     "commands": [
       {
         "command": "che-machine-exec-support.openRemoteTerminal:tools",
-        "title": "machine-exec: tools"
+        "title": "machine-exec: terminal: tools"
       },
       {
-        "command": "che-machine-exec-support.openRemoteTerminal:dev",
-        "title": "machine-exec: dev"
+        "command": "che-machine-exec-support.executeCommand:tools",
+        "title": "machine-exec: command: tools"
       }
     ]
   },
