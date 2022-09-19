@@ -193,7 +193,7 @@ async function parsePort(host, strPort) {
 		let range;
 		if (strPort.match(/^\d+$/)) {
 			specificPort = parseInt(strPort, 10);
-			if (specificPort === 0) {
+			if (specificPort) {
 				return specificPort;
 			}
 		} else if (range = parseRange(strPort)) {
