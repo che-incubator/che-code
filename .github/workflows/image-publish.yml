@@ -10,10 +10,9 @@
 name: image-publish
 
 on:
-  workflow_dispatch:
   push:
     branches: 
-      - fix-insiders
+      - main
     tags:
       - '7.*.*'
 
@@ -30,8 +29,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: fix-insiders
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -54,8 +51,6 @@ jobs:
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: fix-insiders
       - name: Download linux-libc-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
@@ -110,12 +105,10 @@ jobs:
   dev:
     name: dev
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/fix-insiders'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: fix-insiders
       - name: Login to Quay.io
         uses: docker/login-action@v1
         with:
