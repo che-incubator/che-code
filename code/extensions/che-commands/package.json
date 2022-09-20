@@ -49,7 +49,7 @@
     "url": "https://github.com/che-incubator/che-code.git"
   },
   "extensionDependencies": [
-    "eclipse-che.api"
+    "eclipse-che.terminal"
   ],
   "jest": {
     "collectCoverage": true,

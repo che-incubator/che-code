@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+/* eslint-disable header/header */
+
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands } from '@devfile/api';
 import * as vscode from 'vscode';
 
@@ -17,9 +19,21 @@ interface CheTaskDefinition extends vscode.TaskDefinition {
 	component?: string;
 }
 
+let che_api: vscode.Extension<any> | undefined, che_terminal: vscode.Extension<any> | undefined;
+
 export class CheTaskProvider implements vscode.TaskProvider {
 
-	constructor(private channel: vscode.OutputChannel) { }
+	constructor(private channel: vscode.OutputChannel) {
+		che_api = vscode.extensions.getExtension('eclipse-che.api');
+		if (!che_api) {
+			this.channel.appendLine('eclipse-che.api extension is not found.');
+		}
+
+		che_terminal = vscode.extensions.getExtension('eclipse-che.terminal');
+		if (!che_terminal) {
+			this.channel.appendLine('eclipse-che.terminal extension is not found.');
+		}
+	}
 
 	provideTasks(): vscode.ProviderResult<vscode.Task[]> {
 		return this.computeTasks();
@@ -39,9 +53,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 	}
 
 	private async fetchDevfileCommands(): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
-		const che_api = vscode.extensions.getExtension('eclipse-che.api');
 		if (!che_api) {
-			this.channel.appendLine('eclipse-che.api extension is not found.');
 			return [];
 		}
 
@@ -76,8 +88,13 @@ export class CheTaskProvider implements vscode.TaskProvider {
 			component
 		};
 
-		command = command + ` --component ${component}`;
-		const execution = new vscode.ShellExecution(command, { cwd: expandEnvVariables(workdir) });
+		// command = command + ` --component ${component}`;
+		// const execution = new vscode.ShellExecution(command, { cwd: expandEnvVariables(workdir) });
+
+		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
+			return che_terminal?.exports.getMachineExecPTY(component, command, expandEnvVariables(workdir));
+		});
+
 		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution);
 		return task;
 	}

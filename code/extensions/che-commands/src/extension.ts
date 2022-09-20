@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+/* eslint-disable header/header */
+
 import * as vscode from 'vscode';
 import { CheTaskProvider } from './taskProvider';
 

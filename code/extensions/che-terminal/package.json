@@ -62,9 +62,6 @@
     "type": "git",
     "url": "https://github.com/che-incubator/che-code.git"
   },
-  "extensionDependencies": [
-    "eclipse-che.api"
-  ],
   "jest": {
     "collectCoverage": true,
     "collectCoverageFrom": [
