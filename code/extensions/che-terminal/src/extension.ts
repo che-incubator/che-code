@@ -37,15 +37,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	context.subscriptions.push(disposable, disposable2);
 
 	const api: Api = {
-		getMachineExecPTY(component: string, cmd: string): MachineExecPTY {
-			return new MachineExecPTY(component, cmd, '');
+		getMachineExecPTY(component: string, cmd: string, workdir: string): MachineExecPTY {
+			return new MachineExecPTY(component, cmd, workdir);
 		}
 	};
 	return api;
 }
 
 interface Api {
-	getMachineExecPTY(component: string, cmd: string): MachineExecPTY;
+	getMachineExecPTY(component: string, cmd: string, workdir: string): MachineExecPTY;
 }
 
 export function deactivate(): void {
