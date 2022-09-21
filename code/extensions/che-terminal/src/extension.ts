@@ -20,8 +20,15 @@ export const machineExecChannel: vscode.OutputChannel = vscode.window.createOutp
 export const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
-	machineExecConnection.on('message', (data: WS.Data) => {
-		machineExecChannel.appendLine(`WebSocket <<< ${data.toString()}`);
+	const containers: string[] = [];
+
+	machineExecConnection.on('message', async (data: WS.Data) => {
+		const message = JSON.parse(data.toString());
+		machineExecChannel.appendLine(`WebSocket <<< ${message}`);
+
+		if (message.method === 'connected') {
+			containers.push(... await MachineExecClient.getConainers());
+		}
 	});
 
 	const disposable = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:tools', () => {
@@ -32,11 +39,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const disposable2 = vscode.commands.registerCommand('che-machine-exec-support.executeCommand:tools', () => {
 		const pty = new MachineExecPTY('tools', 'ls /etc', '');
 		vscode.window.createTerminal({ name: 'tools component', pty }).show();
-	});
-
-	const containers: string[] = [];
-	machineExecConnection.on('open', async () => {
-		containers.push(... await MachineExecClient.getConainers());
 	});
 
 	const disposable3 = vscode.commands.registerCommand('che-terminal.new', async () => {
