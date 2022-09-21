@@ -88,9 +88,6 @@ export class CheTaskProvider implements vscode.TaskProvider {
 			component
 		};
 
-		// command = command + ` --component ${component}`;
-		// const execution = new vscode.ShellExecution(command, { cwd: expandEnvVariables(workdir) });
-
 		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
 			return che_terminal?.exports.getMachineExecPTY(component, command, expandEnvVariables(workdir));
 		});

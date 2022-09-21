@@ -27,10 +27,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	 */
 	private terminalSession: TerminalSession | undefined;
 
-	private machineExecClient: MachineExecClient;
-
 	constructor(private devWorkspaceComponent: string, private commandLine: string, private workdir: string) {
-		this.machineExecClient = new MachineExecClient();
 	}
 
 	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
@@ -44,7 +41,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	async open(initialDimensions: vscode.TerminalDimensions | undefined): Promise<void> {
 		machineExecChannel.appendLine(`new terminal opened with the dimentions: ${initialDimensions?.columns}, ${initialDimensions?.rows}`);
 
-		this.terminalSession = await this.machineExecClient.createTerminalSession(this.devWorkspaceComponent, this.commandLine, this.workdir, initialDimensions);
+		this.terminalSession = await MachineExecClient.createTerminalSession(this.devWorkspaceComponent, this.commandLine, this.workdir, initialDimensions);
 
 		this.terminalSession.onOutput(e => this.writeEmitter.fire(e));
 		this.terminalSession.onExit(e => this.closeEmitter.fire(e));
@@ -111,7 +108,7 @@ export class TerminalSession {
 	}
 
 	resize(dimensions: vscode.TerminalDimensions): void {
-		const resizeTerminalSessionCall = {
+		const resizeTerminalCall = {
 			id: this.id,
 			cols: dimensions.columns,
 			rows: dimensions.rows
@@ -120,17 +117,43 @@ export class TerminalSession {
 		const jsonCommand = {
 			jsonrpc: '2.0',
 			method: 'resize',
-			params: resizeTerminalSessionCall,
+			params: resizeTerminalCall,
 			id: 0
 		};
 
 		const command = JSON.stringify(jsonCommand);
+		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
 		machineExecConnection.send(command);
 	}
 }
 
 /** Client for the machine-exec server. */
-class MachineExecClient {
+export namespace MachineExecClient {
+
+	const LIST_CONTAINERS_ID = -5;
+
+	export function getConainers(): Promise<string[]> {
+		const jsonCommand = {
+			jsonrpc: '2.0',
+			method: 'listContainers',
+			params: [],
+			id: LIST_CONTAINERS_ID,
+		};
+
+		const command = JSON.stringify(jsonCommand);
+		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
+		machineExecConnection.send(command);
+
+		return new Promise(resolve => {
+			machineExecConnection.once('message', (data: WS.Data) => {
+				const message = JSON.parse(data.toString());
+				if (message.id === LIST_CONTAINERS_ID) {
+					const remoteContainers: string[] = message.result.map((containerInfo: any) => containerInfo.container);
+					resolve(remoteContainers);
+				}
+			});
+		});
+	}
 
 	/**
 	 * Requests the machine-exec server to create a new terminal session to the specified component.
@@ -140,7 +163,7 @@ class MachineExecClient {
 	 * @param dimensions
 	 * @returns a WebSocket connection to communicate with the created terminal session
 	 */
-	createTerminalSession(component: string, commandLine: string, workdir: string, dimensions?: vscode.TerminalDimensions): Promise<TerminalSession> {
+	export function createTerminalSession(component: string, commandLine: string, workdir: string, dimensions?: vscode.TerminalDimensions): Promise<TerminalSession> {
 		const createTerminalSessionCall = {
 			identifier: {
 				machineName: component
@@ -160,7 +183,7 @@ class MachineExecClient {
 		};
 
 		const command = JSON.stringify(jsonCommand);
-		machineExecChannel.appendLine(command);
+		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
 		machineExecConnection.send(command);
 
 		return new Promise(resolve => {

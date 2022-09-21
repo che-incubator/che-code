@@ -31,6 +31,12 @@
       {
         "command": "che-machine-exec-support.executeCommand:tools",
         "title": "machine-exec: command: tools"
+      },
+      {
+        "category": "%category%",
+        "command": "che-terminal.new",
+        "shortTitle": "%new.title%",
+        "title": "%new.shortTitle%"
       }
     ]
   },

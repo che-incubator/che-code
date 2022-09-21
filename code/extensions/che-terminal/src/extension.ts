@@ -12,16 +12,16 @@
 
 import * as vscode from 'vscode';
 import * as WS from 'ws';
-import { MachineExecPTY } from './pseudoterminal';
+import { MachineExecPTY, MachineExecClient } from './pseudoterminal';
 
-export const machineExecChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che terminal');
+export const machineExecChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Che Terminal');
 
 // Create a WebSocket connection to the machine-exec server.
 export const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	machineExecConnection.on('message', (data: WS.Data) => {
-		machineExecChannel.appendLine(data.toString());
+		machineExecChannel.appendLine(`WebSocket <<< ${data.toString()}`);
 	});
 
 	const disposable = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:tools', () => {
@@ -34,7 +34,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		vscode.window.createTerminal({ name: 'tools component', pty }).show();
 	});
 
-	context.subscriptions.push(disposable, disposable2);
+	const containers: string[] = [];
+	machineExecConnection.on('open', async () => {
+		containers.push(... await MachineExecClient.getConainers());
+	});
+
+	const disposable3 = vscode.commands.registerCommand('che-terminal.new', async () => {
+		const container = await vscode.window.showQuickPick(containers);
+		const pty = new MachineExecPTY(container!, '', '');
+		vscode.window.createTerminal({ name: `${container} container`, pty }).show();
+	});
+
+	context.subscriptions.push(disposable, disposable2, disposable3);
 
 	const api: Api = {
 		getMachineExecPTY(component: string, cmd: string, workdir: string): MachineExecPTY {
