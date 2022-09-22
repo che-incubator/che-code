@@ -31,6 +31,15 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 3. `export DOCKER_BUILDKIT=1`
 4. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
+## Developing with Eclipse Che
+
+This project includes [Devfile](devfile.yaml) that simplifies developing Che-Code in Eclipse Che.
+To test your changes in Eclipse Che run the following VS Code Tasks:
+1. `prepare` to download all the required dependencies
+2. `bulid` to pre-build and start the watch mode
+3. `run` to run the VS Code server
+4. Follow the suggested URL to test your changes.
+
 ## Updates and branches
 
 This repository has a main branch being rebased on the main remote branch of `Code-OSS`.
