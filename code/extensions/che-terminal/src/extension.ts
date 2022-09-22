@@ -18,12 +18,14 @@ export const machineExecChannel: vscode.OutputChannel = vscode.window.createOutp
 
 // Create a WebSocket connection to the machine-exec server.
 export const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
+machineExecConnection.on('message', async (data: WS.Data) => {
+	machineExecChannel.appendLine(`WebSocket <<< ${data.toString()}`);
+});
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const containers: string[] = [... await MachineExecClient.getConainers()];
 
 	machineExecConnection.on('message', async (data: WS.Data) => {
-		machineExecChannel.appendLine(`WebSocket <<< ${data.toString()}`);
 		const message = JSON.parse(data.toString());
 		if (message.method === 'connected') {
 			containers.push(... await MachineExecClient.getConainers());
