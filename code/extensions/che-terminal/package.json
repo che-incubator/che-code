@@ -25,18 +25,10 @@
   "contributes": {
     "commands": [
       {
-        "command": "che-machine-exec-support.openRemoteTerminal:tools",
-        "title": "machine-exec: terminal: tools"
-      },
-      {
-        "command": "che-machine-exec-support.executeCommand:tools",
-        "title": "machine-exec: command: tools"
-      },
-      {
         "category": "%category%",
         "command": "che-terminal.new",
-        "shortTitle": "%new.title%",
-        "title": "%new.shortTitle%"
+        "shortTitle": "%new.shortTitle%",
+        "title": "%new.title%"
       }
     ]
   },

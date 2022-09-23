@@ -32,23 +32,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		}
 	});
 
-	const disposable = vscode.commands.registerCommand('che-machine-exec-support.openRemoteTerminal:tools', () => {
-		const pty = new MachineExecPTY('tools', '', '');
-		vscode.window.createTerminal({ name: 'tools component', pty }).show();
+	const disposable = vscode.commands.registerCommand('che-terminal.new', async () => {
+		const quickPickItems = containers.map(container => {
+			return <ContainerQuickPickItem>{
+				label: '$(terminal) ' + container,
+				containerName: container
+			};
+		});
+
+		const item = await vscode.window.showQuickPick<ContainerQuickPickItem>(quickPickItems, { placeHolder: 'Select a container to open a terminal to' });
+		if (item) {
+			const pty = new MachineExecPTY(item.containerName, '', '');
+			const terminal = vscode.window.createTerminal({ name: `${item.containerName} component`, pty });
+			terminal.show();
+		}
 	});
 
-	const disposable2 = vscode.commands.registerCommand('che-machine-exec-support.executeCommand:tools', () => {
-		const pty = new MachineExecPTY('tools', 'ls /etc', '');
-		vscode.window.createTerminal({ name: 'tools component', pty }).show();
-	});
-
-	const disposable3 = vscode.commands.registerCommand('che-terminal.new', async () => {
-		const container = await vscode.window.showQuickPick(containers);
-		const pty = new MachineExecPTY(container!, '', '');
-		vscode.window.createTerminal({ name: `${container} container`, pty }).show();
-	});
-
-	context.subscriptions.push(disposable, disposable2, disposable3);
+	context.subscriptions.push(disposable);
 
 	const api: Api = {
 		getMachineExecPTY(component: string, cmd: string, workdir: string): MachineExecPTY {
@@ -56,6 +56,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		}
 	};
 	return api;
+}
+
+interface ContainerQuickPickItem extends vscode.QuickPickItem {
+	containerName: string;
 }
 
 interface Api {
