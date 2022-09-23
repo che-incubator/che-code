@@ -11,7 +11,7 @@ import { Color } from 'vs/base/common/color';
 import { BugIndicatingError, onUnexpectedError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { autorun, autorunWithStore, IObservable, IReader, observableValue } from 'vs/base/common/observable';
+import { autorun, autorunWithStore, IObservable, IReader, observableValue, transaction } from 'vs/base/common/observable';
 import { basename, isEqual } from 'vs/base/common/resources';
 import { isDefined } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
@@ -36,12 +36,13 @@ import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { applyTextEditorOptions } from 'vs/workbench/common/editor/editorOptions';
 import { readTransientState, writeTransientState } from 'vs/workbench/contrib/codeEditor/browser/toggleWordWrap';
 import { MergeEditorInput } from 'vs/workbench/contrib/mergeEditor/browser/mergeEditorInput';
+import { IMergeEditorInputModel } from 'vs/workbench/contrib/mergeEditor/browser/mergeEditorInputModel';
 import { MergeEditorModel } from 'vs/workbench/contrib/mergeEditor/browser/model/mergeEditorModel';
-import { deepMerge, thenIfNotDisposed } from 'vs/workbench/contrib/mergeEditor/browser/utils';
+import { deepMerge, PersistentStore, thenIfNotDisposed } from 'vs/workbench/contrib/mergeEditor/browser/utils';
 import { BaseCodeEditorView } from 'vs/workbench/contrib/mergeEditor/browser/view/editors/baseCodeEditorView';
 import { ScrollSynchronizer } from 'vs/workbench/contrib/mergeEditor/browser/view/scrollSynchronizer';
 import { MergeEditorViewModel } from 'vs/workbench/contrib/mergeEditor/browser/view/viewModel';
-import { ctxIsMergeEditor, ctxMergeBaseUri, ctxMergeEditorLayout, ctxMergeEditorShowBase, ctxMergeResultUri, MergeEditorLayoutKind } from 'vs/workbench/contrib/mergeEditor/common/mergeEditor';
+import { ctxIsMergeEditor, ctxMergeBaseUri, ctxMergeEditorLayout, ctxMergeEditorShowBase, ctxMergeEditorShowNonConflictingChanges, ctxMergeResultUri, MergeEditorLayoutKind } from 'vs/workbench/contrib/mergeEditor/common/mergeEditor';
 import { settingsSashBorder } from 'vs/workbench/contrib/preferences/common/settingsEditorColorRegistry';
 import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorResolverService, MergeEditorInputFactoryFunction, RegisteredEditorPriority } from 'vs/workbench/services/editor/common/editorResolverService';
@@ -76,7 +77,14 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	private readonly _ctxShowBase: IContextKey<boolean>;
 	private readonly _ctxResultUri: IContextKey<string>;
 	private readonly _ctxBaseUri: IContextKey<string>;
-	public get model(): MergeEditorModel | undefined { return this._viewModel.get()?.model; }
+	private readonly _ctxShowNonConflictingChanges: IContextKey<boolean>;
+	private readonly _inputModel = observableValue<IMergeEditorInputModel | undefined>('inputModel', undefined);
+	public get inputModel(): IObservable<IMergeEditorInputModel | undefined> {
+		return this._inputModel;
+	}
+	public get model(): MergeEditorModel | undefined {
+		return this.inputModel.get()?.model;
+	}
 
 	private get inputsWritable(): boolean {
 		return !!this._configurationService.getValue<boolean>('mergeEditor.writableInputs');
@@ -102,6 +110,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		this._ctxBaseUri = ctxMergeBaseUri.bindTo(contextKeyService);
 		this._ctxResultUri = ctxMergeResultUri.bindTo(contextKeyService);
 		this._ctxShowBase = ctxMergeEditorShowBase.bindTo(contextKeyService);
+		this._ctxShowNonConflictingChanges = ctxMergeEditorShowNonConflictingChanges.bindTo(contextKeyService);
 
 		this._layoutMode = instantiation.createInstance(MergeEditorLayoutStore);
 
@@ -112,6 +121,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		this._sessionDisposables.dispose();
 		this._ctxIsMergeEditor.reset();
 		this._ctxUsesColumnLayout.reset();
+		this._ctxShowNonConflictingChanges.reset();
 		super.dispose();
 	}
 
@@ -176,16 +186,23 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		await super.setInput(input, options, context, token);
 
 		this._sessionDisposables.clear();
-		this._viewModel.set(undefined, undefined);
+		transaction(tx => {
+			this._viewModel.set(undefined, tx);
+			this._inputModel.set(undefined, tx);
+		});
 
-		const model = await input.resolve();
+		const inputModel = await input.resolve();
+		const model = inputModel.model;
 
-		const viewModel = new MergeEditorViewModel(model, this.input1View, this.input2View, this.inputResultView, this.baseView);
-		this._viewModel.set(viewModel, undefined);
+		const viewModel = new MergeEditorViewModel(model, this.input1View, this.input2View, this.inputResultView, this.baseView, this.showNonConflictingChanges);
+		transaction(tx => {
+			this._viewModel.set(viewModel, tx);
+			this._inputModel.set(inputModel, tx);
+		});
 		this._sessionDisposables.add(viewModel);
 
 		// Set/unset context keys based on input
-		this._ctxResultUri.set(model.resultTextModel.uri.toString());
+		this._ctxResultUri.set(inputModel.resultUri.toString());
 		this._ctxBaseUri.set(model.base.uri.toString());
 		this._sessionDisposables.add(toDisposable(() => {
 			this._ctxBaseUri.reset();
@@ -552,7 +569,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	}
 
 	protected computeEditorViewState(resource: URI): IMergeEditorViewState | undefined {
-		if (!isEqual(this.model?.resultTextModel.uri, resource)) {
+		if (!isEqual(this.inputModel.get()?.resultUri, resource)) {
 			return undefined;
 		}
 		const result = this.inputResultView.editor.saveViewState();
@@ -569,6 +586,15 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	protected tracksEditorViewState(input: EditorInput): boolean {
 		return input instanceof MergeEditorInput;
 	}
+
+	private readonly showNonConflictingChangesStore = this.instantiationService.createInstance(PersistentStore<boolean>, 'mergeEditor/showNonConflictingChanges');
+	private readonly showNonConflictingChanges = observableValue('showNonConflictingChanges', this.showNonConflictingChangesStore.get() ?? false);
+
+	public toggleShowNonConflictingChanges(): void {
+		this.showNonConflictingChanges.set(!this.showNonConflictingChanges.get(), undefined);
+		this.showNonConflictingChangesStore.set(this.showNonConflictingChanges.get());
+		this._ctxShowNonConflictingChanges.set(this.showNonConflictingChanges.get());
+	}
 }
 
 interface IMergeEditorLayout {
@@ -576,6 +602,7 @@ interface IMergeEditorLayout {
 	readonly showBase: boolean;
 }
 
+// TODO use PersistentStore
 class MergeEditorLayoutStore {
 	private static readonly _key = 'mergeEditor/layout';
 	private _value: IMergeEditorLayout = { kind: 'mixed', showBase: false };
