@@ -23,5 +23,5 @@ jobs:
       - name: Web IDE Pull Request Check
         uses: redhat-actions/try-in-web-ide@v1
         with:
-          github_token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           add_comment: false
