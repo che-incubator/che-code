@@ -84,7 +84,7 @@ async function getContributedContainers(): Promise<string[]> {
 		.filter((component: any) => component.container)
 		// and the editor container as well, since the user opens a terminal to it
 		// with the VS Code built-in terminal
-		.filter((component: any) => component.attributes && (component.attributes as any)[editorContainerAttribute] === undefined)
+		.filter((component: any) => !component.attributes || (component.attributes as any)[editorContainerAttribute] === undefined)
 		.map((component: any) => component.name);
 
 	// ask machine-exec to get all running containers and
