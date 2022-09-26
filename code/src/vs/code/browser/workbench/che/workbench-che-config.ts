@@ -11,11 +11,11 @@
 /* eslint-disable header/header */
 
 import { ColorScheme } from 'vs/platform/theme/common/theme';
-import { IInitialColorTheme, IWindowIndicator, IWorkbenchConstructionOptions } from 'vs/workbench/workbench.web.main';
+import { IInitialColorTheme, IWindowIndicator, IWorkbenchConstructionOptions } from 'vs/workbench/browser/web.api';
 
 /**
  * Built time configuration (do NOT modify the value below)
- * Modify workbench-config.json file to apply a change for the configuration 
+ * Modify workbench-config.json file to apply a change for the configuration
  */
 const workbenchConfiguration = { /*BUILD->INSERT_WORKBENCH_CONFIGURATION*/ } as IWorkbenchConstructionOptions;
 
@@ -40,7 +40,7 @@ const initialColorTheme: IInitialColorTheme = {
     colors: statusBarColorCustomizations
 }
 
-// the configuration should be applied if built time configuration is not handled 
+// the configuration should be applied if built time configuration is not handled
 // the values are the same as in the workbench-config.json file
 const defaultWorkbenchConfiguration = {
     windowIndicator,
