@@ -10,7 +10,7 @@ import { ILifecycleService, LifecyclePhase } from 'vs/workbench/services/lifecyc
 import { Action2, IAction2Options, MenuRegistry, registerAction2 } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { localize } from 'vs/nls';
-import { IEditSessionsStorageService, Change, ChangeType, Folder, EditSession, FileType, EDIT_SESSION_SYNC_CATEGORY, EDIT_SESSIONS_CONTAINER_ID, EditSessionSchemaVersion, IEditSessionsLogService, EDIT_SESSIONS_VIEW_ICON, EDIT_SESSIONS_TITLE, EDIT_SESSIONS_SHOW_VIEW, EDIT_SESSIONS_SIGNED_IN, EDIT_SESSIONS_DATA_VIEW_ID, decodeEditSessionFileContent } from 'vs/workbench/contrib/editSessions/common/editSessions';
+import { IEditSessionsStorageService, Change, ChangeType, Folder, EditSession, FileType, EDIT_SESSION_SYNC_CATEGORY, EDIT_SESSIONS_CONTAINER_ID, EditSessionSchemaVersion, IEditSessionsLogService, EDIT_SESSIONS_VIEW_ICON, EDIT_SESSIONS_TITLE, EDIT_SESSIONS_SHOW_VIEW, EDIT_SESSIONS_DATA_VIEW_ID, decodeEditSessionFileContent } from 'vs/workbench/contrib/editSessions/common/editSessions';
 import { ISCMRepository, ISCMService } from 'vs/workbench/contrib/scm/common/scm';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IWorkspaceContextService, IWorkspaceFolder, WorkbenchState } from 'vs/platform/workspace/common/workspace';
@@ -131,6 +131,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		this._register(this.fileService.registerProvider(EditSessionsFileSystemProvider.SCHEMA, new EditSessionsFileSystemProvider(this.editSessionsStorageService)));
 		this.lifecycleService.onWillShutdown((e) => e.join(this.autoStoreEditSession(), { id: 'autoStoreEditSession', label: localize('autoStoreEditSession', 'Storing current edit session...') }));
 		this._register(this.editSessionsStorageService.onDidSignIn(() => this.updateAccountsMenuBadge()));
+		this._register(this.editSessionsStorageService.onDidSignOut(() => this.updateAccountsMenuBadge()));
 	}
 
 	private autoResumeEditSession() {
@@ -255,8 +256,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 					id: 'workbench.editSessions.actions.showEditSessions',
 					title: { value: localize('show edit session', "Show Edit Sessions"), original: 'Show Edit Sessions' },
 					category: EDIT_SESSION_SYNC_CATEGORY,
-					f1: true,
-					precondition: EDIT_SESSIONS_SIGNED_IN
+					f1: true
 				});
 			}
 
@@ -378,6 +378,10 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		this.logService.info(ref !== undefined ? `Resuming edit session with ref ${ref}...` : 'Resuming edit session...');
 
+		if (silent && !(await this.editSessionsStorageService.initialize(false, true))) {
+			return;
+		}
+
 		const data = await this.editSessionsStorageService.read(ref);
 		if (!data) {
 			if (ref === undefined && !silent) {
@@ -398,6 +402,9 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		try {
 			const { changes, conflictingChanges } = await this.generateChanges(editSession, ref);
+			if (changes.length === 0) {
+				return;
+			}
 
 			// TODO@joyceerhl Provide the option to diff files which would be overwritten by edit session contents
 			if (conflictingChanges.length > 0) {
