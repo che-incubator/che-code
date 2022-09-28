@@ -96,10 +96,10 @@ git fetch upstream-code main
 
 ## Whitelabel/branding
  
-There is an ability to apply branding for some UI elements. The original data can be overridden by execution [branding.sh script](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh). The script expects that the branding resources are placed in the [branding folder](https://github.com/che-incubator/che-code/tree/main/branding). 
+There is a functionality to apply branding to some UI elements. The original data can be overridden by executing the [branding.sh](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) script. The script searches for the branding resources in the [branding folder](https://github.com/che-incubator/che-code/tree/main/branding). 
 
-The crucial one is: `branding/product.json` file. 
-The values defined in the `branding/product.json` file overwrite [default ones](https://github.com/che-incubator/che-code/blob/main/code/product.json). 
+The `branding/product.json` file is crucial. 
+The values defined in the `branding/product.json` file override the [default values](https://github.com/che-incubator/che-code/blob/main/code/product.json). 
 Also the file serves data mapping for provided branding resources.
 
 Example of the `branding/product.json` file:
@@ -131,21 +131,21 @@ Example of the `branding/product.json` file:
 	"codiconCssFilePath": "css/codicon.css"
 }
 ```
-- `nameShort` - application name
-- `nameLong` - it's used for the `Welcome` page, the `About` dialog, browser tab title
-- `favicon` - icon for the browser tab title, the same for all themes
-- `welcome` - icon for the `Welcome` (`Get Started`) page tab title, the same for all themes
-- `statusBarItem` - icon for the status bar item, the same for all themes, should be defined as `codicon` in the `workbench-config.json` file and `codicon` css styles as well
-- `letterpress` - icon for the main area when all editors are closed, it's possible to provide different icons for the `light` and `dark` theme  
-- `remoteIndicatorCommands` - names of commands provided by [`Eclipse Che Remote` extension](https://github.com/che-incubator/che-code/blob/main/code/extensions/che-remote/package.nls.json)
-- `workbenchConfigFilePath` - the config file path, please see an example of the config file [here](https://github.com/che-incubator/che-code/blob/main/code/src/vs/code/browser/workbench/che/workbench-config.json)
-- `codiconCssFilePath` - the codicon css file path, should contain css styles for `codicon`s, content of the file is appended to [the coressponding css file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/base/browser/ui/codicons/codicon/codicon.css), please see an example of the content [here](https://github.com/che-incubator/che-code/blob/803b864e8411bd57d617dabddfd8a132fac6c743/code/src/vs/base/browser/ui/codicons/codicon/codicon.css#L29-L33)
+- `nameShort` - The application name.
+- `nameLong` - This is used for the **Welcome** page, the **About** dialog, and browser tab title.
+- `favicon` - The icon for the browser tab title. It's the same for all themes.
+- `welcome` - The icon for the **Welcome** (**Get Started**) page tab title. It's the same for all themes.
+- `statusBarItem` - The icon for the status bar item. It's the same for all themes and must be defined as `codicon` in the `workbench-config.json` file and the `codicon` CSS styles.
+- `letterpress` - The icon for the main area when all editors are closed. It's possible to provide different icons for `light` and `dark` themes.
+- `remoteIndicatorCommands` - The names of commands provided by the [`Eclipse Che Remote`](https://github.com/che-incubator/che-code/blob/main/code/extensions/che-remote/package.nls.json) extension.
+- `workbenchConfigFilePath` - The config file path. See an [example of the config file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/code/browser/workbench/che/workbench-config.json).
+- `codiconCssFilePath` - The codicon css file path. Must contain CSS styles for `codicon`s. The content of the file is appended to [the coressponding css file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/base/browser/ui/codicons/codicon/codicon.css). See an [example of the content](https://github.com/che-incubator/che-code/blob/803b864e8411bd57d617dabddfd8a132fac6c743/code/src/vs/base/browser/ui/codicons/codicon/codicon.css#L29-L33).
 
-Please note:
+NOTE:
 -  All paths in the `branding/product.json` file must be relative to the `branding` folder. 
-For example, `workbenchConfigFilePath` field has `anyFolder/myConfigFiles/workbench-config.json` value. 
-It means that the config file can be found by the path: `che-code/branding/anyFolder/myConfigFiles/workbench-config.json`
-- At the moment the [branding.sh script](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) is not run automatically when building this project. It needs to be integrated into the build process of the [downstream branded project or product](https://github.com/redhat-developer/devspaces-images/blob/devspaces-3-rhel-8/devspaces-code/build/scripts/sync.sh#L96).
+For example, the `workbenchConfigFilePath` field might have the `anyFolder/myConfigFiles/workbench-config.json` value. 
+This means that the config file can be found by the path: `che-code/branding/anyFolder/myConfigFiles/workbench-config.json`
+- Currently, the [branding.sh](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) script is not run automatically when building this project. It needs to be integrated into the build process of the [downstream branded project or product](https://github.com/redhat-developer/devspaces-images/blob/devspaces-3-rhel-8/devspaces-code/build/scripts/sync.sh#L96).
 
 # License
 
