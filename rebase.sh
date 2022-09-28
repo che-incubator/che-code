@@ -46,10 +46,9 @@ override_json_file() {
 }
 
 escape_litteral() {
-      escaped=${1//\$/\\$}
+    escaped=${1//\$/\\$}
     escaped=${escaped//\[/\\[}
     escaped=${escaped//\]/\\]}
-    escaped=${escaped//\`/\\\`}
     echo "$escaped"
 }
 
@@ -73,7 +72,7 @@ apply_replace() {
 
     escape_from=$(escape_litteral "$from")
     escape_by=$(escape_litteral "$by")
-    sed -i '.bak' -e "s|${escape_from}|${escape_by}|" "${filename}"
+    sed -i.bak -e "s|${escape_from}|${escape_by}|" "${filename}"
     if diff "$filename" "$filename.bak" &> /dev/null; then
       echo "Unable to perform the replace. Value is not present in the resulting file"
       echo "Wanted to check ${by}"
