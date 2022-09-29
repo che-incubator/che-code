@@ -26,6 +26,14 @@ components:
     volume:
       size: 3Gi
 commands:
+  - id: prepare
+    exec:
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        yarn prepare
+      group:
+        kind: build
   - id: build
     exec:
       component: dev

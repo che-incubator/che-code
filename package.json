@@ -1,11 +1,11 @@
 {
   "name": "che-code",
-  "version": "7.54.0-next",
+  "version": "7.55.0-next",
   "description": "Run Code-OSS on kubernetes",
   "scripts": {
     "prepare": "cd code && yarn && yarn download-builtin-extensions",
     "watch": "cd code && yarn watch",
-    "server": "cd code && VSCODE_DEV=1 yarn node out/server-main.js --host 0.0.0.0",
+    "server": "cd code && VSCODE_DEV=1 yarn node out/server-main.js --host 0.0.0.0 --without-connection-token",
     "build": "cd code && yarn run gulp vscode-reh-web-linux-x64",
     "build:min": "cd code && yarn gulp vscode-reh-web-linux-x64-min",
     "rebuild-native-modules": "cd code && npm rebuild"
