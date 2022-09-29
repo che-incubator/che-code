@@ -94,6 +94,59 @@ git fetch upstream-code main
 4. Fix the conflicts or other errors. **Note**, that`./rebase.sh` script also apllies the patches from the [`.rebase`](https://github.com/che-incubator/che-code/tree/main/.rebase) directory. Sometimes, it also requires some updates there.
 5. Open a PR with your changes.
 
+## Whitelabel/branding
+ 
+There is a functionality to apply branding to some UI elements. The original data can be overridden by executing the [branding.sh](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) script. The script searches for the branding resources in the [branding folder](https://github.com/che-incubator/che-code/tree/main/branding). 
+
+The `branding/product.json` file is crucial. 
+The values defined in the `branding/product.json` file override the [default values](https://github.com/che-incubator/che-code/blob/main/code/product.json). 
+Also the file serves data mapping for provided branding resources.
+
+Example of the `branding/product.json` file:
+```
+{
+	"nameShort": "VS Code - Open Source",
+	"nameLong": "Red Hat OpenShift Dev Spaces with Microsoft Visual Studio Code - Open Source IDE",
+	"icons": {
+		"favicon": {
+			"universal": "icons/favicon.ico"
+		},
+		"welcome": {
+			"universal": "icons/dev-spaces.svg"
+		},
+		"statusBarItem": {
+			"universal": "icons/dev-spaces.svg"
+		},
+		"letterpress": {
+			"light": "icons/letterpress-light.svg",
+			"dark": "icons/letterpress-light.svg"
+		}
+	},
+	"remoteIndicatorCommands": {
+		"openDocumentationCommand": "Dev Spaces: Open Documentation",
+		"openDashboardCommand": "Dev Spaces: Open Dashboard",
+		"stopWorkspaceCommand": "Dev Spaces: Stop Workspace"
+	},
+	"workbenchConfigFilePath": "workbench-config.json",
+	"codiconCssFilePath": "css/codicon.css"
+}
+```
+- `nameShort` - The application name.
+- `nameLong` - This is used for the **Welcome** page, the **About** dialog, and browser tab title.
+- `favicon` - The icon for the browser tab title. It's the same for all themes.
+- `welcome` - The icon for the **Welcome** (**Get Started**) page tab title. It's the same for all themes.
+- `statusBarItem` - The icon for the status bar item. It's the same for all themes and must be defined as `codicon` in the `workbench-config.json` file and the `codicon` CSS styles.
+- `letterpress` - The icon for the main area when all editors are closed. It's possible to provide different icons for `light` and `dark` themes.
+- `remoteIndicatorCommands` - The names of commands provided by the [`Eclipse Che Remote`](https://github.com/che-incubator/che-code/blob/main/code/extensions/che-remote/package.nls.json) extension.
+- `workbenchConfigFilePath` - The config file path. See an [example of the config file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/code/browser/workbench/che/workbench-config.json).
+- `codiconCssFilePath` - The codicon css file path. Must contain CSS styles for `codicon`s. The content of the file is appended to [the coressponding css file](https://github.com/che-incubator/che-code/blob/main/code/src/vs/base/browser/ui/codicons/codicon/codicon.css). See an [example of the content](https://github.com/che-incubator/che-code/blob/803b864e8411bd57d617dabddfd8a132fac6c743/code/src/vs/base/browser/ui/codicons/codicon/codicon.css#L29-L33).
+
+NOTE:
+-  All paths in the `branding/product.json` file must be relative to the `branding` folder. 
+For example, the `workbenchConfigFilePath` field might have the `anyFolder/myConfigFiles/workbench-config.json` value. 
+This means that the config file can be found by the path: `che-code/branding/anyFolder/myConfigFiles/workbench-config.json`
+- Currently, the [branding.sh](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) script is not run automatically when building this project. It needs to be integrated into the build process of the [downstream branded project or product](https://github.com/redhat-developer/devspaces-images/blob/devspaces-3-rhel-8/devspaces-code/build/scripts/sync.sh#L96).
+
 # License
 
 - [Eclipse Public License 2.0](LICENSE)
