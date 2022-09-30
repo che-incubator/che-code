@@ -1,0 +1,7 @@
+{
+	"displayName": "Eclipse Che Terminal",
+	"description": "Provides the remote terminals support",
+	"category": "Terminal",
+	"new.title": "Create New Terminal to DevWorkspace Container",
+	"new.shortTitle": "New Terminal to Container"
+}

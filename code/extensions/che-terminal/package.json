@@ -1,0 +1,55 @@
+{
+  "name": "terminal",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "publisher": "eclipse-che",
+  "license": "EPL-2.0",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.72.0"
+  },
+  "icon": "images/icon.png",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "category": "%category%",
+        "command": "che-terminal.new",
+        "shortTitle": "%new.shortTitle%",
+        "title": "%new.title%"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "gulp compile-extension:che-terminal",
+    "watch": "gulp watch-extension:che-terminal",
+    "vscode:prepublish": "npm run compile",
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    },
+  "dependencies": {
+    "fs-extra": "^10.0.0",
+    "js-yaml": "^4.1.0",
+    "vscode-nls": "^5.2.0",
+    "ws": "8.2.3"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/js-yaml": "^4.0.5",
+    "@types/ws": "8.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/che-incubator/che-code.git"
+  }
+}
