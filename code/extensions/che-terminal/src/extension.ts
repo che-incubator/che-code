@@ -21,7 +21,7 @@ export const machineExecChannel: vscode.OutputChannel = vscode.window.createOutp
 // Create a WebSocket connection to the machine-exec server.
 export const machineExecConnection: WS = new WS('ws://localhost:3333/connect');
 machineExecConnection.on('message', async (data: WS.Data) => {
-	machineExecChannel.appendLine(`WebSocket <<< ${data.toString()}`);
+	machineExecChannel.appendLine(`[WebSocket] <<< ${data.toString()}`);
 });
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
@@ -30,7 +30,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	// machineExecConnection.on('message', async (data: WS.Data) => {
 	// 	const message = JSON.parse(data.toString());
 	// 	if (message.method === 'connected') {
-	// 		containers.push(... await MachineExecClient.getConainers());
+	// 		containers.push(... await MachineExecClient.getContainers());
 	// 	}
 	// });
 
@@ -89,9 +89,8 @@ async function getContributedContainers(): Promise<string[]> {
 
 	// ask machine-exec to get all running containers and
 	// filter out those not declared in the devfile, e.g. che-gateway, etc.
-	const runningContainers = [... await MachineExecClient.getConainers()];
+	const runningContainers = [... await MachineExecClient.getContainers()];
 	const runningDevfileContainers = runningContainers.filter(containerName => devfileContainersNames.includes(containerName));
-
 	return runningDevfileContainers;
 }
 

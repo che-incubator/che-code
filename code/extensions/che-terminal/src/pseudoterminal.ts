@@ -15,7 +15,7 @@ import * as WS from 'ws';
 import { machineExecChannel, machineExecConnection } from './extension';
 
 /**
- * VS Code PTY that communicates with the terminal sessions managed by machine-exec server.
+ * VS Code PTY enables opening a terminal to a DevWorkspace container.
  */
 export class MachineExecPTY implements vscode.Pseudoterminal {
 
@@ -24,6 +24,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 
 	/**
 	 * Remote terminal session that VS Code PTY is connected to.
+	 * It's undefined only when the corresponding terminal isn't opened yet.
 	 */
 	private terminalSession: TerminalSession | undefined;
 
@@ -39,7 +40,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	onDidChangeName?: vscode.Event<string> | undefined;
 
 	async open(initialDimensions: vscode.TerminalDimensions | undefined): Promise<void> {
-		machineExecChannel.appendLine(`new terminal opened with the dimentions: ${initialDimensions?.columns}, ${initialDimensions?.rows}`);
+		machineExecChannel.appendLine('New terminal session requested');
 
 		this.terminalSession = await MachineExecClient.createTerminalSession(this.devWorkspaceComponent, this.commandLine, this.workdir, initialDimensions);
 
@@ -48,7 +49,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	}
 
 	close(): void {
-		machineExecChannel.appendLine('terminal closed');
+		machineExecChannel.appendLine(`Terminal session end requested: ID ${this.terminalSession?.id}`);
 		this.terminalSession?.send('\x03');
 	}
 
@@ -57,12 +58,15 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	}
 
 	setDimensions?(dimensions: vscode.TerminalDimensions): void {
-		machineExecChannel.appendLine(`the dimentions changed: ${dimensions.columns}, ${dimensions.rows}`);
+		machineExecChannel.appendLine(`Terminal session dimensions change requested: ID ${this.terminalSession?.id}. New dimensions: ${dimensions.columns}, ${dimensions.rows}`);
 		this.terminalSession?.resize(dimensions);
 	}
 }
 
 export class TerminalSession {
+
+	/** This terminal session ID assigned by machine-exec server. */
+	id: number;
 
 	/** The established connection for this terminal session. */
 	private terminalConnection: WS;
@@ -71,13 +75,10 @@ export class TerminalSession {
 
 	private onExitEmitter = new vscode.EventEmitter<number>();
 
-	/**
-	 *
-	 * @param id the terminal session ID
-	 */
-	constructor(private id: number) {
-		this.terminalConnection = new WS(`ws://localhost:3333/attach/${id}`);
+	constructor(id: number) {
+		this.id = id;
 
+		this.terminalConnection = new WS(`ws://localhost:3333/attach/${id}`);
 		this.terminalConnection.on('message', (data: WS.Data) => {
 			this.onOutputEmitter.fire(data.toString());
 		});
@@ -122,7 +123,7 @@ export class TerminalSession {
 		};
 
 		const command = JSON.stringify(jsonCommand);
-		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
+		machineExecChannel.appendLine(`[WebSocket] >>> ${command}`);
 		machineExecConnection.send(command);
 	}
 }
@@ -130,24 +131,24 @@ export class TerminalSession {
 /** Client for the machine-exec server. */
 export namespace MachineExecClient {
 
-	const LIST_CONTAINERS_ID = -5;
+	const LIST_CONTAINERS_MESSAGE_ID = -5;
 
-	export function getConainers(): Promise<string[]> {
+	export function getContainers(): Promise<string[]> {
 		const jsonCommand = {
 			jsonrpc: '2.0',
 			method: 'listContainers',
 			params: [],
-			id: LIST_CONTAINERS_ID,
+			id: LIST_CONTAINERS_MESSAGE_ID,
 		};
 
 		const command = JSON.stringify(jsonCommand);
-		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
+		machineExecChannel.appendLine(`[WebSocket] >>> ${command}`);
 		machineExecConnection.send(command);
 
 		return new Promise(resolve => {
 			machineExecConnection.once('message', (data: WS.Data) => {
 				const message = JSON.parse(data.toString());
-				if (message.id === LIST_CONTAINERS_ID) {
+				if (message.id === LIST_CONTAINERS_MESSAGE_ID) {
 					const remoteContainers: string[] = message.result.map((containerInfo: any) => containerInfo.container);
 					resolve(remoteContainers);
 				}
@@ -156,10 +157,10 @@ export namespace MachineExecClient {
 	}
 
 	/**
-	 * Requests the machine-exec server to create a new terminal session to the specified component.
+	 * Requests the machine-exec server to create a new terminal session to the specified container.
 	 *
-	 * @param component
-	 * @param commandLine
+	 * @param component DevWorkspace component that represents a target container
+	 * @param commandLine the command line to execute when starting a terminal session. If empty, machine-exec will start a default shell.
 	 * @param dimensions
 	 * @returns a WebSocket connection to communicate with the created terminal session
 	 */
@@ -183,7 +184,7 @@ export namespace MachineExecClient {
 		};
 
 		const command = JSON.stringify(jsonCommand);
-		machineExecChannel.appendLine(`WebSocket >>> ${command}`);
+		machineExecChannel.appendLine(`[WebSocket] >>> ${command}`);
 		machineExecConnection.send(command);
 
 		return new Promise(resolve => {
