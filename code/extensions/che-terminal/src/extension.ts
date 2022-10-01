@@ -105,9 +105,12 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	}
 
 	setDimensions?(dimensions: vscode.TerminalDimensions): void {
-		getOutputChannel().appendLine(`Terminal session dimensions change requested: ID ${this.terminalSession?.id}. New dimensions: ${dimensions.columns}, ${dimensions.rows}`);
+		// for newly created terminal, VS Code calls setDimensions before the actual terminal session is created
+		if (this.terminalSession) {
+			getOutputChannel().appendLine(`Terminal session dimensions change requested: ID ${this.terminalSession.id}. New dimensions: ${dimensions.columns}, ${dimensions.rows}`);
 
-		this.terminalSession?.resize(dimensions.columns, dimensions.rows);
+			this.terminalSession.resize(dimensions.columns, dimensions.rows);
+		}
 	}
 }
 

@@ -29,6 +29,9 @@ export class MachineExecClient implements vscode.Disposable {
 	private LIST_CONTAINERS_MESSAGE_ID = -5;
 
 	constructor() {
+		let resolveInit: () => void;
+		let rejectInit: (reason: any) => void;
+
 		this.connection = new WS('ws://localhost:3333/connect')
 			.on('message', async (data: WS.Data) => {
 				// By default, VS Code communicates over WebSocket in a binary format (exchanging data frames).
@@ -36,7 +39,10 @@ export class MachineExecClient implements vscode.Disposable {
 				getOutputChannel().appendLine(`[WebSocket] <<< ${data.toString()}`);
 
 				const message = JSON.parse(data.toString());
-				if (message.method === 'onExecExit') {
+				if (message.method === 'connected') {
+					// the machine-exec server responds `connected` once it's ready to serve the clients
+					resolveInit();
+				} else if (message.method === 'onExecExit') {
 					this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 0 }); // normal exit
 				} else if (message.method === 'onExecError') {
 					this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 1 });// the process failed
@@ -44,20 +50,20 @@ export class MachineExecClient implements vscode.Disposable {
 			})
 			.on('error', (err: Error) => {
 				getOutputChannel().appendLine(`[WebSocket] error: ${err.message}`);
+
+				rejectInit(err.message);
 			});
 
-		this.initPromise = new Promise(resolve => {
-			this.connection.on('message', async (data: WS.Data) => {
-				const message = JSON.parse(data.toString());
-				if (message.method === 'connected') {
-					// the machine-exec server responds `connected` once it's ready to serve the clients
-					resolve();
-				}
-			});
+		this.initPromise = new Promise<void>((resolve, reject) => {
+			resolveInit = resolve;
+			rejectInit = reject;
 		});
 	}
 
-	/** Resolves once the machine-exec server is ready to serve the clients. */
+	/**
+	 * Resolves once the machine-exec server is ready to serve the clients.
+	 * Rejects if an error occurred while establishing the WebSocket connection to machine-exec server.
+	 */
 	init(): Promise<void> {
 		return this.initPromise;
 	}
