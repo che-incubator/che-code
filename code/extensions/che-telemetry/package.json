@@ -1,0 +1,53 @@
+{
+    "name": "telemetry",
+    "displayName": "%displayName%",
+    "description": "%description%",
+    "publisher": "eclipse-che",
+    "license": "EPL-2.0",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "icon": "images/icon.png",
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "capabilities": {
+        "virtualWorkspaces": true,
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "compile": "gulp compile-extension:che-telemetry",
+        "watch": "gulp watch-extension:che-telemetry",
+        "vscode:prepublish": "npm run compile",
+        "test": "jest",
+        "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^9.0.13",
+        "@types/jest": "^27.4.1",
+        "@types/js-yaml": "^4.0.5",
+        "@types/node": "14.x",
+        "add": "^2.0.6",
+        "jest": "27.3.1",
+        "ts-jest": "^27.1.4",
+        "yarn": "^1.22.18"
+    },
+    "dependencies": {
+        "axios": "0.21.2",
+        "inversify": "^6.0.1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/che-incubator/che-code.git"
+    },
+    "extensionDependencies": [
+        "eclipse-che.api"
+    ]
+}

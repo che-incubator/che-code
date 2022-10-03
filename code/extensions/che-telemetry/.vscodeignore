@@ -1,0 +1,7 @@
+build/**
+tests/**
+coverage/**
+out/**
+tsconfig.json
+extension.webpack.config.js
+yarn.lock

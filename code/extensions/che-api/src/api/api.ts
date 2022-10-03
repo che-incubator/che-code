@@ -14,9 +14,11 @@
 import { DevfileService } from './devfile-service';
 import { WorkspaceService } from './workspace-service';
 import { GithubService } from './github-service';
+import { TelemetryService } from './telemetry-service';
 
 export interface Api {
     getDevfileService(): DevfileService;
     getWorkspaceService(): WorkspaceService;
     getGithubService(): GithubService;
+    getTelemetryService(): TelemetryService;
 }
