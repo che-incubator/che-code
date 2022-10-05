@@ -21,7 +21,7 @@ export function getOutputChannel(): vscode.OutputChannel {
 	return _channel;
 }
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const machineExecClient = new MachineExecClient();
 	await machineExecClient.init();
 
@@ -51,6 +51,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	context.subscriptions.push(machineExecClient, disposable);
+
+	const api: Api = {
+		getMachineExecPTY(containerName: string, command: string, workdir: string): MachineExecPTY {
+			return new MachineExecPTY(machineExecClient, containerName, command, workdir);
+		}
+	};
+	return api;
+}
+
+interface Api {
+	getMachineExecPTY(containerName: string, command: string, workdir: string): MachineExecPTY;
 }
 
 /**
@@ -72,10 +83,10 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	 *
 	 * @param machineExecClient client to communicate with the machine-exec server
 	 * @param container name of the DevWorkspace component that represents a container to open a terminal to
-	 * @param workdir optional working directory for a created terminal
 	 * @param commandLine optional command that will be passed to the terminal
+	 * @param workdir optional working directory for a created terminal
 	 */
-	constructor(private machineExecClient: MachineExecClient, private container: string, private workdir?: string, private commandLine?: string) {
+	constructor(private machineExecClient: MachineExecClient, private container: string, private commandLine?: string, private workdir?: string) {
 	}
 
 	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
@@ -89,7 +100,7 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 	async open(initialDimensions: vscode.TerminalDimensions | undefined): Promise<void> {
 		getOutputChannel().appendLine('New terminal session requested');
 
-		this.terminalSession = await this.machineExecClient.createTerminalSession(this.container, this.workdir, this.commandLine, initialDimensions?.columns, initialDimensions?.rows);
+		this.terminalSession = await this.machineExecClient.createTerminalSession(this.container, this.commandLine, this.workdir, initialDimensions?.columns, initialDimensions?.rows);
 		this.terminalSession.onOutput(e => this.writeEmitter.fire(e));
 		this.terminalSession.onExit(e => this.closeEmitter.fire(e));
 	}
