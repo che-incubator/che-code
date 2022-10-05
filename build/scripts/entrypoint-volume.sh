@@ -72,11 +72,11 @@ if [ -f /tmp/che/secret/ca.crt ]; then
   export NODE_EXTRA_CA_CERTS=/tmp/che/secret/ca.crt
 fi
 
-if [ -z "$NODEJS_FOR_VSCODE_DIR" ]; then
-  NODEJS_FOR_VSCODE_DIR="$(pwd)" 
+if [ -z "$VSCODE_NODEJS_RUNTIME_DIR" ]; then
+  VSCODE_NODEJS_RUNTIME_DIR="$(pwd)" 
 fi
 
-echo "Node JS dir for running VS Code: $NODEJS_FOR_VSCODE_DIR"
+echo "Node.js dir for running VS Code: $VSCODE_NODEJS_RUNTIME_DIR"
 
 # Launch che without connection-token, security is managed by Che
-"$NODEJS_FOR_VSCODE_DIR/node" out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
+"$VSCODE_NODEJS_RUNTIME_DIR/node" out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
