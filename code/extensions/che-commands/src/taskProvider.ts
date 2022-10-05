@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+/* eslint-disable header/header */
+
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands } from '@devfile/api';
 import * as vscode from 'vscode';
 
@@ -19,7 +21,8 @@ interface CheTaskDefinition extends vscode.TaskDefinition {
 
 export class CheTaskProvider implements vscode.TaskProvider {
 
-	constructor(private channel: vscode.OutputChannel) { }
+	constructor(private channel: vscode.OutputChannel, private cheAPI: any, private terminalExtAPI: any) {
+	}
 
 	provideTasks(): vscode.ProviderResult<vscode.Task[]> {
 		return this.computeTasks();
@@ -39,13 +42,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 	}
 
 	private async fetchDevfileCommands(): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
-		const che_api = vscode.extensions.getExtension('eclipse-che.api');
-		if (!che_api) {
-			this.channel.appendLine('eclipse-che.api extension is not found.');
-			return [];
-		}
-
-		const devfileService = che_api.exports.getDevfileService();
+		const devfileService = this.cheAPI.getDevfileService();
 		const devfile: V1alpha2DevWorkspaceSpecTemplate = await devfileService.get();
 		if (devfile.commands && devfile.commands.length) {
 			this.channel.appendLine(`Detected ${devfile.commands.length} Command(s) in the flattened Devfile.`);
@@ -76,8 +73,9 @@ export class CheTaskProvider implements vscode.TaskProvider {
 			component
 		};
 
-		command = command + ` --component ${component}`;
-		const execution = new vscode.ShellExecution(command, { cwd: expandEnvVariables(workdir) });
+		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
+			return this.terminalExtAPI.getMachineExecPTY(component, command, expandEnvVariables(workdir));
+		});
 		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution);
 		return task;
 	}

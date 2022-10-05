@@ -127,13 +127,13 @@ export class MachineExecClient implements vscode.Disposable {
 	 * Asks the machine-exec server to start a new terminal session to the specified container.
 	 *
 	 * @param component name of the DevWorkspace component that represents a container to create a terminal session to
-	 * @param workdir optional working directory
 	 * @param commandLine optional command line to execute when starting a terminal session. If empty, machine-exec will start a default shell.
+	 * @param workdir optional working directory
 	 * @param columns the initial width of the new terminal
 	 * @param rows the initial height of the new terminal
 	 * @returns a TerminalSession object to manage the created terminal session
 	 */
-	async createTerminalSession(component: string, workdir?: string, commandLine?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
+	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
 		const createTerminalSessionCall = {
 			identifier: {
 				machineName: component
