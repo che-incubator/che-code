@@ -8,21 +8,34 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+/* eslint-disable header/header */
+
 import * as vscode from 'vscode';
 import { CheTaskProvider } from './taskProvider';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Che Commands');
 
-	registerTaskProvider(context, channel);
-}
+	const cheAPI = await getExtensionAPI('eclipse-che.api');
+	const terminalExtAPI = await getExtensionAPI('eclipse-che.terminal');
 
-function registerTaskProvider(context: vscode.ExtensionContext, channel: vscode.OutputChannel) {
-	const taskProvider = new CheTaskProvider(channel);
+	const taskProvider = new CheTaskProvider(channel, cheAPI, terminalExtAPI);
 	const disposable = vscode.tasks.registerTaskProvider('che', taskProvider);
+
 	context.subscriptions.push(disposable);
 }
 
-export function deactivate(): void {
+async function getExtensionAPI(extID: string): Promise<any> {
+	const ext = vscode.extensions.getExtension(extID);
+	if (!ext) {
+		throw Error(`Extension ${extID} is not installed.`);
+	}
+	try {
+		return await ext.activate();
+	} catch {
+		throw Error(`Failed to activate ${extID} extension.`);
+	}
+}
 
+export function deactivate(): void {
 }
