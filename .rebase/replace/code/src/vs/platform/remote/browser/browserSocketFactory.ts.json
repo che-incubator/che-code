@@ -1,7 +1,7 @@
 [
 
     {
-        "from": "${webSocketSchema}://${/:/.test(host) ? `[${host}]` : host}:${port}${path}/?${query}",
+        "from": "${webSocketSchema}://${(/:/.test(host) && !/\\\\[/.test(host)) ? `[${host}]` : host}:${port}${path}?${query}",
         "by": "${webSocketSchema}://${window.location.host}${window.location.pathname}?${query}"
     }
 ]

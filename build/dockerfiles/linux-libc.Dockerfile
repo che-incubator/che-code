@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-16
-FROM registry.access.redhat.com/ubi8/nodejs-16:1-52 as linux-libc-builder
+FROM registry.access.redhat.com/ubi8/nodejs-16:1-58 as linux-libc-builder
 
 USER root
 
