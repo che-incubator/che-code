@@ -62,7 +62,7 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 			const etag = `W/"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 			if (req.headers['if-none-match'] === etag) {
 				res.writeHead(304);
-				return res.end();
+				return void res.end();
 			}
 
 			responseHeaders['Etag'] = etag;
@@ -87,7 +87,7 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		res.writeHead(404, { 'Content-Type': 'text/plain' });
-		return res.end('Not found');
+		return void res.end('Not found');
 	}
 }
 
@@ -233,7 +233,7 @@ export class WebClientServer {
 		setResponseHeader('Content-Type');
 		res.writeHead(200, responseHeaders);
 		const buffer = await streamToBuffer(context.stream);
-		return res.end(buffer.buffer);
+		return void res.end(buffer.buffer);
 	}
 
 	/**
@@ -265,7 +265,7 @@ export class WebClientServer {
 			responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);
 
 			res.writeHead(302, responseHeaders);
-			return res.end();
+			return void res.end();
 		}
 
 		const getFirstHeader = (headerName: string) => {
@@ -337,7 +337,7 @@ export class WebClientServer {
 			data = workbenchTemplate.replace(/\{\{([^}]+)\}\}/g, (_, key) => values[key] ?? 'undefined');
 		} catch (e) {
 			res.writeHead(404, { 'Content-Type': 'text/plain' });
-			return res.end('Not found');
+			return void res.end('Not found');
 		}
 
 		const cspDirectives = [
@@ -373,7 +373,7 @@ export class WebClientServer {
 		}
 
 		res.writeHead(200, headers);
-		return res.end(data);
+		return void res.end(data);
 	}
 
 	private _getScriptCspHashes(content: string): string[] {
@@ -414,6 +414,6 @@ export class WebClientServer {
 			'Content-Type': 'text/html',
 			'Content-Security-Policy': cspDirectives
 		});
-		return res.end(data);
+		return void res.end(data);
 	}
 }
