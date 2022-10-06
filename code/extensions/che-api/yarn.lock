@@ -302,7 +302,7 @@
   resolved "https://registry.yarnpkg.com/@eclipse-che/api/-/api-7.54.0.tgz#10305df3fca96e4149a6e9d99b107f89f916d1ec"
   integrity sha512-/7zO0IVmtMsaoEY6jybejDT3fq68t+Y4pSkDGG3+nJIK1qcT89yUyKMQGUIP4xjIZBZQvCddijscPlhJWXwndg==
 
-"@eclipse-che/workspace-telemetry-client@latest":
+"@eclipse-che/workspace-telemetry-client@^0.0.1-1654006444":
   version "0.0.1-1654006444"
   resolved "https://registry.yarnpkg.com/@eclipse-che/workspace-telemetry-client/-/workspace-telemetry-client-0.0.1-1654006444.tgz#62a4a03573061a3452266392510729843e89d0b9"
   integrity sha512-WQ+zh54t/Kt83Ex9eH05w/4hmhkXAgXC6wauXt92JHhrPbox9E1CWgDVdP/T9FHdCST42qcbPEnXK3zpdgkSBg==

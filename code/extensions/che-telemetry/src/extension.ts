@@ -10,11 +10,9 @@
 import * as vscode from 'vscode';
 import { TelemetryEventService } from "./telemetry-event-service";
 
-let telemetryEventService: TelemetryEventService;
-
 export async function activate(context: vscode.ExtensionContext) {
     const telemetryService = await getTelemetryService();
-    telemetryEventService = new TelemetryEventService(telemetryService);
+    const telemetryEventService = new TelemetryEventService(telemetryService);
 
     telemetryEventService.sendEvent(
         "WORKSPACE_OPENED",

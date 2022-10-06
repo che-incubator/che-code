@@ -1,4 +1,4 @@
 {
 	"displayName": "Eclipse Che Telemetry Extension",
-	"description": "Eclipse Che Telemetry Extension"
+	"description": "Detects and sends telemetry events to a backend telemetry plugin via the Eclipse Che API built-in extension"
 }
