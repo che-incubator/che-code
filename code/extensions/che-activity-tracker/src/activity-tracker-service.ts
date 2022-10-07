@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+export type WorkspaceService = { updateWorkspaceActivity: () => any };
+
 /**
  * Receives activity updates and sends reset inactivity requests to the che-machine-exec /activity/tick endpoint.
  * To avoid duplicate requests may send requests periodically. This means
@@ -27,9 +29,9 @@ export class ActivityTrackerService {
 	// Flag which is used to check if new requests were received during timer awaiting.
 	private isNewRequest: boolean;
 
-	private workspaceService: any;
+	private workspaceService: WorkspaceService;
 
-	constructor(workspaceService: any) {
+	constructor(workspaceService: WorkspaceService) {
 		this.isTimerRunning = false;
 		this.isNewRequest = false;
 		this.workspaceService = workspaceService;

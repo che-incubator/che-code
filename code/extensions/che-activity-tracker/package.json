@@ -22,12 +22,11 @@
   },
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "yarn run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "yarn run compile && yarn run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "compile": "gulp compile-extension:che-activity-tracker",
+    "watch": "gulp watch-extension:che-activity-tracker",
+    "vscode:prepublish": "npm run compile",
+    "test": "jest",
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",

@@ -30,6 +30,7 @@ const extensionsPath = path.join(path.dirname(__dirname), 'extensions');
 // });
 const compilations = [
 	'authentication-proxy/tsconfig.json',
+	'che-activity-tracker/tsconfig.json',
 	'che-api/tsconfig.json',
 	'che-commands/tsconfig.json',
 	'che-port/tsconfig.json',
@@ -37,6 +38,7 @@ const compilations = [
 	'che-remote/tsconfig.json',
 	'che-resource-monitor/tsconfig.json',
 	'che-terminal/tsconfig.json',
+	'che-telemetry/tsconfig.json',
 	'che-github-authentication/tsconfig.json',
 	'configuration-editing/build/tsconfig.json',
 	'configuration-editing/tsconfig.json',

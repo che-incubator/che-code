@@ -36,7 +36,8 @@
     "inversify": "^6.0.1",
     "js-yaml": "^4.1.0",
     "reflect-metadata": "^0.1.13",
-    "vscode-nls": "^5.0.0"
+    "vscode-nls": "^5.0.0",
+    "@eclipse-che/workspace-telemetry-client": "^0.0.1-1654006444"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",

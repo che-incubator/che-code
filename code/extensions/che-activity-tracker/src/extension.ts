@@ -9,7 +9,7 @@
  ***********************************************************************/
 
 import * as vscode from "vscode";
-import { ActivityTrackerService } from "./activity-tracker-service";
+import { ActivityTrackerService, WorkspaceService } from "./activity-tracker-service";
 
 export async function activate(context: vscode.ExtensionContext) {
 
@@ -38,7 +38,7 @@ async function track(events: vscode.Event<any>[], context: vscode.ExtensionConte
 	});
 }
 
-async function getWorkspaceService(): Promise<any> {
+async function getWorkspaceService(): Promise<WorkspaceService> {
 	const CHE_API = 'eclipse-che.api';
 	const extensionApi = vscode.extensions.getExtension(CHE_API);
 	if (!extensionApi) {

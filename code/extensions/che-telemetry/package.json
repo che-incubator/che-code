@@ -1,0 +1,39 @@
+{
+    "name": "telemetry",
+    "displayName": "%displayName%",
+    "description": "%description%",
+    "publisher": "eclipse-che",
+    "license": "EPL-2.0",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "icon": "images/icon.png",
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "capabilities": {
+        "virtualWorkspaces": true,
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "compile": "gulp compile-extension:che-telemetry",
+        "watch": "gulp watch-extension:che-telemetry",
+        "vscode:prepublish": "npm run compile",
+        "test": "jest",
+        "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/che-incubator/che-code.git"
+    },
+    "extensionDependencies": [
+        "eclipse-che.api"
+    ]
+}
