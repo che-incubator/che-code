@@ -27,7 +27,7 @@ export function setup(logger: Logger) {
 			await app.workbench.search.waitForResultText('6 results in 3 files');
 		});
 
-		it('searches only for *.js files & checks for correct result number', async function () {
+		it.skip('searches only for *.js files & checks for correct result number', async function () { // https://github.com/microsoft/vscode/issues/161651
 			const app = this.app as Application;
 			await app.workbench.search.searchFor('body');
 			await app.workbench.search.showQueryDetails();
@@ -39,7 +39,7 @@ export function setup(logger: Logger) {
 			await app.workbench.search.hideQueryDetails();
 		});
 
-		it('dismisses result & checks for correct result number', async function () {
+		it.skip('dismisses result & checks for correct result number', async function () { // https://github.com/microsoft/vscode/issues/161651
 			const app = this.app as Application;
 			await app.workbench.search.searchFor('body');
 			await app.workbench.search.waitForResultText('6 results in 3 files');
