@@ -76,7 +76,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
 			return this.terminalExtAPI.getMachineExecPTY(component, command, expandEnvVariables(workdir));
 		});
-		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution);
+		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution, []);
 		return task;
 	}
 }
