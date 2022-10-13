@@ -94,7 +94,7 @@
             "description": "Target Container"
           }
         },
-        "when": "shellExecutionSupported"
+        "when": "customExecutionSupported"
       }
     ]
   }
