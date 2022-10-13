@@ -93,7 +93,7 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 
 	'version': { type: 'boolean', cat: 't', alias: 'v', description: localize('version', "Print version.") },
 	'verbose': { type: 'boolean', cat: 't', global: true, description: localize('verbose', "Print verbose output (implies --wait).") },
-	'log': { type: 'string', cat: 't', args: 'level', global: true, description: localize('log', "Log level to use. Default is 'info'. Allowed values are 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'.") },
+	'log': { type: 'string[]', cat: 't', args: 'level', global: true, description: localize('log', "Log level to use. Default is 'info'. Allowed values are 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'. You can also configure the log level of an extension by passing extension id and log level in the following format: '${publisher}.${name}:${logLevel}'. For example: 'vscode.csharp:trace'. Can receive one or more such entries.") },
 	'status': { type: 'boolean', alias: 's', cat: 't', description: localize('status', "Print process usage and diagnostics information.") },
 	'prof-startup': { type: 'boolean', cat: 't', description: localize('prof-startup', "Run CPU profiler during startup.") },
 	'prof-append-timers': { type: 'string' },
@@ -209,8 +209,8 @@ export function parseArgs<T>(args: string[], options: OptionDescriptions<T>, err
 	const firstArg = args.find(a => a.length > 0 && a[0] !== '-');
 
 	const alias: { [key: string]: string } = {};
-	const string: string[] = ['_'];
-	const boolean: string[] = [];
+	const stringOptions: string[] = ['_'];
+	const booleanOptions: string[] = [];
 	const globalOptions: OptionDescriptions<any> = {};
 	let command: Subcommand<any> | undefined = undefined;
 	for (const optionId in options) {
@@ -225,14 +225,14 @@ export function parseArgs<T>(args: string[], options: OptionDescriptions<T>, err
 			}
 
 			if (o.type === 'string' || o.type === 'string[]') {
-				string.push(optionId);
+				stringOptions.push(optionId);
 				if (o.deprecates) {
-					string.push(...o.deprecates);
+					stringOptions.push(...o.deprecates);
 				}
 			} else if (o.type === 'boolean') {
-				boolean.push(optionId);
+				booleanOptions.push(optionId);
 				if (o.deprecates) {
-					boolean.push(...o.deprecates);
+					booleanOptions.push(...o.deprecates);
 				}
 			}
 			if (o.global) {
@@ -255,7 +255,7 @@ export function parseArgs<T>(args: string[], options: OptionDescriptions<T>, err
 
 
 	// remove aliases to avoid confusion
-	const parsedArgs = minimist(args, { string, boolean, alias });
+	const parsedArgs = minimist(args, { string: stringOptions, boolean: booleanOptions, alias });
 
 	const cleanedArgs: any = {};
 	const remainingArgs: any = parsedArgs;
