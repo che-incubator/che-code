@@ -11,6 +11,7 @@
 	"serverLicensePrompt": "",
 	"serverApplicationName": "che-code",
 	"serverDataFolderName": ".che-code",
+	"tunnelApplicationName": "code-tunnel-oss",
 	"win32DirName": "CheCode",
 	"win32NameVersion": "CheCode",
 	"win32RegValueName": "CheCode",
