@@ -79,4 +79,4 @@ fi
 echo "Node.js dir for running VS Code: $VSCODE_NODEJS_RUNTIME_DIR"
 
 # Launch che without connection-token, security is managed by Che
-"$VSCODE_NODEJS_RUNTIME_DIR/node" out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token
+"$VSCODE_NODEJS_RUNTIME_DIR/node" out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token --default-folder ${PROJECT_SOURCE}
