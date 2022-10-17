@@ -7,10 +7,10 @@
 #
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
-FROM quay.io/eclipse/che-machine-exec:7.54.0 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.55.0 as machine-exec
 
 # https://registry.access.redhat.com/ubi8/ubi
-FROM registry.access.redhat.com/ubi8/ubi:8.6-943 AS ubi-micro-build
+FROM registry.access.redhat.com/ubi8/ubi:8.6-943.1665521450 AS ubi-micro-build
 RUN mkdir -p /mnt/rootfs
 RUN ARCH=$(uname -m) && yum install --installroot /mnt/rootfs libsecret curl make cmake gcc gcc-c++ python3 git git-core-doc openssh less wget \
                  "https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/libsecret-devel-0.18.6-1.el8.x86_64.rpm" \
