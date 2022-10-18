@@ -45,7 +45,7 @@ suite('git smoke test', function () {
 		// DO not do git init -b as ubi8 git is 2.27.0 and not support that flag
 		cp.execSync('git init', { cwd });
 		cp.execSync('git config user.name testuser', { cwd });
-		cp.execSync('git config user.email monacotools@microsoft.com', { cwd });
+		cp.execSync('git config user.email monacotools@example.com', { cwd });
 		cp.execSync('git config commit.gpgsign false', { cwd });
 		cp.execSync('git add .', { cwd });
 		cp.execSync('git commit -m "initial commit"', { cwd });
