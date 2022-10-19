@@ -11,7 +11,6 @@ exports.dirs = [
 	'extensions/che-api',
 	'extensions/che-commands',
 	'extensions/che-port',
-	'extensions/che-on-start',
 	'extensions/che-remote',
 	'extensions/che-resource-monitor',
 	'extensions/che-terminal',
