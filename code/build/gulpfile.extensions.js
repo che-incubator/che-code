@@ -35,7 +35,6 @@ const compilations = [
 	'che-api/tsconfig.json',
 	'che-commands/tsconfig.json',
 	'che-port/tsconfig.json',
-	'che-on-start/tsconfig.json',
 	'che-remote/tsconfig.json',
 	'che-resource-monitor/tsconfig.json',
 	'che-terminal/tsconfig.json',
