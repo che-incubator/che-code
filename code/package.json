@@ -1,7 +1,7 @@
 {
   "name": "che-code",
   "version": "1.73.0",
-  "distro": "8370e8ae977dad6e0eef308c33944184ee7726c4",
+  "distro": "4c6fae38e1505ef82ecaa4afc0237e3a5335c9af",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -142,7 +142,7 @@
     "css-loader": "^3.6.0",
     "cssnano": "^4.1.11",
     "debounce": "^1.0.0",
-    "deemon": "^1.4.0",
+    "deemon": "^1.7.2",
     "electron": "19.0.17",
     "eslint": "8.7.0",
     "eslint-plugin-header": "3.1.1",
