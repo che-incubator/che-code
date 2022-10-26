@@ -212,8 +212,6 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
-    elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
-      apply_package_changes_by_path "code/build/package.json"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "code/extensions/package.json"
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
