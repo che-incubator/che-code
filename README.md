@@ -147,6 +147,17 @@ For example, the `workbenchConfigFilePath` field might have the `anyFolder/myCon
 This means that the config file can be found by the path: `che-code/branding/anyFolder/myConfigFiles/workbench-config.json`
 - Currently, the [branding.sh](https://github.com/che-incubator/che-code/blob/main/branding/branding.sh) script is not run automatically when building this project. It needs to be integrated into the build process of the [downstream branded project or product](https://github.com/redhat-developer/devspaces-images/blob/devspaces-3-rhel-8/devspaces-code/build/scripts/sync.sh#L96).
 
+# Builds
+
+This repo contains several [actions](https://github.com/che-incubator/che-code/actions), including:
+* ![release latest stable](https://github.com/che-incubator/che-code/actions/workflows/release.yml/badge.svg)
+* ![upstream rebase](https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml/badge.svg)
+* ![PR publish](https://github.com/che-incubator/che-code/actions/workflows/pr-check-image-publish.yml/badge.svg)
+
+Downstream builds can be found at the link below, which is _internal to Red Hat_. Stable builds can be found by replacing the 3.x with a specific version like 3.2.  
+
+* [code_3.x](https://main-jenkins-csb-crwqe.apps.ocp-c1.prod.psi.redhat.com/job/DS_CI/job/code_3.x/)
+
 # License
 
 - [Eclipse Public License 2.0](LICENSE)
