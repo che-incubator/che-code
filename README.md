@@ -150,9 +150,8 @@ This means that the config file can be found by the path: `che-code/branding/any
 # Builds
 
 This repo contains several [actions](https://github.com/che-incubator/che-code/actions), including:
-* ![release latest stable](https://github.com/che-incubator/che-code/actions/workflows/release.yml/badge.svg)
-* ![upstream rebase](https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml/badge.svg)
-* ![PR publish](https://github.com/che-incubator/che-code/actions/workflows/pr-check-image-publish.yml/badge.svg)
+* [![release latest stable](https://github.com/che-incubator/che-code/actions/workflows/release.yml/badge.svg)](https://github.com/che-incubator/che-code/actions/workflows/release.yml)
+* [![upstream rebase](https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml/badge.svg)](https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml)
 
 Downstream builds can be found at the link below, which is _internal to Red Hat_. Stable builds can be found by replacing the 3.x with a specific version like 3.2.  
 
