@@ -1,7 +1,7 @@
 # che-code
 
 Deploy `Code-OSS` on a kubernetes cluster and connect with your Browser.
-
+  
 This repository is hosting the changes to have the `Code-OSS` running inside a Browser and connecting to a remote HTTP(s) server (instead of using Desktop mode).
 
 The terminal is aware of the running Pod. Then, you can open terminals in every container of the running pod (if the containers have shell access).
