@@ -42,7 +42,6 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine \
     && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node
 
-RUN 
 RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
