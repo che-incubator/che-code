@@ -101,7 +101,9 @@ export class K8SUnits {
     const i = Math.floor(Math.log(value) / Math.log(k));
     let computedValue = parseFloat((value / Math.pow(k, i)).toFixed(dm));
     if (i > 2) {
-      return `${computedValue * (i - 2) * 1000}m`;
+      // Take Math.floor to avoid float representation errors
+      let computedValueMillis = Math.floor(computedValue * (i - 2) * 1000)
+      return `${computedValueMillis}m`;
     } else {
       return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))}${sizes[i]}`;
     }
