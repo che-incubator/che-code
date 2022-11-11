@@ -14,14 +14,23 @@ name: Try in Web IDE
 
 on:
   pull_request_target:
-    types: [opened]
+    types: opened
 
 jobs:
   add-link:
     runs-on: ubuntu-20.04
     steps:
-      - name: Web IDE Pull Request Check
+      - name: Add DevSandbox link
         uses: redhat-actions/try-in-web-ide@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          add_comment: false
+          add_comment: true
+          add_status: false
+      - name: Add Dogfooding link
+        uses: redhat-actions/try-in-web-ide@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          add_comment: true
+          add_status: false
+          web_ide_instance: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com
+          comment_badge: https://img.shields.io/static/v1?label=Eclipse%20Che%20(nightly)&message=Dev%20cluster%20(for%20maintainers)&logo=eclipseche&color=FDB940&labelColor=525C86
