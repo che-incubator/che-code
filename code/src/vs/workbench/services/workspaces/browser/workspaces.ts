@@ -30,5 +30,5 @@ export function getSingleFolderWorkspaceIdentifier(folderUri: URI): ISingleFolde
 }
 
 function getWorkspaceId(uri: URI): string {
-	return hash(uri.toString()).toString(16);
+	return hash(window.location.href + uri.toString()).toString(16);
 }
