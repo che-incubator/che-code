@@ -2235,6 +2235,124 @@ declare namespace monaco.editor {
 	export interface ILineChange extends IChange {
 		readonly charChanges: ICharChange[] | undefined;
 	}
+
+	/**
+	 * A document diff provider computes the diff between two text models.
+	 */
+	export interface IDocumentDiffProvider {
+		/**
+		 * Computes the diff between the text models `original` and `modified`.
+		 */
+		computeDiff(original: ITextModel, modified: ITextModel, options: IDocumentDiffProviderOptions): Promise<IDocumentDiff>;
+		/**
+		 * Is fired when settings of the diff algorithm change that could alter the result of the diffing computation.
+		 * Any user of this provider should recompute the diff when this event is fired.
+		 */
+		onDidChange: IEvent<void>;
+	}
+
+	/**
+	 * Options for the diff computation.
+	 */
+	export interface IDocumentDiffProviderOptions {
+		/**
+		 * When set to true, the diff should ignore whitespace changes.i
+		 */
+		ignoreTrimWhitespace: boolean;
+		/**
+		 * A diff computation should throw if it takes longer than this value.
+		 */
+		maxComputationTimeMs: number;
+	}
+
+	/**
+	 * Represents a diff between two text models.
+	 */
+	export interface IDocumentDiff {
+		/**
+		 * If true, both text models are identical (byte-wise).
+		 */
+		readonly identical: boolean;
+		/**
+		 * If true, the diff computation timed out and the diff might not be accurate.
+		 */
+		readonly quitEarly: boolean;
+		/**
+		 * Maps all modified line ranges in the original to the corresponding line ranges in the modified text model.
+		 */
+		readonly changes: LineRangeMapping[];
+	}
+
+	/**
+	 * Maps a line range in the original text model to a line range in the modified text model.
+	 */
+	export class LineRangeMapping {
+		/**
+		 * The line range in the original text model.
+		 */
+		readonly originalRange: LineRange;
+		/**
+		 * The line range in the modified text model.
+		 */
+		readonly modifiedRange: LineRange;
+		/**
+		 * If inner changes have not been computed, this is set to undefined.
+		 * Otherwise, it represents the character-level diff in this line range.
+		 * The original range of each range mapping should be contained in the original line range (same for modified).
+		 * Must not be an empty array.
+		 */
+		readonly innerChanges: RangeMapping[] | undefined;
+		constructor(originalRange: LineRange, modifiedRange: LineRange, innerChanges: RangeMapping[] | undefined);
+		toString(): string;
+	}
+
+	/**
+	 * A range of lines (1-based).
+	 */
+	export class LineRange {
+		/**
+		 * The start line number.
+		 */
+		readonly startLineNumber: number;
+		/**
+		 * The end line number (exclusive).
+		 */
+		readonly endLineNumberExclusive: number;
+		constructor(startLineNumber: number, endLineNumberExclusive: number);
+		/**
+		 * Indicates if this line range is empty.
+		 */
+		get isEmpty(): boolean;
+		/**
+		 * Moves this line range by the given offset of line numbers.
+		 */
+		delta(offset: number): LineRange;
+		/**
+		 * The number of lines this line range spans.
+		 */
+		get length(): number;
+		/**
+		 * Creates a line range that combines this and the given line range.
+		 */
+		join(other: LineRange): LineRange;
+		toString(): string;
+	}
+
+	/**
+	 * Maps a range in the original text model to a range in the modified text model.
+	 */
+	export class RangeMapping {
+		/**
+		 * The original range.
+		 */
+		readonly originalRange: Range;
+		/**
+		 * The modified range.
+		 */
+		readonly modifiedRange: Range;
+		constructor(originalRange: Range, modifiedRange: Range);
+		toString(): string;
+	}
 	export interface IDimension {
 		width: number;
 		height: number;
@@ -3155,6 +3273,12 @@ declare namespace monaco.editor {
 		 */
 		wordWrapBreakAfterCharacters?: string;
 		/**
+		 * Sets whether line breaks appear wherever the text would otherwise overflow its content box.
+		 * When wordBreak = 'normal', Use the default line break rule.
+		 * When wordBreak = 'keepAll', Word breaks should not be used for Chinese/Japanese/Korean (CJK) text. Non-CJK text behavior is the same as for normal.
+		 */
+		wordBreak?: 'normal' | 'keepAll';
+		/**
 		 * Performance guard: Stop rendering a line after x characters.
 		 * Defaults to 10000.
 		 * Use -1 to never stop rendering
@@ -3217,6 +3341,10 @@ declare namespace monaco.editor {
 		 * Defaults to 'spread'.
 		 */
 		multiCursorPaste?: 'spread' | 'full';
+		/**
+		 * Controls the max number of text cursors that can be in an active editor at once.
+		 */
+		multiCursorLimit?: number;
 		/**
 		 * Configure the editor's accessibility support.
 		 * Defaults to 'auto'. It is best to leave this to 'auto'.
@@ -3448,7 +3576,7 @@ declare namespace monaco.editor {
 		/**
 		 * The font family
 		 */
-		fontFamily?: string;
+		fontFamily?: string | string[];
 		/**
 		 * The font weight
 		 */
@@ -3574,7 +3702,7 @@ declare namespace monaco.editor {
 		/**
 		 * Diff Algorithm
 		*/
-		diffAlgorithm?: 'smart' | 'experimental';
+		diffAlgorithm?: 'smart' | 'experimental' | IDocumentDiffProvider;
 	}
 
 	/**
@@ -4498,68 +4626,70 @@ declare namespace monaco.editor {
 		multiCursorMergeOverlapping = 70,
 		multiCursorModifier = 71,
 		multiCursorPaste = 72,
-		occurrencesHighlight = 73,
-		overviewRulerBorder = 74,
-		overviewRulerLanes = 75,
-		padding = 76,
-		parameterHints = 77,
-		peekWidgetDefaultFocus = 78,
-		definitionLinkOpensInPeek = 79,
-		quickSuggestions = 80,
-		quickSuggestionsDelay = 81,
-		readOnly = 82,
-		renameOnType = 83,
-		renderControlCharacters = 84,
-		renderFinalNewline = 85,
-		renderLineHighlight = 86,
-		renderLineHighlightOnlyWhenFocus = 87,
-		renderValidationDecorations = 88,
-		renderWhitespace = 89,
-		revealHorizontalRightPadding = 90,
-		roundedSelection = 91,
-		rulers = 92,
-		scrollbar = 93,
-		scrollBeyondLastColumn = 94,
-		scrollBeyondLastLine = 95,
-		scrollPredominantAxis = 96,
-		selectionClipboard = 97,
-		selectionHighlight = 98,
-		selectOnLineNumbers = 99,
-		showFoldingControls = 100,
-		showUnused = 101,
-		snippetSuggestions = 102,
-		smartSelect = 103,
-		smoothScrolling = 104,
-		stickyScroll = 105,
-		stickyTabStops = 106,
-		stopRenderingLineAfter = 107,
-		suggest = 108,
-		suggestFontSize = 109,
-		suggestLineHeight = 110,
-		suggestOnTriggerCharacters = 111,
-		suggestSelection = 112,
-		tabCompletion = 113,
-		tabIndex = 114,
-		unicodeHighlighting = 115,
-		unusualLineTerminators = 116,
-		useShadowDOM = 117,
-		useTabStops = 118,
-		wordSeparators = 119,
-		wordWrap = 120,
-		wordWrapBreakAfterCharacters = 121,
-		wordWrapBreakBeforeCharacters = 122,
-		wordWrapColumn = 123,
-		wordWrapOverride1 = 124,
-		wordWrapOverride2 = 125,
-		wrappingIndent = 126,
-		wrappingStrategy = 127,
-		showDeprecated = 128,
-		inlayHints = 129,
-		editorClassName = 130,
-		pixelRatio = 131,
-		tabFocusMode = 132,
-		layoutInfo = 133,
-		wrappingInfo = 134
+		multiCursorLimit = 73,
+		occurrencesHighlight = 74,
+		overviewRulerBorder = 75,
+		overviewRulerLanes = 76,
+		padding = 77,
+		parameterHints = 78,
+		peekWidgetDefaultFocus = 79,
+		definitionLinkOpensInPeek = 80,
+		quickSuggestions = 81,
+		quickSuggestionsDelay = 82,
+		readOnly = 83,
+		renameOnType = 84,
+		renderControlCharacters = 85,
+		renderFinalNewline = 86,
+		renderLineHighlight = 87,
+		renderLineHighlightOnlyWhenFocus = 88,
+		renderValidationDecorations = 89,
+		renderWhitespace = 90,
+		revealHorizontalRightPadding = 91,
+		roundedSelection = 92,
+		rulers = 93,
+		scrollbar = 94,
+		scrollBeyondLastColumn = 95,
+		scrollBeyondLastLine = 96,
+		scrollPredominantAxis = 97,
+		selectionClipboard = 98,
+		selectionHighlight = 99,
+		selectOnLineNumbers = 100,
+		showFoldingControls = 101,
+		showUnused = 102,
+		snippetSuggestions = 103,
+		smartSelect = 104,
+		smoothScrolling = 105,
+		stickyScroll = 106,
+		stickyTabStops = 107,
+		stopRenderingLineAfter = 108,
+		suggest = 109,
+		suggestFontSize = 110,
+		suggestLineHeight = 111,
+		suggestOnTriggerCharacters = 112,
+		suggestSelection = 113,
+		tabCompletion = 114,
+		tabIndex = 115,
+		unicodeHighlighting = 116,
+		unusualLineTerminators = 117,
+		useShadowDOM = 118,
+		useTabStops = 119,
+		wordBreak = 120,
+		wordSeparators = 121,
+		wordWrap = 122,
+		wordWrapBreakAfterCharacters = 123,
+		wordWrapBreakBeforeCharacters = 124,
+		wordWrapColumn = 125,
+		wordWrapOverride1 = 126,
+		wordWrapOverride2 = 127,
+		wrappingIndent = 128,
+		wrappingStrategy = 129,
+		showDeprecated = 130,
+		inlayHints = 131,
+		editorClassName = 132,
+		pixelRatio = 133,
+		tabFocusMode = 134,
+		layoutInfo = 135,
+		wrappingInfo = 136
 	}
 
 	export const EditorOptions: {
@@ -4637,6 +4767,7 @@ declare namespace monaco.editor {
 		multiCursorMergeOverlapping: IEditorOption<EditorOption.multiCursorMergeOverlapping, boolean>;
 		multiCursorModifier: IEditorOption<EditorOption.multiCursorModifier, 'altKey' | 'metaKey' | 'ctrlKey'>;
 		multiCursorPaste: IEditorOption<EditorOption.multiCursorPaste, 'spread' | 'full'>;
+		multiCursorLimit: IEditorOption<EditorOption.multiCursorLimit, number>;
 		occurrencesHighlight: IEditorOption<EditorOption.occurrencesHighlight, boolean>;
 		overviewRulerBorder: IEditorOption<EditorOption.overviewRulerBorder, boolean>;
 		overviewRulerLanes: IEditorOption<EditorOption.overviewRulerLanes, number>;
@@ -4684,6 +4815,7 @@ declare namespace monaco.editor {
 		unusualLineTerminators: IEditorOption<EditorOption.unusualLineTerminators, 'auto' | 'off' | 'prompt'>;
 		useShadowDOM: IEditorOption<EditorOption.useShadowDOM, boolean>;
 		useTabStops: IEditorOption<EditorOption.useTabStops, boolean>;
+		wordBreak: IEditorOption<EditorOption.wordBreak, 'normal' | 'keepAll'>;
 		wordSeparators: IEditorOption<EditorOption.wordSeparators, string>;
 		wordWrap: IEditorOption<EditorOption.wordWrap, 'on' | 'off' | 'wordWrapColumn' | 'bounded'>;
 		wordWrapBreakAfterCharacters: IEditorOption<EditorOption.wordWrapBreakAfterCharacters, string>;
