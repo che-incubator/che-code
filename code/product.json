@@ -12,16 +12,6 @@
 	"serverApplicationName": "che-code",
 	"serverDataFolderName": ".che-code",
 	"tunnelApplicationName": "code-tunnel-oss",
-	"tunnelApplicationConfig": {
-		"authenticationProviders": {
-			"github": {
-				"scopes": [
-					"user:email",
-					"read:org"
-				]
-			}
-		}
-	},
 	"win32DirName": "CheCode",
 	"win32NameVersion": "CheCode",
 	"win32RegValueName": "CheCode",
