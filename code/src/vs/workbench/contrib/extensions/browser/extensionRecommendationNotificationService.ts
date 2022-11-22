@@ -147,7 +147,7 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 	}
 
 	hasToInstallRecommendedExtensionsAutomatically(): boolean {
-		return this.configurationService.getValue('extensionsAutoInstallRecommendations');
+		return this.configurationService.getValue('extensions.autoInstallRecommendations');
 	}
 
 	async promptImportantExtensionsInstallNotification(extensionIds: string[], message: string, searchValue: string, source: RecommendationSource): Promise<RecommendationsNotificationResult> {
