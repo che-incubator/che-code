@@ -146,6 +146,10 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 		return config.ignoreRecommendations || !!config.showRecommendationsOnlyOnDemand;
 	}
 
+	hasToInstallRecommendedExtensionsAutomatically(): boolean {
+		return this.configurationService.getValue('extensionsAutoInstallRecommendations');
+	}
+
 	async promptImportantExtensionsInstallNotification(extensionIds: string[], message: string, searchValue: string, source: RecommendationSource): Promise<RecommendationsNotificationResult> {
 		const ignoredRecommendations = [...this.extensionIgnoredRecommendationsService.ignoredRecommendations, ...this.ignoredRecommendations];
 		extensionIds = extensionIds.filter(id => !ignoredRecommendations.includes(id));
@@ -245,6 +249,10 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 	private showRecommendationsNotification(extensions: IExtension[], message: string, searchValue: string, source: RecommendationSource,
 		{ onDidInstallRecommendedExtensions, onDidShowRecommendedExtensions, onDidCancelRecommendedExtensions, onDidNeverShowRecommendedExtensionsAgain }: RecommendationsNotificationActions): CancelablePromise<RecommendationsNotificationResult> {
 		return createCancelablePromise<RecommendationsNotificationResult>(async token => {
+			if (this.hasToInstallRecommendedExtensionsAutomatically()) {
+				this.extensionManagementService.installExtensions(extensions.map(e => e.gallery!))
+				return RecommendationsNotificationResult.Accepted;
+			}
 			let accepted = false;
 			const choices: (IPromptChoice | IPromptChoiceWithMenu)[] = [];
 			const installExtensions = async (isMachineScoped?: boolean) => {
