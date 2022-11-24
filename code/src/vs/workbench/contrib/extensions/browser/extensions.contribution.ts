@@ -163,6 +163,11 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 				default: false,
 				tags: ['usesOnlineServices']
 			},
+			'extensions.autoInstallRecommendations': {
+				type: 'boolean',
+				description: localize('extensionsAutoInstallRecommendations', "When enabled, the extension recommendations will be installed automatically."),
+				default: true
+			},
 			'extensions.closeExtensionDetailsOnViewChange': {
 				type: 'boolean',
 				description: localize('extensionsCloseExtensionDetailsOnViewChange', "When enabled, editors with extension details will be automatically closed upon navigating away from the Extensions View."),
