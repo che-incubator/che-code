@@ -30,7 +30,7 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { workbenchConfigurationNodeBase } from 'vs/workbench/common/configuration';
 import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
-import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
+import { IQuickInputButton, IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { ExtensionsRegistry } from 'vs/workbench/services/extensions/common/extensionsRegistry';
 import { ContextKeyExpr, ContextKeyExpression, IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ICommandService } from 'vs/platform/commands/common/commands';
@@ -57,6 +57,8 @@ import { sha1Hex } from 'vs/base/browser/hash';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IActivityService, NumberBadge } from 'vs/workbench/services/activity/common/activity';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { ILocalizedString } from 'vs/platform/action/common/action';
+import { Codicon } from 'vs/base/common/codicons';
 
 registerSingleton(IEditSessionsLogService, EditSessionsLogService, InstantiationType.Delayed);
 registerSingleton(IEditSessionsStorageService, EditSessionsWorkbenchService, InstantiationType.Delayed);
@@ -289,7 +291,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 				super(continueWorkingOnCommand);
 			}
 
-			async run(accessor: ServicesAccessor, workspaceUri: URI | undefined): Promise<void> {
+			async run(accessor: ServicesAccessor, workspaceUri: URI | undefined, destination: string | undefined): Promise<void> {
 				type ContinueEditSessionEvent = {};
 				type ContinueEditSessionClassification = {
 					owner: 'joyceerhl'; comment: 'Reporting when the continue edit session action is run.';
@@ -298,12 +300,11 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 				// First ask the user to pick a destination, if necessary
 				let uri: URI | 'noDestinationUri' | undefined = workspaceUri;
-				let destination;
-				if (!uri) {
-					destination = await that.pickContinueEditSessionDestination();
-				}
 				if (!destination && !uri) {
-					return;
+					destination = await that.pickContinueEditSessionDestination();
+					if (!destination) {
+						return;
+					}
 				}
 
 				// Determine if we need to store an edit session, asking for edit session auth if necessary
@@ -730,16 +731,40 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 					const icon = command.icon;
 					const title = typeof command.title === 'string' ? command.title : command.title.value;
+					const when = ContextKeyExpr.deserialize(contribution.when);
 
 					continueEditSessionOptions.push(new ContinueEditSessionItem(
 						ThemeIcon.isThemeIcon(icon) ? `$(${icon.id}) ${title}` : title,
 						command.id,
 						command.source,
-						ContextKeyExpr.deserialize(contribution.when)
+						when,
+						contribution.documentation
 					));
+
+					if (contribution.qualifiedName) {
+						this.generateStandaloneOptionCommand(command.id, contribution.qualifiedName, command.category, when);
+					}
 				}
 			}
 			this.continueEditSessionOptions = continueEditSessionOptions;
+		});
+	}
+
+	private generateStandaloneOptionCommand(commandId: string, qualifiedName: string, category: string | ILocalizedString | undefined, when: ContextKeyExpression | undefined) {
+		registerAction2(class StandaloneContinueOnOption extends Action2 {
+			constructor() {
+				super({
+					id: `${continueWorkingOnCommand.id}.${commandId}`,
+					title: { original: qualifiedName, value: qualifiedName },
+					category: typeof category === 'string' ? { original: category, value: category } : category,
+					precondition: when,
+					f1: true
+				});
+			}
+
+			async run(accessor: ServicesAccessor): Promise<void> {
+				return accessor.get(ICommandService).executeCommand(continueWorkingOnCommand.id, undefined, commandId);
+			}
 		});
 	}
 
@@ -787,6 +812,13 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			});
 
 			quickPick.show();
+
+			quickPick.onDidTriggerItemButton(async (e) => {
+				if (e.item.description !== undefined) {
+					const uri = URI.isUri(e.item.description) ? URI.parse(e.item.description) : await this.commandService.executeCommand(e.item.description);
+					void this.openerService.open(uri, { openExternal: true });
+				}
+			});
 		});
 
 		quickPick.dispose();
@@ -824,19 +856,32 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 	}
 }
 
+const infoButtonClass = ThemeIcon.asClassName(Codicon.info);
 class ContinueEditSessionItem implements IQuickPickItem {
+	public readonly buttons: IQuickInputButton[] | undefined;
+
 	constructor(
 		public readonly label: string,
 		public readonly command: string,
 		public readonly description?: string,
 		public readonly when?: ContextKeyExpression,
-	) { }
+		documentation?: string,
+	) {
+		if (documentation !== undefined) {
+			this.buttons = [{
+				iconClass: infoButtonClass,
+				tooltip: localize('learnMoreTooltip', 'Learn More'),
+			}];
+		}
+	}
 }
 
 interface ICommand {
 	command: string;
 	group: string;
 	when: string;
+	documentation?: string;
+	qualifiedName?: string;
 }
 
 const continueEditSessionExtPoint = ExtensionsRegistry.registerExtensionPoint<ICommand[]>({
@@ -853,6 +898,14 @@ const continueEditSessionExtPoint = ExtensionsRegistry.registerExtensionPoint<IC
 				},
 				group: {
 					description: localize('continueEditSessionExtPoint.group', 'Group into which this item belongs.'),
+					type: 'string'
+				},
+				qualifiedName: {
+					description: localize('continueEditSessionExtPoint.qualifiedName', 'A fully qualified name for this item which is used for display in menus.'),
+					type: 'string'
+				},
+				description: {
+					description: localize('continueEditSessionExtPoint.description', "The url, or a command that returns the url, to the option's documentation page."),
 					type: 'string'
 				},
 				when: {
