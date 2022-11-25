@@ -330,8 +330,6 @@ inline:
 
 2\. Check that the configured UI elements are correctly branded in Visual Studio Code - Open Source in the workspace.
 
----
-
 </details>
 
 <!-- FYI: https://github.com/redhat-developer/devspaces-images/tree/devspaces-3-rhel-8/devspaces-dashboard#branding -->
