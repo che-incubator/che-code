@@ -112,12 +112,10 @@ Here are some examples of the UI elements in Visual Studio Code - Open Source th
 * The tab icon for the Get Started page
 * The application name in the **About** dialog
 
-
 ### Prerequisites
 
 * Bash
 * `docker`
-
 
 ### Procedure
 
@@ -131,7 +129,7 @@ Here are some examples of the UI elements in Visual Studio Code - Open Source th
 
 The following example shows all of the properties that you can customize by using this file:
 
-```
+```json
 {
     "nameShort": "Branded IDE",
     "nameLong": "Branded Instance of Eclipse Che with Branded Microsoft Visual Studio Code - Open Source IDE",
@@ -186,7 +184,7 @@ The following example shows all of the properties that you can customize by usin
 
 *Example. `/branding/workbench-config.json`*
 
-```
+```json
 {
 	"windowIndicator": {
 		"label": "$(eclipse-che) Eclipse Che",
@@ -213,7 +211,7 @@ The following example shows all of the properties that you can customize by usin
 
 *Example. `/branding/css/codicon.css`*
 
-```
+```css
 span.codicon.codicon-eclipse-che  {
 	background-image: url(./che/icon.svg);
 	width: 13px;
@@ -246,7 +244,7 @@ $ docker push <username>/vs-code-open-source:next
 
 *Example. `/che-editor.yaml` for the branded Visual Studio Code - Open Source*
 
-```
+```yaml
 inline:
   schemaVersion: 2.1.0
   metadata:
@@ -322,7 +320,6 @@ inline:
 ```
 
 :grey_exclamation: In this example, `quay.io/username/vs-code-open-source:next` specifies the container image of a branded Visual Studio Code - Open Source that will be pulled at workspace creation.
-
 
 ### Verification
 
