@@ -432,7 +432,7 @@ export class Model implements IRemoteSourcePublisherRegistry, IPostCommitCommand
 			// Handle unsafe repository
 			const match = /^fatal: detected dubious ownership in repository at \'([^']+)\'$/m.exec(ex.stderr);
 			if (match && match.length === 2) {
-				const unsafeRepositoryPath = match[1];
+				const unsafeRepositoryPath = path.normalize(match[1]);
 				this.logger.trace(`Unsafe repository: ${unsafeRepositoryPath}`);
 
 				// If the unsafe repository is opened after the initial repository scan, and we cannot use the welcome view
@@ -780,8 +780,8 @@ export class Model implements IRemoteSourcePublisherRegistry, IPostCommitCommand
 		const unsafeRepositoryPathLabels = unsafeRepositoryPaths.sort().map(m => `"${m}"`).join(', ');
 
 		const message = unsafeRepositoryPaths.length === 1 ?
-			l10n.t('The git repository in the following folder has been detected as potentially unsafe as the folder is owned by someone else other than the current user: {0}. Do you want to open the repository?', unsafeRepositoryPathLabels) :
-			l10n.t('The git repositories in the following folders have been detected as potentially unsafe as the folder is owned by someone else other than the current user: {0}. Do you want to open the repositories?', unsafeRepositoryPathLabels);
+			l10n.t('The git repository in the following folder is potentially unsafe as the folder is owned by someone other than the current user: {0}. Do you want to open the repository?', unsafeRepositoryPathLabels) :
+			l10n.t('The git repositories in the following folders are potentially unsafe as the folders are owned by someone other than the current user: {0}. Do you want to open the repositories?', unsafeRepositoryPathLabels);
 
 		const openRepository = unsafeRepositoryPaths.length === 1 ? l10n.t('Open Repository') : l10n.t('Open Repositories');
 		const learnMore = l10n.t('Learn More');
