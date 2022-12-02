@@ -41,6 +41,22 @@ jobs:
       - name: rebase
         run: |
           ./rebase.sh
+      - name: Create an issue
+        if: failure()
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/fix_auto-rebase_issue_template.md
+      - name: Disable the Workflow
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            /repos/azatsarynnyy/che-editor-test/actions/workflows/test.yaml/disable
       - name: Validate tests on libc image
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc.Dockerfile .
@@ -48,5 +64,4 @@ jobs:
         run: |
           set -e
           git push origin main
-
 
