@@ -56,7 +56,7 @@ jobs:
           gh api \
             --method PUT \
             -H "Accept: application/vnd.github+json" \
-            /repos/azatsarynnyy/che-editor-test/actions/workflows/test.yaml/disable
+            /repos/che-incubator/che-code/actions/workflows/rebase-insiders.yml/disable
       - name: Validate tests on libc image
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc.Dockerfile .
@@ -64,4 +64,5 @@ jobs:
         run: |
           set -e
           git push origin main
+
 
