@@ -187,8 +187,8 @@ The following example shows all of the properties that you can customize by usin
 ```json
 {
 	"windowIndicator": {
-		"label": "$(eclipse-che) Eclipse Che",
-		"tooltip": "Eclipse Che"
+		"label": "$(eclipse-che) Branded IDE",
+		"tooltip": "Branded IDE"
 	},
 	"configurationDefaults": {
 		"workbench.colorTheme": "Dark",
