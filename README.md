@@ -207,6 +207,8 @@ The following example shows all of the properties that you can customize by usin
 }
 ```
 
+`eclipse-che` in `"label": "$(eclipse-che) Eclipse Che"` is from `span.codicon.codicon-eclipse-che` in `/branding/css/codicon.css` in the next step.
+
 5\. Create a `/branding/css/codicon.css` file with custom values.
 
 *Example. `/branding/css/codicon.css`*
