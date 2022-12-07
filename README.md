@@ -106,10 +106,10 @@ Here are some examples of the UI elements in Visual Studio Code - Open Source th
 
 * Browser tab title and icon
 * The icon for the empty editor area when no editor is open
-* The Status Bar commands
-* The Status Bar icon
-* The Get Started page
-* The tab icon for the Get Started page
+* The **Status Bar** commands
+* The **Status Bar** icon
+* The **Get Started** page
+* The tab icon for the **Get Started** page
 * The application name in the **About** dialog
 
 ### Prerequisites
@@ -235,7 +235,7 @@ $ docker build -f build/dockerfiles/linux-libc.Dockerfile -t linux-libc-amd64 .
 
 $ export DOCKER_BUILDKIT=1
 
-$ docker build -f build/dockerfiles/assembly.Dockerfile -t vs-code-open-source .
+$ docker build -f build/dockerfiles/assembly.Dockerfile -t vs-code-open-source:next .
 
 $ docker push <username>/vs-code-open-source:next
 ```
@@ -308,7 +308,7 @@ inline:
       volume: {}
     - name: che-code-injector
       container:
-        image: quay.io/username/vs-code-open-source:next <1>
+        image: quay.io/username/vs-code-open-source:next
         command: ["/entrypoint-init-container.sh"]
         volumeMounts:
           - name: checode
