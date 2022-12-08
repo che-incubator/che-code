@@ -310,7 +310,7 @@ inline:
       volume: {}
     - name: che-code-injector
       container:
-        image: quay.io/username/vs-code-open-source:next
+        image: quay.io/branding-organization/vs-code-open-source:next
         command: ["/entrypoint-init-container.sh"]
         volumeMounts:
           - name: checode
