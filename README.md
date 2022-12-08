@@ -54,7 +54,7 @@ Add the `Code-OSS` remote by using for example the following command:
 $ git remote add upstream-code https://github.com/microsoft/vscode
 ```
 
-#### Pulling changes from the remote Code
+#### Pulling changes from upstream https://github.com/microsoft/vscode
 
 For a release branch:
 
@@ -321,7 +321,7 @@ inline:
         cpuRequest: 30m
 ```
 
-:grey_exclamation: In this example, `quay.io/username/vs-code-open-source:next` specifies the container image of a branded Visual Studio Code - Open Source that will be pulled at workspace creation.
+:grey_exclamation: In this example, `quay.io/branding-organization/vs-code-open-source:next` specifies the container image of a branded Visual Studio Code - Open Source IDE that will be pulled at workspace creation.
 
 ### Verification
 
