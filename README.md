@@ -239,7 +239,7 @@ $ export DOCKER_BUILDKIT=1
 
 $ docker build -f build/dockerfiles/assembly.Dockerfile -t vs-code-open-source:next .
 
-$ docker push <username>/vs-code-open-source:next
+$ docker push <branding-organization>/vs-code-open-source:next
 ```
 
 8\. Create a `/.che/che-editor.yaml` file in the remote repository that you intend to clone into workspaces. This file must specify the container image of your customized Visual Studio Code - Open Source that is to be pulled for new workspaces.
