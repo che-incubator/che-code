@@ -1,7 +1,7 @@
 ---
 title: Che-Code automatic rebase against upstream VS Code is failed
 assignees: azatsarynnyy
-labels: area/editor/che-code, kind/task, severity/P1, sprint/current, team/editors
+labels: area/editor/che-code, kind/task, severity/P1, sprint/current
 
 ---
 
