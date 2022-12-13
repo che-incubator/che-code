@@ -116,10 +116,8 @@
 		"statusBar.debuggingForeground": "#000000",
 		"statusBar.focusBorder": "#005FB8",
 		"statusBar.noFolderBackground": "#f8f8f8",
-		"statusBarItem.activeBackground": "#ffffff",
 		"statusBarItem.errorBackground": "#c72e0f",
 		"statusBarItem.focusBorder": "#005FB8",
-		"statusBarItem.hoverBackground": "#c9d1d914",
 		"statusBarItem.prominentBackground": "#6e768166",
 		"statusBarItem.remoteBackground": "#005FB8",
 		"statusBarItem.remoteForeground": "#ffffff",
@@ -150,5 +148,6 @@
 		"titleBar.inactiveBackground": "#f8f8f8",
 		"titleBar.inactiveForeground": "#8b949e",
 		"welcomePage.tileBackground": "#f3f3f3",
+		"wdgetBorder": "#0000001a",
 	},
 }
