@@ -1457,7 +1457,13 @@ export class Repository implements Disposable {
 				});
 
 				await this.repository.clean(toClean);
-				await this.repository.checkout('', toCheckout);
+				try {
+					await this.repository.checkout('', toCheckout);
+				} catch (err) {
+					if (err.gitErrorCode !== GitErrorCodes.BranchNotYetBorn) {
+						throw err;
+					}
+				}
 				await this.repository.updateSubmodules(submodulesToUpdate);
 
 				this.closeDiffEditors([], [...toClean, ...toCheckout]);
@@ -1908,7 +1914,7 @@ export class Repository implements Disposable {
 			...includeUntracked ? this.untrackedGroup.resourceStates.map(r => r.resourceUri.fsPath) : []];
 
 		return await this.run(OperationKind.Stash, async () => {
-			this.repository.createStash(message, includeUntracked);
+			await this.repository.createStash(message, includeUntracked);
 			this.closeDiffEditors(indexResources, workingGroupResources);
 		});
 	}
