@@ -1603,7 +1603,7 @@ class ExtensionStorageCleaner implements IWorkbenchContribution {
 
 const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
 workbenchRegistry.registerWorkbenchContribution(ExtensionsContributions, LifecyclePhase.Restored);
-workbenchRegistry.registerWorkbenchContribution(StatusUpdater, LifecyclePhase.Restored);
+workbenchRegistry.registerWorkbenchContribution(StatusUpdater, LifecyclePhase.Eventually);
 workbenchRegistry.registerWorkbenchContribution(MaliciousExtensionChecker, LifecyclePhase.Eventually);
 workbenchRegistry.registerWorkbenchContribution(KeymapExtensions, LifecyclePhase.Restored);
 workbenchRegistry.registerWorkbenchContribution(ExtensionsViewletViewsContribution, LifecyclePhase.Restored);
