@@ -55,6 +55,10 @@ import { getRemoteName } from 'vs/platform/remote/common/remoteHosts';
 import { IActionViewItem } from 'vs/base/browser/ui/actionbar/actionbar';
 import { connectionHealthToString } from 'vs/base/parts/ipc/common/ipc.net';
 import { getVirtualWorkspaceLocation } from 'vs/platform/workspace/common/virtualWorkspace';
+import { IRequestService } from 'vs/platform/request/common/request';
+import { CheDisconnectionHandler } from 'vs/workbench/contrib/remote/browser/che/remote';
+import { INotificationService } from 'vs/platform/notification/common/notification';
+import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
 
 interface HelpInformation {
 	extensionDescription: IExtensionDescription;
@@ -739,10 +743,14 @@ const DISCONNECT_PROMPT_TIME = 40 * 1000; // 40 seconds
 export class RemoteAgentConnectionStatusListener extends Disposable implements IWorkbenchContribution {
 
 	private _reloadWindowShown: boolean = false;
+	private cheDisconnectionHandler: CheDisconnectionHandler;
 
 	constructor(
 		@IRemoteAgentService remoteAgentService: IRemoteAgentService,
 		@IProgressService progressService: IProgressService,
+		@IRequestService requestService: IRequestService,
+		@INotificationService notificationService: INotificationService,
+		@IEnvironmentVariableService environmentVariableService: IEnvironmentVariableService,
 		@IDialogService dialogService: IDialogService,
 		@ICommandService commandService: ICommandService,
 		@IQuickInputService quickInputService: IQuickInputService,
@@ -751,6 +759,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 		@ITelemetryService telemetryService: ITelemetryService
 	) {
 		super();
+		this.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService);
 		const connection = remoteAgentService.getConnection();
 		if (connection) {
 			let quickInputVisible = false;
@@ -850,6 +859,11 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 				}
 				switch (e.type) {
 					case PersistentConnectionEventType.ConnectionLost:
+						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
+							this.cheDisconnectionHandler.handle(e.type);
+							break;
+						}
+
 						reconnectionToken = e.reconnectionToken;
 						lastIncomingDataTime = Date.now() - e.millisSinceLastIncomingData;
 						reconnectionAttempts = 0;
@@ -878,6 +892,11 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionWait:
+						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
+							this.cheDisconnectionHandler.handle(e.type);
+							break;
+						}
+
 						if (visibleProgress) {
 							reconnectWaitEvent = e;
 							visibleProgress = showProgress(null, [reconnectButton, reloadButton]);
@@ -886,6 +905,11 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionRunning:
+						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
+							this.cheDisconnectionHandler.handle(e.type);
+							break;
+						}
+
 						reconnectionToken = e.reconnectionToken;
 						lastIncomingDataTime = Date.now() - e.millisSinceLastIncomingData;
 						reconnectionAttempts = e.attempt;
@@ -927,6 +951,11 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionPermanentFailure:
+						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
+							this.cheDisconnectionHandler.handle(e.type);
+							break;
+						}
+
 						reconnectionToken = e.reconnectionToken;
 						lastIncomingDataTime = Date.now() - e.millisSinceLastIncomingData;
 						reconnectionAttempts = e.attempt;

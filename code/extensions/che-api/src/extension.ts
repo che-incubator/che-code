@@ -62,5 +62,14 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
         },
     };
 
+	const k8sDevWorkspaceEnvVariables = container.get(K8sDevWorkspaceEnvVariables);
+	const dashboardUrl = k8sDevWorkspaceEnvVariables.getDashboardURL();
+	const workspaceNamespace = k8sDevWorkspaceEnvVariables.getWorkspaceNamespace();
+	const workspaceName = k8sDevWorkspaceEnvVariables.getWorkspaceName();
+	
+	_extensionContext.environmentVariableCollection.append('DASHBOARD_URL', dashboardUrl);
+	_extensionContext.environmentVariableCollection.append('WORKSPACE_NAME', workspaceName);
+	_extensionContext.environmentVariableCollection.append('WORKSPACE_NAMESPACE', workspaceNamespace);
+
     return api;
 }
