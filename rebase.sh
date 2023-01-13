@@ -197,7 +197,19 @@ apply_code_vs_server_web_client_server_changes() {
   git add code/src/vs/server/node/webClientServer.ts > /dev/null 2>&1
 }
 
-
+# Apply changes on code/src/vs/workbench/contrib/remote/browser/remote.ts file
+apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/workbench/contrib/remote/browser/remote.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/workbench/contrib/remote/browser/remote.ts
+  
+  # resolve the change
+  git add code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
+}
 
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
@@ -220,6 +232,8 @@ resolve_conflicts() {
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
       apply_code_vs_server_web_client_server_changes
+	elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
+      apply_code_vs_workbench_contrib_remote_browser_remote_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1

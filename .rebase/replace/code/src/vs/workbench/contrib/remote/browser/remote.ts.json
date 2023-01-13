@@ -1,0 +1,34 @@
+[
+    {
+        "from": "import { getVirtualWorkspaceLocation } from 'vs/platform/workspace/common/virtualWorkspace';",
+        "by": "import { getVirtualWorkspaceLocation } from 'vs/platform/workspace/common/virtualWorkspace';\\\nimport { IRequestService } from 'vs/platform/request/common/request';\\\nimport { CheDisconnectionHandler } from 'vs/workbench/contrib/remote/browser/che/remote';\\\nimport { INotificationService } from 'vs/platform/notification/common/notification';\\\nimport { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';"
+    },
+    {
+        "from": "private _reloadWindowShown: boolean = false;",
+        "by": "private _reloadWindowShown: boolean = false;\\\n\\\tprivate cheDisconnectionHandler: CheDisconnectionHandler;"
+    },
+    {
+        "from": "\\@IProgressService progressService: IProgressService,",
+        "by": "\\@IProgressService progressService: IProgressService,\\\n\\\t\\\t\\@IRequestService requestService: IRequestService,\\\n\\\t\\\t\\@INotificationService notificationService: INotificationService,\\\n\\\t\\\t\\@IEnvironmentVariableService environmentVariableService: IEnvironmentVariableService,"
+    },
+	{
+		"from": "super();",
+		"by": "super();\\\n\\\t\\\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService);"
+	},
+	{
+		"from": "case PersistentConnectionEventType.ConnectionLost:",
+		"by": "case PersistentConnectionEventType.ConnectionLost:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+	},
+	{
+		"from": "case PersistentConnectionEventType.ReconnectionWait:",
+		"by": "case PersistentConnectionEventType.ReconnectionWait:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+	},
+	{
+		"from": "case PersistentConnectionEventType.ReconnectionRunning:",
+		"by": "case PersistentConnectionEventType.ReconnectionRunning:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+	},
+	{
+		"from": "case PersistentConnectionEventType.ReconnectionPermanentFailure:",
+		"by": "case PersistentConnectionEventType.ReconnectionPermanentFailure:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+	}
+]
