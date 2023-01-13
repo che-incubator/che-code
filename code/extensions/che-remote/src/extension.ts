@@ -22,6 +22,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
+	context.subscriptions.push(
+    vscode.commands.registerCommand('che-remote.command.startTunnel', () => {
+      const terminal = vscode.window.createTerminal(`Tunnel`);
+			terminal.sendText("./code tunnel --accept-server-license-terms --name ${DEVWORKSPACE_NAME}");
+    })
+  );
+
   // add dashboard command only if env variable is set
   const dashboardUrl = process.env.CHE_DASHBOARD_URL;
   if (dashboardUrl) {

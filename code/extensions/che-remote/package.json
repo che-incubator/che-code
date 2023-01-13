@@ -56,6 +56,10 @@
         "title": "%openDocumentationCommand%"
       },
       {
+        "command": "che-remote.command.startTunnel",
+        "title": "%startTunnelCommand%"
+      },
+      {
         "command": "che-remote.command.openDashboard",
         "title": "%openDashboardCommand%",
         "enablement": "che-remote.dashboard-enabled"
