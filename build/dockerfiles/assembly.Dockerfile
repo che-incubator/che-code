@@ -35,7 +35,7 @@ RUN for f in "/mnt/rootfs/bin/" "/mnt/rootfs/home/che" "/mnt/rootfs/etc/passwd" 
 COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /mnt/rootfs/bin/machine-exec
 COPY --chmod=755 /build/scripts/*.sh /mnt/rootfs/
 
-RUN wget -qO- https://az764295.vo.msecnd.net/stable/97dec172d3256f8ca4bfb2143f3f76b503ca0534/vscode_cli_alpine_x64_cli.tar.gz | tar -xvz -C /mnt/rootfs
+RUN curl https://az764295.vo.msecnd.net/stable/97dec172d3256f8ca4bfb2143f3f76b503ca0534/vscode_cli_alpine_x64_cli.tar.gz | tar -xz -C /mnt/rootfs
 
 # Create all-in-one image
 FROM scratch
