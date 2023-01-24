@@ -11,16 +11,16 @@
 /* eslint-disable header/header */
 
 import * as vscode from 'vscode';
-import { CheTaskProvider } from './taskProvider';
+import { DevfileTaskProvider } from './taskProvider';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Che Commands');
+	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Devfile Commands');
 
 	const cheAPI = await getExtensionAPI('eclipse-che.api');
 	const terminalExtAPI = await getExtensionAPI('eclipse-che.terminal');
 
-	const taskProvider = new CheTaskProvider(channel, cheAPI, terminalExtAPI);
-	const disposable = vscode.tasks.registerTaskProvider('che', taskProvider);
+	const taskProvider = new DevfileTaskProvider(channel, cheAPI, terminalExtAPI);
+	const disposable = vscode.tasks.registerTaskProvider('devfile', taskProvider);
 
 	context.subscriptions.push(disposable);
 }

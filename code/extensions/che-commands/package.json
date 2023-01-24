@@ -76,7 +76,7 @@
   "contributes": {
     "taskDefinitions": [
       {
-        "type": "che",
+        "type": "devfile",
         "required": [
           "command"
         ],
