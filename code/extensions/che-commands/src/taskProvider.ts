@@ -13,13 +13,13 @@
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands } from '@devfile/api';
 import * as vscode from 'vscode';
 
-interface CheTaskDefinition extends vscode.TaskDefinition {
+interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
 	workdir?: string;
 	component?: string;
 }
 
-export class CheTaskProvider implements vscode.TaskProvider {
+export class DevfileTaskProvider implements vscode.TaskProvider {
 
 	constructor(private channel: vscode.OutputChannel, private cheAPI: any, private terminalExtAPI: any) {
 	}
@@ -66,8 +66,8 @@ export class CheTaskProvider implements vscode.TaskProvider {
 			return line;
 		}
 
-		const kind: CheTaskDefinition = {
-			type: 'che',
+		const kind: DevfileTaskDefinition = {
+			type: 'devfile',
 			command,
 			workdir,
 			component
@@ -76,7 +76,7 @@ export class CheTaskProvider implements vscode.TaskProvider {
 		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
 			return this.terminalExtAPI.getMachineExecPTY(component, command, expandEnvVariables(workdir));
 		});
-		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'che', execution, []);
+		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'devfile', execution, []);
 		return task;
 	}
 }
