@@ -22,6 +22,8 @@ components:
           secure: true
           protocol: http
           targetPort: 8000
+    attributes:
+      controller.devfile.io/merge-contribution: true
   - name: projects
     volume:
       size: 3Gi
