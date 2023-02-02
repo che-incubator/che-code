@@ -32,6 +32,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Docker Build
+        env:
+          # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/${{matrix.arch}} -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile --load -t linux-${{matrix.dist}}-${{matrix.arch}} .
       - name: Upload image
@@ -84,6 +87,9 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}        
       - name: Docker Build and Push
+        env:
+          # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
