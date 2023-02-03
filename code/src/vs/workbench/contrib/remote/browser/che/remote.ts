@@ -12,7 +12,7 @@
 import Severity from 'vs/base/common/severity';
 import * as nls from 'vs/nls';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
+import { IDialogService, IPromptButton } from 'vs/platform/dialogs/common/dialogs';
 import { INotificationService, IPromptChoice } from 'vs/platform/notification/common/notification';
 import { PersistentConnectionEventType } from 'vs/platform/remote/common/remoteAgentConnection';
 import { IRequestService } from 'vs/platform/request/common/request';
@@ -47,6 +47,18 @@ const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
+
+	private reloadWindowHandler = () => {
+		this.commandService.executeCommand(ReloadWindowAction.ID);
+	}
+
+	private restartWorkspaceHandler = () => {
+		this.devWorkspaceAssistant.restartWorkspace();
+	}
+
+	private goToDashboardHandler = () => {
+		this.devWorkspaceAssistant.goToDashboard();
+	}
 
 	constructor(
 		private commandService: ICommandService,
@@ -111,28 +123,34 @@ export class CheDisconnectionHandler {
 
 		this.status = DisconnectionHandlerStatus.USER_ACTION_WAITING;
 
-		const showResult = await this.dialogService.show(Severity.Error, CAN_NOT_RECONNECT, [RELOAD_WINDOW_LABEL, CANCEL_LABEL], { cancelId: 1, custom: true });
-
-		const choice = showResult.choice;
-		if (choice === 0) {
-			return this.commandService.executeCommand(ReloadWindowAction.ID);
+		const reloadWindowButton: IPromptButton<void> = {
+			label: RELOAD_WINDOW_LABEL,
+			run: this.reloadWindowHandler
 		}
 
-		if (choice === 1) {
-			const reloadWindowChoice: IPromptChoice = {
-				label: RELOAD_WINDOW_LABEL,
-				isSecondary: false,
-				run: () => {
-					this.commandService.executeCommand(ReloadWindowAction.ID);
-				}
-			};
-			const cancelChoice: IPromptChoice = {
-				label: CANCEL_LABEL,
-				isSecondary: false,
-				run: () => { }
-			};
-			this.notificationService.prompt(Severity.Error, CAN_NOT_RECONNECT, [reloadWindowChoice, cancelChoice], { sticky: true });
+		const cancelButton: IPromptButton<void> = {
+			label: CANCEL_LABEL,
+			run: () => {
+				const reloadWindowChoice: IPromptChoice = {
+					label: RELOAD_WINDOW_LABEL,
+					isSecondary: false,
+					run: this.reloadWindowHandler
+				};
+				const cancelChoice: IPromptChoice = {
+					label: CANCEL_LABEL,
+					isSecondary: false,
+					run: () => { }
+				};
+				this.notificationService.prompt(Severity.Error, CAN_NOT_RECONNECT, [reloadWindowChoice, cancelChoice], { sticky: true });
+			}
 		}
+
+		await this.dialogService.prompt({
+			type: Severity.Error,
+			message: CAN_NOT_RECONNECT,
+			buttons: [reloadWindowButton],
+			cancelButton
+		});
 	}
 
 	// handle disconnection when dev workspace is stopped
@@ -161,35 +179,41 @@ export class CheDisconnectionHandler {
 	}
 
 	protected async displayDialog(message: string, severity: Severity): Promise<void> {
-		const response = await this.dialogService.show(severity, message, [RESTART_WORKSPACE_LABEL, RETURN_TO_DASHBOARD_LABEL], { cancelId: -1 });
-		switch (response.choice) {
-			case 0:
-				this.devWorkspaceAssistant.restartWorkspace();
-				break;
-			case 1:
-				this.devWorkspaceAssistant.goToDashboard();
-				break;
-			case -1:
-				return this.displayNotification(severity, message);
-			default:
-				break;
+		const restartWorkspaceButton: IPromptButton<void> = {
+			label: RESTART_WORKSPACE_LABEL,
+			run: this.restartWorkspaceHandler
 		}
+
+		const goToDashboardButton: IPromptButton<void> = {
+			label: RETURN_TO_DASHBOARD_LABEL,
+			run: this.goToDashboardHandler
+		}
+
+		const cancelButton: IPromptButton<void> = {
+			label: CANCEL_LABEL,
+			run: () => {
+				this.displayNotification(severity, message);
+			}
+		}
+
+		await this.dialogService.prompt({
+			type: severity,
+			message,
+			buttons: [restartWorkspaceButton, goToDashboardButton],
+			cancelButton
+		});
 	}
 
 	protected displayNotification(severity: Severity, message: string): void {
 		const restartWorkspaceChoice: IPromptChoice = {
 			label: RESTART_WORKSPACE_LABEL,
 			isSecondary: false,
-			run: () => {
-				this.devWorkspaceAssistant.restartWorkspace();
-			}
+			run: this.restartWorkspaceHandler
 		};
 		const goToDashboardChoice: IPromptChoice = {
 			label: RETURN_TO_DASHBOARD_LABEL,
 			isSecondary: false,
-			run: () => {
-				this.devWorkspaceAssistant.goToDashboard();
-			}
+			run: this.goToDashboardHandler
 		};
 		this.notificationService.prompt(severity, message, [restartWorkspaceChoice, goToDashboardChoice], { sticky: true });
 	}
