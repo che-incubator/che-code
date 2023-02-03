@@ -16,7 +16,6 @@ const product = require('../product.json');
 const workbenchConfig = require('../src/vs/code/browser/workbench/che/workbench-config.json');
 const rename = require('gulp-rename');
 const filter = require('gulp-filter');
-const _ = require('underscore');
 const { getProductionDependencies } = require('./lib/dependencies');
 const vfs = require('vinyl-fs');
 const replace = require('gulp-replace');
@@ -65,7 +64,7 @@ const vscodeWebResources = [
 
 const buildfile = require('../src/buildfile');
 
-const vscodeWebEntryPoints = _.flatten([
+const vscodeWebEntryPoints = [
 	buildfile.entrypoint('vs/workbench/workbench.web.main'),
 	buildfile.base,
 	buildfile.workerExtensionHost,
@@ -75,7 +74,7 @@ const vscodeWebEntryPoints = _.flatten([
 	buildfile.workerProfileAnalysis,
 	buildfile.keyboardMaps,
 	buildfile.workbenchWeb
-]);
+].flat();
 exports.vscodeWebEntryPoints = vscodeWebEntryPoints;
 
 const buildDate = new Date().toISOString();
@@ -180,7 +179,7 @@ const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
 			out: 'out-vscode-web',
 			amd: {
 				src: 'out-build',
-				entryPoints: _.flatten(vscodeWebEntryPoints),
+				entryPoints: vscodeWebEntryPoints.flat(),
 				otherSources: [],
 				resources: vscodeWebResources,
 				loaderConfig: optimize.loaderConfig(),
@@ -221,7 +220,7 @@ function packageTask(sourceFolderName, destinationFolderName) {
 		const license = gulp.src(['remote/LICENSE'], { base: 'remote', allowEmpty: true });
 
 		const productionDependencies = getProductionDependencies(WEB_FOLDER);
-		const dependenciesSrc = _.flatten(productionDependencies.map(d => path.relative(REPO_ROOT, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]));
+		const dependenciesSrc = productionDependencies.map(d => path.relative(REPO_ROOT, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]).flat();
 
 		const deps = gulp.src(dependenciesSrc, { base: 'remote/web', dot: true })
 			.pipe(filter(['**', '!**/package-lock.json']))
