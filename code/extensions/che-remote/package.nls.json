@@ -3,5 +3,6 @@
 	"description": "Provides remoteIndicator commands",
 	"openDocumentationCommand": "Eclipse Che: Open Documentation",
 	"openDashboardCommand": "Eclipse Che: Open Dashboard",
-	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace"
+	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace",
+	"restartWorkspaceCommand": "Eclipse Che: Restart Workspace"
 }

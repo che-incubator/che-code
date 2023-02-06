@@ -53,7 +53,7 @@ export class CheDisconnectionHandler {
 	}
 
 	private restartWorkspaceHandler = () => {
-		this.devWorkspaceAssistant.restartWorkspace();
+		this.devWorkspaceAssistant.startWorkspace();
 	}
 
 	private goToDashboardHandler = () => {
@@ -67,7 +67,7 @@ export class CheDisconnectionHandler {
 		requestService: IRequestService,
 		environmentVariableService: IEnvironmentVariableService
 	) {
-		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService);
+		this.devWorkspaceAssistant = new DevWorkspaceAssistant(commandService, requestService, environmentVariableService);
 	}
 
 	canHandle(millisSinceLastIncomingData: number): boolean {
