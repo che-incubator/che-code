@@ -10,6 +10,7 @@
 /* eslint-disable header/header */
 
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/commands';
 import { asJson, IRequestService } from 'vs/platform/request/common/request';
 import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
 
@@ -44,9 +45,16 @@ export class DevWorkspaceAssistant {
 
 	private dashboardUrl: string | undefined;
 	private getDevWorkspaceUrl: string | undefined;
-	private restartingDevWorkspaceUrl: string | undefined;
+	private startingDevWorkspaceUrl: string | undefined;
 
-	constructor(private requestService: IRequestService, private environmentVariableService: IEnvironmentVariableService) { }
+	constructor(
+		private commandService: ICommandService,
+		private requestService: IRequestService,
+		private environmentVariableService: IEnvironmentVariableService) {
+		CommandsRegistry.registerCommand('che-remote.command.restartWorkspace', () => {
+			this.restartWorkspace();
+		});
+	}
 
 	async getDevWorkspace(): Promise<DevWorkspaceLike> {
 		const url = this.getWorkspaceUrl();
@@ -73,11 +81,11 @@ export class DevWorkspaceAssistant {
 		return this.getDevWorkspaceUrl!;
 	}
 
-	getRestartingWorkspaceUrl(): string {
-		if (!this.restartingDevWorkspaceUrl) {
+	getStartingWorkspaceUrl(): string {
+		if (!this.startingDevWorkspaceUrl) {
 			this.provideWorkspaceUrls();
 		}
-		return this.restartingDevWorkspaceUrl!;
+		return this.startingDevWorkspaceUrl!;
 	}
 
 	private provideWorkspaceUrls(): void {
@@ -103,13 +111,18 @@ export class DevWorkspaceAssistant {
 		}
 
 		this.dashboardUrl = dashboardUrl;
-		this.restartingDevWorkspaceUrl = `${dashboardUrl}/dashboard/#/ide/${workspaceNamespace}/${workspaceName}`;
+		this.startingDevWorkspaceUrl = `${dashboardUrl}/dashboard/#/ide/${workspaceNamespace}/${workspaceName}`;
 		this.getDevWorkspaceUrl = `${dashboardUrl}/dashboard/api/namespace/${workspaceNamespace}/devworkspaces/${workspaceName}`;
 	}
 
-	restartWorkspace(): void {
-		const restartingDevWorkspaceUrl = this.getRestartingWorkspaceUrl();
-		window.location.href = restartingDevWorkspaceUrl;
+	async restartWorkspace(): Promise<void> {
+		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
+		this.startWorkspace();
+	}
+
+	startWorkspace(): void {
+		const startingDevWorkspaceUrl = this.getStartingWorkspaceUrl();
+		window.location.href = startingDevWorkspaceUrl;
 	}
 
 	goToDashboard(): void {
