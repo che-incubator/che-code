@@ -37,8 +37,8 @@ export interface IInstallExtensionTask {
 	readonly source: IGalleryExtension | URI;
 	readonly operation: InstallOperation;
 	readonly verificationStatus?: ExtensionVerificationStatus;
-	run(): Promise<{ local: ILocalExtension; metadata: Metadata }>;
-	waitUntilTaskIsFinished(): Promise<{ local: ILocalExtension; metadata: Metadata }>;
+	run(): Promise<ILocalExtension>;
+	waitUntilTaskIsFinished(): Promise<ILocalExtension>;
 	cancel(): void;
 }
 
@@ -143,8 +143,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			const installingExtension = this.installingExtensions.get(getInstallExtensionTaskKey(extension));
 			if (installingExtension) {
 				this.logService.info('Extensions is already requested to install', extension.identifier.id);
-				const { local } = await installingExtension.task.waitUntilTaskIsFinished();
-				return local;
+				return installingExtension.task.waitUntilTaskIsFinished();
 			}
 		}
 
@@ -238,7 +237,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				await this.joinAllSettled(extensionsToInstall.map(async ({ task }) => {
 					const startTime = new Date().getTime();
 					try {
-						const { local } = await task.run();
+						const local = await task.run();
 						await this.joinAllSettled(this.participants.map(participant => participant.postInstall(local, task.source, installExtensionTaskOptions, CancellationToken.None)));
 						if (!URI.isUri(task.source)) {
 							const isUpdate = task.operation === InstallOperation.Update;
