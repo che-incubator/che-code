@@ -52,7 +52,7 @@ export class CheDisconnectionHandler {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
 	}
 
-	private restartWorkspaceHandler = () => {
+	private startWorkspaceHandler = () => {
 		this.devWorkspaceAssistant.startWorkspace();
 	}
 
@@ -181,7 +181,7 @@ export class CheDisconnectionHandler {
 	protected async displayDialog(message: string, severity: Severity): Promise<void> {
 		const restartWorkspaceButton: IPromptButton<void> = {
 			label: RESTART_WORKSPACE_LABEL,
-			run: this.restartWorkspaceHandler
+			run: this.startWorkspaceHandler
 		}
 
 		const goToDashboardButton: IPromptButton<void> = {
@@ -208,7 +208,7 @@ export class CheDisconnectionHandler {
 		const restartWorkspaceChoice: IPromptChoice = {
 			label: RESTART_WORKSPACE_LABEL,
 			isSecondary: false,
-			run: this.restartWorkspaceHandler
+			run: this.startWorkspaceHandler
 		};
 		const goToDashboardChoice: IPromptChoice = {
 			label: RETURN_TO_DASHBOARD_LABEL,
