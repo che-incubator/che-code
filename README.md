@@ -1,10 +1,10 @@
 # che-code
 
-Deploy `Code-OSS` on a kubernetes cluster and connect with your Browser.
+Deploy `Code-OSS` (https://github.com/microsoft/vscode) on a Kubernetes cluster and connect with your Browser.
 
-This repository is hosting the changes to have the `Code-OSS` running inside a Browser and connecting to a remote HTTP(s) server (instead of using Desktop mode).
+This repository is hosting the changes to have the `Code-OSS` running inside a browser and connecting to a remote HTTP(s) server (instead of using desktop mode).
 
-The terminal is aware of the running Pod. Then, you can open terminals in every container of the running pod (if the containers have shell access).
+The terminal is aware of the running pod. Then, you can open terminals in every container of the running pod (if the containers have shell access).
 
 Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging#_subtree_merge). It means that if you're not interested in updating/rebasing upstream code you don't need to setup anything else unlike git submodules. This repository is self-contained.
 
@@ -34,7 +34,7 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 ## Developing with Eclipse Che
 
 This project includes [Devfile](devfile.yaml) that simplifies developing Che-Code in Eclipse Che.
-To test your changes in Eclipse Che run the following VS Code Tasks:
+To test your changes in Eclipse Che run the following VS Code tasks:
 1. `prepare` to download all the required dependencies
 2. `build` to pre-build and start the watch mode
 3. `run` to run the VS Code server
