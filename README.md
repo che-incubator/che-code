@@ -151,7 +151,8 @@ The following example shows all of the properties that you can customize by usin
     "remoteIndicatorCommands": {
         "openDocumentationCommand": "Branded IDE: Open Documentation",
         "openDashboardCommand": "Branded IDE: Open Dashboard",
-        "stopWorkspaceCommand": "Branded IDE: Stop Workspace"
+        "stopWorkspaceCommand": "Branded IDE: Stop Workspace",
+        "restartWorkspaceCommand": "Branded IDE: Restart Workspace"
     },
     "workbenchConfigFilePath": "workbench-config.json",
     "codiconCssFilePath": "css/codicon.css"
