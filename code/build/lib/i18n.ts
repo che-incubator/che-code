@@ -601,16 +601,15 @@ function createL10nBundleForExtension(extensionFolderName: string, prefixWithBui
 			const extension = path.extname(file.relative);
 			if (extension !== '.json') {
 				const contents = file.contents.toString('utf8');
-				getL10nJson([{ contents, extension }])
-					.then((json) => {
-						callback(undefined, new File({
-							path: `extensions/${extensionFolderName}/bundle.l10n.json`,
-							contents: Buffer.from(JSON.stringify(json), 'utf8')
-						}));
-					})
-					.catch((err) => {
-						callback(new Error(`File ${file.relative} threw an error when parsing: ${err}`));
-					});
+				try {
+					const json = getL10nJson([{ contents, extension }]);
+					callback(undefined, new File({
+						path: `extensions/${extensionFolderName}/bundle.l10n.json`,
+						contents: Buffer.from(JSON.stringify(json), 'utf8')
+					}));
+				} catch (error) {
+					callback(new Error(`File ${file.relative} threw an error when parsing: ${error}`));
+				}
 				// signal pause?
 				return false;
 			}
