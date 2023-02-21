@@ -1,4 +1,7 @@
 {
     "name": "che-code",
-    "bin": "out/vs/server/main.js"
+    "bin": "out/vs/server/main.js",
+    "devDependencies": {
+      "@vscode/l10n-dev": "0.0.18"
+    }
 }
