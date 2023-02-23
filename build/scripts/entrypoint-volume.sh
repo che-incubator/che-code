@@ -66,11 +66,11 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
 fi
 
-# Check if we have a custom CA certificate
-if [ -f /tmp/che/secret/ca.crt ]; then
-  echo "Adding custom CA certificate"
-  export NODE_EXTRA_CA_CERTS=/tmp/che/secret/ca.crt
-fi
+# The user may provide untrusted TLS certificates in a pem format.
+for file in /public-certs/*; do
+  echo "Adding the custom certificate: ${file}"
+  export NODE_EXTRA_CA_CERTS="${file}"
+done
 
 if [ -z "$VSCODE_NODEJS_RUNTIME_DIR" ]; then
   VSCODE_NODEJS_RUNTIME_DIR="$(pwd)" 
