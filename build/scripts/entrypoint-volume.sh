@@ -66,7 +66,7 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
 fi
 
-# The user may provide untrusted TLS certificates in a pem format.
+# The user may provide an untrusted TLS certificates in a single *.pem file.
 for file in /public-certs/*; do
   echo "Adding the custom certificate: ${file}"
   export NODE_EXTRA_CA_CERTS="${file}"
