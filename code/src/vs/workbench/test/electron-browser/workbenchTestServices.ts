@@ -5,9 +5,7 @@
 
 import { workbenchInstantiationService as browserWorkbenchInstantiationService, ITestInstantiationService, TestLifecycleService, TestFilesConfigurationService, TestFileService, TestFileDialogService, TestPathService, TestEncodingOracle } from 'vs/workbench/test/browser/workbenchTestServices';
 import { Event } from 'vs/base/common/event';
-import { ISharedProcessService } from 'vs/platform/ipc/electron-sandbox/services';
 import { NativeTextFileService, } from 'vs/workbench/services/textfile/electron-sandbox/nativeTextFileService';
-import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { FileOperationError, IFileService } from 'vs/platform/files/common/files';
 import { IUntitledTextEditorService } from 'vs/workbench/services/untitled/common/untitledTextEditorService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
@@ -36,7 +34,7 @@ import { TestContextService, TestProductService } from 'vs/workbench/test/common
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { MouseInputEvent } from 'vs/base/parts/sandbox/common/electronTypes';
 import { ILanguageService } from 'vs/editor/common/languages/language';
-import { IOSProperties, IOSStatistics } from 'vs/platform/native/common/native';
+import { INativeHostService, IOSProperties, IOSStatistics } from 'vs/platform/native/common/native';
 import { homedir, release, tmpdir, hostname } from 'os';
 import { IEnvironmentService, INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
@@ -176,17 +174,6 @@ export class TestNativeTextFileServiceWithEncodingOverrides extends NativeTextFi
 
 		return this._testEncoding;
 	}
-}
-
-export class TestSharedProcessService implements ISharedProcessService {
-
-	declare readonly _serviceBrand: undefined;
-
-	getChannel(channelName: string): any { return undefined; }
-
-	registerChannel(channelName: string, channel: any): void { }
-
-	notifyRestored(): void { }
 }
 
 export class TestNativeHostService implements INativeHostService {
