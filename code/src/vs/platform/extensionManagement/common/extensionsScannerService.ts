@@ -920,6 +920,7 @@ class CachedExtensionsScanner extends ExtensionsScanner {
 		}
 
 		try {
+			this.logService.info('Invalidating Cache', actual, expected);
 			// Cache is invalid, delete it
 			await this.fileService.del(this.cacheFile);
 			this._onDidChangeCache.fire();
