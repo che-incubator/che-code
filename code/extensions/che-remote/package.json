@@ -30,7 +30,9 @@
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
     },
   "dependencies": {
-    "vscode-nls": "^5.0.0"
+    "vscode-nls": "^5.0.0",
+    "axios": "0.21.2",
+    "@eclipse-che/che-devworkspace-generator": "0.0.1-96cdbb4"
   },
   "devDependencies": {
     "jest": "27.3.1",
@@ -51,9 +53,14 @@
         "title": "%stopWorkspaceCommand%",
         "enablement": "che-remote.workspace-enabled"
       },
-	  {
+      {
         "command": "che-remote.command.restartWorkspace",
         "title": "%restartWorkspaceCommand%",
+        "enablement": "che-remote.workspace-enabled"
+      },
+      {
+        "command": "che-remote.command.restartFromLocalDevfile",
+        "title": "%restartWorkspaceFromLocalDevfileCommand%",
         "enablement": "che-remote.workspace-enabled"
       },
       {
@@ -73,11 +80,16 @@
           "group": "remote_40_che_navigation@10",
           "when": "che-remote.workspace-enabled"
         },
-		{
-			"command": "che-remote.command.restartWorkspace",
-			"group": "remote_40_che_navigation@15",
-			"when": "che-remote.workspace-enabled"
-		  },
+        {
+          "command": "che-remote.command.restartWorkspace",
+          "group": "remote_40_che_navigation@15",
+          "when": "che-remote.workspace-enabled"
+        },
+        {
+          "command": "che-remote.command.restartFromLocalDevfile",
+          "group": "remote_40_che_navigation@16",
+          "when": "che-remote.workspace-enabled"
+        },
         {
           "command": "che-remote.command.openDashboard",
           "group": "remote_40_che_navigation@20",
