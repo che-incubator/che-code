@@ -11,7 +11,14 @@
 /* eslint-disable header/header */
 
 // local import to find the correct type
+import { Main as DevWorkspaceGenerator } from '@eclipse-che/che-devworkspace-generator/lib/main';
+import * as axios from 'axios';
+import * as fs from 'fs-extra';
 import * as vscode from 'vscode';
+
+const DEVFILE_NAME = 'devfile.yaml';
+const DOT_DEVFILE_NAME = '.devfile.yaml';
+const DEFAULT_EDITOR_ENTRY = 'che-incubator/che-code/insiders';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -46,11 +53,61 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await workspaceService.stop();
       })
     );
-  }
 
+    context.subscriptions.push(
+      vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
+        await updateDevfile(cheApi);
+        await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
+      })
+    );
+  }
 }
 
 
 export function deactivate(): void {
 
+}
+
+async function updateDevfile(cheApi: any): Promise<void> {
+  const devfileService: {
+    get(): Promise<any>;
+    getRaw(): Promise<string>;
+    updateDevfile(devfile: any): Promise<void>;
+  } = cheApi.getDevfileService();
+  const devWorkspaceGenerator = new DevWorkspaceGenerator();
+
+  try {
+    const projectPath = process.env.PROJECT_SOURCE
+    let devfilePath: string | undefined = `${projectPath}/${DEVFILE_NAME}`;
+
+    let devfileExists = await fs.pathExists(devfilePath);
+    if (!devfileExists) {
+      devfilePath = `${projectPath}/${DOT_DEVFILE_NAME}`;
+      devfileExists = await fs.pathExists(devfilePath);
+    }
+
+    if (!devfileExists) {
+      devfilePath = await vscode.window.showInputBox({ title: 'Path to the devfile', value: `${projectPath}/` });
+      devfileExists = devfilePath ? await fs.pathExists(devfilePath) : false;
+    }
+
+    if (!devfileExists) {
+      vscode.window.showWarningMessage(`Can not restart the workspace - the devfile was not found by path: ${devfilePath}`);
+      return undefined;
+    }
+
+    const currentDevfile = await devfileService.get()
+    const projects = currentDevfile.projects || [];
+
+    const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorEntry: DEFAULT_EDITOR_ENTRY, projects: [] }, axios.default);
+    if (newContent) {
+      newContent.devWorkspace.spec!.template!.projects = projects;
+      await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
+    } else {
+      throw new Error('An error occurred while performing generation a new devfile context');
+    }
+  } catch (error) {
+    console.error(`Something went wrong for the 'Restart From Local Devfile' action: ${error}`);
+    vscode.window.showErrorMessage('Can not restart the workspace from the local devfile');
+  }
 }
