@@ -14,7 +14,7 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { memoize } from 'vs/base/common/decorators';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { parseLineAndColumnAware } from 'vs/base/common/extpath';
-import { LogLevelToString } from 'vs/platform/log/common/log';
+import { ILogService, LogLevelToString } from 'vs/platform/log/common/log';
 import { isUndefined } from 'vs/base/common/types';
 import { refineServiceDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ITextEditorOptions } from 'vs/platform/editor/common/editor';
@@ -257,11 +257,18 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 		private readonly workspaceId: string,
 		readonly logsHome: URI,
 		readonly options: IWorkbenchConstructionOptions,
-		private readonly productService: IProductService
+		private readonly productService: IProductService,
+		@ILogService logService: ILogService
 	) {
 		if (options.workspaceProvider && Array.isArray(options.workspaceProvider.payload)) {
 			try {
 				this.payload = new Map(options.workspaceProvider.payload);
+
+				const webviewSources = this.payload?.get('WEBVIEW_SOURCES');
+				
+				console.log(`>>> WEBVIEW SOURCES: ${webviewSources} `);
+
+
 			} catch (error) {
 				onUnexpectedError(error); // possible invalid payload for map
 			}

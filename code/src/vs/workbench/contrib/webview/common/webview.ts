@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+// import { env } from 'process';
 import { CharCode } from 'vs/base/common/charCode';
 import { Schemas } from 'vs/base/common/network';
 import { URI } from 'vs/base/common/uri';
@@ -12,13 +13,24 @@ export interface WebviewRemoteInfo {
 	readonly authority: string | undefined;
 }
 
+function getResourceBaseHost(): string {
+	const host = 'localhost';
+	console.log('===========================================');
+	console.log('=');
+	console.log(`= ${host}`);
+	console.log('=');
+	console.log('===========================================');
+	return host;
+}
+
 /**
  * Root from which resources in webviews are loaded.
  *
  * This is hardcoded because we never expect to actually hit it. Instead these requests
  * should always go to a service worker.
  */
-export const webviewResourceBaseHost = 'vscode-cdn.net';
+// export const webviewResourceBaseHost = 'vscode-cdn.net';
+export const webviewResourceBaseHost = getResourceBaseHost();
 
 export const webviewRootResourceAuthority = `vscode-resource.${webviewResourceBaseHost}`;
 
