@@ -56,8 +56,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     context.subscriptions.push(
       vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
-        await updateDevfile(cheApi);
-        await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
+        try {
+          await updateDevfile(cheApi);
+          await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
+        } catch (error) {
+          console.error(`Something went wrong for the 'Restart From Local Devfile' action: ${error}`);
+          vscode.window.showErrorMessage(`Can not restart the workspace from the local devfile: ${error}`);
+        }
       })
     );
   }
@@ -76,38 +81,32 @@ async function updateDevfile(cheApi: any): Promise<void> {
   } = cheApi.getDevfileService();
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
-  try {
-    const projectPath = process.env.PROJECT_SOURCE
-    let devfilePath: string | undefined = `${projectPath}/${DEVFILE_NAME}`;
+  const projectPath = process.env.PROJECT_SOURCE
+  let devfilePath: string | undefined = `${projectPath}/${DEVFILE_NAME}`;
 
-    let devfileExists = await fs.pathExists(devfilePath);
-    if (!devfileExists) {
-      devfilePath = `${projectPath}/${DOT_DEVFILE_NAME}`;
-      devfileExists = await fs.pathExists(devfilePath);
-    }
+  let devfileExists = await fs.pathExists(devfilePath);
+  if (!devfileExists) {
+    devfilePath = `${projectPath}/${DOT_DEVFILE_NAME}`;
+    devfileExists = await fs.pathExists(devfilePath);
+  }
 
-    if (!devfileExists) {
-      devfilePath = await vscode.window.showInputBox({ title: 'Path to the devfile', value: `${projectPath}/` });
-      devfileExists = devfilePath ? await fs.pathExists(devfilePath) : false;
-    }
+  if (!devfileExists) {
+    devfilePath = await vscode.window.showInputBox({ title: 'Path to the devfile', value: `${projectPath}/` });
+    devfileExists = devfilePath ? await fs.pathExists(devfilePath) : false;
+  }
 
-    if (!devfileExists) {
-      vscode.window.showWarningMessage(`Can not restart the workspace - the devfile was not found by path: ${devfilePath}`);
-      return undefined;
-    }
+  if (!devfileExists) {
+    throw new Error(`The devfile was not found by path: ${devfilePath}`);
+  }
 
-    const currentDevfile = await devfileService.get()
-    const projects = currentDevfile.projects || [];
+  const currentDevfile = await devfileService.get()
+  const projects = currentDevfile.projects || [];
 
-    const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorEntry: DEFAULT_EDITOR_ENTRY, projects: [] }, axios.default);
-    if (newContent) {
-      newContent.devWorkspace.spec!.template!.projects = projects;
-      await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
-    } else {
-      throw new Error('An error occurred while performing generation a new devfile context');
-    }
-  } catch (error) {
-    console.error(`Something went wrong for the 'Restart From Local Devfile' action: ${error}`);
-    vscode.window.showErrorMessage('Can not restart the workspace from the local devfile');
+  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorEntry: DEFAULT_EDITOR_ENTRY, projects: [] }, axios.default);
+  if (newContent) {
+    newContent.devWorkspace.spec!.template!.projects = projects;
+    await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
+  } else {
+    throw new Error('An error occurred while performing generation a new devfile context');
   }
 }
