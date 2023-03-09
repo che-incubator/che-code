@@ -152,7 +152,8 @@ The following example shows all of the properties that you can customize by usin
         "openDocumentationCommand": "Branded IDE: Open Documentation",
         "openDashboardCommand": "Branded IDE: Open Dashboard",
         "stopWorkspaceCommand": "Branded IDE: Stop Workspace",
-        "restartWorkspaceCommand": "Branded IDE: Restart Workspace"
+        "restartWorkspaceCommand": "Branded IDE: Restart Workspace",
+        "restartWorkspaceFromLocalDevfileCommand": "Branded IDE: Restart Workspace from Local Devfile"
     },
     "workbenchConfigFilePath": "workbench-config.json",
     "codiconCssFilePath": "css/codicon.css"
