@@ -68,7 +68,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 }
 
-
 export function deactivate(): void {
 
 }
@@ -96,7 +95,7 @@ async function updateDevfile(cheApi: any): Promise<void> {
   }
 
   if (!devfileExists) {
-    throw new Error(`The devfile was not found by path: ${devfilePath}`);
+    throw new Error(`The devfile was not found at: ${devfilePath}`);
   }
 
   const currentDevfile = await devfileService.get()
@@ -107,6 +106,6 @@ async function updateDevfile(cheApi: any): Promise<void> {
     newContent.devWorkspace.spec!.template!.projects = projects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
   } else {
-    throw new Error('An error occurred while performing generation a new devfile context');
+    throw new Error('An error occurred while generating new devfile context');
   }
 }
