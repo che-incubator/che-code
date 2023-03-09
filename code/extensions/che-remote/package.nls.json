@@ -5,5 +5,5 @@
 	"openDashboardCommand": "Eclipse Che: Open Dashboard",
 	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace",
 	"restartWorkspaceCommand": "Eclipse Che: Restart Workspace",
-	"restartWorkspaceFromLocalDevfileCommand": "Eclipse Che: Restart Workspace From Local Devfile"
+	"restartWorkspaceFromLocalDevfileCommand": "Eclipse Che: Restart Workspace from Local Devfile"
 }
