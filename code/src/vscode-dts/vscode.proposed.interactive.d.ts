@@ -73,7 +73,7 @@ declare module 'vscode' {
 
 	export interface InteractiveRequest {
 		session: InteractiveSession;
-		message: string;
+		message: string | InteractiveSessionReplyFollowup;
 	}
 
 	export interface InteractiveResponseErrorDetails {
@@ -109,7 +109,11 @@ declare module 'vscode' {
 
 	export interface InteractiveSessionReplyFollowup {
 		message: string;
+		tooltip?: string;
 		title?: string;
+
+		// Extensions can put any serializable data here, such as an ID/version
+		metadata?: any;
 	}
 
 	export type InteractiveSessionFollowup = InteractiveSessionReplyFollowup | InteractiveResponseCommand;
@@ -150,11 +154,29 @@ declare module 'vscode' {
 		codeBlockIndex: number;
 	}
 
-	export type InteractiveSessionUserAction = InteractiveSessionVoteAction | InteractiveSessionCopyAction | InteractiveSessionInsertAction;
+	export interface InteractiveSessionCommandAction {
+		kind: 'command';
+		command: InteractiveResponseCommand;
+	}
+
+	export type InteractiveSessionUserAction = InteractiveSessionVoteAction | InteractiveSessionCopyAction | InteractiveSessionInsertAction | InteractiveSessionCommandAction;
 
 	export interface InteractiveSessionUserActionEvent {
 		action: InteractiveSessionUserAction;
 		providerId: string;
+	}
+
+	export interface InteractiveSessionDynamicRequest {
+		/**
+		 * The message that will be displayed in the UI
+		 */
+		message: string;
+
+		/**
+		 * Any extra metadata/context that will go to the provider.
+		 * NOTE not actually used yet.
+		 */
+		metadata?: any;
 	}
 
 	export namespace interactive {
@@ -163,6 +185,8 @@ declare module 'vscode' {
 
 		export function registerInteractiveSessionProvider(id: string, provider: InteractiveSessionProvider): Disposable;
 		export function addInteractiveRequest(context: InteractiveSessionRequestArgs): void;
+
+		export function sendInteractiveRequestToProvider(providerId: string, message: InteractiveSessionDynamicRequest): void;
 
 		export function registerInteractiveEditorSessionProvider(provider: InteractiveEditorSessionProvider): Disposable;
 
