@@ -41,6 +41,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
   }
 
+  // add command only if env variable is set
+  const clusterConsoleUrl = process.env.CLUSTER_CONSOLE_URL;
+  if (clusterConsoleUrl) {
+    // enable command
+    vscode.commands.executeCommand('setContext', 'che-remote.cluster-console-enabled', true);
+    context.subscriptions.push(
+      vscode.commands.registerCommand('che-remote.command.openClusterConsole', () => {
+        vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(clusterConsoleUrl));
+      })
+    );
+  }
+
   const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
   if (extensionApi) {
     await extensionApi.activate();
