@@ -10,6 +10,7 @@ import { CancellationError, getErrorMessage } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { isWeb } from 'vs/base/common/platform';
+import { isDefined } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import * as nls from 'vs/nls';
 import {
@@ -25,11 +26,7 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { excludedExtensions } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 
-export const enum ExtensionVerificationStatus {
-	'Verified' = 'Verified',
-	'Unverified' = 'Unverified',
-	'UnknownError' = 'UnknownError',
-}
+export type ExtensionVerificationStatus = boolean | string;
 
 export type InstallExtensionTaskOptions = InstallOptions & InstallVSIXOptions & { readonly profileLocation: URI };
 export interface IInstallExtensionTask {
@@ -697,6 +694,18 @@ function toExtensionManagementError(error: Error): ExtensionManagementError {
 function reportTelemetry(telemetryService: ITelemetryService, eventName: string, { extensionData, verificationStatus, duration, error, durationSinceUpdate }: { extensionData: any; verificationStatus?: ExtensionVerificationStatus; duration?: number; durationSinceUpdate?: number; error?: Error }): void {
 	let errorcode: ExtensionManagementErrorCode | undefined;
 	let errorcodeDetail: string | undefined;
+
+	if (isDefined(verificationStatus)) {
+		if (verificationStatus === true) {
+			verificationStatus = 'Verified';
+		} else if (verificationStatus === false) {
+			verificationStatus = 'Unverified';
+		} else {
+			errorcode = ExtensionManagementErrorCode.Signature;
+			errorcodeDetail = verificationStatus;
+			verificationStatus = 'Unverified';
+		}
+	}
 
 	if (error) {
 		if (error instanceof ExtensionManagementError) {
