@@ -41,13 +41,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
   }
 
-  // add command only if env variable is set
+  // add command only if Che Code is running on OpenShift
   const clusterConsoleUrl = process.env.CLUSTER_CONSOLE_URL;
-  if (clusterConsoleUrl) {
+  const clusterConsoleTitle = process.env.CLUSTER_CONSOLE_TITLE || '';
+  if (clusterConsoleUrl && clusterConsoleTitle.includes('OpenShift')) {
     // enable command
-    vscode.commands.executeCommand('setContext', 'che-remote.cluster-console-enabled', true);
+    vscode.commands.executeCommand('setContext', 'che-remote.openshift-console-enabled', true);
     context.subscriptions.push(
-      vscode.commands.registerCommand('che-remote.command.openClusterConsole', () => {
+      vscode.commands.registerCommand('che-remote.command.openOpenShiftConsole', () => {
         vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(clusterConsoleUrl));
       })
     );

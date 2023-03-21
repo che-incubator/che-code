@@ -73,9 +73,9 @@
         "enablement": "che-remote.dashboard-enabled"
       },
       {
-        "command": "che-remote.command.openClusterConsole",
-        "title": "%openClusterConsoleCommand%",
-        "enablement": "che-remote.cluster-console-enabled"
+        "command": "che-remote.command.openOpenShiftConsole",
+        "title": "%openOpenShiftConsoleCommand%",
+        "enablement": "che-remote.openshift-console-enabled"
       }
     ],
     "menus": {
@@ -101,9 +101,9 @@
           "when": "che-remote.dashboard-enabled"
         },
         {
-          "command": "che-remote.command.openClusterConsole",
+          "command": "che-remote.command.openOpenShiftConsole",
           "group": "remote_40_che_navigation@21",
-          "when": "che-remote.cluster-console-enabled"
+          "when": "che-remote.openshift-console-enabled"
         },
         {
           "command": "che-remote.command.openDocumentation",
