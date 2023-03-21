@@ -3,7 +3,7 @@
 	"description": "Provides remoteIndicator commands",
 	"openDocumentationCommand": "Eclipse Che: Open Documentation",
 	"openDashboardCommand": "Eclipse Che: Open Dashboard",
-	"openClusterConsoleCommand": "Eclipse Che: Open Cluster Console",
+	"openClusterConsoleCommand": "Eclipse Che: Open OpenShift Console",
 	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace",
 	"restartWorkspaceCommand": "Eclipse Che: Restart Workspace",
 	"restartWorkspaceFromLocalDevfileCommand": "Eclipse Che: Restart Workspace from Local Devfile"
