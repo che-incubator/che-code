@@ -261,12 +261,8 @@
 }
 
 .interactive-session .interactive-session-followups .monaco-button {
-	width: initial;
-
-	color: var(--vscode-textLink-foreground);
-	justify-content: left;
 	text-align: left;
-	align-items: start;
+	width: initial;
 }
 
 .interactive-session .interactive-session-followups .monaco-button .codicon {
@@ -284,6 +280,15 @@
 
 .interactive-session .interactive-input-part .interactive-input-followups .interactive-session-followups {
 	margin-bottom: 8px;
+}
+
+.interactive-session .interactive-input-part .interactive-input-followups .interactive-session-followups .monaco-button {
+	display: block;
+	color: var(--vscode-textLink-foreground);
+}
+
+.interactive-session .interactive-input-part .interactive-input-followups .interactive-session-followups .monaco-button .codicon-sparkle {
+	float: left;
 }
 
 .interactive-session .interactive-session-followups .monaco-button.interactive-followup-reply {
