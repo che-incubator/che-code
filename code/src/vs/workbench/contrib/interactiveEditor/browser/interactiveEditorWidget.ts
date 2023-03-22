@@ -841,8 +841,12 @@ export class InteractiveEditorController implements IEditorContribution {
 			this._ctsRequest = new CancellationTokenSource(this._ctsSession.token);
 
 			this._historyOffset = -1;
-			this._editor.revealRange(wholeRange, ScrollType.Smooth);
-			const input = await this._zone.getInput(wholeRange.getEndPosition(), placeholder, value, this._ctsRequest.token);
+			const inputPromise = this._zone.getInput(wholeRange.getEndPosition(), placeholder, value, this._ctsRequest.token);
+
+			// reveal the line after the whole range to ensure that the input box is visible
+			this._editor.revealPosition({ lineNumber: wholeRange.endLineNumber + 1, column: 1 }, ScrollType.Smooth);
+
+			const input = await inputPromise;
 			roundStore.clear();
 
 			if (!input || !input.value) {
@@ -896,7 +900,7 @@ export class InteractiveEditorController implements IEditorContribution {
 			if (!reply) {
 				this._logService.trace('[IE] NO reply or edits', provider.debugName);
 				value = input.value;
-				statusWidget.update({ message: localize('empty', "No results, tweak your input and try again."), classes: ['warn'], actions: [] });
+				statusWidget.update({ message: localize('empty', "No results, please refine your input and try again."), classes: ['warn'], actions: [] });
 				continue;
 			}
 
