@@ -151,6 +151,7 @@ The following example shows all of the properties that you can customize by usin
     "remoteIndicatorCommands": {
         "openDocumentationCommand": "Branded IDE: Open Documentation",
         "openDashboardCommand": "Branded IDE: Open Dashboard",
+        "openOpenShiftConsoleCommand": "Branded IDE: Open OpenShift Console",
         "stopWorkspaceCommand": "Branded IDE: Stop Workspace",
         "restartWorkspaceCommand": "Branded IDE: Restart Workspace",
         "restartWorkspaceFromLocalDevfileCommand": "Branded IDE: Restart Workspace from Local Devfile"
