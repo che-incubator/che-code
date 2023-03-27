@@ -1322,13 +1322,6 @@ export function registerTerminalActions() {
 	});
 
 	registerTerminalAction({
-		id: TerminalCommandId.CreateWithProfileButton,
-		title: TerminalCommandId.CreateWithProfileButton,
-		f1: false,
-		run: (c) => { }
-	});
-
-	registerTerminalAction({
 		id: TerminalCommandId.ConfigureTerminalSettings,
 		title: { value: localize('workbench.action.terminal.openSettings', "Configure Terminal Settings"), original: 'Configure Terminal Settings' },
 		precondition: ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated),
@@ -1449,17 +1442,6 @@ export function registerTerminalActions() {
 			weight: KeybindingWeight.WorkbenchContrib + 1
 		},
 		run: (activeInstance) => activeInstance.hideSuggestWidget()
-	});
-
-	registerActiveInstanceAction({
-		id: TerminalCommandId.ShowQuickFixes,
-		title: { value: localize('workbench.action.terminal.showQuickFixes', "Show Terminal Quick Fixes"), original: 'Show Terminal Quick Fixes' },
-		precondition: TerminalContextKeys.focus,
-		keybinding: {
-			primary: KeyMod.CtrlCmd | KeyCode.Period,
-			weight: KeybindingWeight.WorkbenchContrib
-		},
-		run: (activeInstance) => activeInstance.quickFix?.showMenu()
 	});
 
 	// Some commands depend on platform features
