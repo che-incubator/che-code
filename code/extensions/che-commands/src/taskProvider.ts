@@ -37,7 +37,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 		const cheTasks: vscode.Task[] = devfileCommands!
 			.filter(command => command.exec?.commandLine)
-			.filter(command => !command.attributes || (command.attributes as any)['controller.devfile.io/imported-by'] !== 'editor')
+			.filter(command => !command.attributes || (command.attributes as any)['controller.devfile.io/imported-by'] === undefined)
 			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!));
 		return cheTasks;
 	}
