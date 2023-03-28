@@ -71,6 +71,11 @@
         "command": "che-remote.command.openDashboard",
         "title": "%openDashboardCommand%",
         "enablement": "che-remote.dashboard-enabled"
+      },
+      {
+        "command": "che-remote.command.openOpenShiftConsole",
+        "title": "%openOpenShiftConsoleCommand%",
+        "enablement": "che-remote.openshift-console-enabled"
       }
     ],
     "menus": {
@@ -94,6 +99,11 @@
           "command": "che-remote.command.openDashboard",
           "group": "remote_40_che_navigation@20",
           "when": "che-remote.dashboard-enabled"
+        },
+        {
+          "command": "che-remote.command.openOpenShiftConsole",
+          "group": "remote_40_che_navigation@21",
+          "when": "che-remote.openshift-console-enabled"
         },
         {
           "command": "che-remote.command.openDocumentation",

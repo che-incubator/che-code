@@ -1097,6 +1097,18 @@ declare namespace monaco.editor {
 	 */
 	export function registerCommand(id: string, handler: (accessor: any, ...args: any[]) => void): IDisposable;
 
+	export interface ILinkOpener {
+		open(resource: Uri): boolean | Promise<boolean>;
+	}
+
+	/**
+	 * Registers a handler that is called when a link is opened in any editor. The handler callback should return `true` if the link was handled and `false` otherwise.
+	 * The handler that was registered last will be called first when a link is opened.
+	 *
+	 * Returns a disposable that can unregister the opener again.
+	 */
+	export function registerLinkOpener(opener: ILinkOpener): IDisposable;
+
 	export type BuiltinTheme = 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
 
 	export interface IStandaloneThemeData {
@@ -2308,6 +2320,10 @@ declare namespace monaco.editor {
 		readonly endLineNumberExclusive: number;
 		constructor(startLineNumber: number, endLineNumberExclusive: number);
 		/**
+		 * Indicates if this line range contains the given line number.
+		 */
+		contains(lineNumber: number): boolean;
+		/**
 		 * Indicates if this line range is empty.
 		 */
 		get isEmpty(): boolean;
@@ -2324,6 +2340,12 @@ declare namespace monaco.editor {
 		 */
 		join(other: LineRange): LineRange;
 		toString(): string;
+		/**
+		 * The resulting range is empty if the ranges do not intersect, but touch.
+		 * If the ranges don't even touch, the result is undefined.
+		 */
+		intersect(other: LineRange): LineRange | undefined;
+		overlapOrTouch(other: LineRange): boolean;
 	}
 
 	/**
@@ -2341,7 +2363,7 @@ declare namespace monaco.editor {
 		/**
 		 * If inner changes have not been computed, this is set to undefined.
 		 * Otherwise, it represents the character-level diff in this line range.
-		 * The original range of each range mapping should be contained in the original line range (same for modified).
+		 * The original range of each range mapping should be contained in the original line range (same for modified), exceptions are new-lines.
 		 * Must not be an empty array.
 		 */
 		readonly innerChanges: RangeMapping[] | undefined;
@@ -2478,7 +2500,7 @@ declare namespace monaco.editor {
 		readonly label: string;
 		readonly alias: string;
 		isSupported(): boolean;
-		run(): Promise<void>;
+		run(args?: unknown): Promise<void>;
 	}
 
 	export type IEditorModel = ITextModel | IDiffEditorModel;
@@ -4052,6 +4074,10 @@ declare namespace monaco.editor {
 		 * Maximum number of sticky lines to show
 		 */
 		maxLineCount?: number;
+		/**
+		 * Model to choose for sticky scroll by default
+		 */
+		defaultModel?: 'outlineModel' | 'foldingProviderModel' | 'indentationModel';
 	}
 
 	/**
@@ -4335,6 +4361,7 @@ declare namespace monaco.editor {
 		*/
 		mode?: 'prefix' | 'subword' | 'subwordSmart';
 		showToolbar?: 'always' | 'onHover';
+		suppressSuggestions?: boolean;
 	}
 
 	export interface IBracketPairColorizationOptions {
@@ -5828,6 +5855,14 @@ declare namespace monaco.editor {
 		readonly fontVariationSettings: string;
 		readonly lineHeight: number;
 		readonly letterSpacing: number;
+	}
+
+	export const EditorZoom: IEditorZoom;
+
+	export interface IEditorZoom {
+		onDidChangeZoomLevel: IEvent<number>;
+		getZoomLevel(): number;
+		setZoomLevel(zoomLevel: number): void;
 	}
 
 	//compatibility:

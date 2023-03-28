@@ -146,7 +146,7 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 				return new Promise<IMessagePassingProtocol>((resolve, reject) => {
 
 					const handle = setTimeout(() => {
-						reject('The remote extenion host took longer than 60s to send its ready message.');
+						reject('The remote extension host took longer than 60s to send its ready message.');
 					}, 60 * 1000);
 
 					const disposable = protocol.onMessage(msg => {
@@ -202,7 +202,7 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 	}
 
 	private async _createExtHostInitData(isExtensionDevelopmentDebug: boolean): Promise<IExtensionHostInitData> {
-		const [telemetryInfo, remoteInitData] = await Promise.all([this._telemetryService.getTelemetryInfo(), this._initDataProvider.getInitData()]);
+		const remoteInitData = await this._initDataProvider.getInitData();
 		const workspace = this._contextService.getWorkspace();
 		const deltaExtensions = this.extensions.set(remoteInitData.allExtensions, remoteInitData.myExtensions);
 		return {
@@ -243,7 +243,12 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 			allExtensions: deltaExtensions.toAdd,
 			activationEvents: deltaExtensions.addActivationEvents,
 			myExtensions: deltaExtensions.myToAdd,
-			telemetryInfo,
+			telemetryInfo: {
+				sessionId: this._telemetryService.sessionId,
+				machineId: this._telemetryService.machineId,
+				firstSessionDate: this._telemetryService.firstSessionDate,
+				msftInternal: this._telemetryService.msftInternal
+			},
 			logLevel: this._logService.getLevel(),
 			loggers: [...this._loggerService.getRegisteredLoggers()],
 			logsLocation: remoteInitData.extensionHostLogsPath,
