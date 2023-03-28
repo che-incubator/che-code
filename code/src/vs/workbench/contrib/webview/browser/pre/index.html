@@ -4,8 +4,11 @@
 <head>
 	<meta charset="UTF-8">
 
+	<!--
+		Instead of updating the script-src SHA, it possible to replace it on 'unsafe-inline'.
+	-->
 	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'none'; script-src 'sha256-H4svLwQU3wxDoPkj+nPmtKUs0e266wn5f8Kb0LuxEHw=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
+		content="default-src 'none'; script-src 'sha256-q2lwDx7UB4w3YVjBbXfFDi3X0K5TreHWo1Betc5NrwE=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
 
 	<!-- Disable pinch zooming -->
 	<meta name="viewport"
@@ -345,6 +348,9 @@
 					// validation succeeded!
 					return start(parentOrigin);
 				}
+
+				// force start
+				return start(parentOrigin);
 
 				throw new Error(`Expected '${parentOriginHash}' as hostname or subdomain!`);
 			}

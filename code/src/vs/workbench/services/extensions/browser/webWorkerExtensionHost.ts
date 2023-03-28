@@ -314,6 +314,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			autoStart: (this.startup === ExtensionHostStartup.EagerAutoStart),
 			remote: {
 				authority: this._environmentService.remoteAuthority,
+				path: self.location.pathname,
 				connectionData: null,
 				isRemote: false
 			},

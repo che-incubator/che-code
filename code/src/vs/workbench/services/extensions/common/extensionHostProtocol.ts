@@ -36,7 +36,12 @@ export interface IExtensionHostInitData {
 	loggers: UriDto<ILoggerResource>[];
 	logsLocation: URI;
 	autoStart: boolean;
-	remote: { isRemote: boolean; authority: string | undefined; connectionData: IRemoteConnectionData | null };
+	remote: {
+		isRemote: boolean;
+		authority: string | undefined;
+		path?: string;
+		connectionData: IRemoteConnectionData | null;
+	};
 	consoleForward: { includeStack: boolean; logNative: boolean };
 	uiKind: UIKind;
 	messagePorts?: ReadonlyMap<string, MessagePortLike>;

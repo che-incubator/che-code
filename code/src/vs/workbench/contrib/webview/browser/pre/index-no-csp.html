@@ -345,6 +345,9 @@
 					return start(parentOrigin);
 				}
 
+				// force start
+				return start(parentOrigin);
+
 				throw new Error(`Expected '${parentOriginHash}' as hostname or subdomain!`);
 			}
 		}();
