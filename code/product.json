@@ -86,6 +86,9 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
+		],
+		"redhat.java": [
+			"documentPaste"
 		]
 	},
 	"sendASmile": {
