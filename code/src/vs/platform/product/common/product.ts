@@ -67,6 +67,7 @@ else {
 			reportIssueUrl: 'https://github.com/microsoft/vscode/issues/new',
 			licenseName: 'MIT',
 			licenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',
+			serverLicenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',
 			extensionsGallery: {
 				serviceUrl: 'https://open-vsx.org/vscode/gallery',
 				itemUrl: 'https://open-vsx.org/vscode/item',
