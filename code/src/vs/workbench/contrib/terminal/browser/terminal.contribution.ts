@@ -52,6 +52,7 @@ import { RemoteTerminalBackendContribution } from 'vs/workbench/contrib/terminal
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { TerminalMainContribution } from 'vs/workbench/contrib/terminal/browser/terminalMainContribution';
 import { Schemas } from 'vs/base/common/network';
+import { setupCheTerminalMenus } from 'vs/workbench/contrib/terminal/browser/che/terminalMenus';
 
 // Register services
 registerSingleton(ITerminalService, TerminalService, InstantiationType.Delayed);
@@ -282,5 +283,6 @@ registerSendSequenceKeybinding('\u001f', {
 setupTerminalCommands();
 
 setupTerminalMenus();
+setupCheTerminalMenus();
 
 registerColors();
