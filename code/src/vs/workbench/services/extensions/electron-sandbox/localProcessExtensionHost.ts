@@ -457,7 +457,6 @@ export class NativeLocalProcessExtensionHost implements IExtensionHost {
 			},
 			remote: {
 				authority: this._environmentService.remoteAuthority,
-				path: '',
 				connectionData: null,
 				isRemote: false
 			},

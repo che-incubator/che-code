@@ -201,10 +201,6 @@ class BrowserExtensionHostFactory implements IExtensionHostFactory {
 					throw new Error('Cannot provide init data for remote extension host!');
 				}
 
-				console.log(`remoteEnv.appRoot ${remoteEnv.appRoot.toString()}`);
-				console.log(`> self.locatiion ${self.location}`);
-				console.log(`> self.locatiion.pathname ${self.location.pathname}`);
-
 				const myExtensions = runningLocations.filterByExtensionHostKind(allExtensions, ExtensionHostKind.Remote);
 
 				const initData = {

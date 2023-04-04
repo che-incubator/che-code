@@ -213,16 +213,8 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 	@memoize
 	get enableExtensions() { return this.options.enabledExtensions; }
 
-	webviewLocalResources(): boolean {
-		return true;
-	}
-
 	@memoize
 	get webviewExternalEndpoint(): string {
-		if (this.webviewLocalResources()) {
-			const selfURI = URI.parse(self.location.toString());
-			return `${selfURI.toString()}oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/`;
-		}
 
 		const endpoint = this.options.webviewEndpoint
 			|| this.productService.webviewContentExternalBaseUrlTemplate

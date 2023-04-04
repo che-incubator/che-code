@@ -37,6 +37,7 @@ import { WebviewFindDelegate, WebviewFindWidget } from 'vs/workbench/contrib/web
 import { FromWebviewMessage, KeyEvent, ToWebviewMessage } from 'vs/workbench/contrib/webview/browser/webviewMessages';
 import { decodeAuthority, webviewGenericCspSource, webviewRootResourceAuthority } from 'vs/workbench/contrib/webview/common/webview';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
+import { alternativeWebviewExternalEndpoint } from '../common/webviewLocalResources';
 
 interface WebviewContent {
 	readonly html: string;
@@ -519,6 +520,17 @@ export class WebviewElement extends Disposable implements IWebview, WebviewFindD
 	}
 
 	protected webviewContentEndpoint(encodedWebviewOrigin: string): string {
+		console.log(`>> webviewContentEndpoint`);
+
+		if (alternativeWebviewExternalEndpoint) {
+			console.log(`>> webviewContentEndpoint :: ${alternativeWebviewExternalEndpoint}`);
+			if (alternativeWebviewExternalEndpoint[alternativeWebviewExternalEndpoint.length - 1] === '/') {
+				return alternativeWebviewExternalEndpoint.slice(0, alternativeWebviewExternalEndpoint.length - 1);
+			}
+
+			return alternativeWebviewExternalEndpoint;
+		}
+
 		const webviewExternalEndpoint = this._environmentService.webviewExternalEndpoint;
 		if (!webviewExternalEndpoint) {
 			throw new Error(`'webviewExternalEndpoint' has not been configured. Webviews will not work!`);
