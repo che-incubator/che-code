@@ -8,6 +8,8 @@ The terminal is aware of the running pod. Then, you can open terminals in every 
 
 Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging#_subtree_merge). It means that if you're not interested in updating/rebasing upstream code you don't need to setup anything else unlike git submodules. This repository is self-contained.
 
+
+
 ## Development pre-requisites
  - NodeJS version used by `Code-OSS` (Exact version can be find inside https://github.com/microsoft/vscode/blob/main/remote/.yarnrc with target property)
  - Yarn v1.x
