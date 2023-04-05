@@ -419,7 +419,7 @@ class IssueReporterItem extends HelpItemBase {
 		return Promise.all(this.values.map(async (value) => {
 			return {
 				label: value.extensionDescription.displayName || value.extensionDescription.identifier.value,
-				description: '',
+				description: await value.url,
 				extensionDescription: value.extensionDescription
 			};
 		}));
