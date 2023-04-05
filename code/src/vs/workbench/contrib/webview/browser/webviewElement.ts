@@ -520,10 +520,7 @@ export class WebviewElement extends Disposable implements IWebview, WebviewFindD
 	}
 
 	protected webviewContentEndpoint(encodedWebviewOrigin: string): string {
-		console.log(`>> webviewContentEndpoint`);
-
 		if (alternativeWebviewExternalEndpoint) {
-			console.log(`>> webviewContentEndpoint :: ${alternativeWebviewExternalEndpoint}`);
 			if (alternativeWebviewExternalEndpoint[alternativeWebviewExternalEndpoint.length - 1] === '/') {
 				return alternativeWebviewExternalEndpoint.slice(0, alternativeWebviewExternalEndpoint.length - 1);
 			}

@@ -41,11 +41,6 @@ export const webviewGenericCspSource = `'self' https://*.${webviewResourceBaseHo
  * @param remoteInfo Optional information about the remote that specifies where `resource` should be resolved from.
  */
 export function asWebviewUri(resource: URI, remoteInfo?: WebviewRemoteInfo): URI {
-	console.log(`>> asWebviewUri: ${resource.toString()}`);
-	if (remoteInfo) {
-		console.log(`>> remoteInfo ? ${JSON.stringify(remoteInfo, undefined, 2)}`);
-	}
-
 	if (resource.scheme === Schemas.http || resource.scheme === Schemas.https) {
 		return resource;
 	}
@@ -53,10 +48,7 @@ export function asWebviewUri(resource: URI, remoteInfo?: WebviewRemoteInfo): URI
 	if (remoteInfo && remoteInfo.authority && remoteInfo.isRemote && resource.scheme === Schemas.file) {
 		const redirected = redirectToLocalWorkspace(resource, remoteInfo);
 		if (redirected) {
-			console.log(`>> got redirection ${redirected.toString()}`);
 			return redirected;
-		} else {
-			console.log('>> no redirection');
 		}
 
 		resource = URI.from({
@@ -65,7 +57,6 @@ export function asWebviewUri(resource: URI, remoteInfo?: WebviewRemoteInfo): URI
 			path: resource.path,
 		});
 	}
-
 
 	return URI.from({
 		scheme: Schemas.https,
