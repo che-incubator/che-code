@@ -12,6 +12,9 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
  - NodeJS version used by `Code-OSS` (Exact version can be find inside https://github.com/microsoft/vscode/blob/main/remote/.yarnrc with target property)
  - Yarn v1.x
 
+
+
+
 ## Directories layout
 
 - `code` contains the upstream content (subtree) + changes required to have Code running in a remote server.
