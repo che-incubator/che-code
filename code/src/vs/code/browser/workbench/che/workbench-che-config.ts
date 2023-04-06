@@ -45,7 +45,8 @@ const initialColorTheme: IInitialColorTheme = {
 const defaultWorkbenchConfiguration = {
     windowIndicator,
     configurationDefaults,
-    initialColorTheme
+    initialColorTheme,
+	webviewEndpoint: `${window.location.protocol}//${window.location.host}${window.location.pathname}oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/`
 };
 
 export function getCheConfig(): IWorkbenchConstructionOptions {
