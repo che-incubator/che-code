@@ -6,7 +6,7 @@
 import { CharCode } from 'vs/base/common/charCode';
 import { Schemas } from 'vs/base/common/network';
 import { URI } from 'vs/base/common/uri';
-import { alternativeWebviewResourcesBaseURI, redirectToLocalWorkspace } from './webviewLocalResources';
+import { redirectToLocalWorkspace } from './che/webviewLocalResources';
 
 export interface WebviewRemoteInfo {
 	readonly isRemote: boolean;
@@ -21,7 +21,7 @@ export interface WebviewRemoteInfo {
  * should always go to a service worker.
  */
 
-export const webviewResourceBaseHost = URI.parse(alternativeWebviewResourcesBaseURI).authority;
+export let webviewResourceBaseHost = 'vscode-cdn.net';
 
 export const webviewRootResourceAuthority = `vscode-resource.${webviewResourceBaseHost}`;
 

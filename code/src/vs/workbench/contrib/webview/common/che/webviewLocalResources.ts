@@ -39,17 +39,18 @@ export const alternativeWebviewResourcesBaseURI = getBaseURI();
 export const alternativeWebviewExternalEndpoint = `${alternativeWebviewResourcesBaseURI}oss-dev/static/out/vs/workbench/contrib/webview/browser/pre`;
 
 export function redirectToLocalWorkspace(resource: URI, remoteInfo: { authority: string | undefined; path?: string; }): URI | undefined {
+
     // Checks if a resource from some built-in extension is requested
     // file:///checode/checode-linux-libc/extensions/markdown-language-features/media/pre.js
     if (resource.toString().startsWith('file:///checode/checode-linux-libc/')) {
 
         const rpath = resource.toString().replace('file:///checode/checode-linux-libc/', `${remoteInfo.path}oss-dev/static/`);
         return URI.from({
-        	scheme: Schemas.https,
-        	authority: remoteInfo.authority,
-        	path: rpath,
-        	fragment: resource.fragment,
-        	query: resource.query
+            scheme: Schemas.https,
+            authority: remoteInfo.authority,
+            path: rpath,
+            fragment: resource.fragment,
+            query: resource.query
         });
     }
 
@@ -59,11 +60,11 @@ export function redirectToLocalWorkspace(resource: URI, remoteInfo: { authority:
 
         const rpath = resource.toString().replace('file:///', `${remoteInfo.path}oss-dev/static/`);
         return URI.from({
-        	scheme: Schemas.https,
-        	authority: remoteInfo.authority,
-        	path: rpath,
-        	fragment: resource.fragment,
-        	query: resource.query
+            scheme: Schemas.https,
+            authority: remoteInfo.authority,
+            path: rpath,
+            fragment: resource.fragment,
+            query: resource.query
         });
     }
 
@@ -72,11 +73,11 @@ export function redirectToLocalWorkspace(resource: URI, remoteInfo: { authority:
     if (resource.toString().startsWith('file:///checode/remote/extensions/')) {
         const rpath = resource.toString().replace('file:///checode/remote/extensions/', `${remoteInfo.path}oss-dev/static/remote-extensions/`);
         return URI.from({
-        	scheme: Schemas.https,
-        	authority: remoteInfo.authority,
-        	path: rpath,
-        	fragment: resource.fragment,
-        	query: resource.query
+            scheme: Schemas.https,
+            authority: remoteInfo.authority,
+            path: rpath,
+            fragment: resource.fragment,
+            query: resource.query
         });
     }
 
