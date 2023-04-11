@@ -21,14 +21,6 @@ RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/
 
 WORKDIR /mnt/rootfs
 
-#
-# Important for webviews!!!
-#
-# Create symlinks to allow local workspace resources being loaded via VS Code http server 
-#   projects -> /projects
-#   remote-extensions -> /checode/remote/extensions
-#
-
 COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl
 COPY --from=linux-libc-content --chown=0:0 /checode-linux-libc /mnt/rootfs/checode-linux-libc
 
