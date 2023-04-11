@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 
 	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'none'; script-src 'sha256-TnR7AVgkB1cMXTyv4+AQLaQIDdMeJrYtgrY3bdZbyiU=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
+		content="default-src 'none'; script-src 'sha256-Y7zGIKslRXDuVO/sNfumhE/tIAo8X5IU4brbypn7jqg=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
 
 	<!-- Disable pinch zooming -->
 	<meta name="viewport"
@@ -326,6 +326,12 @@
 
 				const hostname = location.hostname;
 
+				// Run if we are on the same host.
+				const parent = new URL(parentOrigin);
+				if (parent.hostname === hostname) {
+					return start(parentOrigin);
+				}
+
 				if (!crypto.subtle) {
 					// cannot validate, not running in a secure context
 					throw new Error(`'crypto.subtle' is not available so webviews will not work. This is likely because the editor is not running in a secure context (https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).`);
@@ -352,9 +358,7 @@
 					return start(parentOrigin);
 				}
 
-				// throw new Error(`Expected '${parentOriginHash}' as hostname or subdomain!`);
-				// force start instead of firing an error
-				return start(parentOrigin);
+				throw new Error(`Expected '${parentOriginHash}' as hostname or subdomain!`);
 			}
 		}();
 

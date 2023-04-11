@@ -30,12 +30,7 @@ WORKDIR /mnt/rootfs
 #
 
 COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl
-RUN ln -s /projects /mnt/rootfs/checode-linux-musl/projects && \
-    ln -s /checode/remote/extensions /mnt/rootfs/checode-linux-musl/remote-extensions
-
 COPY --from=linux-libc-content --chown=0:0 /checode-linux-libc /mnt/rootfs/checode-linux-libc
-RUN ln -s /projects /mnt/rootfs/checode-linux-libc/projects && \
-    ln -s /checode/remote/extensions /mnt/rootfs/checode-linux-libc/remote-extensions
 
 RUN mkdir -p /mnt/rootfs/projects && mkdir -p /mnt/rootfs/home/che && mkdir -p /mnt/rootfs/bin/
 RUN cat /mnt/rootfs/etc/passwd | sed s#root:x.*#root:x:\${USER_ID}:\${GROUP_ID}::\${HOME}:/bin/bash#g > /mnt/rootfs/home/che/.passwd.template \

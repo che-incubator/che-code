@@ -11,7 +11,6 @@ import { redirectToLocalWorkspace } from './che/webviewLocalResources';
 export interface WebviewRemoteInfo {
 	readonly isRemote: boolean;
 	readonly authority: string | undefined;
-	readonly path?: string;
 }
 
 /**

@@ -66,6 +66,50 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
 fi
 
+
+# To switch the webview content being loaded from local workspace we need to check for 'WEBVIEW_LOCAL_RESOURCES' environment variable.
+# If the variable is set, then:
+#   - using `sed` command, replace 'load-webview-resources-from-vscode-cdn' on 'load-webview-resources-from-local-workspace' in folowing javascript files;
+#     this remplacement will activate trigger and will replace the resource URI prefix to forward requests to the workspace
+#   - using `yq`, find and fetch 'che-code' endpoint value from /devworkspace-metadata/flattened.devworkspace.yaml,
+#     using `sed` command, replace 'alternative-webview-resources-base-uri' on the edpoint value, got by `yq` command;
+#   - to be able to load the resources from the current workspace and to work properly with installed extension it needs as well
+#       -- create symlink /checode/checode-linux-[libc|musl]/projects -> /projects
+#       -- create symlink /checode/checode-linux-[libc|musl]/remote-extensions -> /checode/remote/extensions
+# 
+if [ -n "${WEBVIEW_LOCAL_RESOURCES+x}" ]; then
+  CHE_CODE_ENDPOINT=$(yq -r '
+    .components
+    | to_entries[]
+    | select(.value.container.command[0] == "/checode/entrypoint-volume.sh")
+    | .value.container.endpoints
+    | to_entries[]
+    | select(.value.name == "che-code")
+    | .value.attributes
+    | to_entries[]
+    | select(.key == "controller.devfile.io/endpoint-url")
+    | .value
+  ' /devworkspace-metadata/flattened.devworkspace.yaml)
+
+  echo "CHE_CODE_ENDPOINT: $CHE_CODE_ENDPOINT"
+
+  # turn on loading the webview resources from the local workspace
+  sed -i -r -e "s|load-webview-resources-from-vscode-cdn|load-webview-resources-from-local-workspace|" out/vs/workbench/workbench.web.main.js
+  sed -i -r -e "s|load-webview-resources-from-vscode-cdn|load-webview-resources-from-local-workspace|" out/vs/workbench/api/worker/extensionHostWorker.js
+  sed -i -r -e "s|load-webview-resources-from-vscode-cdn|load-webview-resources-from-local-workspace|" out/vs/workbench/api/node/extensionHostProcess.js
+  
+  # inject the 'che-code' endpoint URI into vscode
+  sed -i -r -e "s|alternative-webview-resources-base-uri|${CHE_CODE_ENDPOINT}|" out/vs/workbench/workbench.web.main.js
+  sed -i -r -e "s|alternative-webview-resources-base-uri|${CHE_CODE_ENDPOINT}|" out/vs/workbench/api/worker/extensionHostWorker.js
+  sed -i -r -e "s|alternative-webview-resources-base-uri|${CHE_CODE_ENDPOINT}|" out/vs/workbench/api/node/extensionHostProcess.js
+
+  # create smlinks to /projects and to /checode/remote/extensions
+  ln -s /projects ./projects
+  # ln -s /checode/remote/extensions ./remote-extensions
+  ln -s $VSCODE_AGENT_FOLDER/extensions ./remote-extensions
+fi
+
+
 # Check if we have a custom CA certificate
 if [ -f /tmp/che/secret/ca.crt ]; then
   echo "Adding custom CA certificate"

@@ -32,7 +32,6 @@ export interface IRemoteExtensionHostInitData {
 	readonly connectionData: IRemoteConnectionData | null;
 	readonly pid: number;
 	readonly appRoot: URI;
-	readonly appPath: string;
 	readonly extensionHostLogsPath: URI;
 	readonly globalStorageHome: URI;
 	readonly workspaceStorageHome: URI;
@@ -233,8 +232,7 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 			remote: {
 				isRemote: true,
 				authority: this._initDataProvider.remoteAuthority,
-				path: remoteInitData.appPath,
-				connectionData: remoteInitData.connectionData,
+				connectionData: remoteInitData.connectionData
 			},
 			consoleForward: {
 				includeStack: false,
