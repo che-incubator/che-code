@@ -20,7 +20,7 @@ export interface WebviewRemoteInfo {
  * should always go to a service worker.
  */
 
-export let webviewResourceBaseHost = 'vscode-cdn.net';
+export const webviewResourceBaseHost = 'vscode-cdn.net';
 
 export const webviewRootResourceAuthority = `vscode-resource.${webviewResourceBaseHost}`;
 

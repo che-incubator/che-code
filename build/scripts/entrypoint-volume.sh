@@ -104,8 +104,7 @@ if [ -n "${WEBVIEW_LOCAL_RESOURCES+x}" ]; then
   sed -i -r -e "s|alternative-webview-resources-base-uri|${CHE_CODE_ENDPOINT}|" out/vs/workbench/api/node/extensionHostProcess.js
 
   # create smlinks to /projects and to /checode/remote/extensions
-  ln -s /projects ./projects
-  # ln -s /checode/remote/extensions ./remote-extensions
+  ln -s $PROJECTS_ROOT ./projects
   ln -s $VSCODE_AGENT_FOLDER/extensions ./remote-extensions
 fi
 
