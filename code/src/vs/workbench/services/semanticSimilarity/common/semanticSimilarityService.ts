@@ -44,7 +44,7 @@ export class SemanticSimilarityService implements ISemanticSimilarityService {
 	}
 
 	isEnabled(): boolean {
-		return this._providers.length > 0;
+		return this._providers.length > 0 || this.oldService.isEnabled();
 	}
 
 	registerSemanticSimilarityProvider(provider: ISemanticSimilarityProvider): IDisposable {
@@ -111,6 +111,10 @@ interface ICommandsEmbeddingsCache {
 	[commandId: string]: { embedding: number[] };
 }
 
+interface INewCommandsEmbeddingsCacheFormat {
+	core: ICommandsEmbeddingsCache;
+}
+
 class OldSemanticSimilarityService {
 	declare _serviceBrand: undefined;
 
@@ -132,7 +136,11 @@ class OldSemanticSimilarityService {
 			return {};
 		}
 		const content = await this.fileService.readFile(URI.parse(path));
-		return JSON.parse(content.value.toString());
+		const parsed = JSON.parse(content.value.toString()) as INewCommandsEmbeddingsCacheFormat | ICommandsEmbeddingsCache;
+		if ('core' in parsed) {
+			return (parsed as INewCommandsEmbeddingsCacheFormat).core;
+		}
+		return parsed;
 	}
 
 	isEnabled(): boolean {
