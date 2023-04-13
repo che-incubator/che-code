@@ -37,7 +37,7 @@ import { WebviewFindDelegate, WebviewFindWidget } from 'vs/workbench/contrib/web
 import { FromWebviewMessage, KeyEvent, ToWebviewMessage } from 'vs/workbench/contrib/webview/browser/webviewMessages';
 import { decodeAuthority, webviewGenericCspSource, webviewRootResourceAuthority } from 'vs/workbench/contrib/webview/common/webview';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
-import { alternativeWebviewExternalEndpoint, loadWebviewResourcesFromLocalWorkspace } from '../common/che/webviewLocalResources';
+import { alternativeWebviewExternalEndpoint, loadWebviewResourcesFromLocalWorkspace } from 'vs/workbench/contrib/webview/common/che/webviewLocalResources';
 
 interface WebviewContent {
 	readonly html: string;

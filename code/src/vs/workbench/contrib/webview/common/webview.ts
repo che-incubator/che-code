@@ -6,7 +6,7 @@
 import { CharCode } from 'vs/base/common/charCode';
 import { Schemas } from 'vs/base/common/network';
 import { URI } from 'vs/base/common/uri';
-import { redirectToLocalWorkspace } from './che/webviewLocalResources';
+import { redirectToLocalWorkspace } from 'vs/workbench/contrib/webview/common/che/webviewLocalResources';
 
 export interface WebviewRemoteInfo {
 	readonly isRemote: boolean;
