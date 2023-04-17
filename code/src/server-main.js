@@ -8,6 +8,7 @@
 const perf = require('./vs/base/common/performance');
 const performance = require('perf_hooks').performance;
 const product = require('../product.json');
+const url = require('url');
 const readline = require('readline');
 const http = require('http');
 
@@ -102,6 +103,12 @@ async function start() {
 			firstRequest = false;
 			perf.mark('code/server/firstRequest');
 		}
+		if (!_remoteExtensionHostAgentServer && req.url && url.parse(req.url, true).pathname === '/healthz') {
+			res.writeHead(503, { 'Content-Type': 'text/plain' });
+			res.end('Service Unavailable');
+			return;
+		}
+		
 		const remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();
 		return remoteExtensionHostAgentServer.handleRequest(req, res);
 	});
@@ -160,6 +167,7 @@ async function start() {
 		server.close();
 		if (_remoteExtensionHostAgentServer) {
 			_remoteExtensionHostAgentServer.dispose();
+			_remoteExtensionHostAgentServer = null;
 		}
 	});
 }
