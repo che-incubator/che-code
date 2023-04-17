@@ -121,6 +121,11 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 			return void res.end(this._productService.commit || '');
 		}
 
+		if (pathname === '/healthz') {
+			res.writeHead(200, { 'Content-Type': 'text/plain' });
+			return void res.end('OK');
+		}
+
 		// Delay shutdown
 		if (pathname === '/delay-shutdown') {
 			this._delayShutdown();
