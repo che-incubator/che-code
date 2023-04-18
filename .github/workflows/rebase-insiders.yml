@@ -41,13 +41,11 @@ jobs:
       - name: rebase
         run: |
           ./rebase.sh
-      - name: Create an issue
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          filename: .github/fix_auto-rebase_issue_template.md
+# It requires a token in order to create an issue in the "eclipse" GH org.
+# It fails with: "GraphQL: Resource not accessible by integration (createIssue)".
+#       - name: Create an issue
+#         if: failure()
+#         run: gh issue create --repo eclipse/che --title "Che-Code automatic rebase against upstream VS Code is failed" --label "kind/task,area/editor/vscode,severity/P1" --assignee azatsarynnyy --body "$(cat ./.github/fix_auto-rebase_issue_template.md)"
       - name: Disable the Workflow
         if: failure()
         env:
