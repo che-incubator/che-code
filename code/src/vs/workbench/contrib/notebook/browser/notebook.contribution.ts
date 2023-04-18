@@ -912,22 +912,37 @@ configurationRegistry.registerConfiguration({
 			tags: ['notebookLayout'],
 			default: false
 		},
-		[NotebookSetting.experimentalFindInMarkdownMode]: {
-			markdownDescription: nls.localize('notebook.experimental.findInMarkdownMode', "Customize the Find Widget behavior for searching within markdown cells. When both are enabled, the Find Widget will search either the content or preview based on the current state of the markdown cell. Toggle the boolean values to control the Find Widget's scope for each mode as needed."),
+		[NotebookSetting.confirmDeleteRunningCell]: {
+			markdownDescription: nls.localize('notebook.confirmDeleteRunningCell', "Control whether a confirmation prompt is required to delete a running cell."),
+			type: 'boolean',
+			default: true
+		},
+		[NotebookSetting.findScope]: {
+			markdownDescription: nls.localize('notebook.findScope', "Customize the Find Widget behavior for searching within notebook cells. When both markup source and markup preview are enabled, the Find Widget will search either the source code or preview based on the current state of the cell."),
 			type: 'object',
 			properties: {
-				source: {
+				markupSource: {
 					type: 'boolean',
 					default: true
 				},
-				preview: {
+				markupPreview: {
 					type: 'boolean',
-					default: false
+					default: true
+				},
+				codeSource: {
+					type: 'boolean',
+					default: true
+				},
+				codeOutput: {
+					type: 'boolean',
+					default: true
 				}
 			},
 			default: {
-				source: true,
-				preview: false
+				markupSource: true,
+				markupPreview: true,
+				codeSource: true,
+				codeOutput: true
 			},
 			tags: ['notebookLayout']
 		}
