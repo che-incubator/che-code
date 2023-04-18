@@ -31,7 +31,7 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 3. `export DOCKER_BUILDKIT=1`
 4. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
-## Developing with Eclipse Che
+## Developing with Eclipse Che®
 
 This project includes [Devfile](devfile.yaml) that simplifies developing Che-Code in Eclipse Che.
 To test your changes in Eclipse Che run the following VS Code tasks:
@@ -349,3 +349,7 @@ Downstream builds can be found at the link below, which is _internal to Red Hat_
 # License
 
 - [Eclipse Public License 2.0](LICENSE)
+
+# Trademark
+
+"Che" is a trademark of the Eclipse Foundation.
