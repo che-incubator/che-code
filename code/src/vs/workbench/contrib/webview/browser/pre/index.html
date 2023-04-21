@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 
 	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'none'; script-src 'sha256-7T0Xm7l4AYKDwm8oYNQ65wcQX7K/ndvxH/2ZgHWUE3w=' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
+		content="default-src 'none'; script-src 'unsafe-inline' 'self'; frame-src 'self'; style-src 'unsafe-inline';">
 
 	<!-- Disable pinch zooming -->
 	<meta name="viewport"
@@ -333,6 +333,12 @@
 				const parentOrigin = searchParams.get('parentOrigin');
 
 				const hostname = location.hostname;
+
+				// Run if we are on the same host.
+				const parent = new URL(parentOrigin);
+				if (parent.hostname === hostname) {
+					return start(parentOrigin);
+				}
 
 				if (!crypto.subtle) {
 					// cannot validate, not running in a secure context
