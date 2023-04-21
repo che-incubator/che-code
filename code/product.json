@@ -24,6 +24,8 @@
 	"win32arm64UserAppId": "{{3AEBF0C8-F733-4AD4-BADE-FDB816D53D7B}",
 	"win32AppUserModelId": "Che.Code",
 	"win32ShellNameShort": "CheC&ode",
+	"win32TunnelServiceMutex": "vscodetunnelserviceoss",
+	"win32TunnelMutex": "vscodetunneloss",
 	"darwinBundleIdentifier": "org.eclipse.che.code",
 	"linuxIconName": "org.eclipse.che.code",
 	"licenseFileName": "LICENSE.txt",
@@ -86,9 +88,6 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
-		],
-		"redhat.java": [
-			"documentPaste"
 		]
 	},
 	"sendASmile": {
