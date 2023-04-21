@@ -23,6 +23,7 @@
   },
   "main": "./out/extension.js",
   "scripts": {
+    "prepare": "yarn compile && yarn test",
     "compile": "gulp compile-extension:che-commands",
     "watch": "gulp watch-extension:che-commands",
     "vscode:prepublish": "npm run compile",
