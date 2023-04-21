@@ -1,0 +1,10 @@
+[
+	{
+		"from": "content=\\\"default-src 'none'; script-src 'sha256-............................................' 'self'; frame-src 'self'; style-src 'unsafe-inline';\\\"",
+		"by": "content=\\\"default-src 'none'; script-src 'unsafe-inline' 'self'; frame-src 'self'; style-src 'unsafe-inline';\\\""
+	},
+	{
+		"from": "const hostname = location.hostname;",
+		"by": "const hostname = location.hostname;\\\n\\\n\\\t\\\t\\\t\\\t// Run if we are on the same host.\\\n\\\t\\\t\\\t\\\tconst parent = new URL(parentOrigin);\\\n\\\t\\\t\\\t\\\tif (parent.hostname === hostname) {\\\n\\\t\\\t\\\t\\\t\\\treturn start(parentOrigin);\\\n\\\t\\\t\\\t\\\t}"
+	}
+]

@@ -75,7 +75,7 @@ apply_replace() {
     sed -i.bak -e "s|${escape_from}|${escape_by}|" "${filename}"
     if diff "$filename" "$filename.bak" &> /dev/null; then
       echo "Unable to perform the replace. Value is not present in the resulting file"
-      echo "Wanted to check ${by}"
+      echo "Wanted to check ${from}"
       echo "File content is"
       cat "${filename}"
       exit 1
@@ -211,6 +211,34 @@ apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
   git add code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index.html file
+apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index.html..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index.html
+  
+  # resolve the change
+  git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
+}
+
+# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html file
+apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
+  
+  # resolve the change
+  git add code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
+}
+
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
@@ -234,12 +262,15 @@ resolve_conflicts() {
       apply_code_vs_server_web_client_server_changes
 	elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
+      apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html" ]]; then
+      apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
     fi
   done
-  
 }
 
 # $1 is the upstream sha1 on which we're rebasing
