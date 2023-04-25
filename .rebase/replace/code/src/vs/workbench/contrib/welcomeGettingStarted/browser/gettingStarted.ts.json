@@ -1,0 +1,6 @@
+[
+  {
+    "from": "localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, \"Editing evolved\")",
+    "by": "this.productService.nameLongSubtitle \\|\\| localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, \"Editing evolved\")"
+  }
+]
