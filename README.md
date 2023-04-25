@@ -132,7 +132,8 @@ The following example shows all of the properties that you can customize by usin
 ```json
 {
     "nameShort": "Branded IDE",
-    "nameLong": "Branded Instance of Eclipse Che with Branded Microsoft Visual Studio Code - Open Source IDE",
+    "nameLong": "Branded Instance of Eclipse Che",
+    "nameLongSubtitle": "with Branded Microsoft Visual Studio Code - Open Source IDE",
     "icons": {
         "favicon": {
             "universal": "icons/favicon.ico"
