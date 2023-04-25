@@ -1,0 +1,6 @@
+[
+  {
+    "from": "readonly nameLong: string;",
+    "by": "readonly nameLong: string;\\\n\\\treadonly nameLongSubtitle?: string;"
+  }
+]
