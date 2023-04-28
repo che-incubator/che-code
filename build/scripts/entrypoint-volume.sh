@@ -62,7 +62,7 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
   echo "using OPENVSX_URL=$OPENVSX_URL"
   sed -i -r -e "s|\"serviceUrl\": \"..*\"|\"serviceUrl\": \"${OPENVSX_URL}/gallery\"|" product.json
   sed -i -r -e "s|\"itemUrl\": \"..*\"|\"itemUrl\": \"${OPENVSX_URL}/item\"|" product.json
-  sed -i -e "s|serviceUrl:\".*\",itemUrl:\".*\"},version|serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"},version|" out/vs/workbench/workbench.web.main.js
+  sed -i -e "s|extensionsGallery:{serviceUrl:\"[^\"]*\",itemUrl:\"[^\"]*\"|extensionsGallery:{serviceUrl:\"${OPENVSX_URL}/gallery\",itemUrl:\"${OPENVSX_URL}/item\"|" out/vs/workbench/workbench.web.main.js
 fi
 
 
