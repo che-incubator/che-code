@@ -321,12 +321,13 @@ export class InteractiveEditorController implements IEditorContribution {
 		@IContextKeyService contextKeyService: IContextKeyService,
 
 	) {
-		this._zone = this._store.add(_instaService.createInstance(InteractiveEditorZoneWidget, this._editor));
 		this._ctxHasActiveRequest = CTX_INTERACTIVE_EDITOR_HAS_ACTIVE_REQUEST.bindTo(contextKeyService);
 		this._ctxInlineDiff = CTX_INTERACTIVE_EDITOR_INLNE_DIFF.bindTo(contextKeyService);
 		this._ctxLastEditKind = CTX_INTERACTIVE_EDITOR_LAST_EDIT_KIND.bindTo(contextKeyService);
 		this._ctxLastResponseType = CTX_INTERACTIVE_EDITOR_LAST_RESPONSE_TYPE.bindTo(contextKeyService);
 		this._ctxLastFeedbackKind = CTX_INTERACTIVE_EDITOR_LAST_FEEDBACK_KIND.bindTo(contextKeyService);
+		this._zone = this._store.add(_instaService.createInstance(InteractiveEditorZoneWidget, this._editor));
+
 	}
 
 	dispose(): void {
@@ -460,19 +461,13 @@ export class InteractiveEditorController implements IEditorContribution {
 					this._logService.trace('[IE] ABORT wholeRange seems gone/collapsed');
 					return;
 				}
-				// for (const change of e.changes) {
-				// 	if (!Range.areIntersectingOrTouching(wholeRange, change.range)) {
-				// 		this._ctsSession.cancel();
-				// 		this._logService.trace('[IE] CANCEL because of model change OUTSIDE range');
-				// 		this._currentSession!.teldata.terminalEdits = true;
-				// 		break;
-				// 	}
-				// }
 			}
 
 		}, undefined, store);
 
 		const diffZone = this._instaService.createInstance(InteractiveEditorDiffWidget, this._editor, textModel0);
+
+		let _requestCancelledOnModelContentChanged = false;
 
 		do {
 
@@ -494,7 +489,8 @@ export class InteractiveEditorController implements IEditorContribution {
 			this._ctsRequest = new CancellationTokenSource(this._ctsSession.token);
 
 			this._historyOffset = -1;
-			const inputPromise = this._zone.getInput(wholeRange.getEndPosition(), placeholder, value, this._ctsRequest.token);
+			const inputPromise = this._zone.getInput(wholeRange.getEndPosition(), placeholder, value, this._ctsRequest.token, _requestCancelledOnModelContentChanged);
+			_requestCancelledOnModelContentChanged = false;
 
 			if (textModel0Changes && editMode === EditMode.LivePreview) {
 
@@ -528,6 +524,11 @@ export class InteractiveEditorController implements IEditorContribution {
 				continue;
 			}
 
+			const typeListener = this._zone.widget.inputEditor.onDidChangeModelContent(() => {
+				this.cancelCurrentRequest();
+				_requestCancelledOnModelContentChanged = true;
+			});
+
 			const sw = StopWatch.create();
 			const request: IInteractiveEditorRequest = {
 				prompt: input,
@@ -557,6 +558,8 @@ export class InteractiveEditorController implements IEditorContribution {
 				this._ctxLastResponseType.set(reply?.type);
 				this._zone.widget.updateProgress(false);
 				this._logService.trace('[IE] request took', sw.elapsed(), provider.debugName);
+
+				typeListener.dispose();
 			}
 
 			if (this._ctsRequest.token.isCancellationRequested) {
@@ -574,7 +577,7 @@ export class InteractiveEditorController implements IEditorContribution {
 			this._zone.widget.updateToolbar(true);
 
 			if (reply.type === 'message') {
-				this._logService.info('[IE] received a MESSAGE, continuing outside editor', provider.debugName);
+				this._logService.info('[IE] received a MESSAGE, showing inline first', provider.debugName);
 				const renderedMarkdown = renderMarkdown(reply.message, { inline: true });
 				this._zone.widget.updateStatus('');
 				this._zone.widget.updateMarkdownMessage(renderedMarkdown.element);
@@ -623,7 +626,7 @@ export class InteractiveEditorController implements IEditorContribution {
 				const textModelNplus1 = this._modelService.createModel(createTextBufferFactoryFromSnapshot(textModel.createSnapshot()), null, undefined, true);
 				textModelNplus1.applyEdits(editOperations);
 				const diff = await this._editorWorkerService.computeDiff(textModel0.uri, textModelNplus1.uri, { ignoreTrimWhitespace: false, maxComputationTimeMs: 5000 }, 'advanced');
-				textModel0Changes = diff?.changes ?? undefined;
+				textModel0Changes = diff?.changes ?? [];
 				textModelNplus1.dispose();
 
 				try {
