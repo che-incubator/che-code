@@ -88,7 +88,8 @@ export class CopyPasteController extends Disposable implements IEditorContributi
 	}
 
 	private isPasteAsEnabled(): boolean {
-		return this._editor.getOption(EditorOption.pasteAs).enabled;
+		return this._editor.getOption(EditorOption.pasteAs).enabled
+			&& !this._editor.getOption(EditorOption.readOnly);
 	}
 
 	private handleCopy(e: ClipboardEvent) {
@@ -160,12 +161,12 @@ export class CopyPasteController extends Disposable implements IEditorContributi
 
 		this._currentOperation?.cancel();
 
+		const model = this._editor.getModel();
 		const selections = this._editor.getSelections();
-		if (!selections?.length || !this._editor.hasModel()) {
+		if (!selections?.length || !model) {
 			return;
 		}
 
-		const model = this._editor.getModel();
 		if (!this.isPasteAsEnabled()) {
 			return;
 		}
@@ -225,7 +226,7 @@ export class CopyPasteController extends Disposable implements IEditorContributi
 
 				if (providerEdits.length) {
 					const canShowWidget = editor.getOption(EditorOption.pasteAs).showPasteSelector === 'afterPaste';
-					return this._postPasteWidgetManager.applyEditAndShowIfNeeded(selections[0], { activeEditIndex: 0, allEdits: providerEdits }, canShowWidget, tokenSource.token);
+					return this._postPasteWidgetManager.applyEditAndShowIfNeeded(selections, { activeEditIndex: 0, allEdits: providerEdits }, canShowWidget, tokenSource.token);
 				}
 
 				await this.applyDefaultPasteHandler(dataTransfer, metadata, tokenSource.token);
