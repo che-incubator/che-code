@@ -132,8 +132,9 @@ The following example shows all of the properties that you can customize by usin
 ```json
 {
     "nameShort": "Branded IDE",
-    "nameLong": "Branded Instance of Eclipse Che",
-    "nameLongSubtitle": "with Branded Microsoft Visual Studio Code - Open Source IDE",
+    "nameLong": "Branded Instance of Eclipse Che with Branded Microsoft Visual Studio Code - Open Source IDE",
+    "welcomePageTitle": "Branded Instance of Eclipse Che",
+    "welcomePageSubtitle": "with Branded Microsoft Visual Studio Code - Open Source IDE",
     "icons": {
         "favicon": {
             "universal": "icons/favicon.ico"
@@ -165,6 +166,10 @@ The following example shows all of the properties that you can customize by usin
 `nameShort` is the application name for UI elements.
 
 `nameLong` is the application name that is used for the **Welcome** page, **About** dialog, and browser tab title.
+
+`welcomePageTitle` is the **Welcome** page title. The field is optional, the default is `nameLong` as the title.
+
+`welcomePageSubtitle` - is the **Welcome** page subtitle. The field is optional, the default value comes from the upstream.
 
 `favicon` is the icon for the browser tab title for all themes.
 
