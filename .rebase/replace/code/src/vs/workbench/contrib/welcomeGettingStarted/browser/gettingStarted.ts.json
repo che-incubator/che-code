@@ -1,6 +1,10 @@
 [
   {
-    "from": "localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, \"Editing evolved\")",
-    "by": "this.productService.nameLongSubtitle \\|\\| localize({ key: 'gettingStarted.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, \"Editing evolved\")"
+    "from": "'h1.product-name.caption', {}, this.productService.nameLong",
+    "by": "'h1.product-name.caption', {}, this.productService.welcomePageTitle \\|\\| this.productService.nameLong"
+  },
+  {
+    "from": "'p.subtitle.description', {},",
+    "by": "'p.subtitle.description', {}, this.productService.welcomePageSubtitle \\|\\|"
   }
 ]
