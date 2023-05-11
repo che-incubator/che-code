@@ -66,46 +66,53 @@ if [ -n "${OPENVSX_REGISTRY_URL+x}" ]; then
 fi
 
 
+# fetch che-code endpoint value from /devworkspace-metadata/flattened.devworkspace.yaml
+CHE_CODE_ENDPOINT=$(yq -r '
+  .components
+  | to_entries[]
+  | select(.value.attributes | to_entries[] | .key == "app.kubernetes.io/component" and .value == "che-code-runtime")
+  | .value.container.endpoints
+  | to_entries[]
+  | select(.value.name == "che-code")
+  | .value.attributes
+  | to_entries[]
+  | select(.key == "controller.devfile.io/endpoint-url")
+  | .value
+' /devworkspace-metadata/flattened.devworkspace.yaml)
+
+if [ -z "$CHE_CODE_ENDPOINT" ]; then
+  echo "Unable to fetch che-code endpoint from /devworkspace-metadata/flattened.devworkspace.yaml. Webviews will not work if CDN disabled."
+fi
+
 # To switch the webview content being loaded from local workspace we need to check for 'WEBVIEW_LOCAL_RESOURCES' environment variable.
 if [ -n "${WEBVIEW_LOCAL_RESOURCES+x}" ]; then
 
   # If the variable is set to 'true', then:
-  if [[ "${WEBVIEW_LOCAL_RESOURCES}" == "true" ]]; then
+  if [ "${WEBVIEW_LOCAL_RESOURCES}" == "true" ]; then
 
-    # fetch che-code endpoint value from /devworkspace-metadata/flattened.devworkspace.yaml
-    CHE_CODE_ENDPOINT=$(yq -r '
-      .components
-      | to_entries[]
-      | select(.value.container.command[0] == "/checode/entrypoint-volume.sh")
-      | .value.container.endpoints
-      | to_entries[]
-      | select(.value.name == "che-code")
-      | .value.attributes
-      | to_entries[]
-      | select(.key == "controller.devfile.io/endpoint-url")
-      | .value
-    ' /devworkspace-metadata/flattened.devworkspace.yaml)
+    if [ ! -z "$CHE_CODE_ENDPOINT" ]; then
+      # make a valid base URI for webview static resources
+      WEBVIEW_CONTENT_BASE_URL=$CHE_CODE_ENDPOINT"oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/"
+      echo "Load webview static files from $WEBVIEW_CONTENT_BASE_URL"
 
-    # make a valid base URI for webview static resources
-    WEBVIEW_CONTENT_BASE_URL=$CHE_CODE_ENDPOINT"oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/"
-    echo "WEBVIEW_CONTENT_BASE_URL: $WEBVIEW_CONTENT_BASE_URL"
+      # fetch the existing base URI from product.json
+      WEBVIEW_CONTENT_BASE_URL_TEMPLATE=$(jq -r '.webviewContentExternalBaseUrlTemplate' product.json)
+      echo "WEBVIEW_CONTENT_BASE_URL_TEMPLATE: $WEBVIEW_CONTENT_BASE_URL_TEMPLATE"
 
-    # fetch the existing base URI from product.json
-    WEBVIEW_CONTENT_BASE_URL_TEMPLATE=$(jq -r '.webviewContentExternalBaseUrlTemplate' product.json)
-    echo "WEBVIEW_CONTENT_BASE_URL_TEMPLATE: $WEBVIEW_CONTENT_BASE_URL_TEMPLATE"
+      # escape special characters
+      WORK_TEMPLATE=$WEBVIEW_CONTENT_BASE_URL_TEMPLATE
+      WORK_TEMPLATE=${WORK_TEMPLATE//[\{]/\\{}
+      WORK_TEMPLATE=${WORK_TEMPLATE//[\}]/\\\}}
+      echo "WORK_TEMPLATE: $WORK_TEMPLATE"
 
-    # escape special characters
-    WORK_TEMPLATE=$WEBVIEW_CONTENT_BASE_URL_TEMPLATE
-    WORK_TEMPLATE=${WORK_TEMPLATE//[\{]/\\{}
-    WORK_TEMPLATE=${WORK_TEMPLATE//[\}]/\\\}}
+      # apply new base URI to the following files
+      sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" out/vs/workbench/workbench.web.main.js
+      sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" out/vs/workbench/api/node/extensionHostProcess.js
 
-    # apply new base URI to the following files
-    sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" out/vs/workbench/workbench.web.main.js
-    sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" out/vs/workbench/api/node/extensionHostProcess.js
-
-    # actual value of webviewContentExternalBaseUrlTemplate in the product.json has no effect at runtime
-    # it serves as a marker for easily verifying the source of the webview static resources
-    sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" product.json
+      # actual value of webviewContentExternalBaseUrlTemplate in the product.json has no effect at runtime
+      # it serves as a marker for easily verifying the source of the webview static resources
+      sed -i -r -e "s|${WORK_TEMPLATE}|${WEBVIEW_CONTENT_BASE_URL}|" product.json
+    fi
   fi
 fi
 
