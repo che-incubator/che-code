@@ -397,7 +397,15 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			registerIssueUriRequestHandler(handler: vscode.IssueUriRequestHandler) {
 				checkProposedApiEnabled(extension, 'handleIssueUri');
 				return extHostIssueReporter.registerIssueUriRequestHandler(extension, handler);
-			}
+			},
+			get appQuality(): string | undefined {
+				checkProposedApiEnabled(extension, 'resolvers');
+				return initData.quality;
+			},
+			get appCommit(): string | undefined {
+				checkProposedApiEnabled(extension, 'resolvers');
+				return initData.commit;
+			},
 		};
 		if (!initData.environment.extensionTestsLocationURI) {
 			// allow to patch env-function when running tests
@@ -1089,6 +1097,14 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				checkProposedApiEnabled(extension, 'editSessionIdentityProvider');
 				return extHostWorkspace.getOnWillCreateEditSessionIdentityEvent(extension)(listener, thisArgs, disposables);
 			},
+			registerCanonicalUriIdentityProvider: (scheme: string, provider: vscode.CanonicalUriIdentityProvider) => {
+				checkProposedApiEnabled(extension, 'canonicalUriIdentityProvider');
+				return extHostWorkspace.registerCanonicalUriIdentityProvider(scheme, provider);
+			},
+			provideCanonicalUriIdentity: (uri: vscode.Uri, token: vscode.CancellationToken) => {
+				checkProposedApiEnabled(extension, 'canonicalUriIdentityProvider');
+				return extHostWorkspace.provideCanonicalUriIdentity(uri, token);
+			}
 		};
 
 		// namespace: scm
