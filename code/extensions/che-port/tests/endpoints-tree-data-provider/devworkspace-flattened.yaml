@@ -69,8 +69,6 @@ components:
       value: https://che-eclipse-che.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com
     - name: CHE_PLUGIN_REGISTRY_URL
       value: https://che-eclipse-che.apps.cluster-c9b7.c9b7.sandbox909.opentlc.com/plugin-registry/v3
-    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
-      value: http://plugin-registry.eclipse-che.svc:8080/v3
     image: quay.io/che-incubator/che-code:insiders
     memoryLimit: 128Mi
     memoryRequest: 32Mi
