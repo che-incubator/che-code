@@ -55,13 +55,6 @@ export class K8sDevWorkspaceEnvVariables {
   private readonly pluginRegistryURL!: string;
 
   /**
-   * pluginRegistryInternalURL - Plugin registry internal URL
-   */
-
-  private readonly pluginRegistryInternalURL!: string;
-
-
-  /**
    * dashboardURL - Dashboard URL
    */
 
@@ -104,12 +97,6 @@ export class K8sDevWorkspaceEnvVariables {
       this.pluginRegistryURL = process.env.CHE_PLUGIN_REGISTRY_URL;
     }
 
-    if (process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL === undefined) {
-      console.error('Environment variable CHE_PLUGIN_REGISTRY_INTERNAL_URL is not set');
-    } else {
-      this.pluginRegistryInternalURL = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-    }
-
     if (process.env.CHE_DASHBOARD_URL === undefined) {
       console.error('Environment variable CHE_DASHBOARD_URL is not set');
     } else {
@@ -139,10 +126,6 @@ export class K8sDevWorkspaceEnvVariables {
 
   getPluginRegistryURL(): string {
     return this.pluginRegistryURL;
-  }
-
-  getPluginRegistryInternalURL(): string {
-    return this.pluginRegistryInternalURL;
   }
 
   getDashboardURL(): string {
