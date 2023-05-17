@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: '14.x'
 
-      - name: build
+      - name: Build
         run: |
           echo "-------------------------------------------------------------------------------"
           echo "> {{matrix.dist}}: ${{matrix.dist}}"
@@ -56,11 +56,18 @@ jobs:
           docker image prune -a -f
           docker build -f build/dockerfiles/linux-libc.Dockerfile -t linux-libc-amd64 .
 
-      # - name: Start minikube
-      #   id: run-minikube
-      #   uses: che-incubator/setup-minikube-action@next
-      #   with:
-      #     minikube-version: v1.23.2
+      - name: Check Docker images
+        run: |
+          echo "-------------------------------------------------------------------------------"
+          echo "> checking docker images"
+          echo "-------------------------------------------------------------------------------"
+          docker images
+
+      - name: Start minikube
+        id: run-minikube
+        uses: che-incubator/setup-minikube-action@next
+        with:
+          minikube-version: v1.23.2
 
       # - name: Deploy Eclipse Che
       #   id: deploy-che
