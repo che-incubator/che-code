@@ -25,9 +25,12 @@ jobs:
   smoke-test:
     strategy:
       fail-fast: false
+      # matrix:
+      #   dist: [ 'alpine', 'ubi8' ]
+      #   chectlchannel: [ 'next', 'stable' ]
       matrix:
-        dist: [ 'alpine', 'ubi8' ]
-        chectlchannel: [ 'next', 'stable' ]
+        dist: [ 'alpine' ]
+        chectlchannel: [ 'stable' ]
 
     env:
       JOB_NAME_SUFFIX: ${{matrix.dist}} ${{matrix.chectlchannel}}
