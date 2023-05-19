@@ -320,7 +320,7 @@ class HelpItemValue {
 			} else if (this.urlOrCommandOrId?.id) {
 				try {
 					const walkthroughId = `${this.extensionDescription.id}#${this.urlOrCommandOrId.id}`;
-					const walkthrough = this.walkthroughService.getWalkthrough(walkthroughId);
+					const walkthrough = await this.walkthroughService.getWalkthrough(walkthroughId);
 					this._description = walkthrough.title;
 					this._url = walkthroughId;
 				} catch { }
