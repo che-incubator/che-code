@@ -76,6 +76,12 @@ jobs:
           echo "-------------------------------------------------------------------------------"
           docker images
 
+      - name: Install yq
+        run: sudo pip install yq
+
+      - name: Install chectl
+        run: bash <(curl -sL https://www.eclipse.org/che/chectl/) --channel=next
+
       - name: Get chectl version
         run: |
           chectl version
@@ -83,12 +89,6 @@ jobs:
       - name: Get chectl version
         run: |
           yq --version
-
-      # - name: Install yq
-      #   run: sudo pip install yq
-
-      # - name: Install chectl
-      #   run: bash <(curl -sL https://www.eclipse.org/che/chectl/) --channel=next
 
       - name: Run tests
         run: /bin/bash build/scripts/minikube-tests/run-tests.sh
