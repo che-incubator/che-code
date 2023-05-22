@@ -82,13 +82,13 @@ jobs:
       - name: Install chectl
         run: bash <(curl -sL https://www.eclipse.org/che/chectl/) --channel=next
 
-      - name: Get chectl version
-        run: |
-          chectl version
+      # - name: Get chectl version
+      #   run: |
+      #     chectl version
 
-      - name: Get chectl version
-        run: |
-          yq --version
+      # - name: Get YQ version
+      #   run: |
+      #     yq --version
 
       - name: Run tests
         run: /bin/bash build/scripts/minikube-tests/run-tests.sh
