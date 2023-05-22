@@ -23,29 +23,42 @@ on:
 
 jobs:
   smoke-test:
-    strategy:
-      fail-fast: false
-      # matrix:
-      #   dist: [ 'alpine', 'ubi8' ]
-      #   chectlchannel: [ 'next', 'stable' ]
-      matrix:
-        dist: [ 'alpine' ]
-        chectlchannel: [ 'stable' ]
 
-    env:
-      JOB_NAME_SUFFIX: ${{matrix.dist}} ${{matrix.chectlchannel}}
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     dist: [ 'alpine', 'ubi8' ]
+    #     chectlchannel: [ 'next', 'stable' ]
+    #   matrix:
+    #     dist: [ 'alpine' ]
+    #     chectlchannel: [ 'stable' ]
 
-    runs-on: ubuntu-20.04
+    # env:
+    #   JOB_NAME_SUFFIX: ${{matrix.dist}} ${{matrix.chectlchannel}}
+
+    runs-on: ubuntu-22.04
 
     steps:
 
       - name: Checkout che-code source code
         uses: actions/checkout@v2
 
+      # - name: Checkout source code
+      #   uses: actions/checkout@v3
+
       - name: Configuring nodejs 14.x version
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
+
+      - name: Start minikube
+        id: run-minikube
+        uses: che-incubator/setup-minikube-action@next
+        with:
+          minikube-version: v1.23.2
+
+      # - name: Install yq
+      #   run: sudo pip install yq
 
       # - name: Build
       #   run: |
@@ -63,17 +76,28 @@ jobs:
           echo "-------------------------------------------------------------------------------"
           docker images
 
-      - name: Start minikube
-        id: run-minikube
-        uses: che-incubator/setup-minikube-action@next
-        with:
-          minikube-version: v1.23.2
+      - name: Get chectl version
+        run: |
+          chectl version
 
-      - name: Deploy Eclipse Che
-        id: deploy-che
-        uses: che-incubator/che-deploy-action@next
-        with:
-          chectl-channel: ${{matrix.chectlchannel}}
+      - name: Get chectl version
+        run: |
+          yq --version
+
+      # - name: Install yq
+      #   run: sudo pip install yq
+
+      # - name: Install chectl
+      #   run: bash <(curl -sL https://www.eclipse.org/che/chectl/) --channel=next
+
+      - name: Run tests
+        run: /bin/bash build/scripts/minikube-tests/run-tests.sh
+
+      # - name: Deploy Eclipse Che
+      #   id: deploy-che
+      #   uses: che-incubator/che-deploy-action@next
+      #   with:
+      #     chectl-channel: ${{matrix.chectlchannel}}
 
       # - name: devfile-che-theia
       #   id: devfile-che-theia
