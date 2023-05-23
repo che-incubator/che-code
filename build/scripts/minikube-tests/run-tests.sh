@@ -55,19 +55,7 @@ initDefaults() {
   # turn off telemetry
   mkdir -p ${HOME}/.config/chectl
   echo "{\"segment.telemetry\":\"off\"}" > ${HOME}/.config/chectl/config.json
-
-  # getLatestStableVersions
 }
-
-# getLatestStableVersions() {
-#   echo "> getLatestStableVersions"
-#   git remote add operator https://github.com/eclipse-che/che-operator.git
-#   git fetch operator -q
-#   tags=$(git ls-remote --refs --tags operator | sed -n 's|.*refs/tags/\(7.*\)|\1|p' | awk -F. '{ print ($1*1000)+($2*10)+$3" "$1"."$2"."$3}' | sort | tac)
-#   export PREVIOUS_PACKAGE_VERSION=$(echo "${tags}" | sed -n 2p | cut -d ' ' -f2)
-#   export LAST_PACKAGE_VERSION=$(echo "${tags}" | sed -n 1p | cut -d ' ' -f2)
-#   git remote remove operator
-# }
 
 createDevWorkspace() {
   kubectl apply -f - <<EOF
@@ -122,22 +110,18 @@ deleteDevWorkspace() {
 }
 
 deployChe() {
-  echo "> deployChe"
-
   chectl server:deploy \
     --batch \
     --platform minikube \
     --k8spodwaittimeout=120000 \
     --k8spodreadytimeout=120000 \
     --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
-
-  echo "CHE has been deployed successfully!!!"
-  sleep 30s
 }
 
 runSmokeTests() {
   # prepull UDI image
-  minikube ssh 'docker pull quay.io/devfile/universal-developer-image:ubi8-latest'
+  # minikube ssh 'docker pull quay.io/devfile/universal-developer-image:ubi8-latest'
+  minikube image pull quay.io/devfile/universal-developer-image:ubi8-latest
 
   # run tests
   docker run \
@@ -162,20 +146,14 @@ runSmokeTests() {
     quay.io/mmusiien/che-e2e:smoke
 }
 
-# runTest() {
-#   echo "> runTest"
+pushd ${OPERATOR_REPO} >/dev/null
 
+initDefaults
+deployChe
 #   createDevWorkspace
 #   startAndWaitDevWorkspace
-#   sleep 2m
 #   stopAndWaitDevWorkspace
 #   deleteDevWorkspace
-# }
-
-pushd ${OPERATOR_REPO} >/dev/null
-initDefaults
-
-deployChe
 runSmokeTests
 
 popd >/dev/null
