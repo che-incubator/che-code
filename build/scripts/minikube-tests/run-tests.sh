@@ -69,6 +69,41 @@ getLatestStableVersions() {
   git remote remove operator
 }
 
+createDevWorkspace() {
+  kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${USER_NAMESPACE}
+  annotations:
+    che.eclipse.org/username: admin
+  labels:
+    app.kubernetes.io/component: workspaces-namespace
+    app.kubernetes.io/part-of: che.eclipse.org
+    kubernetes.io/metadata.name: ${USER_NAMESPACE}
+EOF
+
+  kubectl apply -f - <<EOF
+kind: DevWorkspace
+apiVersion: workspace.devfile.io/v1alpha2
+metadata:
+  name: ${DEV_WORKSPACE_NAME}
+  namespace: ${USER_NAMESPACE}
+spec:
+  routingClass: che
+  started: false
+  contributions:
+    - name: ide
+      uri: http://plugin-registry.eclipse-che.svc:8080/v3/plugins/che-incubator/che-code/insiders/devfile.yaml
+  template:
+    components:
+      - name: tooling-container
+        container:
+          image: quay.io/devfile/universal-developer-image:ubi8-latest
+          cpuLimit: 100m
+EOF
+}
+
 runTest() {
   echo "> runTest"
   # buildAndCopyCheOperatorImageToMinikube
@@ -94,7 +129,7 @@ runTest() {
     --k8spodreadytimeout=120000 \
     --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
 
-  # createDevWorkspace
+  createDevWorkspace
   # startAndWaitDevWorkspace
   # stopAndWaitDevWorkspace
   # deleteDevWorkspace
