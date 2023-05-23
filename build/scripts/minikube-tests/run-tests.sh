@@ -103,7 +103,7 @@ runTest() {
 pushd ${OPERATOR_REPO} >/dev/null
 initDefaults
 # initTemplates
-# runTest
+runTest
 popd >/dev/null
 
 echo "================================================================================"
