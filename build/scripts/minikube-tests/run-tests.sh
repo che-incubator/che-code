@@ -104,6 +104,23 @@ spec:
 EOF
 }
 
+startAndWaitDevWorkspace() {
+  # pre-pull image for faster workspace startup
+  minikube image pull quay.io/devfile/universal-developer-image:ubi8-latest
+
+  kubectl patch devworkspace ${DEV_WORKSPACE_NAME} -p '{"spec":{"started":true}}' --type=merge -n ${USER_NAMESPACE}
+  kubectl wait devworkspace ${DEV_WORKSPACE_NAME} -n ${USER_NAMESPACE} --for=jsonpath='{.status.phase}'=Running --timeout=300s
+}
+
+stopAndWaitDevWorkspace() {
+  kubectl patch devworkspace ${DEV_WORKSPACE_NAME} -p '{"spec":{"started":false}}' --type=merge -n ${USER_NAMESPACE}
+  kubectl wait devworkspace ${DEV_WORKSPACE_NAME} -n ${USER_NAMESPACE} --for=jsonpath='{.status.phase}'=Stopped
+}
+
+deleteDevWorkspace() {
+  kubectl delete devworkspace ${DEV_WORKSPACE_NAME} -n ${USER_NAMESPACE}
+}
+
 runTest() {
   echo "> runTest"
   # buildAndCopyCheOperatorImageToMinikube
@@ -130,9 +147,12 @@ runTest() {
     --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
 
   createDevWorkspace
-  # startAndWaitDevWorkspace
-  # stopAndWaitDevWorkspace
-  # deleteDevWorkspace
+  startAndWaitDevWorkspace
+
+  sleep 2m
+
+  stopAndWaitDevWorkspace
+  deleteDevWorkspace
 }
 
 pushd ${OPERATOR_REPO} >/dev/null
