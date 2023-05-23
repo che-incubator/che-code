@@ -136,6 +136,10 @@ deployChe() {
 }
 
 runSmokeTests() {
+  # prepull UDI image
+  minikube ssh 'docker pull quay.io/devfile/universal-developer-image:ubi8-latest'
+
+  # run tests
   docker run \
     --shm-size=2048m \
     -p 5920:5920 \
@@ -158,36 +162,18 @@ runSmokeTests() {
     quay.io/mmusiien/che-e2e:smoke
 }
 
-runTest() {
-  echo "> runTest"
-  # buildAndCopyCheOperatorImageToMinikube
-  # yq -riSY '.spec.template.spec.containers[0].image = "'${OPERATOR_IMAGE}'"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
-  # yq -riSY '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
+# runTest() {
+#   echo "> runTest"
 
-  # chectl server:deploy \
-  #   --batch \
-  #   --platform minikube \
-  #   --k8spodwaittimeout=120000 \
-  #   --k8spodreadytimeout=120000 \
-  #   --templates "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}" \
-  #   --k8spodwaittimeout=120000 \
-  #   --k8spodreadytimeout=120000 \
-  #   --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
-
-  # make wait-devworkspace-running NAMESPACE="devworkspace-controller" VERBOSE=1
-
-
-  createDevWorkspace
-  startAndWaitDevWorkspace
-  sleep 2m
-  stopAndWaitDevWorkspace
-  deleteDevWorkspace
-}
+#   createDevWorkspace
+#   startAndWaitDevWorkspace
+#   sleep 2m
+#   stopAndWaitDevWorkspace
+#   deleteDevWorkspace
+# }
 
 pushd ${OPERATOR_REPO} >/dev/null
 initDefaults
-# initTemplates
-# runTest
 
 deployChe
 runSmokeTests
