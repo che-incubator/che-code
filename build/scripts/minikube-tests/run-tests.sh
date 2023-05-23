@@ -14,6 +14,9 @@
 set -e
 set -x
 
+# Stop execution on any error
+trap "catchFinish" EXIT SIGINT
+
 echo "Running Smoke Tests..."
 
 # Get absolute path for root repo directory from github actions context: https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions
@@ -22,7 +25,7 @@ if [ -z "${OPERATOR_REPO}" ]; then
   OPERATOR_REPO=$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")")")
 fi
 
-# source "${OPERATOR_REPO}/build/scripts/minikube-tests/common.sh"
+source "${OPERATOR_REPO}/build/scripts/minikube-tests/common.sh"
 
 catchFinish() {
   result=$?
@@ -39,9 +42,6 @@ catchFinish() {
   echo "[INFO] Please check github actions artifacts."
   exit $result
 }
-
-# Stop execution on any error
-trap "catchFinish" EXIT SIGINT
 
 initDefaults() {
   echo "> initDefaults"
