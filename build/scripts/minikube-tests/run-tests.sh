@@ -121,6 +121,43 @@ deleteDevWorkspace() {
   kubectl delete devworkspace ${DEV_WORKSPACE_NAME} -n ${USER_NAMESPACE}
 }
 
+deployChe() {
+  echo "> deployChe"
+
+  chectl server:deploy \
+    --batch \
+    --platform minikube \
+    --k8spodwaittimeout=120000 \
+    --k8spodreadytimeout=120000 \
+    --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
+
+  echo "CHE has been deployed successfully!!!"
+  sleep 30s
+}
+
+runSmokeTests() {
+  docker run \
+    --shm-size=2048m \
+    -p 5920:5920 \
+    --network="host" \
+    -e TS_SELENIUM_LOAD_PAGE_TIMEOUT=60000 \
+    -e TS_SELENIUM_USERNAME=che@eclipse.org \
+    -e TS_SELENIUM_PASSWORD=admin \
+    -e TS_SELENIUM_BASE_URL=https://$(kubectl get ingress che -n eclipse-che -o jsonpath='{.spec.rules[0].host}') \
+    -e DELETE_WORKSPACE_ON_FAILED_TEST=true \
+    -e TS_SELENIUM_START_WORKSPACE_TIMEOUT=120000 \
+    -e NODE_TLS_REJECT_UNAUTHORIZED=0 \
+    -e VIDEO_RECORDING=true \
+    -e TS_SELENIUM_LOG_LEVEL=TRACE \
+    -e TS_WAIT_LOADER_PRESENCE_TIMEOUT=120000 \
+    -e TS_COMMON_DASHBOARD_WAIT_TIMEOUT=30000 \
+    -v $LOCAL_TEST_DIR/tests/e2e/report:/tmp/e2e/report:Z \
+    -v $LOCAL_TEST_DIR/tests/e2e/video:/tmp/ffmpeg_report:Z \
+    -e USERSTORY=SmokeTest \
+    -e TS_SELENIUM_VALUE_OPENSHIFT_OAUTH=false \
+    quay.io/mmusiien/che-e2e:smoke
+}
+
 runTest() {
   echo "> runTest"
   # buildAndCopyCheOperatorImageToMinikube
@@ -139,18 +176,10 @@ runTest() {
 
   # make wait-devworkspace-running NAMESPACE="devworkspace-controller" VERBOSE=1
 
-  chectl server:deploy \
-    --batch \
-    --platform minikube \
-    --k8spodwaittimeout=120000 \
-    --k8spodreadytimeout=120000 \
-    --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
 
   createDevWorkspace
   startAndWaitDevWorkspace
-
   sleep 2m
-
   stopAndWaitDevWorkspace
   deleteDevWorkspace
 }
@@ -158,7 +187,11 @@ runTest() {
 pushd ${OPERATOR_REPO} >/dev/null
 initDefaults
 # initTemplates
-runTest
+# runTest
+
+deployChe
+runSmokeTests
+
 popd >/dev/null
 
 echo "================================================================================"
