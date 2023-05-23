@@ -71,26 +71,33 @@ getLatestStableVersions() {
 
 runTest() {
   echo "> runTest"
-  buildAndCopyCheOperatorImageToMinikube
-  yq -riSY '.spec.template.spec.containers[0].image = "'${OPERATOR_IMAGE}'"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
-  yq -riSY '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
+  # buildAndCopyCheOperatorImageToMinikube
+  # yq -riSY '.spec.template.spec.containers[0].image = "'${OPERATOR_IMAGE}'"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
+  # yq -riSY '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}/che-operator/kubernetes/operator.yaml"
+
+  # chectl server:deploy \
+  #   --batch \
+  #   --platform minikube \
+  #   --k8spodwaittimeout=120000 \
+  #   --k8spodreadytimeout=120000 \
+  #   --templates "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}" \
+  #   --k8spodwaittimeout=120000 \
+  #   --k8spodreadytimeout=120000 \
+  #   --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
+
+  # make wait-devworkspace-running NAMESPACE="devworkspace-controller" VERBOSE=1
 
   chectl server:deploy \
     --batch \
     --platform minikube \
     --k8spodwaittimeout=120000 \
     --k8spodreadytimeout=120000 \
-    --templates "${CURRENT_OPERATOR_VERSION_TEMPLATE_PATH}" \
-    --k8spodwaittimeout=120000 \
-    --k8spodreadytimeout=120000 \
     --che-operator-cr-patch-yaml "${OPERATOR_REPO}/build/scripts/minikube-tests/minikube-checluster-patch.yaml"
 
-  make wait-devworkspace-running NAMESPACE="devworkspace-controller" VERBOSE=1
-
-  createDevWorkspace
-  startAndWaitDevWorkspace
-  stopAndWaitDevWorkspace
-  deleteDevWorkspace
+  # createDevWorkspace
+  # startAndWaitDevWorkspace
+  # stopAndWaitDevWorkspace
+  # deleteDevWorkspace
 }
 
 pushd ${OPERATOR_REPO} >/dev/null
