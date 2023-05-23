@@ -514,11 +514,10 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 	create(document.body, {
 		...config,
 		...cheConfig,
-		settingsSyncOptions: config.settingsSyncOptions ? {
-			enabled: config.settingsSyncOptions.enabled,
-		} : undefined,
+		windowIndicator: config.windowIndicator ?? { label: '$(remote)', tooltip: `${product.nameShort} Web` },
+		settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageCredentialsProvider() // with a remote, we don't use a local credentials provider
+		credentialsProvider: config.remoteAuthority ? undefined /* with a remote, we don't use a local credentials provider */ : new LocalStorageCredentialsProvider()
 	});
 })();
