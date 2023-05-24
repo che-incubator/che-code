@@ -129,5 +129,23 @@ fi
 
 echo "Node.js dir for running VS Code: $VSCODE_NODEJS_RUNTIME_DIR"
 
-# Launch che without connection-token, security is managed by Che
-"$VSCODE_NODEJS_RUNTIME_DIR/node" out/server-main.js --host "${CODE_HOST}" --port 3100 --without-connection-token --default-folder ${PROJECT_SOURCE}
+# Set the default workspace if the VSCODE_DEFAULT_WORKSPACE env variable exist``
+if [[ -v VSCODE_DEFAULT_WORKSPACE ]]; then
+  if [[ -f "${VSCODE_DEFAULT_WORKSPACE}" ]]; then
+    echo "Found VSCODE_DEFAULT_WORKSPACE environment variable set to: \"${VSCODE_DEFAULT_WORKSPACE}\""
+    FOLDER_OR_WORKSPACE_OPTION="--default-workspace ${VSCODE_DEFAULT_WORKSPACE}"
+  else
+    echo "WARNING: VS Code default workspace file ${VSCODE_DEFAULT_WORKSPACE} doesn't exist."
+    FOLDER_OR_WORKSPACE_OPTION="--default-folder ${PROJECT_SOURCE}"
+  fi
+else
+  FOLDER_OR_WORKSPACE_OPTION="--default-folder ${PROJECT_SOURCE}"
+fi
+
+# Launch VS Code without connection-token, security is managed by Che
+"$VSCODE_NODEJS_RUNTIME_DIR/node" out/server-main.js \
+                --host "${CODE_HOST}" \
+                --port 3100 \
+                --without-connection-token \
+                ${FOLDER_OR_WORKSPACE_OPTION}
+
