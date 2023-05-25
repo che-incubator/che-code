@@ -18,6 +18,31 @@ function getSystemProxyURI(requestURL: Url, env: typeof process.env): string | n
 	return null;
 }
 
+/** Respects the NO_PROXY environment variable. */
+function getCheSystemProxyURI(requestURL: Url, env: typeof process.env): string | null {
+	const noProxy = (env.NO_PROXY || env.no_proxy || '').trim().toLowerCase();
+	if (noProxy === '*') {
+		return null;
+	}
+
+	const filters = noProxy
+		.split(',')
+		.map(s => s.trim().split(':', 2))
+		.map(([name, port]) => ({ name, port }))
+		.filter(filter => !!filter.name)
+		.map(({ name, port }) => {
+			const domain = name[0] === '.' ? name : `.${name}`;
+			return { domain, port };
+		});
+	const hostname = requestURL.hostname?.toLowerCase();
+	const port = requestURL.port || (requestURL.protocol === 'https:' ? '443' : '80');
+	if (hostname && filters.some(({ domain, port: filterPort }) => `.${hostname}`.endsWith(domain) && (!filterPort || port === filterPort))) {
+		return null;
+	}
+
+	return getSystemProxyURI(requestURL, env);
+}
+
 export interface IOptions {
 	proxyUrl?: string;
 	strictSSL?: boolean;
@@ -25,7 +50,7 @@ export interface IOptions {
 
 export async function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: IOptions = {}): Promise<Agent> {
 	const requestURL = parseUrl(rawRequestURL);
-	const proxyURL = options.proxyUrl || getSystemProxyURI(requestURL, env);
+	const proxyURL = options.proxyUrl || getCheSystemProxyURI(requestURL, env);
 
 	if (!proxyURL) {
 		return null;
