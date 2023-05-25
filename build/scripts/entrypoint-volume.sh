@@ -129,7 +129,7 @@ fi
 
 echo "Node.js dir for running VS Code: $VSCODE_NODEJS_RUNTIME_DIR"
 
-# Set the default workspace if the VSCODE_DEFAULT_WORKSPACE env variable exist``
+# Set the default workspace if the VSCODE_DEFAULT_WORKSPACE env variable exists
 if [[ -v VSCODE_DEFAULT_WORKSPACE ]]; then
   if [[ -f "${VSCODE_DEFAULT_WORKSPACE}" ]]; then
     echo "Found VSCODE_DEFAULT_WORKSPACE environment variable set to: \"${VSCODE_DEFAULT_WORKSPACE}\""
