@@ -193,6 +193,8 @@ export interface IProductConfiguration {
 	readonly 'editSessions.store'?: Omit<ConfigurationSyncStore, 'insidersUrl' | 'stableUrl'>;
 	readonly darwinUniversalAssetId?: string;
 	readonly profileTemplatesUrl?: string;
+
+	readonly commonlyUsedSettings?: string[];
 }
 
 export interface ITunnelApplicationConfig {
@@ -203,6 +205,11 @@ export interface ITunnelApplicationConfig {
 
 export interface IExtensionRecommendations {
 	readonly onFileOpen: IFileOpenCondition[];
+	readonly onSettingsEditorOpen?: ISettingsEditorOpenCondition;
+}
+
+export interface ISettingsEditorOpenCondition {
+	readonly prerelease: boolean | string;
 }
 
 export interface IExtensionRecommendationCondition {
