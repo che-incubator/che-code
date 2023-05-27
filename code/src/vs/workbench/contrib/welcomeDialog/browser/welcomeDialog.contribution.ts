@@ -24,12 +24,17 @@ import { IExtensionService } from 'vs/workbench/services/extensions/common/exten
 import { LanguageService } from 'vs/editor/common/services/languageService';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { GettingStartedDetailsRenderer } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedDetailsRenderer';
+import { IConfigurationRegistry, Extensions as ConfigurationExtensions, ConfigurationScope } from 'vs/platform/configuration/common/configurationRegistry';
+import { localize } from 'vs/nls';
+import { applicationConfigurationNodeBase } from 'vs/workbench/common/configuration';
+import { RunOnceScheduler } from 'vs/base/common/async';
 
-const configurationKey = 'welcome.experimental.dialog';
+const configurationKey = 'workbench.welcome.experimental.dialog';
 
 class WelcomeDialogContribution extends Disposable implements IWorkbenchContribution {
 
 	private contextKeysToWatch = new Set<string>();
+	private isRendered = false;
 
 	constructor(
 		@IStorageService storageService: IStorageService,
@@ -49,7 +54,7 @@ class WelcomeDialogContribution extends Disposable implements IWorkbenchContribu
 	) {
 		super();
 
-		if (!storageService.isNew(StorageScope.PROFILE)) {
+		if (!storageService.isNew(StorageScope.APPLICATION)) {
 			return; // do not show if this is not the first session
 		}
 
@@ -66,27 +71,41 @@ class WelcomeDialogContribution extends Disposable implements IWorkbenchContribu
 		this.contextKeysToWatch.add(welcomeDialog.when);
 
 		this._register(this.contextService.onDidChangeContext(e => {
-			if (e.affectsSome(this.contextKeysToWatch) &&
-				Array.from(this.contextKeysToWatch).every(value => this.contextService.contextMatchesRules(ContextKeyExpr.deserialize(value)))) {
+			if (e.affectsSome(this.contextKeysToWatch) && !this.isRendered) {
+
+				if (!Array.from(this.contextKeysToWatch).every(value => this.contextService.contextMatchesRules(ContextKeyExpr.deserialize(value)))) {
+					return;
+				}
+
 				const codeEditor = this.codeEditorService.getActiveCodeEditor();
+
 				if (codeEditor?.hasModel()) {
+					const scheduler = new RunOnceScheduler(() => {
+						this.isRendered = true;
+						const detailsRenderer = new GettingStartedDetailsRenderer(fileService, notificationService, extensionService, languageService);
 
-					const detailsRenderer = new GettingStartedDetailsRenderer(fileService, notificationService, extensionService, languageService);
+						const welcomeWidget = new WelcomeWidget(
+							codeEditor,
+							instantiationService,
+							commandService,
+							telemetryService,
+							openerService,
+							webviewService,
+							detailsRenderer);
 
-					const welcomeWidget = new WelcomeWidget(
-						codeEditor,
-						instantiationService,
-						commandService,
-						telemetryService,
-						openerService,
-						webviewService,
-						detailsRenderer);
+						welcomeWidget.render(welcomeDialog.title,
+							welcomeDialog.message,
+							welcomeDialog.buttonText,
+							welcomeDialog.buttonCommand,
+							welcomeDialog.media);
 
-					welcomeWidget.render(welcomeDialog.title,
-						welcomeDialog.message,
-						welcomeDialog.buttonText,
-						welcomeDialog.buttonCommand,
-						welcomeDialog.media);
+					}, 3000);
+
+					this._register(codeEditor.onDidChangeModelContent((e) => {
+						if (!this.isRendered) {
+							scheduler.schedule();
+						}
+					}));
 
 					this.contextKeysToWatch.delete(welcomeDialog.when);
 				}
@@ -97,3 +116,17 @@ class WelcomeDialogContribution extends Disposable implements IWorkbenchContribu
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 	.registerWorkbenchContribution(WelcomeDialogContribution, LifecyclePhase.Restored);
+
+const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
+configurationRegistry.registerConfiguration({
+	...applicationConfigurationNodeBase,
+	properties: {
+		'workbench.welcome.experimental.dialog': {
+			scope: ConfigurationScope.APPLICATION,
+			type: 'boolean',
+			default: false,
+			tags: ['experimental'],
+			description: localize('workbench.welcome.dialog', "When enabled, a welcome widget is shown in the editor")
+		}
+	}
+});
