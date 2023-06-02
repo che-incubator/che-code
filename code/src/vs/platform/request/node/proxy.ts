@@ -37,7 +37,6 @@ function getCheSystemProxyURI(requestURL: Url, env: typeof process.env): string 
 	const hostname = requestURL.hostname?.toLowerCase();
 	const port = requestURL.port || (requestURL.protocol === 'https:' ? '443' : '80');
 	if (hostname && filters.some(({ domain, port: filterPort }) => `.${hostname}`.endsWith(domain) && (!filterPort || port === filterPort))) {
-		console.info(`skipping proxy`);
 		return null;
 	}
 
@@ -51,9 +50,7 @@ export interface IOptions {
 
 export async function getProxyAgent(rawRequestURL: string, env: typeof process.env, options: IOptions = {}): Promise<Agent> {
 	const requestURL = parseUrl(rawRequestURL);
-	console.info(`Getting proxy for URL:  ${rawRequestURL}`);
 	const proxyURL = options.proxyUrl || getCheSystemProxyURI(requestURL, env);
-	console.info(`proxyURL:  ${proxyURL}`);
 
 	if (!proxyURL) {
 		return null;
