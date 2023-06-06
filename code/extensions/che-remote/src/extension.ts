@@ -18,7 +18,11 @@ import * as vscode from 'vscode';
 
 const DEVFILE_NAME = 'devfile.yaml';
 const DOT_DEVFILE_NAME = '.devfile.yaml';
-const DEFAULT_EDITOR_ENTRY = 'che-incubator/che-code/insiders';
+const EDITOR_CONTENT_STUB: string = `
+schemaVersion: 2.2.0
+metadata:
+  name: che-code
+  `;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -111,10 +115,9 @@ async function updateDevfile(cheApi: any): Promise<void> {
     throw new Error(`The devfile was not found at: ${devfilePath}`);
   }
 
-  const currentDevfile = await devfileService.get()
+  const currentDevfile = await devfileService.get();
   const projects = currentDevfile.projects || [];
-
-  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorEntry: DEFAULT_EDITOR_ENTRY, projects: [] }, axios.default);
+  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, projects: [] }, axios.default);
   if (newContent) {
     newContent.devWorkspace.spec!.template!.projects = projects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
