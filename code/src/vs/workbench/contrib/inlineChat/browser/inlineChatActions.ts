@@ -26,6 +26,8 @@ import { fromNow } from 'vs/base/common/date';
 import { IInlineChatSessionService, Recording } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
 import { runAccessibilityHelpAction } from 'vs/workbench/contrib/chat/browser/actions/chatAccessibilityHelp';
 import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from 'vs/platform/accessibility/common/accessibility';
+import { AccessibilityHelpAction } from 'vs/workbench/contrib/accessibility/browser/accessibilityContribution';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 
 CommandsRegistry.registerCommandAlias('interactiveEditor.start', 'inlineChat.start');
@@ -98,7 +100,7 @@ export class UnstashSessionAction extends EditorAction2 {
 
 abstract class AbstractInlineChatAction extends EditorAction2 {
 
-	static readonly category = { value: localize('cat', 'Interactive Editor'), original: 'Interactive Editor' };
+	static readonly category = { value: localize('cat', 'Inline Chat'), original: 'Inline Chat' };
 
 	constructor(desc: IAction2Options) {
 		super({
@@ -591,20 +593,15 @@ export class ContractMessageAction extends AbstractInlineChatAction {
 	}
 }
 
-export class AccessibilityHelpEditorAction extends EditorAction2 {
+export class InlineAccessibilityHelpContribution extends Disposable {
 	constructor() {
-		super({
-			id: 'inlineChat.accessibilityHelp',
-			title: localize('actions.interactiveSession.accessibiltyHelpEditor', "Interactive Session Editor Accessibility Help"),
-			category: AbstractInlineChatAction.category,
-			keybinding: {
-				when: CTX_INLINE_CHAT_FOCUSED,
-				primary: KeyMod.Alt | KeyCode.F1,
-				weight: KeybindingWeight.EditorContrib
+		super();
+		this._register(AccessibilityHelpAction.addImplementation(106, 'inline-chat', async accessor => {
+			const codeEditor = accessor.get(ICodeEditorService).getActiveCodeEditor() || accessor.get(ICodeEditorService).getFocusedCodeEditor();
+			if (!codeEditor) {
+				return;
 			}
-		});
-	}
-	async runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
-		runAccessibilityHelpAction(accessor, editor, 'editor');
+			runAccessibilityHelpAction(accessor, codeEditor, 'inline');
+		}, CTX_INLINE_CHAT_FOCUSED));
 	}
 }
