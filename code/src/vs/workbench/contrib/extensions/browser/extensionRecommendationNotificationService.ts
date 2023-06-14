@@ -270,7 +270,7 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 		{ onDidInstallRecommendedExtensions, onDidShowRecommendedExtensions, onDidCancelRecommendedExtensions, onDidNeverShowRecommendedExtensionsAgain }: RecommendationsNotificationActions): CancelablePromise<RecommendationsNotificationResult> {
 		return createCancelablePromise<RecommendationsNotificationResult>(async token => {
 			if (this.hasToInstallRecommendedExtensionsAutomatically()) {
-				this.extensionManagementService.installExtensions(extensions.map(e => e.gallery!))
+				this.extensionManagementService.installGalleryExtensions(extensions.map(e => ({ extension: e.gallery!, options: { } })))
 				return RecommendationsNotificationResult.Accepted;
 			}
 			let accepted = false;
