@@ -117,11 +117,39 @@ if [ -n "${WEBVIEW_LOCAL_RESOURCES+x}" ]; then
 fi
 
 
-# Check if we have a custom CA certificate
-if [ -f /tmp/che/secret/ca.crt ]; then
-  echo "Adding custom CA certificate"
-  export NODE_EXTRA_CA_CERTS=/tmp/che/secret/ca.crt
+###################################################################################
+#
+# Prepare /tmp/node-extra-certificates/ca.crt bundle, initilize NODE_EXTRA_CA_CERTS 
+#
+###################################################################################
+EXTRA_CERTS_DIR="/tmp/node-extra-certificates"
+EXTRA_CERTS="$EXTRA_CERTS_DIR/ca.crt"
+
+if [ ! -f "$EXTRA_CERTS" ]; then
+  mkdir -p "$EXTRA_CERTS_DIR"
+
+  # Check if we have a custom Che CA certificate
+  CHE_CUSTOM_CERTIFICATE="/tmp/che/secret/ca.crt"
+  if [ -f "$CHE_CUSTOM_CERTIFICATE" ]; then
+    cat "$CHE_CUSTOM_CERTIFICATE" >> "$EXTRA_CERTS"
+  fi
+
+  # Check if we have public certificates in /public-certs
+  CUSTOM_PUBLIC_CERTIFICATES="/public-certs"
+  if [[ -d "$CUSTOM_PUBLIC_CERTIFICATES" ]]; then
+    for ENTRY in "$CUSTOM_PUBLIC_CERTIFICATES"/*
+    do
+      if [ -f "$ENTRY" ]; then
+        cat "$ENTRY" >> "$EXTRA_CERTS"
+      fi
+    done
+  fi
 fi
+
+if [ -f "$EXTRA_CERTS" ]; then
+  export NODE_EXTRA_CA_CERTS="$EXTRA_CERTS"
+fi
+
 
 if [ -z "$VSCODE_NODEJS_RUNTIME_DIR" ]; then
   VSCODE_NODEJS_RUNTIME_DIR="$(pwd)" 
