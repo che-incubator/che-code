@@ -132,6 +132,11 @@ if [ ! -f "$EXTRA_CERTS" ]; then
   CHE_CUSTOM_CERTIFICATE="/tmp/che/secret/ca.crt"
   if [ -f "$CHE_CUSTOM_CERTIFICATE" ]; then
     cat "$CHE_CUSTOM_CERTIFICATE" >> "$EXTRA_CERTS"
+
+    # check if it is needed to add a new line character
+    if [[ $(tail -c1 "$CHE_CUSTOM_CERTIFICATE") != "" ]]; then
+      echo >> "$EXTRA_CERTS"
+    fi
   fi
 
   # Check if we have public certificates in /public-certs
@@ -141,6 +146,11 @@ if [ ! -f "$EXTRA_CERTS" ]; then
     do
       if [ -f "$ENTRY" ]; then
         cat "$ENTRY" >> "$EXTRA_CERTS"
+
+        # check if it is needed to add a new line character
+        if [[ $(tail -c1 "$ENTRY") != "" ]]; then
+          echo >> "$EXTRA_CERTS"
+        fi
       fi
     done
   fi
