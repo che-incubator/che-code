@@ -68,15 +68,20 @@ RUN yarn config set network-timeout 600000 -g
 # Grab dependencies (and force to rebuild them)
 RUN yarn install --force
 
-# Compile
-RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
+RUN NODE_LOCATION="https://nodejs.org" \
     && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
-    # cache node from this image to avoid to grab it from within the build
-    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
-    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
-    && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
-    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
+    && ARCH="x64" \
+    && PLATFORM="linux" \
+    && NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${ARCH}.tar.gz" \
+    && echo "Downloading Node.js from ${NODE_URL}" \
+    && curl -sSLO "${NODE_URL}" \
+    && tar -xf node-v${NODE_VERSION}-${PLATFORM}-${ARCH}.tar.gz \
+    # cache node from this image to avoid to grab it within the build
+    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH} \
+    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH}" \
+    && cp node-v${NODE_VERSION}-${PLATFORM}-${ARCH}/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH}/node \
+    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${ARCH}-min \
+    && cp -r ../vscode-reh-web-${PLATFORM}-${ARCH} /checode
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
