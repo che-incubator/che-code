@@ -55,10 +55,10 @@ jobs:
           # PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
           echo "Pull request $PR_NUMBER"
 
-          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
-            echo "Pull request number invalid"
-            exit 1
-          fi
+          # if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+          #   echo "Pull request number invalid"
+          #   exit 1
+          # fi
 
           echo "_PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
