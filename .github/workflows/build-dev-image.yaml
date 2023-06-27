@@ -45,12 +45,34 @@ jobs:
           PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
           echo "Pull request $PR_NUMBER"
 
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Pull request number invalid"
+            exit 1
+          fi
+
+          echo "_PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+
           DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${PR_NUMBER}-dev-amd64
           echo "Dev image $DEV_IMAGE_NAME"
 
-          # docker buildx build --platform linux/amd64 --progress=plain --push -f build/dockerfiles/dev.Dockerfile -t ${DEV_IMAGE_NAME} .
-          docker buildx build --platform linux/amd64 --progress=plain -f build/dockerfiles/dev.Dockerfile -t ${DEV_IMAGE_NAME} .
+          echo "_DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
+
+          docker buildx build --platform linux/amd64 --progress=plain --push -f build/dockerfiles/dev.Dockerfile -t ${DEV_IMAGE_NAME} .
+          # docker buildx build --platform linux/amd64 --progress=plain -f build/dockerfiles/dev.Dockerfile -t ${DEV_IMAGE_NAME} .
 
       - name: Display docker images
         run: |
           docker images
+
+      - name: 'Comment PR'
+        uses: actions/github-script@v6
+        with:
+         script: |
+           const { repo: { owner, repo } } = context;
+           await github.rest.issues.createComment({
+              issue_number: process.env._PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Pull Request Dev image published:\n👉 ${process.env._DEV_IMAGE_NAME}`
+            })
