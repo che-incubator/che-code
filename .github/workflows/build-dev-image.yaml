@@ -31,6 +31,11 @@ jobs:
       - name: Checkout che-code source code
         uses: actions/checkout@v2
 
-      - name: Build Che-Code Docker image
+      - name: Get Pull Request number
         run: |
-          docker buildx build --platform linux/amd64 --progress=plain -f build/dockerfiles/dev.Dockerfile -t quay.io/vgulyy/che-code-dev:next-udi .
+          PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          echo "Pull request $PR_NUMBER"
+
+      # - name: Build Che-Code Docker image
+      #   run: |
+      #     docker buildx build --platform linux/amd64 --progress=plain -f build/dockerfiles/dev.Dockerfile -t quay.io/vgulyy/che-code-dev:next-udi .
