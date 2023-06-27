@@ -51,7 +51,7 @@ jobs:
 
       - name: Build Che-Code Docker image
         run: |
-          echo "${{ github.event.number }}" > PR_NUMBER
+          PR_NUMBER="${{ github.event.number }}"
           echo "Pull request $PR_NUMBER"
 
           # echo "_PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
