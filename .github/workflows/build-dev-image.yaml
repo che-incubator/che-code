@@ -56,7 +56,7 @@ jobs:
 
           # echo "_PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
-          DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${PR_NUMBER}-dev-amd64
+          DEV_IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code-dev:pr-$PR_NUMBER-dev-amd64"
           echo "Dev image $DEV_IMAGE_NAME"
 
           echo "_DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
