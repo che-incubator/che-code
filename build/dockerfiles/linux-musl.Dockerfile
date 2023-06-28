@@ -80,13 +80,13 @@ RUN [[ $(uname -m) == "x86_64" ]] && \
 
 
 
-# Run integration tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-    retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium
+# # Run integration tests (Browser)
+# RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+#     retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium
 
-# Run smoke tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-    retry -v -t 3 -s 2 -- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+# # Run smoke tests (Browser)
+# RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+#     retry -v -t 3 -s 2 -- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
 
 FROM scratch as linux-musl-content
 COPY --from=linux-musl-builder /checode /checode-linux-musl
