@@ -12,6 +12,7 @@
 
 import * as vscode from 'vscode';
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
+import { resolveTerminalProfile } from './profile-resolver';
 
 let _channel: vscode.OutputChannel;
 export function getOutputChannel(): vscode.OutputChannel {
@@ -57,6 +58,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 			return new MachineExecPTY(machineExecClient, containerName, command, workdir);
 		}
 	};
+
+	resolveTerminalProfile(getOutputChannel());
+
 	return api;
 }
 
