@@ -10,7 +10,7 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-name: Build che-code-dev image Pull Request check
+name: Build che-code Dev image Pull Request check
 
 # Trigger the workflow on pull request
 on:
