@@ -168,6 +168,19 @@ apply_code_product_changes() {
   git add code/product.json > /dev/null 2>&1
 }
 
+# Apply changes on code/extensions/mangle-loader.js file
+apply_mangle_loader_changes() {
+  
+  echo "  ⚙️ reworking code/extensions/mangle-loader.js..."
+  # reset the file from what is upstream
+  git checkout --theirs code/extensions/mangle-loader.js > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/extensions/mangle-loader.js
+  
+  # resolve the change
+  git add code/extensions/mangle-loader.js > /dev/null 2>&1
+}
 
 # Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
 apply_code_vs_platform_remote_browser_factory_changes() {
@@ -300,6 +313,8 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
+    elif [[ "$conflictingFile" == "code/extensions/mangle-loader.js" ]]; then
+      apply_mangle_loader_changes
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
     elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then

@@ -25,7 +25,7 @@ function getMangledFileContents(projectPath) {
 	if (!entry) {
 		const log = (...data) => fancyLog(ansiColors.blue('[mangler]'), ...data);
 		log(`Mangling ${projectPath}`);
-		const ts2tsMangler = new Mangler(projectPath, log, { mangleExports: true, manglePrivateFields: true });
+		const ts2tsMangler = new Mangler(projectPath, log, { mangleExports: false, manglePrivateFields: true });
 		entry = ts2tsMangler.computeNewFileContents();
 		mangleMap.set(projectPath, entry);
 	}
