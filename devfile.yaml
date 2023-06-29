@@ -14,8 +14,6 @@ components:
 
   - name: dev
     container:
-      # image: quay.io/vgulyy/che-code-dev:next
-      # image: quay.io/vgulyy/che-code-dev:next-udi
       image: quay.io/che-incubator-pull-requests/che-code-dev:pr-246-dev-amd64
       memoryLimit: 12Gi
       memoryRequest: 512Mi
