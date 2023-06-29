@@ -55,43 +55,45 @@ jobs:
       #   with:
       #     image: "linux-${{matrix.dist}}-${{matrix.arch}}"
 
-  # assemble:
-  #   name: assemble
-  #   needs: build
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #     - name: Download linux-libc-amd64 image
-  #       uses: ishworkh/docker-image-artifact-download@v1
-  #       with:
-  #         image: "linux-libc-amd64"
-  #     - name: Download linux-musl image
-  #       uses: ishworkh/docker-image-artifact-download@v1
-  #       with:
-  #         image: "linux-musl-amd64"
-  #     - name: Display docker images
-  #       run: |
-  #         docker images
-  #     - name: Docker Build
-  #       run: |
-  #         docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --load -t assembly-pr .
-  #     - name: Upload assembly image
-  #       uses: ishworkh/docker-image-artifact-upload@v1
-  #       with:
-  #         image: "assembly-pr"
-  #     - name: Store PR info
-  #       run: |
-  #         echo "${{ github.event.number }}" > PR_NUMBER
-  #         echo "${{ github.event.pull_request.head.sha }}" > PR_SHA
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         name: pull-request-number
-  #         path: PR_NUMBER
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         name: pull-request-sha
-  #         path: PR_SHA
+  assemble:
+    name: assemble
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      # - name: Checkout
+      #   uses: actions/checkout@v3
+      # - name: Download linux-libc-amd64 image
+      #   uses: ishworkh/docker-image-artifact-download@v1
+      #   with:
+      #     image: "linux-libc-amd64"
+      # - name: Download linux-musl image
+      #   uses: ishworkh/docker-image-artifact-download@v1
+      #   with:
+      #     image: "linux-musl-amd64"
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      # - name: Docker Build
+      #   run: |
+      #     docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --load -t assembly-pr .
+      # - name: Upload assembly image
+      #   uses: ishworkh/docker-image-artifact-upload@v1
+      #   with:
+      #     image: "assembly-pr"
+      # - name: Store PR info
+      #   run: |
+      #     echo "${{ github.event.number }}" > PR_NUMBER
+      #     echo "${{ github.event.pull_request.head.sha }}" > PR_SHA
+      # - uses: actions/upload-artifact@v3
+      #   with:
+      #     name: pull-request-number
+      #     path: PR_NUMBER
+      # - uses: actions/upload-artifact@v3
+      #   with:
+      #     name: pull-request-sha
+      #     path: PR_SHA
 
   # dev:
   #   name: dev
