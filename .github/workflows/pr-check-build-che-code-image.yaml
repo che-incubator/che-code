@@ -13,7 +13,8 @@
 name: Build che-code image Pull Request check
 
 # Trigger the workflow on pull request
-on: [pull_request]
+on:
+  pull_request:
     paths-ignore:
       - '**/*.md'
       - devfile.yaml
@@ -21,7 +22,7 @@ on: [pull_request]
       - '.rebase/*'
 
 jobs:
-  build-che-code-dev:
+  build-che-code:
     runs-on: ubuntu-22.04
     steps:
 
