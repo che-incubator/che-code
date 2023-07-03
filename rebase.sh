@@ -168,18 +168,32 @@ apply_code_product_changes() {
   git add code/product.json > /dev/null 2>&1
 }
 
-# Apply changes on code/extensions/mangle-loader.js file
-apply_mangle_loader_changes() {
+# Apply changes on code/build/lib/mangle/index.js file
+apply_mangle_index_js_changes() {
   
-  echo "  ⚙️ reworking code/extensions/mangle-loader.js..."
+  echo "  ⚙️ reworking code/build/lib/mangle/index.js..."
   # reset the file from what is upstream
-  git checkout --theirs code/extensions/mangle-loader.js > /dev/null 2>&1
+  git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
   
   # now apply again the changes
-  apply_replace code/extensions/mangle-loader.js
+  apply_replace code/build/lib/mangle/index.js
   
   # resolve the change
-  git add code/extensions/mangle-loader.js > /dev/null 2>&1
+  git add code/build/lib/mangle/index.js > /dev/null 2>&1
+}
+
+# Apply changes on code/build/lib/mangle/index.ts file
+apply_mangle_index_ts_changes() {
+  
+  echo "  ⚙️ reworking code/build/lib/mangle/index.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/build/lib/mangle/index.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/build/lib/mangle/index.ts
+  
+  # resolve the change
+  git add code/build/lib/mangle/index.ts > /dev/null 2>&1
 }
 
 # Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
@@ -313,8 +327,10 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
-    elif [[ "$conflictingFile" == "code/extensions/mangle-loader.js" ]]; then
-      apply_mangle_loader_changes
+    elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
+      apply_mangle_index_js_changes
+    elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
+      apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
     elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then
