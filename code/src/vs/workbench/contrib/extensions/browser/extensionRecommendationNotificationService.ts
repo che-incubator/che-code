@@ -270,22 +270,22 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 		{ onDidInstallRecommendedExtensions, onDidShowRecommendedExtensions, onDidCancelRecommendedExtensions, onDidNeverShowRecommendedExtensionsAgain }: RecommendationsNotificationActions): CancelablePromise<RecommendationsNotificationResult> {
 		return createCancelablePromise<RecommendationsNotificationResult>(async token => {
 			if (this.hasToInstallRecommendedExtensionsAutomatically()) {
-				this.extensionManagementService.installExtensions(extensions.map(e => e.gallery!))
+				this.extensionManagementService.installGalleryExtensions(extensions.map(e => ({ extension: e.gallery!, options: { } })))
 				return RecommendationsNotificationResult.Accepted;
 			}
 			let accepted = false;
 			const choices: (IPromptChoice | IPromptChoiceWithMenu)[] = [];
-			const installExtensions = async (isMachineScoped?: boolean) => {
+			const installExtensions = async (isMachineScoped: boolean) => {
 				this.runAction(this.instantiationService.createInstance(SearchExtensionsAction, searchValue));
 				onDidInstallRecommendedExtensions(extensions);
 				await Promises.settled<any>([
 					Promises.settled(extensions.map(extension => this.extensionsWorkbenchService.open(extension, { pinned: true }))),
-					this.extensionManagementService.installExtensions(extensions.map(e => e.gallery!), { isMachineScoped })
+					this.extensionManagementService.installGalleryExtensions(extensions.map(e => ({ extension: e.gallery!, options: { isMachineScoped } })))
 				]);
 			};
 			choices.push({
 				label: localize('install', "Install"),
-				run: () => installExtensions(),
+				run: () => installExtensions(false),
 				menu: this.userDataSyncEnablementService.isEnabled() && this.userDataSyncEnablementService.isResourceEnabled(SyncResource.Extensions) ? [{
 					label: localize('install and do no sync', "Install (Do not sync)"),
 					run: () => installExtensions(true)
