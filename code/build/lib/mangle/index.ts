@@ -287,6 +287,12 @@ const fileIdents = new class {
 };
 
 const skippedExportMangledFiles = [
+	// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic
+	'devfile-service',
+	'github-service',
+	'telemetry-service',
+	'workspace-service',
+
 	// Build
 	'css.build',
 	'nls.build',
