@@ -41,6 +41,7 @@ type ChatProviderInvokedEvent = {
 	totalTime: number;
 	result: 'success' | 'error' | 'errorWithOutput' | 'cancelled' | 'filtered';
 	requestType: 'string' | 'followup' | 'slashCommand';
+	slashCommand: string | undefined;
 };
 
 type ChatProviderInvokedClassification = {
@@ -49,6 +50,7 @@ type ChatProviderInvokedClassification = {
 	totalTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The total time it took to run the provider\'s `provideResponseWithProgress`.' };
 	result: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether invoking the ChatProvider resulted in an error.' };
 	requestType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The type of request that the user made.' };
+	slashCommand?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The type of slashCommand used.' };
 	owner: 'roblourens';
 	comment: 'Provides insight into the performance of Chat providers.';
 };
@@ -285,13 +287,8 @@ export class ChatService extends Disposable implements IChatService {
 	private _startSession(providerId: string, someSessionHistory: ISerializableChatData | undefined, token: CancellationToken): ChatModel {
 		const model = this.instantiationService.createInstance(ChatModel, providerId, someSessionHistory);
 		this._sessionModels.set(model.sessionId, model);
-		const modelInitPromise = this.initializeSession(model, someSessionHistory, token);
-		modelInitPromise.then(resolvedModel => {
-			if (!resolvedModel) {
-				model.dispose();
-				this._sessionModels.delete(model.sessionId);
-			}
-		}).catch(err => {
+		const modelInitPromise = this.initializeSession(model, token);
+		modelInitPromise.catch(err => {
 			this.trace('startSession', `initializeSession failed: ${err}`);
 			model.setInitializationError(err);
 			model.dispose();
@@ -301,7 +298,22 @@ export class ChatService extends Disposable implements IChatService {
 		return model;
 	}
 
-	private async initializeSession(model: ChatModel, sessionHistory: ISerializableChatData | undefined, token: CancellationToken): Promise<ChatModel | undefined> {
+	private reinitializeModel(model: ChatModel): void {
+		model.startReinitialize();
+		this.startSessionInit(model, CancellationToken.None);
+	}
+
+	private startSessionInit(model: ChatModel, token: CancellationToken): void {
+		const modelInitPromise = this.initializeSession(model, token);
+		modelInitPromise.catch(err => {
+			this.trace('startSession', `initializeSession failed: ${err}`);
+			model.setInitializationError(err);
+			model.dispose();
+			this._sessionModels.delete(model.sessionId);
+		});
+	}
+
+	private async initializeSession(model: ChatModel, token: CancellationToken): Promise<void> {
 		await this.extensionService.activateByEvent(`onInteractiveSession:${model.providerId}`);
 
 		const provider = this._providers.get(model.providerId);
@@ -317,18 +329,16 @@ export class ChatService extends Disposable implements IChatService {
 		}
 
 		if (!session) {
-			this.trace('startSession', 'Provider returned no session');
-			return undefined;
+			throw new Error('Provider returned no session');
 		}
 
 		this.trace('startSession', `Provider returned session`);
 
-		const welcomeMessage = sessionHistory ? undefined : withNullAsUndefined(await provider.provideWelcomeMessage?.(token));
+		const welcomeMessage = model.welcomeMessage ? undefined : withNullAsUndefined(await provider.provideWelcomeMessage?.(token));
 		const welcomeModel = welcomeMessage && new ChatWelcomeMessageModel(
 			welcomeMessage.map(item => typeof item === 'string' ? new MarkdownString(item) : item as IChatReplyFollowup[]), session.responderUsername, session.responderAvatarIconUri);
 
 		model.initialize(session, welcomeModel);
-		return model;
 	}
 
 	getSession(sessionId: string): IChatModel | undefined {
@@ -357,7 +367,7 @@ export class ChatService extends Disposable implements IChatService {
 		return this._startSession(data.providerId, data, CancellationToken.None);
 	}
 
-	async sendRequest(sessionId: string, request: string | IChatReplyFollowup): Promise<{ responseCompletePromise: Promise<void> } | undefined> {
+	async sendRequest(sessionId: string, request: string | IChatReplyFollowup, usedSlashCommand?: ISlashCommand): Promise<{ responseCompletePromise: Promise<void> } | undefined> {
 		const messageText = typeof request === 'string' ? request : request.message;
 		this.trace('sendRequest', `sessionId: ${sessionId}, message: ${messageText.substring(0, 20)}${messageText.length > 20 ? '[...]' : ''}}`);
 		if (!messageText.trim()) {
@@ -382,10 +392,10 @@ export class ChatService extends Disposable implements IChatService {
 		}
 
 		// This method is only returning whether the request was accepted - don't block on the actual request
-		return { responseCompletePromise: this._sendRequestAsync(model, provider, request) };
+		return { responseCompletePromise: this._sendRequestAsync(model, provider, request, usedSlashCommand) };
 	}
 
-	private async _sendRequestAsync(model: ChatModel, provider: IChatProvider, message: string | IChatReplyFollowup): Promise<void> {
+	private async _sendRequestAsync(model: ChatModel, provider: IChatProvider, message: string | IChatReplyFollowup, usedSlashCommand?: ISlashCommand): Promise<void> {
 		const request = model.addRequest(message);
 
 		const resolvedCommand = typeof message === 'string' && message.startsWith('/') ? await this.handleSlashCommand(model.sessionId, message) : message;
@@ -420,7 +430,8 @@ export class ChatService extends Disposable implements IChatService {
 					// Normally timings happen inside the EH around the actual provider. For cancellation we can measure how long the user waited before cancelling
 					totalTime: stopWatch.elapsed(),
 					result: 'cancelled',
-					requestType
+					requestType,
+					slashCommand: usedSlashCommand?.command
 				});
 
 				model.cancelRequest(request);
@@ -443,15 +454,20 @@ export class ChatService extends Disposable implements IChatService {
 					timeToFirstProgress: rawResponse.timings?.firstProgress ?? 0,
 					totalTime: rawResponse.timings?.totalElapsed ?? 0,
 					result,
-					requestType
+					requestType,
+					slashCommand: usedSlashCommand?.command
 				});
-				model.completeResponse(request, rawResponse);
+				model.setResponse(request, rawResponse);
 				this.trace('sendRequest', `Provider returned response for session ${model.sessionId}`);
 
+				// TODO refactor this or rethink the API https://github.com/microsoft/vscode-copilot/issues/593
 				if (provider.provideFollowups) {
 					Promise.resolve(provider.provideFollowups(model.session!, CancellationToken.None)).then(followups => {
 						model.setFollowups(request, withNullAsUndefined(followups));
+						model.completeResponse(request);
 					});
+				} else {
+					model.completeResponse(request);
 				}
 			}
 		});
@@ -575,7 +591,7 @@ export class ChatService extends Disposable implements IChatService {
 		model.acceptResponseProgress(request, {
 			content: response.message,
 		}, true);
-		model.completeResponse(request, {
+		model.setResponse(request, {
 			session: model.session!,
 			errorDetails: response.errorDetails,
 		});
@@ -609,6 +625,10 @@ export class ChatService extends Disposable implements IChatService {
 
 		this._providers.set(provider.id, provider);
 		this._hasProvider.set(true);
+
+		Array.from(this._sessionModels.values())
+			.filter(model => model.providerId === provider.id)
+			.forEach(model => this.reinitializeModel(model));
 
 		return toDisposable(() => {
 			this.trace('registerProvider', `Disposing chat provider`);

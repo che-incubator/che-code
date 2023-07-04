@@ -17,6 +17,11 @@ enum MediaKind {
 	Audio,
 }
 
+const externalUriSchemes = [
+	'http',
+	'https',
+];
+
 export const mediaFileExtensions = new Map<string, MediaKind>([
 	// Images
 	['bmp', MediaKind.Image],
@@ -153,7 +158,7 @@ export function createUriListSnippet(
 			if (insertAsMedia) {
 				insertedImageCount++;
 				snippet.appendText('![');
-				const placeholderText = options?.placeholderText ? (escapeBrackets(title) || 'Alt text') : 'label';
+				const placeholderText = escapeBrackets(title) || options?.placeholderText || 'Alt text';
 				const placeholderIndex = typeof options?.placeholderStartIndex !== 'undefined' ? options?.placeholderStartIndex + i : (placeholderValue === 0 ? undefined : placeholderValue);
 				snippet.appendPlaceholder(placeholderText, placeholderIndex);
 				snippet.appendText(`](${escapeMarkdownLinkPath(mdPath)})`);
@@ -161,7 +166,12 @@ export function createUriListSnippet(
 				insertedLinkCount++;
 				snippet.appendText('[');
 				snippet.appendPlaceholder(escapeBrackets(title) || 'Title', placeholderValue);
-				snippet.appendText(`](${escapeMarkdownLinkPath(mdPath)})`);
+				if (externalUriSchemes.includes(uri.scheme)) {
+					const uriString = uri.toString(true);
+					snippet.appendText(`](${uriString})`);
+				} else {
+					snippet.appendText(`](${escapeMarkdownLinkPath(mdPath)})`);
+				}
 			}
 		}
 
@@ -292,7 +302,6 @@ function escapeMarkdownLinkPath(mdPath: string): string {
 
 function escapeBrackets(value: string): string {
 	value = value.replace(/[\[\]]/g, '\\$&');
-	// value = value.replace(/\r\n\r\n/g, '\n\n');
 	return value;
 }
 
