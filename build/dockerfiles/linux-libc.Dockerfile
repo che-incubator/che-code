@@ -45,7 +45,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch wget \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
 
@@ -68,20 +68,47 @@ RUN yarn config set network-timeout 600000 -g
 # Grab dependencies (and force to rebuild them)
 RUN yarn install --force
 
-RUN NODE_LOCATION="https://nodejs.org" \
+ARG PLATFORM="linux"
+ARG NODE_LOCATION="https://nodejs.org"
+
+RUN { \ 
+    if [[ $(uname -m) == "s390x" ]]; then \
+      NODE_ARCH="s390x"; \
+      BUILD_ARCH="s390x"; \
+    elif [[ $(uname -m) == "ppc64le" ]]; then \ 
+      NODE_ARCH="ppc64le"; \
+      BUILD_ARCH="ppc64"; \
+    elif [[ $(uname -m) == "x86_64" ]]; then \
+      NODE_ARCH="x64"; \
+      BUILD_ARCH="x64"; \
+    elif [[ $(uname -m) == "aarch64" ]]; then \
+      NODE_ARCH="arm64"; \
+      BUILD_ARCH="arm64"; \
+    else \
+      NODE_ARCH=""; \
+      BUILD_ARCH=$(echo "console.log(process.arch)" | node); \
+    fi; \ 
+    } \
     && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
-    && ARCH="x64" \
-    && PLATFORM="linux" \
-    && NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${ARCH}.tar.gz" \
-    && echo "Downloading Node.js from ${NODE_URL}" \
-    && curl -sSLO "${NODE_URL}" \
-    && tar -xf node-v${NODE_VERSION}-${PLATFORM}-${ARCH}.tar.gz \
+    && { \
+        if [ -n "$NODE_ARCH" ]; then \
+            NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz"; \
+            echo "Downloading Node.js from ${NODE_URL}"; \
+            wget -q "${NODE_URL}"; \
+            tar -xf node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz; \
+            mv node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH} nodejs; \
+        else mkdir -p nodejs/bin && cp /usr/bin/node nodejs/bin/node; \
+        fi; \
+       } \
     # cache node from this image to avoid to grab it within the build
-    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH} \
-    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH}" \
-    && cp node-v${NODE_VERSION}-${PLATFORM}-${ARCH}/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${ARCH}/node \
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${ARCH}-min \
-    && cp -r ../vscode-reh-web-${PLATFORM}-${ARCH} /checode
+    && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${BUILD_ARCH} \
+    && mkdir -p $CACHE_NODE_PATH \
+    && echo "caching ${CACHE_NODE_PATH}" \
+    && cp nodejs/bin/node ${CACHE_NODE_PATH}/node \
+    # compile assembly
+    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
+    && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode \
+    && mv nodejs /checode/nodejs
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
