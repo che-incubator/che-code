@@ -107,8 +107,7 @@ RUN { \
     && cp nodejs/bin/node ${CACHE_NODE_PATH}/node \
     # compile assembly
     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
-    && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode \
-    && mv nodejs /checode/nodejs
+    && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
