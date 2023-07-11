@@ -51,12 +51,56 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 # COPY code /checode-compilation
 RUN mkdir -p /checode-compilation/customNode/sss
 WORKDIR /checode-compilation
-RUN git clone --depth 1 --branch v16.17.1 https://github.com/nodejs/node
-RUN cd node \
-    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static  \
+# RUN git clone --depth 1 --branch v16.17.1 https://github.com/nodejs/node
+# RUN cd node \
+#     && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static  \
+#     && make -j$(nproc) \
+#     && make install  
+
+ARG PLATFORM="linux"
+ARG NODE_LOCATION="https://nodejs.org"
+
+RUN { \ 
+    if [[ $(uname -m) == "s390x" ]]; then \
+      NODE_ARCH="s390x"; \
+      BUILD_ARCH="s390x"; \
+    elif [[ $(uname -m) == "ppc64le" ]]; then \ 
+      NODE_ARCH="ppc64le"; \
+      BUILD_ARCH="ppc64"; \
+    elif [[ $(uname -m) == "x86_64" ]]; then \
+      NODE_ARCH="x64"; \
+      BUILD_ARCH="x64"; \
+    elif [[ $(uname -m) == "aarch64" ]]; then \
+      NODE_ARCH="arm64"; \
+      BUILD_ARCH="arm64"; \
+    else \
+      NODE_ARCH=""; \
+      BUILD_ARCH=$(echo "console.log(process.arch)" | node); \
+    fi; \ 
+    } \
+    && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+    && { \
+        if [ -n "$NODE_ARCH" ]; then \
+            NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz"; \
+            echo "Downloading Node.js from ${NODE_URL}"; \
+            wget -q "${NODE_URL}"; \
+            tar -xf node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz; \
+            mv node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH} nodejs; \
+        else mkdir -p nodejs/bin && cp /usr/bin/node nodejs/bin/node; \
+        fi; \
+       } \
+    && cd nodejs \
+    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static \
     && make -j$(nproc) \
     && make install  
-
+    # cache node from this image to avoid to grab it within the build
+    # && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${BUILD_ARCH} \
+    # && mkdir -p $CACHE_NODE_PATH \
+    # && echo "caching ${CACHE_NODE_PATH}" \
+    # && cp nodejs/bin/node ${CACHE_NODE_PATH}/node \
+    # compile assembly
+    # && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
+    # && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
 
 
 # ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
