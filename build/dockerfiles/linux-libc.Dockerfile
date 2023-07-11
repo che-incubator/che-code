@@ -79,7 +79,7 @@ RUN { \
       BUILD_ARCH=$(echo "console.log(process.arch)" | node); \
     fi; \ 
     } \
-    && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+    # && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
     && { \
         if [ -n "$NODE_ARCH" ]; then \
             NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz"; \
