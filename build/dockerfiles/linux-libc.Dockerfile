@@ -53,8 +53,8 @@ RUN mkdir -p /checode-compilation/customNode/sss
 WORKDIR /checode-compilation
 RUN git clone --depth 1 --branch v16.17.1 https://github.com/nodejs/node
 RUN cd node \
-    && ./configure --prefix=/checode-compilation/customNode ./configure --fully-static --enable-static  \
-    && make -j1 \
+    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static  \
+    && make -j$(nproc) \
     && make install  
 
 
