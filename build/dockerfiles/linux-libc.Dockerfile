@@ -59,6 +59,7 @@ WORKDIR /checode-compilation
 
 ARG PLATFORM="linux"
 ARG NODE_LOCATION="https://nodejs.org"
+ARG NODE_VERSION="16.17.1"
 
 RUN { \ 
     if [[ $(uname -m) == "s390x" ]]; then \
