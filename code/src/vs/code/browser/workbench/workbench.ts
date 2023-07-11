@@ -410,7 +410,7 @@ class WorkspaceProvider implements IWorkspaceProvider {
 		} : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageCredentialsProvider() // with a remote, we don't use a local credentials provider
+		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageSecretStorageProvider() // with a remote, we don't use a local secret storage provider
 	}, undefined, 2));
 
 	// Create workbench
