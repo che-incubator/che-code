@@ -45,81 +45,90 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake libstdc++-static openssl-devel libffi-devel zlib-devel gcc gcc-c++ python3 python3-pip git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
-COPY code /checode-compilation
+# COPY code /checode-compilation
+RUN mkdir -p /checode-compilation/customNode/sss
 WORKDIR /checode-compilation
-ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+RUN git clone --depth 1 --branch v16.17.1 https://github.com/nodejs/node
+RUN cd node \
+    && ./configure --prefix=/checode-compilation/customNode --fully-static \
+    && make -j4 \
+    && make install  
+
+
+
+# ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
+#     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 # Initialize a git repository for code build tools
-RUN git init .
+# RUN git init .
 
 # change network timeout (slow using multi-arch build)
-RUN yarn config set network-timeout 600000 -g
+# RUN yarn config set network-timeout 600000 -g
 
 # Grab dependencies (and force to rebuild them)
-RUN yarn install --force
+# RUN yarn install --force
 
 # Compile
-RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
-    && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
-    # cache node from this image to avoid to grab it from within the build
-    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
-    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
-    && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
-    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
+# RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
+#     && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+#     # cache node from this image to avoid to grab it from within the build
+#     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
+#     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
+#     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
+#     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
+#     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
 
-RUN chmod a+x /checode/out/server-main.js \
-    && chgrp -R 0 /checode && chmod -R g+rwX /checode
+# RUN chmod a+x /checode/out/server-main.js \
+#     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
-### Testing
-# Compile tests
-RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
-	compile-extension:markdown-language-features \
-	compile-extension:typescript-language-features \
-	compile-extension:emmet \
-	compile-extension:git \
-	compile-extension:ipynb \
-	compile-extension-media \
-  compile-extension:configuration-editing
+# ### Testing
+# # Compile tests
+# RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
+# 	compile-extension:markdown-language-features \
+# 	compile-extension:typescript-language-features \
+# 	compile-extension:emmet \
+# 	compile-extension:git \
+# 	compile-extension:ipynb \
+# 	compile-extension-media \
+#   compile-extension:configuration-editing
 
-# Compile test suites
-# https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
-RUN [[ $(uname -m) == "x86_64" ]] && yarn --cwd test/smoke compile && yarn --cwd test/integration/browser compile
+# # Compile test suites
+# # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
+# RUN [[ $(uname -m) == "x86_64" ]] && yarn --cwd test/smoke compile && yarn --cwd test/integration/browser compile
 
-# install test dependencies
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
-RUN [[ $(uname -m) == "x86_64" ]] &&  yarn playwright-install 
-# Install procps to manage to kill processes and centos stream repository
-RUN [[ $(uname -m) == "x86_64" ]] && \
-    ARCH=$(uname -m) && \
-    yum install --nobest -y procps \
-        http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
+# # install test dependencies
+# ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+# RUN [[ $(uname -m) == "x86_64" ]] &&  yarn playwright-install 
+# # Install procps to manage to kill processes and centos stream repository
+# RUN [[ $(uname -m) == "x86_64" ]] && \
+#     ARCH=$(uname -m) && \
+#     yum install --nobest -y procps \
+#         http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
+#         http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
+#         http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
 
-RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
-    PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
-    rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
+# RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
+#     PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
+#     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+#     ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
 
-# use of retry and timeout
-COPY /build/scripts/helper/retry.sh /opt/app-root/src/retry.sh
-RUN chmod u+x /opt/app-root/src/retry.sh
+# # use of retry and timeout
+# COPY /build/scripts/helper/retry.sh /opt/app-root/src/retry.sh
+# RUN chmod u+x /opt/app-root/src/retry.sh
 
-# Run integration tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
-    VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-    /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium
+# # Run integration tests (Browser)
+# RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
+#     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
+#     /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium
 
-# Run smoke tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
-    VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-    /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+# # Run smoke tests (Browser)
+# RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
+#     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
+#     /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
 
-# Store the content of the result
+# # Store the content of the result
 FROM scratch as linux-libc-content
-COPY --from=linux-libc-builder /checode /checode-linux-libc
+COPY --from=linux-libc-builder /checode-compilation /checode-linux-libc
