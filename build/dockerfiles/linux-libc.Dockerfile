@@ -82,11 +82,11 @@ RUN { \
     # && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
     && { \
         if [ -n "$NODE_ARCH" ]; then \
-            NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz"; \
+            NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}.tar.gz"; \
             echo "Downloading Node.js from ${NODE_URL}"; \
             wget -q "${NODE_URL}"; \
-            tar -xf node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH}.tar.gz; \
-            mv node-v${NODE_VERSION}-${PLATFORM}-${NODE_ARCH} nodejs; \
+            tar -xf node-v${NODE_VERSION}.tar.gz; \
+            mv node-v${NODE_VERSION} nodejs; \
         else mkdir -p nodejs/bin && cp /usr/bin/node nodejs/bin/node; \
         fi; \
        } \
