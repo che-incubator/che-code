@@ -87,7 +87,7 @@ RUN { \
         fi; \
        } \
     && cd nodejs \
-    && ./configure --prefix=/checode-compilation/customNode --download=all --cross-compiling --fully-static --enable-static \
+    && ./configure --prefix=/checode-compilation/customNode --cross-compiling --fully-static --enable-static \
     && make -j$(nproc) \
     && make install \
     # cache node from this image to avoid to grab it within the build
@@ -95,6 +95,7 @@ RUN { \
     && mkdir -p $CACHE_NODE_PATH \
     && echo "caching ${CACHE_NODE_PATH}" \
     && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node \
+    && cd .. \
     # compile assembly
     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
     && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
