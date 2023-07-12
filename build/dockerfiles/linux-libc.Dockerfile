@@ -45,11 +45,12 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl wget make cmake libstdc++-static openssl-devel libffi-devel zlib-devel gcc gcc-c++ python3 python3-pip git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    wget python3 libstdc++-static glibc-devel glibc-static python3-pip \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
-# COPY code /checode-compilation
-RUN mkdir -p /checode-compilation/customNode/sss
+COPY code /checode-compilation
+RUN mkdir -p /checode-compilation/customNode
 WORKDIR /checode-compilation
 # RUN git clone --depth 1 --branch v16.17.1 https://github.com/nodejs/node
 # RUN cd node \
@@ -60,27 +61,22 @@ WORKDIR /checode-compilation
 ARG PLATFORM="linux"
 ARG NODE_LOCATION="https://nodejs.org"
 ARG NODE_VERSION="16.17.1"
+ARG NODE_ARCH="x64"
+ARG BUILD_ARCH="x64"
 
-RUN { \ 
-    if [[ $(uname -m) == "s390x" ]]; then \
-      NODE_ARCH="s390x"; \
-      BUILD_ARCH="s390x"; \
-    elif [[ $(uname -m) == "ppc64le" ]]; then \ 
-      NODE_ARCH="ppc64le"; \
-      BUILD_ARCH="ppc64"; \
-    elif [[ $(uname -m) == "x86_64" ]]; then \
-      NODE_ARCH="x64"; \
-      BUILD_ARCH="x64"; \
-    elif [[ $(uname -m) == "aarch64" ]]; then \
-      NODE_ARCH="arm64"; \
-      BUILD_ARCH="arm64"; \
-    else \
-      NODE_ARCH=""; \
-      BUILD_ARCH=$(echo "console.log(process.arch)" | node); \
-    fi; \ 
-    } \
-    # && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
-    && { \
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# Initialize a git repository for code build tools
+RUN git init .
+
+# change network timeout (slow using multi-arch build)
+RUN yarn config set network-timeout 600000 -g
+
+# Grab dependencies (and force to rebuild them)
+RUN yarn install --force
+
+RUN { \
         if [ -n "$NODE_ARCH" ]; then \
             NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}.tar.gz"; \
             echo "Downloading Node.js from ${NODE_URL}"; \
@@ -91,43 +87,20 @@ RUN { \
         fi; \
        } \
     && cd nodejs \
-    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static \
+    && ./configure --prefix=/checode-compilation/customNode --download=all --cross-compiling --fully-static --enable-static \
     && make -j$(nproc) \
-    && make install  
+    && make install \
     # cache node from this image to avoid to grab it within the build
-    # && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${BUILD_ARCH} \
-    # && mkdir -p $CACHE_NODE_PATH \
-    # && echo "caching ${CACHE_NODE_PATH}" \
-    # && cp nodejs/bin/node ${CACHE_NODE_PATH}/node \
+    && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${BUILD_ARCH} \
+    && mkdir -p $CACHE_NODE_PATH \
+    && echo "caching ${CACHE_NODE_PATH}" \
+    && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node \
     # compile assembly
-    # && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
-    # && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
+    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
+    && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
 
-
-# ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-#     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-
-# Initialize a git repository for code build tools
-# RUN git init .
-
-# change network timeout (slow using multi-arch build)
-# RUN yarn config set network-timeout 600000 -g
-
-# Grab dependencies (and force to rebuild them)
-# RUN yarn install --force
-
-# Compile
-# RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
-#     && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
-#     # cache node from this image to avoid to grab it from within the build
-#     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
-#     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
-#     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-#     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
-#     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
-
-# RUN chmod a+x /checode/out/server-main.js \
-#     && chgrp -R 0 /checode && chmod -R g+rwX /checode
+RUN chmod a+x /checode/out/server-main.js \
+    && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # ### Testing
 # # Compile tests
