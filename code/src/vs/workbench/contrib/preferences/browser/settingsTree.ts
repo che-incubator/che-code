@@ -758,7 +758,7 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 
 	constructor(
 		private readonly settingActions: IAction[],
-		private readonly disposableActionFactory: (setting: ISetting) => IAction[],
+		private readonly disposableActionFactory: (setting: ISetting, settingTarget: SettingsTarget) => IAction[],
 		@IThemeService protected readonly _themeService: IThemeService,
 		@IContextViewService protected readonly _contextViewService: IContextViewService,
 		@IOpenerService protected readonly _openerService: IOpenerService,
@@ -875,7 +875,7 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		const element = node.element;
 		template.context = element;
 		template.toolbar.context = element;
-		const actions = this.disposableActionFactory(element.setting);
+		const actions = this.disposableActionFactory(element.setting, element.settingsTarget);
 		actions.forEach(a => isDisposable(a) && template.elementDisposables.add(a));
 		template.toolbar.setActions([], [...this.settingActions, ...actions]);
 
@@ -1980,7 +1980,7 @@ export class SettingTreeRenderers {
 			this._instantiationService.createInstance(CopySettingAsJSONAction),
 		];
 
-		const actionFactory = (setting: ISetting) => this.getActionsForSetting(setting);
+		const actionFactory = (setting: ISetting, settingTarget: SettingsTarget) => this.getActionsForSetting(setting, settingTarget);
 		const emptyActionFactory = (_: ISetting) => [];
 		const settingRenderers = [
 			this._instantiationService.createInstance(SettingBoolRenderer, this.settingActions, actionFactory),
@@ -2015,14 +2015,15 @@ export class SettingTreeRenderers {
 		];
 	}
 
-	private getActionsForSetting(setting: ISetting): IAction[] {
-		const enableSync = this._userDataSyncEnablementService.isEnabled();
-		return enableSync && !setting.disallowSyncIgnore ?
-			[
-				new Separator(),
-				this._instantiationService.createInstance(SyncSettingAction, setting)
-			] :
-			[];
+	private getActionsForSetting(setting: ISetting, settingTarget: SettingsTarget): IAction[] {
+		const actions: IAction[] = [];
+		if (this._userDataSyncEnablementService.isEnabled() && !setting.disallowSyncIgnore) {
+			actions.push(this._instantiationService.createInstance(SyncSettingAction, setting));
+		}
+		if (actions.length) {
+			actions.splice(0, 0, new Separator());
+		}
+		return actions;
 	}
 
 	cancelSuggesters() {
@@ -2295,7 +2296,7 @@ export class NonCollapsibleObjectTreeModel<T> extends ObjectTreeModel<T> {
 }
 
 class SettingsTreeAccessibilityProvider implements IListAccessibilityProvider<SettingsTreeElement> {
-	constructor(private readonly configurationService: IConfigurationService, private readonly languageService: ILanguageService, private readonly userDataProfilesService: IUserDataProfilesService) {
+	constructor(private readonly configurationService: IWorkbenchConfigurationService, private readonly languageService: ILanguageService, private readonly userDataProfilesService: IUserDataProfilesService) {
 	}
 
 	getAriaLabel(element: SettingsTreeElement) {
@@ -2337,7 +2338,7 @@ export class SettingsTree extends WorkbenchObjectTree<SettingsTreeElement> {
 		renderers: ITreeRenderer<any, void, any>[],
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IListService listService: IListService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@IWorkbenchConfigurationService configurationService: IWorkbenchConfigurationService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ILanguageService languageService: ILanguageService,
 		@IUserDataProfilesService userDataProfilesService: IUserDataProfilesService
