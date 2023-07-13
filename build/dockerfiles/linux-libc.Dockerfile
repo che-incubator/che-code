@@ -94,10 +94,9 @@ RUN { \
     && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM}-${BUILD_ARCH} \
     && mkdir -p $CACHE_NODE_PATH \
     && echo "caching ${CACHE_NODE_PATH}" \
-    && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node \
-    && cd .. \
-    # compile assembly
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
+    && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node
+
+RUN NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
     && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
 
 RUN chmod a+x /checode/out/server-main.js \
@@ -150,4 +149,4 @@ RUN chmod a+x /checode/out/server-main.js \
 
 # # Store the content of the result
 FROM scratch as linux-libc-content
-COPY --from=linux-libc-builder /checode-compilation /checode-linux-libc
+COPY --from=linux-libc-builder /checode /checode-linux-libc
