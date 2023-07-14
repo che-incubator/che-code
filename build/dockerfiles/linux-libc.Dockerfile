@@ -84,7 +84,7 @@ RUN { \
         fi; \
        } \
     && cd nodejs \
-    && ./configure --prefix=/checode-compilation/customNode --cross-compiling --fully-static --enable-static \
+    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static --without-npm \
     && make -j$(nproc) \
     && make install \
     # cache node from this image to avoid to grab it within the build
