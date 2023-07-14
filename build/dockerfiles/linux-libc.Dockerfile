@@ -73,9 +73,6 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
 
-# Grab dependencies (and force to rebuild them)
-RUN yarn install --force
-
 RUN { \
         if [ -n "$NODE_ARCH" ]; then \
             NODE_URL="${NODE_LOCATION}/dist/v${NODE_VERSION}/node-v${NODE_VERSION}.tar.gz"; \
@@ -95,6 +92,13 @@ RUN { \
     && mkdir -p $CACHE_NODE_PATH \
     && echo "caching ${CACHE_NODE_PATH}" \
     && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node
+
+# RUN npm config set node_bin_location /checode-compilation/customNode/bin/node
+ENV NODE_PATH=/checode-compilation/customNode/bin/node
+ENV PATH=/checode-compilation/customNode/bin:$PATH
+
+# Grab dependencies (and force to rebuild them)
+RUN yarn install --force
 
 RUN NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
     && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
