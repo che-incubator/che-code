@@ -47,6 +47,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     fi; } \
     && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     wget python3 libstdc++-static glibc-devel glibc-static python3-pip \
+    openssl-devel zlib-devel ncurses-devel libffi-devel \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
 COPY code /checode-compilation
@@ -84,7 +85,7 @@ RUN { \
         fi; \
        } \
     && cd nodejs \
-    && ./configure --prefix=/checode-compilation/customNode --fully-static --enable-static --without-npm \
+    && ./configure --prefix=/checode-compilation/customNode --partly-static --enable-static \
     && make -j$(nproc) \
     && make install \
     # cache node from this image to avoid to grab it within the build
