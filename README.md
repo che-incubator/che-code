@@ -31,7 +31,7 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 3. `export DOCKER_BUILDKIT=1`
 4. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
-## Developing with Eclipse Che
+## Developing with Eclipse Che®
 
 This project includes [Devfile](devfile.yaml) that simplifies developing Che-Code in Eclipse Che.
 To test your changes in Eclipse Che run the following VS Code tasks:
@@ -133,6 +133,8 @@ The following example shows all of the properties that you can customize by usin
 {
     "nameShort": "Branded IDE",
     "nameLong": "Branded Instance of Eclipse Che with Branded Microsoft Visual Studio Code - Open Source IDE",
+    "welcomePageTitle": "Branded Instance of Eclipse Che",
+    "welcomePageSubtitle": "with Branded Microsoft Visual Studio Code - Open Source IDE",
     "icons": {
         "favicon": {
             "universal": "icons/favicon.ico"
@@ -164,6 +166,10 @@ The following example shows all of the properties that you can customize by usin
 `nameShort` is the application name for UI elements.
 
 `nameLong` is the application name that is used for the **Welcome** page, **About** dialog, and browser tab title.
+
+`welcomePageTitle` is the **Welcome** page title. The field is optional, the default is `nameLong` as the title.
+
+`welcomePageSubtitle` - is the **Welcome** page subtitle. The field is optional, the default value comes from the upstream.
 
 `favicon` is the icon for the browser tab title for all themes.
 
@@ -349,3 +355,7 @@ Downstream builds can be found at the link below, which is _internal to Red Hat_
 # License
 
 - [Eclipse Public License 2.0](LICENSE)
+
+# Trademark
+
+"Che" is a trademark of the Eclipse Foundation.

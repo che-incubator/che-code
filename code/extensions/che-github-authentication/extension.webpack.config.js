@@ -15,6 +15,7 @@
 'use strict';
 
 const withDefaults = require('../shared.webpack.config');
+const webpack = require('webpack');
 
 module.exports = withDefaults({
     context: __dirname,
@@ -24,4 +25,11 @@ module.exports = withDefaults({
     entry: {
         extension: './src/extension.ts',
     },
+    externals: {
+		'bufferutil': 'commonjs bufferutil', // ignored
+		'utf-8-validate': 'commonjs utf-8-validate', // ignored
+	},
+	plugins: [
+		new webpack.ContextReplacementPlugin(/keyv/), // needs to exclude the package to ignore warnings https://github.com/jaredwray/keyv/issues/45
+	],
 });

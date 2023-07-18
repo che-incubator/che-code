@@ -8,6 +8,7 @@
 const perf = require('./vs/base/common/performance');
 const performance = require('perf_hooks').performance;
 const product = require('../product.json');
+const url = require('url');
 const readline = require('readline');
 const http = require('http');
 
@@ -43,12 +44,6 @@ async function start() {
 			mod.spawnCli();
 		});
 		return;
-	}
-
-	if (parsedArgs['compatibility'] === '1.63') {
-		console.warn(`server.sh is being replaced by 'bin/${product.serverApplicationName}'. Please migrate to the new command and adopt the following new default behaviors:`);
-		console.warn('* connection token is mandatory unless --without-connection-token is used');
-		console.warn('* host defaults to `localhost`');
 	}
 
 	/**
@@ -102,6 +97,12 @@ async function start() {
 			firstRequest = false;
 			perf.mark('code/server/firstRequest');
 		}
+		if (!_remoteExtensionHostAgentServer && req.url && url.parse(req.url, true).pathname === '/healthz') {
+			res.writeHead(503, { 'Content-Type': 'text/plain' });
+			res.end('Service Unavailable');
+			return;
+		}
+		
 		const remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();
 		return remoteExtensionHostAgentServer.handleRequest(req, res);
 	});
@@ -160,6 +161,7 @@ async function start() {
 		server.close();
 		if (_remoteExtensionHostAgentServer) {
 			_remoteExtensionHostAgentServer.dispose();
+			_remoteExtensionHostAgentServer = null;
 		}
 	});
 }

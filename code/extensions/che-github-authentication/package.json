@@ -31,13 +31,16 @@
   },
   "main": "./out/extension.js",
   "scripts": {
-    "compile": "gulp compile-extension:github-authentication",
+    "compile": "gulp compile-extension:che-github-authentication",
     "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
-    "watch": "gulp watch-extension:github-authentication",
+    "watch": "gulp watch-extension:che-github-authentication",
     "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose",
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {
+    "inversify": "^6.0.1",
+    "@devfile/api": "^2.2.0-alpha-1641413790",
+    "@kubernetes/client-node": "^0.16.1",
     "node-fetch": "2.6.7",
     "uuid": "8.1.0",
     "@vscode/extension-telemetry": "0.4.10",
@@ -47,7 +50,8 @@
   "devDependencies": {
     "@types/node": "16.x",
     "@types/node-fetch": "^2.5.7",
-    "@types/uuid": "8.0.0"
+    "@types/uuid": "8.0.0",
+    "webpack-node-externals": "^3.0.0"
   },
   "repository": {
     "type": "git",

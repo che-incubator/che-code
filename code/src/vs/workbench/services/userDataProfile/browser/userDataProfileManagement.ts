@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { CancellationError } from 'vs/base/common/errors';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
@@ -42,18 +43,24 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 		this._register(userDataProfilesService.onDidChangeProfiles(e => this.onDidChangeProfiles(e)));
 		this._register(userDataProfilesService.onDidResetWorkspaces(() => this.onDidResetWorkspaces()));
 		this._register(userDataProfileService.onDidChangeCurrentProfile(e => this.onDidChangeCurrentProfile(e)));
+		this._register(userDataProfilesService.onDidChangeProfiles(e => {
+			const updatedCurrentProfile = e.updated.find(p => this.userDataProfileService.currentProfile.id === p.id);
+			if (updatedCurrentProfile) {
+				this.changeCurrentProfile(updatedCurrentProfile, localize('reload message when updated', "The current profile has been updated. Please reload to switch back to the updated profile"));
+			}
+		}));
 	}
 
 	private onDidChangeProfiles(e: DidChangeProfilesEvent): void {
 		if (e.removed.some(profile => profile.id === this.userDataProfileService.currentProfile.id)) {
-			this.enterProfile(this.userDataProfilesService.defaultProfile, false, localize('reload message when removed', "The current profile has been removed. Please reload to switch back to default profile"));
+			this.changeCurrentProfile(this.userDataProfilesService.defaultProfile, localize('reload message when removed', "The current profile has been removed. Please reload to switch back to default profile"));
 			return;
 		}
 	}
 
 	private onDidResetWorkspaces(): void {
 		if (!this.userDataProfileService.currentProfile.isDefault) {
-			this.enterProfile(this.userDataProfilesService.defaultProfile, false, localize('reload message when removed', "The current profile has been removed. Please reload to switch back to default profile"));
+			this.changeCurrentProfile(this.userDataProfilesService.defaultProfile, localize('reload message when removed', "The current profile has been removed. Please reload to switch back to default profile"));
 			return;
 		}
 	}
@@ -64,16 +71,16 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 		}
 	}
 
-	async createAndEnterProfile(name: string, options?: IUserDataProfileOptions, fromExisting?: boolean): Promise<IUserDataProfile> {
+	async createAndEnterProfile(name: string, options?: IUserDataProfileOptions): Promise<IUserDataProfile> {
 		const profile = await this.userDataProfilesService.createNamedProfile(name, options, toWorkspaceIdentifier(this.workspaceContextService.getWorkspace()));
-		await this.enterProfile(profile, !!fromExisting);
+		await this.changeCurrentProfile(profile);
 		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'createAndEnterProfile' });
 		return profile;
 	}
 
 	async createAndEnterTransientProfile(): Promise<IUserDataProfile> {
 		const profile = await this.userDataProfilesService.createTransientProfile(toWorkspaceIdentifier(this.workspaceContextService.getWorkspace()));
-		await this.enterProfile(profile, false);
+		await this.changeCurrentProfile(profile);
 		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'createAndEnterTransientProfile' });
 		return profile;
 	}
@@ -109,19 +116,25 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 			return;
 		}
 		await this.userDataProfilesService.setProfileForWorkspace(workspaceIdentifier, profile);
-		await this.enterProfile(profile, false);
+		await this.changeCurrentProfile(profile);
 		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'switchProfile' });
 	}
 
-	private async enterProfile(profile: IUserDataProfile, preserveData: boolean, reloadMessage?: string): Promise<void> {
+	private async changeCurrentProfile(profile: IUserDataProfile, reloadMessage?: string): Promise<void> {
 		const isRemoteWindow = !!this.environmentService.remoteAuthority;
 
 		if (!isRemoteWindow) {
-			this.extensionService.stopExtensionHosts();
+			if (!(await this.extensionService.stopExtensionHosts(localize('switch profile', "Switching to a profile.")))) {
+				// If extension host did not stop, do not switch profile
+				if (this.userDataProfilesService.profiles.some(p => p.id === this.userDataProfileService.currentProfile.id)) {
+					await this.userDataProfilesService.setProfileForWorkspace(toWorkspaceIdentifier(this.workspaceContextService.getWorkspace()), this.userDataProfileService.currentProfile);
+				}
+				throw new CancellationError();
+			}
 		}
 
 		// In a remote window update current profile before reloading so that data is preserved from current profile if asked to preserve
-		await this.userDataProfileService.updateCurrentProfile(profile, preserveData);
+		await this.userDataProfileService.updateCurrentProfile(profile);
 
 		if (isRemoteWindow) {
 			const { confirmed } = await this.dialogService.confirm({

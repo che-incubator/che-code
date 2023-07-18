@@ -8,15 +8,33 @@ import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { IUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { IStorageEntry, IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
+import { IUserDataProfile, ProfileResourceType } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IUserDataProfileStorageService } from 'vs/platform/userDataProfile/common/userDataProfileStorageService';
 import { API_OPEN_EDITOR_COMMAND_ID } from 'vs/workbench/browser/parts/editor/editorCommands';
 import { ITreeItemCheckboxState, TreeItemCollapsibleState } from 'vs/workbench/common/views';
-import { IProfileResource, IProfileResourceChildTreeItem, IProfileResourceTreeItem, ProfileResourceType } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
+import { IProfileResource, IProfileResourceChildTreeItem, IProfileResourceInitializer, IProfileResourceTreeItem } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 
 interface IGlobalState {
 	storage: IStringDictionary<string>;
+}
+
+export class GlobalStateResourceInitializer implements IProfileResourceInitializer {
+
+	constructor(@IStorageService private readonly storageService: IStorageService) {
+	}
+
+	async initialize(content: string): Promise<void> {
+		const globalState: IGlobalState = JSON.parse(content);
+		const storageKeys = Object.keys(globalState.storage);
+		if (storageKeys.length) {
+			const storageEntries: Array<IStorageEntry> = [];
+			for (const key of storageKeys) {
+				storageEntries.push({ key, value: globalState.storage[key], scope: StorageScope.PROFILE, target: StorageTarget.USER });
+			}
+			this.storageService.storeAll(storageEntries, true);
+		}
+	}
 }
 
 export class GlobalStateResource implements IProfileResource {
@@ -96,6 +114,7 @@ export abstract class GlobalStateResourceTreeItem implements IProfileResourceTre
 	}
 
 	abstract getContent(): Promise<string>;
+	abstract isFromDefaultProfile(): boolean;
 }
 
 export class GlobalStateResourceExportTreeItem extends GlobalStateResourceTreeItem {
@@ -117,6 +136,10 @@ export class GlobalStateResourceExportTreeItem extends GlobalStateResourceTreeIt
 		return this.instantiationService.createInstance(GlobalStateResource).getContent(this.profile);
 	}
 
+	isFromDefaultProfile(): boolean {
+		return !this.profile.isDefault && !!this.profile.useDefaultFlags?.globalState;
+	}
+
 }
 
 export class GlobalStateResourceImportTreeItem extends GlobalStateResourceTreeItem {
@@ -130,6 +153,10 @@ export class GlobalStateResourceImportTreeItem extends GlobalStateResourceTreeIt
 
 	async getContent(): Promise<string> {
 		return this.content;
+	}
+
+	isFromDefaultProfile(): boolean {
+		return false;
 	}
 
 }

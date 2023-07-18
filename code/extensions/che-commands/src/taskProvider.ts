@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2023 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,8 +10,9 @@
 
 /* eslint-disable header/header */
 
-import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands } from '@devfile/api';
+import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands, V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv } from '@devfile/api';
 import * as vscode from 'vscode';
+import { resolveEnvVariablesForCommand } from './utils';
 
 interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
@@ -38,7 +39,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		const cheTasks: vscode.Task[] = devfileCommands!
 			.filter(command => command.exec?.commandLine)
 			.filter(command => !command.attributes || ((command.attributes as any)['controller.devfile.io/imported-by'] === undefined || 'parent'))
-			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!));
+			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env));
 		return cheTasks;
 	}
 
@@ -52,7 +53,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return [];
 	}
 
-	private createCheTask(name: string, command: string, workdir: string, component: string): vscode.Task {
+	private createCheTask(name: string, command: string, workdir: string, component: string, env?: Array<V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv>): vscode.Task {
 		function expandEnvVariables(line: string): string {
 			const regex = /\${[a-zA-Z_][a-zA-Z0-9_]*}/g;
 			const envArray = line.match(regex);
@@ -75,7 +76,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		};
 
 		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
-			return this.terminalExtAPI.getMachineExecPTY(component, command, expandEnvVariables(workdir));
+			return this.terminalExtAPI.getMachineExecPTY(component, resolveEnvVariablesForCommand(command, env), expandEnvVariables(workdir));
 		});
 		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'devfile', execution, []);
 		return task;

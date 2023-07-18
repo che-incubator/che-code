@@ -1,0 +1,14 @@
+[
+    {
+        "from": "const product = require('../product.json');",
+        "by": "const product = require('../product.json');\\\nconst url = require('url');"
+    },
+    {
+        "from": "perf.mark('code/server/firstRequest');",
+        "by": "perf.mark('code/server/firstRequest');\\\n\\\t\\\t}\\\n\\\t\\\tif (!_remoteExtensionHostAgentServer \\&\\& req.url \\&\\& url.parse(req.url, true).pathname === '/healthz') {\\\n\\\t\\\t\\\tres.writeHead(503, { 'Content-Type': 'text/plain' });\\\n\\\t\\\t\\\tres.end('Service Unavailable');\\\n\\\t\\\t\\\treturn;"
+    },
+    {
+        "from": "_remoteExtensionHostAgentServer.dispose();",
+        "by": "_remoteExtensionHostAgentServer.dispose();\\\n\\\t\\\t\\\t_remoteExtensionHostAgentServer = null;"
+    }
+]

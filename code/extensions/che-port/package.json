@@ -63,7 +63,7 @@
     "views": {
       "endpoints": [
         {
-          "name": "endpoints",
+          "name": "Endpoints",
           "id": "endpoints"
         }
       ]

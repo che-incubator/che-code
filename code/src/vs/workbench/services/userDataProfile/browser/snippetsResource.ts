@@ -11,13 +11,31 @@ import { localize } from 'vs/nls';
 import { FileOperationError, FileOperationResult, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
-import { IUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { IUserDataProfile, ProfileResourceType } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { API_OPEN_EDITOR_COMMAND_ID } from 'vs/workbench/browser/parts/editor/editorCommands';
 import { ITreeItemCheckboxState, TreeItemCollapsibleState } from 'vs/workbench/common/views';
-import { IProfileResource, IProfileResourceChildTreeItem, IProfileResourceTreeItem, ProfileResourceType } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
+import { IProfileResource, IProfileResourceChildTreeItem, IProfileResourceInitializer, IProfileResourceTreeItem, IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 
 interface ISnippetsContent {
 	snippets: IStringDictionary<string>;
+}
+
+export class SnippetsResourceInitializer implements IProfileResourceInitializer {
+
+	constructor(
+		@IUserDataProfileService private readonly userDataProfileService: IUserDataProfileService,
+		@IFileService private readonly fileService: IFileService,
+		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
+	) {
+	}
+
+	async initialize(content: string): Promise<void> {
+		const snippetsContent: ISnippetsContent = JSON.parse(content);
+		for (const key in snippetsContent.snippets) {
+			const resource = this.uriIdentityService.extUri.joinPath(this.userDataProfileService.currentProfile.snippetsHome, key);
+			await this.fileService.writeFile(resource, VSBuffer.fromString(snippetsContent.snippets[key]));
+		}
+	}
 }
 
 export class SnippetsResource implements IProfileResource {
@@ -127,6 +145,11 @@ export class SnippetsResourceTreeItem implements IProfileResourceTreeItem {
 	async getContent(): Promise<string> {
 		return this.instantiationService.createInstance(SnippetsResource).getContent(this.profile, this.excludedSnippets);
 	}
+
+	isFromDefaultProfile(): boolean {
+		return !this.profile.isDefault && !!this.profile.useDefaultFlags?.snippets;
+	}
+
 
 }
 

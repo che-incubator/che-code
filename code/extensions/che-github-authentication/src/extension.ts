@@ -13,6 +13,9 @@
 import * as vscode from 'vscode';
 import { v4 } from 'uuid';
 import { AuthenticationSession } from 'vscode';
+import { Container } from 'inversify';
+import { K8sHelper } from './k8s-helper';
+import { ErrorHandler } from './error-handler';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
@@ -21,6 +24,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
     await extensionApi.activate();
     const cheApi: any = extensionApi?.exports;
+    const container = new Container();
+
+    container.bind(Symbol.for('DevfileServiceInstance')).toConstantValue(cheApi.getDevfileService());
+    container.bind(K8sHelper).toSelf().inSingletonScope();
+    container.bind(ErrorHandler).toSelf().inSingletonScope();
+
+    const errorHandler = container.get(ErrorHandler);
     const githubService = cheApi.getGithubService();
 
     const sessions: vscode.AuthenticationSession[] = context.workspaceState.get('sessions') || [];
@@ -33,11 +43,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 try {
                     const tokenScopes: string[] = await githubService.getTokenScopes(session.accessToken);
                     if (sessionScopes && sessionScopes.every(sessionScope => tokenScopes.some(
-                      tokenScope =>
-                        sessionScope === tokenScope
-                        // compare partial scope with a full group scope e.g. "read:user" with "user".
-                        || sessionScope.includes(tokenScope + ':')
-                        || sessionScope.includes(':' + tokenScope)))) {
+                        tokenScope =>
+                            sessionScope === tokenScope
+                            // compare partial scope with a full group scope e.g. "read:user" with "user".
+                            || sessionScope.includes(tokenScope + ':')
+                            || sessionScope.includes(':' + tokenScope)))) {
                         filteredSessions.push(session);
                     }
                 } catch (e) {
@@ -50,20 +60,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             let token = '';
             try {
                 token = await githubService.getToken();
-            } catch (e) {
-                if (
-                    await vscode.window.showWarningMessage(
-                        'Che could not authenticate to your Github account. The setup for Github OAuth provider is not complete.',
-                        'Setup instructions'
-                    )
-                ) {
-                    vscode.commands.executeCommand(
-                        'vscode.open',
-                        'https://www.eclipse.org/che/docs/che-7/administration-guide/configuring-authorization/#configuring-github-oauth_che'
-                    );
-                }
+            } catch (error) {
+                errorHandler.onUnauthorizedError();
+                throw new Error(error.message);
             }
-            const githubUser = await githubService.getUser();
+
+            let githubUser;
+            try {
+                githubUser = await githubService.getUser();
+            } catch (error) {
+                if (error && error.response && error.response.status === 401) {
+                    errorHandler.onUnauthorizedError();
+                }
+                throw new Error(error.message);
+            }
+
             const session = {
                 id: v4(),
                 accessToken: token,

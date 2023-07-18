@@ -41,13 +41,6 @@ jobs:
       - name: rebase
         run: |
           ./rebase.sh
-      - name: Create an issue
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          filename: .github/fix_auto-rebase_issue_template.md
       - name: Disable the Workflow
         if: failure()
         env:

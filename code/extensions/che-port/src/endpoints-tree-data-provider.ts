@@ -104,7 +104,7 @@ export class EndpointsTreeDataProvider implements vscode.TreeDataProvider<Endpoi
     );
 
     // initialize context
-    this.updateContext(treeView, false);
+    this.updateContext(treeView, true);
   }
 
   // update global context (like toggle mode for showing plugins)

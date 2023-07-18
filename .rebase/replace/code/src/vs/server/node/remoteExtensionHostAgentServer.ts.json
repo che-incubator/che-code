@@ -1,0 +1,6 @@
+[
+    {
+        "from": "// Version",
+        "by": "// healthz\\\n\\\t\\\tif (pathname === '/healthz') {\\\n\\\t\\\t\\\tres.writeHead(200, { 'Content-Type': 'text/plain' });\\\n\\\t\\\t\\\treturn void res.end('OK');\\\n\\\t\\\t}"
+    }
+]

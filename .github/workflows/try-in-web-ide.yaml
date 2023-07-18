@@ -21,13 +21,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Add DevSandbox link
-        uses: redhat-actions/try-in-web-ide@v1.2
+        uses: redhat-actions/try-in-web-ide@v1.4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           add_comment: true
           add_status: false
       - name: Add Dogfooding link
-        uses: redhat-actions/try-in-web-ide@v1.2
+        uses: redhat-actions/try-in-web-ide@v1.4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           add_comment: true

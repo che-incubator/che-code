@@ -1,5 +1,5 @@
 ## Running Visual Studio Code - Open Source ("Code - OSS") in a UBI9-based container
-`Node.js` version >=16.14.x and <17 [is required](https://github.com/microsoft/vscode/wiki/How-to-Contribute#prerequisites) to run `Code-OSS`.
+`Node.js` is required to run `Code-OSS` (see required version [here](https://github.com/microsoft/vscode/wiki/How-to-Contribute#prerequisites)).
 This project includes [dockefiles](https://github.com/che-incubator/che-code/tree/main/build/dockerfiles) that based on the `ubi8/nodejs-16` image - an assembly contains `Node.js 16` that requires `OpenSSL 1`.
 
 One of the differences between `UBI8` and `UBI9` image is:
