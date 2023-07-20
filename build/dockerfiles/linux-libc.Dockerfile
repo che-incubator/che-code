@@ -97,8 +97,8 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     # && cp /checode-compilation/customNode/bin/node ${CACHE_NODE_PATH}/node
 
 # RUN npm config set node_bin_location /checode-compilation/customNode/bin/node
-# ENV NODE_PATH=/checode-compilation/customNode/bin/node
-# ENV PATH=/checode-compilation/customNode/bin:$PATH
+ENV NODE_PATH=/usr/local/bin/node
+ENV PATH=/usr/local/bin:$PATH
 
 RUN npm install -g yarn@1.22.17
 
