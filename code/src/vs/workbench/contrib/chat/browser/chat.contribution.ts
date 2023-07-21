@@ -78,6 +78,13 @@ configurationRegistry.registerConfiguration({
 			description: nls.localize('interactiveSession.editor.lineHeight', "Controls the line height in pixels in chat codeblocks. Use 0 to compute the line height from the font size."),
 			default: 0
 		},
+		'chat.experimental.defaultMode': {
+			type: 'string',
+			tags: ['experimental'],
+			enum: ['chatView', 'quickQuestion'],
+			description: nls.localize('interactiveSession.defaultMode', "Controls the default mode of the chat experience."),
+			default: 'chatView'
+		},
 		'chat.experimental.quickQuestion.mode': {
 			type: 'string',
 			tags: ['experimental'],
@@ -186,7 +193,7 @@ class ChatAccessibleViewContribution extends Disposable {
 						verifiedWidget.moveFocus(focusedItem, 'previous');
 						renderAccessibleView(accessibleViewService, widgetService, codeEditorService);
 					},
-					options: { ariaLabel: nls.localize('chatAccessibleView', "Chat Accessible View"), language: 'typescript', type: AccessibleViewType.View }
+					options: { ariaLabel: nls.localize('chatAccessibleView', "Chat Accessible View"), type: AccessibleViewType.View }
 				});
 				return true;
 			}
