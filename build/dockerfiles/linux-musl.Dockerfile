@@ -8,6 +8,7 @@
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
 FROM docker.io/node:16.17.1-alpine3.15 as linux-musl-builder
+
 RUN apk add --update --no-cache \
     # Download some files
     curl \
@@ -20,7 +21,9 @@ RUN apk add --update --no-cache \
     # some lib to compile 'native-keymap' npm mpdule
     libx11-dev libxkbfile-dev \
     # requirements for keytar
-    libsecret libsecret-dev
+    libsecret libsecret-dev \
+    # kerberos authentication
+    krb5-dev
 
 COPY code /checode-compilation
 WORKDIR /checode-compilation
@@ -31,8 +34,10 @@ RUN git init .
 
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
+
 # Grab dependencies
-RUN yarn 
+RUN yarn
+
 # Rebuild platform specific dependencies
 RUN npm rebuild
 
@@ -77,8 +82,6 @@ RUN [[ $(uname -m) == "x86_64" ]] && \
     ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
     ls -la /checode-compilation/extensions/vscode-api-tests/ && \
     ls -la /checode-compilation/extensions/vscode-api-tests/out/
-
-
 
 # Run integration tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
