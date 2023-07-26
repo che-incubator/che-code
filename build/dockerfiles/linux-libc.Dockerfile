@@ -48,6 +48,12 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
+
+#########################################################
+#
+# Copy Che-Code to the container
+#
+#########################################################
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
@@ -119,6 +125,18 @@ RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
     /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+
+#########################################################
+#
+# Copy VS Code launcher to the container
+#
+#########################################################
+COPY launcher /checode-launcher
+WORKDIR /checode-launcher
+RUN yarn \
+    && mkdir /checode/launcher \
+    && cp -r out/src/*.js /checode/launcher \
+    && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # Store the content of the result
 FROM scratch as linux-libc-content

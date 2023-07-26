@@ -1,0 +1,179 @@
+attributes:
+  controller.devfile.io/devworkspace-config:
+    name: devworkspace-config
+    namespace: dogfooding
+  controller.devfile.io/scc: container-build
+  controller.devfile.io/storage-type: per-workspace
+  dw.metadata.annotations:
+    che.eclipse.org/devfile-source: |
+      scm:
+        repo: https://github.com/che-incubator/che-code.git
+        revision: che-code-launcher-test
+        fileName: devfile.yaml
+      factory:
+        params: url=https://github.com/che-incubator/che-code/tree/che-code-launcher-test
+commands:
+- apply:
+    component: che-code-injector
+  attributes:
+    controller.devfile.io/imported-by: editor
+  id: init-container-command
+- attributes:
+    controller.devfile.io/imported-by: editor
+  exec:
+    commandLine: nohup /checode/entrypoint-volume.sh > /checode/entrypoint-logs.txt
+      2>&1 &
+    component: dev
+  id: init-che-code-command
+- exec:
+    commandLine: |
+      yarn prepare
+    component: dev
+    group:
+      kind: build
+    workingDir: ${PROJECTS_ROOT}/che-code
+  id: prepare
+- exec:
+    commandLine: |
+      yarn watch
+    component: dev
+    group:
+      isDefault: true
+      kind: build
+    workingDir: ${PROJECTS_ROOT}/che-code
+  id: build
+- exec:
+    commandLine: |
+      yarn server
+    component: dev
+    group:
+      isDefault: true
+      kind: run
+    workingDir: ${PROJECTS_ROOT}/che-code
+  id: run
+components:
+- attributes:
+    controller.devfile.io/imported-by: editor
+  name: checode
+  volume: {}
+- attributes:
+    controller.devfile.io/imported-by: editor
+  container:
+    command:
+    - /entrypoint-init-container.sh
+    cpuLimit: 500m
+    cpuRequest: 30m
+    env:
+    - name: CHE_DASHBOARD_URL
+      value: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com
+    - name: CHE_PLUGIN_REGISTRY_URL
+      value: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3
+    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+      value: http://plugin-registry.dogfooding.svc:8080/v3
+    - name: CLUSTER_CONSOLE_URL
+      value: https://console-openshift-console.apps.che-dev.x6e0.p1.openshiftapps.com
+    - name: CLUSTER_CONSOLE_TITLE
+      value: OpenShift console
+    - name: OPENVSX_REGISTRY_URL
+      value: https://open-vsx.org
+    image: quay.io/vgulyy/che-code:test-che-code-launcher-2
+    memoryLimit: 256Mi
+    memoryRequest: 32Mi
+    sourceMapping: /projects
+    volumeMounts:
+    - name: checode
+      path: /checode
+  name: che-code-injector
+- attributes:
+    app.kubernetes.io/component: che-code-runtime
+    app.kubernetes.io/part-of: che-code.eclipse.org
+    controller.devfile.io/merged-contributions: editor
+  container:
+    cpuLimit: "4"
+    endpoints:
+    - attributes:
+        controller.devfile.io/endpoint-url: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/
+        cookiesAuthEnabled: true
+        discoverable: false
+        type: main
+        urlRewriteSupported: true
+      exposure: public
+      name: che-code
+      protocol: https
+      secure: false
+      targetPort: 3100
+    - attributes:
+        controller.devfile.io/endpoint-url: http://vgulyy-che-code-multiroot-code-redirect-1.apps.che-dev.x6e0.p1.openshiftapps.com/
+        discoverable: false
+        urlRewriteSupported: false
+      exposure: public
+      name: code-redirect-1
+      protocol: http
+      targetPort: 13131
+    - attributes:
+        controller.devfile.io/endpoint-url: http://vgulyy-che-code-multiroot-code-redirect-2.apps.che-dev.x6e0.p1.openshiftapps.com/
+        discoverable: false
+        urlRewriteSupported: false
+      exposure: public
+      name: code-redirect-2
+      protocol: http
+      targetPort: 13132
+    - attributes:
+        controller.devfile.io/endpoint-url: http://vgulyy-che-code-multiroot-code-redirect-3.apps.che-dev.x6e0.p1.openshiftapps.com/
+        discoverable: false
+        urlRewriteSupported: false
+      exposure: public
+      name: code-redirect-3
+      protocol: http
+      targetPort: 13133
+    - attributes:
+        controller.devfile.io/endpoint-url: https://vgulyy-che-code-multiroot-dev.apps.che-dev.x6e0.p1.openshiftapps.com/
+      exposure: public
+      name: dev
+      protocol: http
+      secure: true
+      targetPort: 8000
+    env:
+    - name: WEBVIEW_LOCAL_RESOURCES
+      value: "true"
+    - name: CHE_DASHBOARD_URL
+      value: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com
+    - name: CHE_PLUGIN_REGISTRY_URL
+      value: https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3
+    - name: CHE_PLUGIN_REGISTRY_INTERNAL_URL
+      value: http://plugin-registry.dogfooding.svc:8080/v3
+    - name: CLUSTER_CONSOLE_URL
+      value: https://console-openshift-console.apps.che-dev.x6e0.p1.openshiftapps.com
+    - name: CLUSTER_CONSOLE_TITLE
+      value: OpenShift console
+    - name: OPENVSX_REGISTRY_URL
+      value: https://open-vsx.org
+    image: quay.io/che-incubator/che-code-dev:insiders
+    memoryLimit: 13Gi
+    memoryRequest: 320Mi
+    sourceMapping: /projects
+    volumeMounts:
+    - name: checode
+      path: /checode
+  name: dev
+- name: projects
+  volume:
+    size: 3Gi
+events:
+  postStart:
+  - init-che-code-command
+  preStart:
+  - init-container-command
+projects:
+- git:
+    remotes:
+      url: https://github.com/che-incubator/che-code.git
+  name: che-code
+- git:
+    remotes:
+      url: https://github.com/eclipse-che/che-devfile-registry
+  name: che-devfile-registry
+- git:
+    remotes:
+      url: https://github.com/che-samples/web-nodejs-sample
+  name: web-nodejs-sample
