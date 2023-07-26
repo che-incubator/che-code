@@ -21,7 +21,7 @@ RUN ARCH=$(uname -m) && yum install --installroot /mnt/rootfs libsecret curl mak
                  "http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm" \
                  "http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm" \
                  "http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm" \
-                libX11-devel libxkbcommon bash tar gzip rsync patch pkg-config glib2-devel coreutils-single glibc-minimal-langpack which util-linux-user --releasever 8 --nodocs -y && yum --installroot /mnt/rootfs clean all
+                libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch pkg-config glib2-devel coreutils-single glibc-minimal-langpack which util-linux-user --releasever 8 --nodocs -y && yum --installroot /mnt/rootfs clean all
 # node-gyp will search for python
 RUN cd /mnt/rootfs && ln -s /usr/bin/python3 ./usr/bin/python
                 
