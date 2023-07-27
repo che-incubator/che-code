@@ -8,6 +8,7 @@
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
 FROM docker.io/node:16.17.1-alpine3.15 as linux-musl-builder
+
 RUN apk add --update --no-cache \
     # Download some files
     curl \
@@ -20,7 +21,9 @@ RUN apk add --update --no-cache \
     # some lib to compile 'native-keymap' npm mpdule
     libx11-dev libxkbfile-dev \
     # requirements for keytar
-    libsecret libsecret-dev
+    libsecret libsecret-dev \
+    # kerberos authentication
+    krb5-dev
 
 #########################################################
 #
@@ -36,8 +39,10 @@ RUN git init .
 
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
+
 # Grab dependencies
-RUN yarn 
+RUN yarn
+
 # Rebuild platform specific dependencies
 RUN npm rebuild
 
