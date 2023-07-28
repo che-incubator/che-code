@@ -75,7 +75,9 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
-### Testing
+### Beginning of tests
+# Do not change line above! It is used to cut this section to skip tests
+
 # Compile tests
 RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
 	compile-extension:markdown-language-features \
@@ -119,6 +121,9 @@ RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)
 RUN [[ $(uname -m) == "x86_64" ]] && NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
     /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+
+# Do not change line below! It is used to cut this section to skip tests
+### Ending of tests
 
 # Store the content of the result
 FROM scratch as linux-libc-content
