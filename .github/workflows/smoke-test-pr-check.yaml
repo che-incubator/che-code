@@ -66,8 +66,13 @@ jobs:
           docker image prune -a -f
 
           # docker build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+          docker build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
           # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile --load -t linux-libc-amd64 .
-          docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+          # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+
+      - name: Display docker images
+        run: |
+          docker images
 
       - name: Build Che-Code Docker image
         run: |
@@ -79,12 +84,13 @@ jobs:
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
-          export DOCKER_BUILDKIT=1
           
+          export DOCKER_BUILDKIT=1
           # docker build -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+          docker build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
           
           # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile --load -t che-code .
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+          # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
 
           docker tag che-code:latest che-code:next
           docker save -o /tmp/che-code-latest.tar che-code:latest che-code:next
