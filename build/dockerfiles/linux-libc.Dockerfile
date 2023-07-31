@@ -51,7 +51,7 @@ RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
     # && dnf -y clean all
 RUN dnf install -y gcc g++ gcc-c++ make npm
 RUN dnf install -y python3.9 openssl-devel git glibc-devel glibc-static libstdc++-static libuv-devel
-RUN dnf install -y libsecret-devel libsecret libX11-devel libxkbfile-devel libxkbfile libxkbcommon
+RUN dnf install -y libsecret-devel libsecret libX11-devel libxkbfile-devel libxkbfile libxkbcommon krb5-devel
 
 # Install additional libraries that may be required
 # RUN dnf install -y libuv-devel libstdc++-static
