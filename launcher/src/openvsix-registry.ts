@@ -37,12 +37,16 @@ export class OpenVSIXRegistry {
         console.log(
           `  > env.OPENVSX_REGISTRY_URL set to ${env.OPENVSX_REGISTRY_URL}`
         );
-        openvsxURL = `${env.OPENVSX_REGISTRY_URL}/vscode`;
+        openvsxURL = `${this.withoutTrailingSlash(
+          env.OPENVSX_REGISTRY_URL
+        )}/vscode`;
       } else if (env.CHE_PLUGIN_REGISTRY_URL) {
         console.log(
           `  > env.OPENVSX_REGISTRY_URL is empty, use env.CHE_PLUGIN_REGISTRY_URL ${env.CHE_PLUGIN_REGISTRY_URL}`
         );
-        let registryURL = env.CHE_PLUGIN_REGISTRY_URL;
+        let registryURL = this.withoutTrailingSlash(
+          env.CHE_PLUGIN_REGISTRY_URL
+        );
         if (registryURL.endsWith("/v3")) {
           registryURL = registryURL.substring(0, registryURL.length - 3);
         }
@@ -94,5 +98,13 @@ export class OpenVSIXRegistry {
       `extensionsGallery:{serviceUrl:"${newServiceURL}",itemUrl:"${newItemURL}"}`
     );
     await fs.writeFile(file, newContent);
+  }
+
+  withoutTrailingSlash(url: string): string {
+    while (url.endsWith("/")) {
+      url = url.substring(0, url.length - 1);
+    }
+
+    return url;
   }
 }

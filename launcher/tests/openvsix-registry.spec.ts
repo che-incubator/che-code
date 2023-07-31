@@ -62,7 +62,9 @@ describe("Test Configuring of OpenVSIX registry:", () => {
   });
 
   test("should proceed with OPENVSX_REGISTRY_URL", async () => {
-    env.OPENVSX_REGISTRY_URL = "https://test-openvsx.org";
+    // adding tailing slash here
+    // it must be cut when forming a registry URL
+    env.OPENVSX_REGISTRY_URL = "https://test-openvsx.org/";
 
     const fileWorkbenchWebMain = await fs.readFile(
       path.resolve(__dirname, "_data", "workbench.web.main.js")
@@ -107,8 +109,10 @@ describe("Test Configuring of OpenVSIX registry:", () => {
 
   test("should proceed with CHE_PLUGIN_REGISTRY_URL if OPENVSX_REGISTRY_URL is empty", async () => {
     env.OPENVSX_REGISTRY_URL = "";
+    // adding tailing slash here
+    // it must be cut when forming a registry URL
     env.CHE_PLUGIN_REGISTRY_URL =
-      "https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3";
+      "https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3/";
 
     const fileWorkbenchWebMain = await fs.readFile(
       path.resolve(__dirname, "_data", "workbench.web.main.js")

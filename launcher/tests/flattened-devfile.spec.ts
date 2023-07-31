@@ -22,7 +22,7 @@ describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
       fail();
     } catch (error) {
       expect(error.message).toBe(
-        "  > Unable to find flattened dewworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
+        "  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
       );
     }
   });

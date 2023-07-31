@@ -54,7 +54,7 @@ export class FlattenedDevfile {
   async getDevfile(): Promise<Devfile> {
     if (!env.DEVWORKSPACE_FLATTENED_DEVFILE) {
       throw new Error(
-        "  > Unable to find flattened dewworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
+        "  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
       );
     }
 
