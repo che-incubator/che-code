@@ -116,7 +116,7 @@ RUN CACHE_NODE_PATH=/checode-compilation/.build/node/v16.17.1/linux-x64 \
     && echo "caching ${CACHE_NODE_PATH}" \
     && cp /usr/local/bin/node ${CACHE_NODE_PATH}/node
 
-RUN NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
+RUN NODE_OPTIONS="--max_old_space_size=10500" ./node_modules/.bin/gulp vscode-reh-web-${PLATFORM}-${BUILD_ARCH}-min \
     && cp -r ../vscode-reh-web-${PLATFORM}-${BUILD_ARCH} /checode
 
 RUN chmod a+x /checode/out/server-main.js \
