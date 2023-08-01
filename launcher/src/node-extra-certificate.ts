@@ -57,7 +57,7 @@ export class NodeExtraCertificate {
         const file = `${PUBLIC_CERTS_DIR}/${item}`;
 
         if (await fs.isFile(file)) {
-          console.log(`> found ${file}`);
+          console.log(`  > found ${file}`);
           let content = await fs.readFile(file);
           data += content
             ? content.endsWith("\n")

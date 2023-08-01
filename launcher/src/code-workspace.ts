@@ -30,6 +30,23 @@ export class CodeWorkspace {
       return;
     }
 
+    // skip if env.VSCODE_DEFAULT_WORKSPACE is defined and points to a real file
+    if (env.VSCODE_DEFAULT_WORKSPACE) {
+      if (
+        (await fs.pathExists(env.VSCODE_DEFAULT_WORKSPACE)) &&
+        (await fs.isFile(env.VSCODE_DEFAULT_WORKSPACE))
+      ) {
+        console.log(
+          "  > env.VSCODE_DEFAULT_WORKSPACE is defined, skip this step"
+        );
+        return;
+      } else {
+        console.log(
+          "  > env.VSCODE_DEFAULT_WORKSPACE must point on a workspace file"
+        );
+      }
+    }
+
     try {
       // skip if workspace file is already exist
       if (await fs.pathExists(workspaceFilePath())) {
@@ -55,6 +72,8 @@ export class CodeWorkspace {
       // write .code-workspace file
       const json = JSON.stringify(workspace, null, "\t");
       await fs.writeFile(workspaceFilePath(), json);
+
+      console.log(`  > writing ${workspaceFilePath()}..`);
     } catch (err) {
       console.error(
         `${err.message} Unable to generate che.code-workspace file`

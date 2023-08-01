@@ -68,8 +68,8 @@ export class VSCodeLauncher {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
 
-    console.log(`> Running: ${node}`);
-    console.log(`> Params: ${params}`);
+    console.log(`  > Running: ${node}`);
+    console.log(`  > Params: ${params}`);
 
     const run = child_process.spawn(node, params);
 

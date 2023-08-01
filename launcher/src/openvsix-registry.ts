@@ -59,7 +59,7 @@ export class OpenVSIXRegistry {
         return;
       }
 
-      console.log(`  > apply OpenVSIX URL [${openvsxURL}]\n`);
+      console.log(`  > apply OpenVSIX URL [${openvsxURL}]`);
 
       const productJSON = await new ProductJSON().load();
 
