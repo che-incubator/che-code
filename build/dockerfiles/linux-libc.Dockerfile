@@ -93,7 +93,8 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /checode-compilation/nodejs/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max_old_space_size=10500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
-    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
+    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
+    && cp -r /checode-compilation/nodejs /checode
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
