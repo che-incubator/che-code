@@ -6,8 +6,20 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi8/nodejs-16
-FROM registry.access.redhat.com/ubi8/nodejs-16:1-111.1689167503 as linux-libc-builder
+# FROM nodejs as nodejs-content
+FROM fedora:latest as nodejs-content
+
+USER root
+
+RUN dnf install -y gcc g++ gcc-c++ make npm python3.9 openssl-devel git glibc-devel glibc-static libstdc++-static libuv-devel libsecret libsecret-devel
+
+RUN git clone --depth 1 --branch v16.20.1 https://github.com/nodejs/node
+RUN cd node \
+    && ./configure --fully-static --enable-static \
+    && make \
+    && make install
+
+FROM registry.access.redhat.com/ubi8:8.8-1009 as linux-libc-builder
 
 USER root
 
@@ -45,7 +57,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
 
@@ -55,6 +67,11 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 #
 #########################################################
 COPY code /checode-compilation
+COPY --from=nodejs-content /usr/local/bin/node /checode-compilation/nodejs/bin/node
+
+ENV NODE_PATH=/checode-compilation/nodejs/bin/node
+ENV PATH=/checode-compilation/nodejs/bin:$PATH
+
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
@@ -74,8 +91,8 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     # cache node from this image to avoid to grab it from within the build
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
-    && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
+    && cp /checode-compilation/nodejs/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
+    && NODE_OPTIONS="--max_old_space_size=10500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
 
 RUN chmod a+x /checode/out/server-main.js \
