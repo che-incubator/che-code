@@ -25,6 +25,11 @@ RUN apk add --update --no-cache \
     # kerberos authentication
     krb5-dev
 
+#########################################################
+#
+# Copy Che-Code to the container
+#
+#########################################################
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
@@ -90,6 +95,18 @@ RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
     retry -v -t 3 -s 2 -- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+
+#########################################################
+#
+# Copy VS Code launcher to the container
+#
+#########################################################
+COPY launcher /checode-launcher
+WORKDIR /checode-launcher
+RUN yarn \
+    && mkdir /checode/launcher \
+    && cp -r out/src/*.js /checode/launcher \
+    && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 FROM scratch as linux-musl-content
 COPY --from=linux-musl-builder /checode /checode-linux-musl

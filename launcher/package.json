@@ -1,0 +1,68 @@
+{
+  "name": "che-code-launcher",
+  "publisher": "eclipse-che",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Configure and launch VS Code",
+  "main": "out/entrypoint.js",
+  "bin": "out/entrypoint.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "out",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "rimraf lib",
+    "build": "yarn run format && yarn run compile && yarn run lint && yarn run test",
+    "compile": "tsc --project .",
+    "format": "prettier --check '{src,tests}/**/*.ts' package.json",
+    "format:fix": "prettier --write '{src,tests}/**/*.ts' package.json",
+    "lint": "eslint --cache=true --no-error-on-unmatched-pattern=true '{src,tests}/(!model|**)/*.ts'",
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/(!model|**)/*.{ts,tsx}\"",
+    "test": "jest --forceExit",
+    "watch": "tsc -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/che-incubator/che-code.git"
+  },
+  "dependencies": {
+    "js-yaml": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "@types/js-yaml": "^4.0.5",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^12.0.0",
+    "eslint": "^7.14.0",
+    "jest": "27.3.1",
+    "prettier": "^2.2.0",
+    "ts-jest": "27.0.7",
+    "ts-node": "^10.8.1",
+    "typescript": "^4.6.3"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ],
+    "coverageDirectory": "./coverage",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/out"
+    ],
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json"
+    ]
+  }
+}
