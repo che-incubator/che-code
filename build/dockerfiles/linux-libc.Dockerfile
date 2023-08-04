@@ -57,9 +57,9 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum \
-    && npm install -g yarn@1.22.17
+    && npm install -g yarn@1.22.17 && npm install -g node-gyp
 
 #########################################################
 #
@@ -68,6 +68,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 #########################################################
 COPY code /checode-compilation
 COPY --from=nodejs-content /usr/local/bin/node /checode-compilation/nodejs/bin/node
+COPY --from=nodejs-content /usr/local/bin/node /usr/bin/node
 
 ENV NODE_PATH=/checode-compilation/nodejs/bin/node
 ENV PATH=/checode-compilation/nodejs/bin:$PATH
