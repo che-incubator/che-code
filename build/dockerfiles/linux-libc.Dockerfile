@@ -127,7 +127,7 @@ RUN [[ $(uname -m) == "x86_64" ]] && \
         http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
 
 RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
-    PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
+    PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*) && \
     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
     ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
 
