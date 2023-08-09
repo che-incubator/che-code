@@ -1,6 +1,6 @@
 [
     {
         "from": "const skippedExportMangledFiles = [",
-        "by": "const skippedExportMangledFiles = [\\\n\\\t// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic\\\n\\\t'devfile-service',\\\n\\\t'github-service',\\\n\\\t'telemetry-service',\\\n\\\t'workspace-service',\\\n"
+        "by": "const skippedExportMangledFiles = [\\\n\\\t// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic\\\n\\\t'devfile-service',\\\n\\\t'github-service',\\\n\\\t'telemetry-service',\\\n\\\t'workspace-service',"
     }
 ]
