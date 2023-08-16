@@ -174,10 +174,10 @@ apply_mangle_index_js_changes() {
   echo "  ⚙️ reworking code/build/lib/mangle/index.js..."
   # reset the file from what is upstream
   git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/build/lib/mangle/index.js
-  
+
+  # the actual changes are in the code/build/lib/mangle/index.ts file  
+  (cd code/build && yarn compile)
+
   # resolve the change
   git add code/build/lib/mangle/index.js > /dev/null 2>&1
 }
@@ -191,9 +191,13 @@ apply_mangle_index_ts_changes() {
   
   # now apply again the changes
   apply_replace code/build/lib/mangle/index.ts
+
+  # apply changes for the code/build/lib/mangle/index.js file
+  (cd code/build && yarn compile)
   
   # resolve the change
   git add code/build/lib/mangle/index.ts > /dev/null 2>&1
+  git add code/build/lib/mangle/index.js > /dev/null 2>&1
 }
 
 # Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
