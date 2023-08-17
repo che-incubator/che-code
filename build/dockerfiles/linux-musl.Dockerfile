@@ -7,13 +7,13 @@
 #
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:16.17.1-alpine3.15 as linux-musl-builder
+FROM docker.io/node:18.16.1-alpine3.18 as linux-musl-builder
 
 RUN apk add --update --no-cache \
     # Download some files
     curl \
     # compile some javascript native stuff (node-gyp)
-    make gcc g++ python2 \
+    make gcc g++ python3 py3-pip \
     # git 
     git \
     # bash shell

@@ -48,7 +48,7 @@
     "vscode-tas-client": "^0.1.31"
   },
   "devDependencies": {
-    "@types/node": "16.x",
+    "@types/node": "18.x",
     "@types/node-fetch": "^2.5.7",
     "@types/uuid": "8.0.0",
     "webpack-node-externals": "^3.0.0"
