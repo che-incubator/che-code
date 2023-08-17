@@ -12,9 +12,9 @@
 
 // local import to find the correct type
 import { Main as DevWorkspaceGenerator } from '@eclipse-che/che-devworkspace-generator/lib/main';
-import * as axios from 'axios';
 import * as fs from 'fs-extra';
 import * as vscode from 'vscode';
+import { axiosInstance } from './axios-certificate-authority';
 
 const DEVFILE_NAME = 'devfile.yaml';
 const DOT_DEVFILE_NAME = '.devfile.yaml';
@@ -120,7 +120,7 @@ async function updateDevfile(cheApi: any): Promise<void> {
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
-  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axios.default);
+  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
     newContent.devWorkspace.spec!.template!.projects = projects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
