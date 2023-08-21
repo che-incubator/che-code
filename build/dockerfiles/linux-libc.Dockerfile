@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi8/nodejs-16
-FROM registry.access.redhat.com/ubi8/nodejs-16:1-118 as linux-libc-builder
+# https://registry.access.redhat.com/ubi8/nodejs-18
+FROM registry.access.redhat.com/ubi8/nodejs-18:1-60 as linux-libc-builder
 
 USER root
 
@@ -45,7 +45,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python2 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
 
