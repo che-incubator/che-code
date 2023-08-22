@@ -12,8 +12,8 @@
 
 import * as axios from 'axios';
 import * as fs from 'fs-extra';
-import https from 'https';
-import path from 'path';
+import * as https from 'https';
+import * as path from 'path';
 
 const DEFAULT_CHE_SELF_SIGNED_MOUNT_PATH = '/public-certs';
 const CHE_SELF_SIGNED_MOUNT_PATH = process.env.CHE_SELF_SIGNED_MOUNT_PATH;
