@@ -16,7 +16,7 @@ import * as nls from 'vs/nls';
 import {
 	ExtensionManagementError, IExtensionGalleryService, IExtensionIdentifier, IExtensionManagementParticipant, IGalleryExtension, ILocalExtension, InstallOperation,
 	IExtensionsControlManifest, StatisticType, isTargetPlatformCompatible, TargetPlatformToString, ExtensionManagementErrorCode,
-	InstallOptions, InstallVSIXOptions, UninstallOptions, Metadata, InstallExtensionEvent, DidUninstallExtensionEvent, InstallExtensionResult, UninstallExtensionEvent, IExtensionManagementService, InstallExtensionInfo, EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT
+	InstallOptions, InstallVSIXOptions, UninstallOptions, Metadata, InstallExtensionEvent, DidUninstallExtensionEvent, InstallExtensionResult, UninstallExtensionEvent, IExtensionManagementService, InstallExtensionInfo, EXTENSION_INSTALL_DEP_PACK_CONTEXT
 } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { areSameExtensions, ExtensionKey, getGalleryExtensionId, getGalleryExtensionTelemetryData, getLocalExtensionTelemetryData } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { ExtensionType, IExtensionManifest, isApplicationScopedExtension, TargetPlatform } from 'vs/platform/extensions/common/extensions';
@@ -36,6 +36,7 @@ export interface IInstallExtensionTask {
 	readonly source: IGalleryExtension | URI;
 	readonly operation: InstallOperation;
 	readonly profileLocation: URI;
+	readonly options: InstallExtensionTaskOptions;
 	readonly verificationStatus?: ExtensionVerificationStatus;
 	run(): Promise<ILocalExtension>;
 	waitUntilTaskIsFinished(): Promise<ILocalExtension>;
@@ -249,7 +250,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 		allInstallExtensionTasks.push({ task: installExtensionTask, manifest });
 		let installExtensionHasDependents: boolean = false;
 
-		const hasPackExtensions = manifest.extensionPack && manifest.extensionPack.length > 0;
 		try {
 			if (installExtensionTaskOptions.donotIncludePackAndDependencies) {
 				this.logService.info('Installing the extension without checking dependencies and pack', installExtensionTask.identifier.id);
@@ -257,6 +257,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				try {
 					const allDepsAndPackExtensionsToInstall = await this.getAllDepsAndPackExtensions(installExtensionTask.identifier, manifest, !!installExtensionTaskOptions.installOnlyNewlyAddedFromExtensionPack, !!installExtensionTaskOptions.installPreReleaseVersion, installExtensionTaskOptions.profileLocation);
 					const installed = await this.getInstalled(undefined, installExtensionTaskOptions.profileLocation);
+					const options: InstallExtensionTaskOptions = { ...installExtensionTaskOptions, donotIncludePackAndDependencies: true, context: { ...installExtensionTaskOptions.context, [EXTENSION_INSTALL_DEP_PACK_CONTEXT]: true } };
 					for (const { gallery, manifest } of distinct(allDepsAndPackExtensionsToInstall, ({ gallery }) => gallery.identifier.id)) {
 						if (excludedExtensions.includes(gallery.name)) {
 							continue;
@@ -283,7 +284,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 									}));
 							}
 						} else if (!installed.some(({ identifier }) => areSameExtensions(identifier, gallery.identifier))) {
-							const task = this.createInstallExtensionTask(manifest, gallery, { ...installExtensionTaskOptions, donotIncludePackAndDependencies: true });
+							const task = this.createInstallExtensionTask(manifest, gallery, options);
 							this.installingExtensions.set(key, { task, waitingTasks: [installExtensionTask] });
 							this._onInstallExtension.fire({ identifier: task.identifier, source: gallery, profileLocation: installExtensionTaskOptions.profileLocation });
 							this.logService.info('Installing extension:', task.identifier.id, installExtensionTask.identifier.id);
@@ -347,12 +348,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 							}
 						}
 
-						const context = installExtensionTaskOptions.context ?? {};
-						if (hasPackExtensions && task.identifier.id !== installExtensionTask.identifier.id) {
-							context[EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT] = true;
-						}
-
-						installResults.push({ local, identifier: task.identifier, operation: task.operation, source: task.source, context: context, profileLocation: task.profileLocation, applicationScoped: local.isApplicationScoped });
+						installResults.push({ local, identifier: task.identifier, operation: task.operation, source: task.source, context: task.options.context, profileLocation: task.profileLocation, applicationScoped: local.isApplicationScoped });
 					} catch (error) {
 						if (!URI.isUri(task.source)) {
 							reportTelemetry(this.telemetryService, task.operation === InstallOperation.Update ? 'extensionGallery:update' : 'extensionGallery:install', {
