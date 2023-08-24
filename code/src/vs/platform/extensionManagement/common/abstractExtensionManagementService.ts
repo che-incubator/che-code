@@ -155,7 +155,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 	}
 
 	async toggleAppliationScope(extension: ILocalExtension, fromProfileLocation: URI): Promise<ILocalExtension> {
-		if (isApplicationScopedExtension(extension.manifest)) {
+		if (isApplicationScopedExtension(extension.manifest) || extension.isBuiltin) {
 			return extension;
 		}
 
