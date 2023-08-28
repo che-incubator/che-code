@@ -94,13 +94,13 @@ export class UnchangedRangesFeature extends Disposable {
 					const d = derived(reader => /** @description hiddenOriginalRangeStart */ r.getHiddenOriginalRange(reader).startLineNumber - 1);
 					const origVz = new PlaceholderViewZone(d, 24);
 					origViewZones.push(origVz);
-					store.add(new CollapsedCodeOverlayWidget(this._editors.original, origVz, r, r.originalRange, !sideBySide, modifiedOutlineSource));
+					store.add(new CollapsedCodeOverlayWidget(this._editors.original, origVz, r, r.originalRange, !sideBySide, modifiedOutlineSource, l => this._diffModel.get()!.ensureOriginalLineIsVisible(l, undefined), this._options));
 				}
 				{
 					const d = derived(reader => /** @description hiddenModifiedRangeStart */ r.getHiddenModifiedRange(reader).startLineNumber - 1);
 					const modViewZone = new PlaceholderViewZone(d, 24);
 					modViewZones.push(modViewZone);
-					store.add(new CollapsedCodeOverlayWidget(this._editors.modified, modViewZone, r, r.modifiedRange, false, modifiedOutlineSource));
+					store.add(new CollapsedCodeOverlayWidget(this._editors.modified, modViewZone, r, r.modifiedRange, false, modifiedOutlineSource, l => this._diffModel.get()!.ensureModifiedLineIsVisible(l, undefined), this._options));
 				}
 			}
 
@@ -174,7 +174,7 @@ export class UnchangedRangesFeature extends Disposable {
 				if (!model) { return; }
 				const region = model.unchangedRegions.get().find(r => r.modifiedRange.includes(lineNumber));
 				if (!region) { return; }
-				region.setState(0, 0, undefined);
+				region.collapseAll(undefined);
 				event.event.stopPropagation();
 				event.event.preventDefault();
 			}
@@ -187,7 +187,7 @@ export class UnchangedRangesFeature extends Disposable {
 				if (!model) { return; }
 				const region = model.unchangedRegions.get().find(r => r.originalRange.includes(lineNumber));
 				if (!region) { return; }
-				region.setState(0, 0, undefined);
+				region.collapseAll(undefined);
 				event.event.stopPropagation();
 				event.event.preventDefault();
 			}
@@ -236,13 +236,13 @@ class OutlineSource extends Disposable {
 		}));
 	}
 
-	public getBreadcrumbItems(startRange: LineRange, reader: IReader): { name: string; kind: SymbolKind }[] {
+	public getBreadcrumbItems(startRange: LineRange, reader: IReader): { name: string; kind: SymbolKind; startLineNumber: number }[] {
 		const m = this._currentModel.read(reader);
 		if (!m) { return []; }
 		const symbols = m.asListOfDocumentSymbols()
 			.filter(s => startRange.contains(s.range.startLineNumber) && !startRange.contains(s.range.endLineNumber));
 		symbols.sort(reverseOrder(compareBy(s => s.range.endLineNumber - s.range.startLineNumber, numberComparator)));
-		return symbols.map(s => ({ name: s.name, kind: s.kind }));
+		return symbols.map(s => ({ name: s.name, kind: s.kind, startLineNumber: s.range.startLineNumber }));
 	}
 }
 
@@ -251,7 +251,7 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 		h('div.top@top', { title: localize('diff.hiddenLines.top', 'Click or drag to show more above') }),
 		h('div.center@content', { style: { display: 'flex' } }, [
 			h('div@first', { style: { display: 'flex', justifyContent: 'center', alignItems: 'center' } },
-				[$('a', { title: localize('showAll', 'Show all'), role: 'button', onclick: () => { this._unchangedRegion.showAll(undefined); } }, ...renderLabelWithIcons('$(unfold)'))]
+				[$('a', { title: localize('showAll', 'Show all'), role: 'button', onclick: () => { this.showAll(); } }, ...renderLabelWithIcons('$(unfold)'))]
 			),
 			h('div@others', { style: { display: 'flex', justifyContent: 'center', alignItems: 'center' } }),
 		]),
@@ -265,6 +265,8 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 		private readonly _unchangedRegionRange: LineRange,
 		private readonly hide: boolean,
 		private readonly _modifiedOutlineSource: OutlineSource,
+		private readonly _revealHiddenLine: (lineNumber: number) => void,
+		private readonly _options: DiffEditorOptions,
 	) {
 		const root = h('div.diff-hidden-lines-widget');
 		super(_editor, _viewZone, root.root);
@@ -306,7 +308,7 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 
 			const mouseUpListener = addDisposableListener(window, 'mouseup', e => {
 				if (!didMove) {
-					this._unchangedRegion.showMoreAbove(20, undefined);
+					this._unchangedRegion.showMoreAbove(this._options.hideUnchangedRegionsRevealLineCount.get(), undefined);
 				}
 				this._nodes.top.classList.toggle('dragging', false);
 				this._nodes.root.classList.toggle('dragging', false);
@@ -346,7 +348,7 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 				if (!didMove) {
 					const top = editor.getTopForLineNumber(this._unchangedRegionRange.endLineNumberExclusive);
 
-					this._unchangedRegion.showMoreBelow(20, undefined);
+					this._unchangedRegion.showMoreBelow(this._options.hideUnchangedRegionsRevealLineCount.get(), undefined);
 					const top2 = editor.getTopForLineNumber(this._unchangedRegionRange.endLineNumberExclusive);
 					editor.setScrollTop(editor.getScrollTop() + (top2 - top));
 				}
@@ -364,23 +366,38 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 			if (!this.hide) {
 				const lineCount = _unchangedRegion.getHiddenModifiedRange(reader).length;
 				const linesHiddenText = localize('hiddenLines', '{0} Hidden Lines', lineCount);
-				children.push($('span', { title: linesHiddenText }, linesHiddenText));
+				const span = $('span', { title: localize('diff.hiddenLines.expandAll', 'Double click to unfold') }, linesHiddenText);
+				span.addEventListener('dblclick', e => {
+					if (e.button !== 0) { return; }
+					e.preventDefault();
+					this.showAll();
+				});
+				children.push(span);
 
 				const range = this._unchangedRegion.getHiddenModifiedRange(reader);
 				const items = this._modifiedOutlineSource.getBreadcrumbItems(range, reader);
 
 				if (items.length > 0) {
-					children.push($('span', undefined, '\u00a0|\u00a0'));
+					children.push($('span', undefined, '\u00a0\u00a0|\u00a0\u00a0'));
 
-					let isFirst = true;
-					for (const item of items) {
-						if (!isFirst) {
-							children.push($('span', {}, ' ', renderIcon(Codicon.chevronRight), ' '));
-						}
-
+					for (let i = 0; i < items.length; i++) {
+						const item = items[i];
 						const icon = SymbolKinds.toIcon(item.kind);
-						children.push($('span', {}, renderIcon(icon), ' ', item.name));
-						isFirst = false;
+						const divItem = h('div.breadcrumb-item', {
+							style: { display: 'flex', alignItems: 'center' },
+						}, [
+							renderIcon(icon),
+							'\u00a0',
+							item.name,
+							...(i === items.length - 1
+								? []
+								: [renderIcon(Codicon.chevronRight)]
+							)
+						]).root;
+						children.push(divItem);
+						divItem.onclick = () => {
+							this._revealHiddenLine(item.startLineNumber);
+						};
 					}
 				}
 			}
@@ -388,4 +405,6 @@ class CollapsedCodeOverlayWidget extends ViewZoneOverlayWidget {
 			reset(this._nodes.others, ...children);
 		}));
 	}
+
+	private showAll() { this._unchangedRegion.showAll(undefined); }
 }
