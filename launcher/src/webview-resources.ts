@@ -13,9 +13,7 @@ import * as fs from "./fs-extra";
 import { FlattenedDevfile } from "./flattened-devfile";
 import { ProductJSON } from "./product-json";
 
-const FILE_WORKBENCH_WEB_MAIN = "out/vs/workbench/workbench.web.main.js";
-const FILE_EXTENSION_HOST_PROCESS =
-  "out/vs/workbench/api/node/extensionHostProcess.js";
+import { FILE_EXTENSION_HOST_PROCESS, FILE_WORKBENCH_WEB_MAIN } from "./files";
 
 export class WebviewResources {
   /*****************************************************************************************************************

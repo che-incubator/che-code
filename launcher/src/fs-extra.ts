@@ -13,7 +13,7 @@
  * Why do we need to add the wrapper:
  *   - it allows to get rid of using `fs-extra` package
  *   - it allows to use common `node_modules` directory for launcher and VS Code
- *   - it simplifies writing tests and allows to easily mock of this module
+ *   - it simplifies writing tests and allows to easily mock this module
  */
 
 import * as fs from "fs";
