@@ -20,7 +20,7 @@ export class DevWorkspaceId {
     console.log("# Setting curent DevWorkspace ID to che-code...");
 
     if (!env.DEVWORKSPACE_ID) {
-      console.log("> env.DEVWORKSPACE_ID is not set, skip this step");
+      console.log("  > env.DEVWORKSPACE_ID is not set, skip this step");
       return;
     }
 
