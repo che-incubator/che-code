@@ -90,21 +90,21 @@ jobs:
         run: |
           BRANCH_NAME=${{ github.ref }}
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
-      - name: Create failure MM message
-        if: contains(join(needs.*.result, ','), 'failure')
-        run: |
-          echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml\"}" > mattermost.json
-      - name: Create success MM message
-        run: |
-          echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json
-      - name: Send MM message
+      #- name: Create failure MM message
+        #if: contains(join(needs.*.result, ','), 'failure')
+        #run: |
+          #echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/image-publish.yml\"}" > mattermost.json
+      #- name: Create success MM message
+        #run: |
+          #echo "{\"text\":\":white_check_mark: Che Code ${{ env.BRANCH_NAME }} has been released: https://quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}\"}" > mattermost.json
+      #- name: Send MM message
         # don't notify for cancelled builds
-        if: success() || failure()
-        uses: mattermost/action-mattermost-notify@1.1.0
-        env:
-          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          MATTERMOST_CHANNEL: eclipse-che-releases
-          MATTERMOST_USERNAME: che-bot
+        #if: success() || failure()
+        #uses: mattermost/action-mattermost-notify@1.1.0
+        #env:
+          #MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          #MATTERMOST_CHANNEL: eclipse-che-releases
+          #MATTERMOST_USERNAME: che-bot
   dev:
     name: dev
     runs-on: ubuntu-22.04

@@ -556,7 +556,8 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 			const socket = net.createConnection(
 				{
 					host: host,
-					port: port
+					port: port,
+					autoSelectFamily: true
 				}, () => {
 					socket.removeListener('error', e);
 					socket.pause();

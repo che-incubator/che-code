@@ -1,0 +1,60 @@
+/**********************************************************************
+ * Copyright (c) 2023 Red Hat, Inc.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ***********************************************************************/
+
+import { Main } from "../src/main";
+
+const configureOpenVSIXRegistryMock = jest.fn();
+jest.mock("../src/openvsix-registry", () => ({
+  OpenVSIXRegistry: function () {
+    return { configure: configureOpenVSIXRegistryMock };
+  },
+}));
+
+const configureWebviewResourcesMock = jest.fn();
+jest.mock("../src/webview-resources", () => ({
+  WebviewResources: function () {
+    return { configure: configureWebviewResourcesMock };
+  },
+}));
+
+const configureNodeExtraCertificate = jest.fn();
+jest.mock("../src/node-extra-certificate", () => ({
+  NodeExtraCertificate: function () {
+    return { configure: configureNodeExtraCertificate };
+  },
+}));
+
+const generateCodeWorkspace = jest.fn();
+jest.mock("../src/code-workspace", () => ({
+  CodeWorkspace: function () {
+    return { generate: generateCodeWorkspace };
+  },
+}));
+
+const launchVsCode = jest.fn();
+jest.mock("../src/vscode-launcher", () => ({
+  VSCodeLauncher: function () {
+    return { launch: launchVsCode };
+  },
+}));
+
+describe("Test main flow:", () => {
+  test("should configure all the stuff", async () => {
+    await new Main().start();
+
+    expect(configureOpenVSIXRegistryMock).toBeCalled();
+    expect(configureWebviewResourcesMock).toBeCalled();
+    expect(configureNodeExtraCertificate).toBeCalled();
+
+    expect(generateCodeWorkspace).toBeCalled();
+
+    expect(launchVsCode).toBeCalled();
+  });
+});
