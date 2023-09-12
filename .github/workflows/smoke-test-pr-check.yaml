@@ -30,70 +30,70 @@ jobs:
       - name: Checkout che-code source code
         uses: actions/checkout@v3
 
-      # - name: Configuring nodejs 14.x version
-      #   uses: actions/setup-node@v3
-      #   with:
-      #     node-version: '16'
+      ### - name: Configuring nodejs 14.x version
+      ###   uses: actions/setup-node@v3
+      ###   with:
+      ###     node-version: '16'
 
-      # - name: Install yq
-      #   run: sudo pip install yq
+      ### - name: Install yq
+      ###   run: sudo pip install yq
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v2
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
 
-      - name: Prepare Che-Code Dockerfile ( remove tests )
-        run: |
-          #
-          # truncate Dockerfile, remove section that runs tests
-          #
-          cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
-          REMOVE_FROM="### Beginning of tests"
-          REMOVE_TO="### Ending of tests"
-          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc.no-test.Dockerfile
+      # - name: Prepare Che-Code Dockerfile ( remove tests )
+      #   run: |
+      #     #
+      #     # truncate Dockerfile, remove section that runs tests
+      #     #
+      #     cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
+      #     REMOVE_FROM="### Beginning of tests"
+      #     REMOVE_TO="### Ending of tests"
+      #     sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc.no-test.Dockerfile
 
-          #
-          # show the Dockerfile
-          #
-          cat build/dockerfiles/linux-libc.no-test.Dockerfile
+      #     #
+      #     # show the Dockerfile
+      #     #
+      #     cat build/dockerfiles/linux-libc.no-test.Dockerfile
 
-      - name: Compile Che-Code editor
-        run: |
-          #
-          # build linux-libc-amd64:latest docker image
-          #
-          docker image prune -a -f
+      # - name: Compile Che-Code editor
+      #   run: |
+      #     #
+      #     # build linux-libc-amd64:latest docker image
+      #     #
+      #     docker image prune -a -f
 
-          # docker build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
-          docker build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
-          # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile --load -t linux-libc-amd64 .
-          # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+      #     # docker build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+      #     docker build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+      #     # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile --load -t linux-libc-amd64 .
+      #     # docker buildx build --memory-swap -1 --memory 12g --platform linux/amd64 -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
 
       - name: Display docker images
         run: |
           docker images
 
-      - name: Build Che-Code Docker image
-        run: |
-          #
-          # build che-code:latest docker image
-          #
-          cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="FROM linux-musl-amd64 as linux-musl-content"
-          sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
-          sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
+      # - name: Build Che-Code Docker image
+      #   run: |
+      #     #
+      #     # build che-code:latest docker image
+      #     #
+      #     cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.copy.Dockerfile
+      #     REPLACE_FROM="FROM linux-musl-amd64 as linux-musl-content"
+      #     sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
+      #     REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
+      #     sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           
-          export DOCKER_BUILDKIT=1
-          # docker build -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
-          docker build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
-          
-          # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile --load -t che-code .
-          # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+      #     export DOCKER_BUILDKIT=1
+      #     # docker build -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+      #     docker build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
 
-          docker tag che-code:latest che-code:next
-          docker save -o /tmp/che-code-latest.tar che-code:latest che-code:next
+      #     # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile --load -t che-code .
+      #     # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+
+      #     docker tag che-code:latest che-code:next
+      #     docker save -o /tmp/che-code-latest.tar che-code:latest che-code:next
 
       - name: Start minikube
         id: run-minikube
@@ -109,7 +109,8 @@ jobs:
           #
           # load che-code images from /tmp/che-code-latest.tar
           #
-          eval $(minikube docker-env) && docker load -i  /tmp/che-code-latest.tar && rm /tmp/che-code-latest.tar
+          # temporary
+          # eval $(minikube docker-env) && docker load -i  /tmp/che-code-latest.tar && rm /tmp/che-code-latest.tar
 
           #
           # deploy Che
