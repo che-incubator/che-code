@@ -74,6 +74,22 @@ jobs:
         run: |
           docker images
 
+      - name: Disk free TO
+        run: |
+          df -h
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Display docker images again
+        run: |
+          docker images
+
+      - name: Disk free AFTER
+        run: |
+          df -h
+
       # - name: Build Che-Code Docker image
       #   run: |
       #     #
