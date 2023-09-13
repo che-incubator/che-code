@@ -344,7 +344,8 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		if (this._terminalService.getReconnectedTerminals('Task')?.length) {
 			this._attemptTaskReconnection();
 		} else {
-			this._register(this._terminalService.onDidChangeConnectionState(() => {
+			this._register(this._terminalService.onDidChangeConnectionState(async () => {
+				await this._terminalService.whenConnected;
 				if (this._terminalService.getReconnectedTerminals('Task')?.length) {
 					this._attemptTaskReconnection();
 				}
@@ -1865,8 +1866,8 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		}
 		if (executeResult.kind === TaskExecuteKind.Active) {
 			const active = executeResult.active;
-			if (active && active.same && runSource === TaskRunSource.FolderOpen) {
-				// ignore, the task is already active, likely from being reconnected.
+			if (active && active.same && runSource === TaskRunSource.FolderOpen || runSource === TaskRunSource.Reconnect) {
+				// ignore, the task is already active, likely from being reconnected or from folder open.
 				this._logService.debug('Ignoring task that is already active', executeResult.task);
 				return executeResult.promise;
 			}
