@@ -6,7 +6,7 @@
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 import { URI } from 'vs/base/common/uri';
 import { hash } from 'vs/base/common/hash';
-import { getDevWorkspceId } from 'vs/workbench/services/workspaces/browser/che/devWorkspaceId'
+import { getDevWorkspaceId } from 'vs/workbench/services/workspaces/browser/che/devWorkspaceId'
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // NOTE: DO NOT CHANGE. IDENTIFIERS HAVE TO REMAIN STABLE
@@ -31,5 +31,5 @@ export function getSingleFolderWorkspaceIdentifier(folderUri: URI): ISingleFolde
 }
 
 function getWorkspaceId(uri: URI): string {
-	return getDevWorkspceId() || hash(uri.toString()).toString(16);
+	return hash(getDevWorkspaceId() + uri.toString()).toString(16);
 }

@@ -14,7 +14,7 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 const DEVWORKSPACE = "https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/";
 
-export function getDevWorkspceId(): string | undefined {
+export function getDevWorkspaceId(): string | undefined {
     // checking for "https://" guarantees we apply here the ID set by che-code launcher
     if (DEVWORKSPACE && !DEVWORKSPACE.startsWith("https://")) {
         return DEVWORKSPACE;
