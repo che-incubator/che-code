@@ -19,7 +19,6 @@ components:
       memoryRequest: 512Mi
       cpuRequest: 500m
       cpuLimit: 3500m
-      mountSources: true
       endpoints:
         - exposure: public
           name: dev
@@ -82,7 +81,7 @@ commands:
 
   - id: podman-assemble-che-code
     exec:
-      label: Build che-code docker image using Podman
+      label: Build che-code image using Podman
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
