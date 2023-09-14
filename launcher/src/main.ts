@@ -9,6 +9,7 @@
  ***********************************************************************/
 
 import { CodeWorkspace } from "./code-workspace";
+import { DevWorkspaceId } from "./devworkspace-id";
 import { NodeExtraCertificate } from "./node-extra-certificate";
 import { OpenVSIXRegistry } from "./openvsix-registry";
 import { VSCodeLauncher } from "./vscode-launcher";
@@ -22,6 +23,7 @@ import { WebviewResources } from "./webview-resources";
  */
 export class Main {
   async start(): Promise<void> {
+    await new DevWorkspaceId().configure();
     await new OpenVSIXRegistry().configure();
     await new WebviewResources().configure();
     await new NodeExtraCertificate().configure();

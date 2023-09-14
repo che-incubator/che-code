@@ -16,8 +16,6 @@ import * as child_process from "child_process";
 import { NODE_EXTRA_CERTIFICATE } from "./node-extra-certificate";
 import { workspaceFilePath } from "./code-workspace";
 
-export const DEFAULT_PROJECTS_DIRECTORY = "/projects";
-
 export class VSCodeLauncher {
   async launch(): Promise<void> {
     console.log("# Launching VS Code...");
