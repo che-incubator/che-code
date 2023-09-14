@@ -65,11 +65,7 @@ jobs:
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           
           export DOCKER_BUILDKIT=1
-          # docker build -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
           docker build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
-
-          # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile --load -t che-code .
-          # docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
 
           docker tag che-code:latest che-code:next
           docker save -o /tmp/che-code-latest.tar che-code:latest che-code:next
@@ -78,28 +74,13 @@ jobs:
         run: |
           docker images
 
-
-
-
-      # - name: Disk free TO
-      #   run: |
-      #     df -h
-
       - name: Cleanup docker images
         run: |
           docker system prune -af
 
-      # - name: Display docker images again
-      #   run: |
-      #     docker images
-
-      # - name: Disk free AFTER
-      #   run: |
-      #     df -h
-
-
-
-
+      - name: Disk free
+        run: |
+          df -h
 
       - name: Start minikube
         id: run-minikube
