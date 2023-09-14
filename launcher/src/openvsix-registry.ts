@@ -9,6 +9,7 @@
  ***********************************************************************/
 
 import { env } from "process";
+import { FILE_WORKBENCH_WEB_MAIN } from "./files";
 import * as fs from "./fs-extra";
 import { ProductJSON } from "./product-json";
 
@@ -74,7 +75,7 @@ export class OpenVSIXRegistry {
       await productJSON.save();
 
       await this.update(
-        "out/vs/workbench/workbench.web.main.js",
+        FILE_WORKBENCH_WEB_MAIN,
         serviceURL,
         newServiceURL,
         itemURL,
