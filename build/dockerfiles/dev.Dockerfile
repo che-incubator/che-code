@@ -14,7 +14,8 @@ RUN dnf -y install libsecret libX11-devel libxkbcommon \
     "https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/libsecret-devel-0.18.6-1.el8.x86_64.rpm" \
     "https://rpmfind.net/linux/centos/8-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-1.el8.x86_64.rpm" \
     "https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm" \
-    "https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/zsh-5.5.1-6.el8_1.2.x86_64.rpm"
+    "https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/zsh-5.5.1-6.el8_1.2.x86_64.rpm" \
+    util-linux-user
 
 # cleanup dnf cache
 RUN dnf -y clean all --enablerepo='*'
@@ -28,6 +29,18 @@ RUN dnf -y clean all --enablerepo='*'
 # ]
 
 RUN (echo '[containers]'; echo 'default_ulimits = ['; echo ' "nofile=65535:65535",'; echo ']') >> /etc/containers/containers.conf
+
+# zsh support
+RUN wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O - | zsh && \
+    cp $HOME/.oh-my-zsh/templates/zshrc.zsh-template $HOME/.zshrc && \
+    chsh -s $(which zsh) root && \
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $HOME/.oh-my-zsh/custom/themes/powerlevel10k && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions $HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
+    sed -i 's|\(ZSH_THEME="\).*|\1powerlevel10k/powerlevel10k"|' $HOME/.zshrc && \
+    # Add zsh autosuggestions plug-in
+    sed -i 's|plugins=(\(.*\))|plugins=(\1 zsh-autosuggestions)|' $HOME/.zshrc && \
+    echo "[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh" >> $HOME/.zshrc
+ENV ZSH_DISABLE_COMPFIX="true"
 
 USER 10001
 
