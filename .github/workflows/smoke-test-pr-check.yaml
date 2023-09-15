@@ -28,15 +28,7 @@ jobs:
     steps:
 
       - name: Checkout che-code source code
-        uses: actions/checkout@v2
-
-      - name: Configuring nodejs 14.x version
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
-      - name: Install yq
-        run: sudo pip install yq
+        uses: actions/checkout@v3
 
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
@@ -44,8 +36,8 @@ jobs:
           # truncate Dockerfile, remove section that runs tests
           #
           cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
-          REMOVE_FROM="### Testing"
-          REMOVE_TO="# Store the content of the result"
+          REMOVE_FROM="### Beginning of tests"
+          REMOVE_TO="### Ending of tests"
           sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc.no-test.Dockerfile
 
           #
@@ -59,7 +51,7 @@ jobs:
           # build linux-libc-amd64:latest docker image
           #
           docker image prune -a -f
-          docker build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
 
       - name: Build Che-Code Docker image
         run: |
@@ -71,10 +63,24 @@ jobs:
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
+          
           export DOCKER_BUILDKIT=1
           docker build -f build/dockerfiles/assembly.copy.Dockerfile -t che-code .
+
           docker tag che-code:latest che-code:next
           docker save -o /tmp/che-code-latest.tar che-code:latest che-code:next
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Disk free
+        run: |
+          df -h
 
       - name: Start minikube
         id: run-minikube
