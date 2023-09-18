@@ -22,78 +22,35 @@ on:
       - '.rebase/*'
 
 jobs:
-  compile-che-code:
+  build-che-code:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        dist: [ 'musl', 'libc' ]
-        arch: ['amd64']
     steps:
 
       - name: Checkout che-code source code
         uses: actions/checkout@v3
 
-      - name: Compile che-code
+      - name: Login to Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
+          password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+
+      - name: Compile linux-libc
         run: |
           docker buildx build \
-            --platform linux/${{matrix.arch}} \
+            --platform linux/amd64 \
             --progress=plain \
-            -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
-            -t linux-${{matrix.dist}}-${{matrix.arch}} .
+            -f build/dockerfiles/linux-libc.Dockerfile \
+            -t linux-libc-amd64 .
 
-      - name: Upload image
-        uses: ishworkh/docker-image-artifact-upload@v1
-        with:
-          image: "linux-${{matrix.dist}}-${{matrix.arch}}"
-
-      - name: Prepare test file
+      - name: Compile linux-musl
         run: |
-          echo "TEST CONTENT" >> /tmp/test-file
-
-  assemble-che-code:
-    runs-on: ubuntu-22.04
-    needs: compile-che-code
-    steps:
-
-      - name: Show temp
-        run: |
-          ls -la /tmp
-
-      - name: Checkout che-code source code
-        uses: actions/checkout@v3
-
-      - name: Download linux-libc-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: "linux-libc-amd64"
-      - name: Download linux-musl image
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: "linux-musl-amd64"
-
-      # - name: Login to Quay.io
-      #   uses: docker/login-action@v2
-      #   with:
-      #     registry: quay.io
-      #     username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
-      #     password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
-
-      # - name: Compile linux-libc
-      #   run: |
-      #     docker buildx build \
-      #       --platform linux/amd64 \
-      #       --progress=plain \
-      #       -f build/dockerfiles/linux-libc.Dockerfile \
-      #       -t linux-libc-amd64 .
-
-      # - name: Compile linux-musl
-      #   run: |
-      #     docker buildx build \
-      #       --platform linux/amd64 \
-      #       --progress=plain \
-      #       -f build/dockerfiles/linux-musl.Dockerfile \
-      #       -t linux-musl-amd64 .
+          docker buildx build \
+            --platform linux/amd64 \
+            --progress=plain \
+            -f build/dockerfiles/linux-musl.Dockerfile \
+            -t linux-musl-amd64 .
 
       - name: Display docker images
         run: |
