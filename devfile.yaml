@@ -11,13 +11,10 @@ schemaVersion: 2.1.0
 metadata:
   name: che-code
 components:
-
   - name: dev
     container:
       image: quay.io/che-incubator/che-code-dev:insiders
       memoryLimit: 12Gi
-      memoryRequest: 512Mi
-      cpuRequest: 500m
       cpuLimit: 3500m
       endpoints:
         - exposure: public
