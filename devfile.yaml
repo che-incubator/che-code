@@ -14,7 +14,7 @@ components:
 
   - name: dev
     container:
-      image: quay.io/che-incubator-pull-requests/che-code-dev:pr-253-dev-amd64
+      image: quay.io/che-incubator/che-code-dev:insiders
       memoryLimit: 12Gi
       memoryRequest: 512Mi
       cpuRequest: 500m
