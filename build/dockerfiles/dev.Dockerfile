@@ -34,7 +34,6 @@ RUN (echo '[containers]'; echo 'default_ulimits = ['; echo ' "nofile=65535:65535
 RUN wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O - | zsh && \
     cp $HOME/.oh-my-zsh/templates/zshrc.zsh-template $HOME/.zshrc && \
     chsh -s $(which zsh) root && \
-    chsh -s $(which zsh) user && \
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $HOME/.oh-my-zsh/custom/themes/powerlevel10k && \
     git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions $HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
     sed -i 's|\(ZSH_THEME="\).*|\1powerlevel10k/powerlevel10k"|' $HOME/.zshrc && \
