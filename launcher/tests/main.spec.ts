@@ -10,6 +10,13 @@
 
 import { Main } from "../src/main";
 
+const setDevWorkspaceIdMock = jest.fn();
+jest.mock("../src/devworkspace-id", () => ({
+  DevWorkspaceId: function () {
+    return { configure: setDevWorkspaceIdMock };
+  },
+}));
+
 const configureOpenVSIXRegistryMock = jest.fn();
 jest.mock("../src/openvsix-registry", () => ({
   OpenVSIXRegistry: function () {
@@ -49,6 +56,7 @@ describe("Test main flow:", () => {
   test("should configure all the stuff", async () => {
     await new Main().start();
 
+    expect(setDevWorkspaceIdMock).toBeCalled();
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
