@@ -373,6 +373,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 		const updateIcon = (updated: ThemeIcon | undefined) => {
 			icon = updated ?? DEFAULT_ICON;
 			profileIconElement.className = `profile-icon ${ThemeIcon.asClassName(icon)}`;
+			profileIconElement.ariaLabel = localize('select icon', "Icon: {0}", icon.id);
 		};
 		disposables.add(iconSelectBox.onDidSelect(selectedIcon => {
 			if (icon.id !== selectedIcon.id) {
@@ -572,7 +573,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 				sticky: true,
 			}, async progress => {
 				const reportProgress = (message: string) => progress.report({ message: localize('create from profile', "Create Profile: {0}", message) });
-				const profile = await this.doCreateProfile(profileTemplate, false, false, { useDefaultFlags: options?.useDefaultFlags }, reportProgress);
+				const profile = await this.doCreateProfile(profileTemplate, false, false, { useDefaultFlags: options?.useDefaultFlags, icon: options?.icon }, reportProgress);
 				if (profile) {
 					reportProgress(localize('progress extensions', "Applying Extensions..."));
 					await this.instantiationService.createInstance(ExtensionsResource).copy(this.userDataProfileService.currentProfile, profile, false);
