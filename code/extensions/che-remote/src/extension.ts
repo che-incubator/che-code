@@ -33,6 +33,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
+  // stopWorkspaceAndRedirectToDashboard
+  const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
+  if (extensionApi) {
+    await extensionApi.activate();
+    const cheApi: any = extensionApi?.exports;
+    const workspaceService = cheApi.getWorkspaceService();
+
+    vscode.commands.executeCommand('setContext', 'che-remote.workspace-enabled', true);
+    context.subscriptions.push(
+      vscode.commands.registerCommand('che-remote.command.stopWorkspaceAndRedirectToDashboard', async () => {
+        await workspaceService.stop();
+      })
+    );
+  }
+
+
   // add dashboard command only if env variable is set
   const dashboardUrl = process.env.CHE_DASHBOARD_URL;
   if (dashboardUrl) {

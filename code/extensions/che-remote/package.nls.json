@@ -5,6 +5,7 @@
 	"openDashboardCommand": "Eclipse Che: Open Dashboard",
 	"openOpenShiftConsoleCommand": "Eclipse Che: Open OpenShift Console",
 	"stopWorkspaceCommand": "Eclipse Che: Stop Workspace",
+	"stopWorkspaceAndRedirectToDashboard": "Eclipse Che: Stop Workspace and Redirect to Dashboard",
 	"restartWorkspaceCommand": "Eclipse Che: Restart Workspace",
 	"restartWorkspaceFromLocalDevfileCommand": "Eclipse Che: Restart Workspace from Local Devfile"
 }

@@ -54,6 +54,11 @@
         "enablement": "che-remote.workspace-enabled"
       },
       {
+        "command": "che-remote.command.stopWorkspaceAndRedirectToDashboard",
+        "title": "%stopWorkspaceAndRedirectToDashboard%",
+        "enablement": "che-remote.workspace-enabled"
+      },
+      {
         "command": "che-remote.command.restartWorkspace",
         "title": "%restartWorkspaceCommand%",
         "enablement": "che-remote.workspace-enabled"
