@@ -155,6 +155,7 @@ The following example shows all of the properties that you can customize by usin
         "openDashboardCommand": "Branded IDE: Open Dashboard",
         "openOpenShiftConsoleCommand": "Branded IDE: Open OpenShift Console",
         "stopWorkspaceCommand": "Branded IDE: Stop Workspace",
+        "stopWorkspaceAndRedirectToDashboard": "Branded IDE: Stop Workspace and Redirect to Dashboard",
         "restartWorkspaceCommand": "Branded IDE: Restart Workspace",
         "restartWorkspaceFromLocalDevfileCommand": "Branded IDE: Restart Workspace from Local Devfile"
     },
