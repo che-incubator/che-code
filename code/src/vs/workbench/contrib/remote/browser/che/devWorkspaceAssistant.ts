@@ -54,6 +54,9 @@ export class DevWorkspaceAssistant {
 		CommandsRegistry.registerCommand('che-remote.command.restartWorkspace', () => {
 			this.restartWorkspace();
 		});
+		CommandsRegistry.registerCommand('che-remote.command.stopWorkspaceAndRedirectToDashboard', () => {
+			this.stopWorkspaceAndRedirectToDashboard();
+		});
 	}
 
 	async getDevWorkspace(): Promise<DevWorkspaceLike> {
@@ -118,6 +121,11 @@ export class DevWorkspaceAssistant {
 	async restartWorkspace(): Promise<void> {
 		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
 		this.startWorkspace();
+	}
+
+	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {
+		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
+		this.goToDashboard();
 	}
 
 	startWorkspace(): void {

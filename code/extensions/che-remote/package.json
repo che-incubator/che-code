@@ -54,6 +54,11 @@
         "enablement": "che-remote.workspace-enabled"
       },
       {
+        "command": "che-remote.command.stopWorkspaceAndRedirectToDashboard",
+        "title": "%stopWorkspaceAndRedirectToDashboard%",
+        "enablement": "che-remote.workspace-enabled"
+      },
+      {
         "command": "che-remote.command.restartWorkspace",
         "title": "%restartWorkspaceCommand%",
         "enablement": "che-remote.workspace-enabled"
@@ -83,6 +88,11 @@
         {
           "command": "che-remote.command.stopWorkspace",
           "group": "remote_40_che_navigation@10",
+          "when": "che-remote.workspace-enabled"
+        },
+        {
+          "command": "che-remote.command.stopWorkspaceAndRedirectToDashboard",
+          "group": "remote_40_che_navigation@11",
           "when": "che-remote.workspace-enabled"
         },
         {
