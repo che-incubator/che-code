@@ -64,7 +64,7 @@ jobs:
         with:
           image: "linux-libc-amd64"
 
-      - name: Download linux-musl image
+      - name: Download linux-musl-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
           image: "linux-musl-amd64"

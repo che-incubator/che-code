@@ -30,6 +30,8 @@ RUN dnf -y clean all --enablerepo='*'
 
 RUN (echo '[containers]'; echo 'default_ulimits = ['; echo ' "nofile=65535:65535",'; echo ']') >> /etc/containers/containers.conf
 
+COPY --chmod=664 /build/conf/dev/.p10k.zsh /home/user/.p10k.zsh
+
 # zsh support
 RUN wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O - | zsh && \
     cp $HOME/.oh-my-zsh/templates/zshrc.zsh-template $HOME/.zshrc && \
