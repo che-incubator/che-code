@@ -10,19 +10,14 @@
 #   Red Hat, Inc. - initial API and implementation
 #
 
-name: Build che-code images Pull Request check
+name: Pull Request Check
 
 # Trigger the workflow on pull request
-on:
-  pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - devfile.yaml
-      - '.che/*'
-      - '.rebase/*'
+on: [pull_request]
 
 jobs:
-  compile-che-code:
+  build:
+    name: build
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -47,9 +42,10 @@ jobs:
         with:
           image: "linux-${{matrix.dist}}-${{matrix.arch}}"
 
-  assemble-che-code:
+  assemble:
+    name: assemble
     runs-on: ubuntu-22.04
-    needs: compile-che-code
+    needs: build
     steps:
 
       - name: Checkout che-code source code
@@ -109,4 +105,51 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `Pull Request Che-Code image published:\n👉 [${process.env._IMAGE_NAME}](https://${process.env._IMAGE_NAME})`
+            })
+
+  dev:
+    name: dev
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout che-code source code
+        uses: actions/checkout@v2
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
+          password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+
+      - name: Build Che-Code Docker image
+        run: |
+          PR_NUMBER="${{ github.event.number }}"
+          echo "Pull request $PR_NUMBER"
+          
+          DEV_IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code-dev:pr-$PR_NUMBER-dev-amd64"
+          echo "Dev image $DEV_IMAGE_NAME"
+          echo "_DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --progress=plain \
+            --push \
+            -f build/dockerfiles/dev.Dockerfile \
+            -t ${DEV_IMAGE_NAME} .
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: 'Comment PR'
+        uses: actions/github-script@v6
+        with:
+         script: |
+           const { repo: { owner, repo } } = context;
+           await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Pull Request Dev image published:\n👉 [${process.env._DEV_IMAGE_NAME}](https://${process.env._DEV_IMAGE_NAME})`
             })
