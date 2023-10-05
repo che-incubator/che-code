@@ -15,7 +15,7 @@ import { Event } from 'vs/base/common/event';
 import { stripComments } from 'vs/base/common/json';
 import { getPathLabel } from 'vs/base/common/labels';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
-import { Schemas } from 'vs/base/common/network';
+import { Schemas, VSCODE_AUTHORITY } from 'vs/base/common/network';
 import { isAbsolute, join, posix } from 'vs/base/common/path';
 import { IProcessEnvironment, isLinux, isLinuxSnap, isMacintosh, isWindows, OS } from 'vs/base/common/platform';
 import { assertType } from 'vs/base/common/types';
@@ -118,6 +118,7 @@ import { ElectronPtyHostStarter } from 'vs/platform/terminal/electron-main/elect
 import { PtyHostService } from 'vs/platform/terminal/node/ptyHostService';
 import { NODE_REMOTE_RESOURCE_CHANNEL_NAME, NODE_REMOTE_RESOURCE_IPC_METHOD_NAME, NodeRemoteResourceResponse, NodeRemoteResourceRouter } from 'vs/platform/remote/common/electronRemoteResources';
 import { Lazy } from 'vs/base/common/lazy';
+import { AuxiliaryWindow } from 'vs/platform/windows/electron-main/auxiliaryWindow';
 
 /**
  * The main VS Code application. There will only ever be one instance,
@@ -145,7 +146,7 @@ export class CodeApplication extends Disposable {
 		@IStateService private readonly stateService: IStateService,
 		@IFileService private readonly fileService: IFileService,
 		@IProductService private readonly productService: IProductService,
-		@IUserDataProfilesMainService private readonly userDataProfilesMainService: IUserDataProfilesMainService,
+		@IUserDataProfilesMainService private readonly userDataProfilesMainService: IUserDataProfilesMainService
 	) {
 		super();
 
@@ -176,7 +177,7 @@ export class CodeApplication extends Disposable {
 				return callback(allowedPermissionsInWebview.has(permission));
 			}
 
-			if (details.isMainFrame && details.securityOrigin === 'vscode-file://vscode-app/') {
+			if (details.isMainFrame && details.securityOrigin === `${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}/`) {
 				return callback(allowedPermissionsInMainFrame.has(permission));
 			}
 
@@ -188,7 +189,7 @@ export class CodeApplication extends Disposable {
 				return allowedPermissionsInWebview.has(permission);
 			}
 
-			if (details.isMainFrame && details.securityOrigin === 'vscode-file://vscode-app/') {
+			if (details.isMainFrame && details.securityOrigin === `${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}/`) {
 				return allowedPermissionsInMainFrame.has(permission);
 			}
 
@@ -382,16 +383,41 @@ export class CodeApplication extends Disposable {
 		//
 		app.on('web-contents-created', (event, contents) => {
 
+			// Child Window: delegate to `AuxiliaryWindow` class
+			const isChildWindow = contents?.opener?.url.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}/`);
+			if (isChildWindow) {
+				this.mainInstantiationService.createInstance(AuxiliaryWindow, contents);
+			}
+
+			// Block any in-page navigation
 			contents.on('will-navigate', event => {
 				this.logService.error('webContents#will-navigate: Prevented webcontent navigation');
 
 				event.preventDefault();
 			});
 
-			contents.setWindowOpenHandler(({ url }) => {
-				this.nativeHostMainService?.openExternal(undefined, url);
+			// All Windows: only allow about:blank child windows to open
+			// For all other URLs, delegate to the OS.
+			contents.setWindowOpenHandler(handler => {
 
-				return { action: 'deny' };
+				// about:blank windows can open as window witho our default options
+				if (handler.url === 'about:blank') {
+					this.logService.trace('webContents#setWindowOpenHandler: Allowing about:blank window to open');
+
+					return {
+						action: 'allow',
+						overrideBrowserWindowOptions: AuxiliaryWindow.open(this.mainInstantiationService)
+					};
+				}
+
+				// Any other URL: delegate to OS
+				else {
+					this.logService.trace(`webContents#setWindowOpenHandler: Prevented opening window with URL ${handler.url}}`);
+
+					this.nativeHostMainService?.openExternal(undefined, handler.url);
+
+					return { action: 'deny' };
+				}
 			});
 		});
 
