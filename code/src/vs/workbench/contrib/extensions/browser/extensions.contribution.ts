@@ -290,7 +290,7 @@ CommandsRegistry.registerCommand('extension.open', async (accessor: ServicesAcce
 
 CommandsRegistry.registerCommand({
 	id: 'workbench.extensions.installExtension',
-	description: {
+	metadata: {
 		description: localize('workbench.extensions.installExtension.description', "Install the given extension"),
 		args: [
 			{
@@ -369,7 +369,7 @@ CommandsRegistry.registerCommand({
 
 CommandsRegistry.registerCommand({
 	id: 'workbench.extensions.uninstallExtension',
-	description: {
+	metadata: {
 		description: localize('workbench.extensions.uninstallExtension.description', "Uninstall the given extension"),
 		args: [
 			{
@@ -405,7 +405,7 @@ CommandsRegistry.registerCommand({
 
 CommandsRegistry.registerCommand({
 	id: 'workbench.extensions.search',
-	description: {
+	metadata: {
 		description: localize('workbench.extensions.search.description', "Search for a specific extension"),
 		args: [
 			{
