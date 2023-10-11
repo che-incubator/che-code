@@ -66,6 +66,17 @@ export class VSCodeLauncher {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
 
+    if (!env.SHELL) {
+      // The SHELL env var is not set. In this case, Code will attempt to read the appropriate shell from /etc/passwd,
+      // which can cause issues when cri-o injects /sbin/nologin when starting containers. Instead, we'll check if bash
+      // is installed, and use that.
+      const shell = this.detectShell();
+      console.log(
+        `  > SHELL environment variable is not set. Setting it to ${shell}`
+      );
+      env.SHELL = shell;
+    }
+
     console.log(`  > Running: ${node}`);
     console.log(`  > Params: ${params}`);
 
@@ -82,5 +93,18 @@ export class VSCodeLauncher {
     run.on("close", (code: string) => {
       console.log(`VS Code process exited with code ${code}`);
     });
+  }
+
+  detectShell(): string {
+    try {
+      // Check if bash is installed
+      child_process.execSync("command -v /bin/bash", {
+        timeout: 500,
+      });
+      return "/bin/bash";
+    } catch (error) {
+      // bash not installed, fallback blindly to sh since it's at least better than /sbin/nologin
+      return "/bin/sh";
+    }
   }
 }
