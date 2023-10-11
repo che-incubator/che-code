@@ -22,6 +22,7 @@ describe("Test VS Code launcher:", () => {
     delete env.PROJECT_SOURCE;
     delete env.VSCODE_DEFAULT_WORKSPACE;
     delete env.NODE_EXTRA_CA_CERTS;
+    delete env.SHELL;
   });
 
   test("should fail if env.VSCODE_NODEJS_RUNTIME_DIR is not set", async () => {
@@ -78,6 +79,7 @@ describe("Test VS Code launcher:", () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
     env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
+    env.SHELL = "/bin/testshell";
 
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
@@ -137,6 +139,7 @@ describe("Test VS Code launcher:", () => {
   test("should launch VS Code with /projects/.code-workspace workspace file and Node extra certificate", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
+    env.SHELL = "/bin/testshell";
 
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
@@ -194,6 +197,7 @@ describe("Test VS Code launcher:", () => {
 
     env.PROJECTS_ROOT = "/tmp/projects";
     env.PROJECT_SOURCE = "/tmp/projects/sample-project";
+    env.SHELL = "/bin/testshell";
 
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
@@ -271,5 +275,174 @@ describe("Test VS Code launcher:", () => {
       );
       expect(spawnMock).not.toBeCalled();
     }
+  });
+
+  test("should use SHELL env var when launching Code if set", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
+    env.SHELL = "/bin/testshell";
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    pathExistsMock.mockImplementation(async (path) => {
+      return "/tmp/.code-workspace" === path;
+    });
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+    });
+
+    const mainTreadEventEmitter = jest.fn();
+    const stdoutEventEmitter = jest.fn();
+    const stderrEventEmitter = jest.fn();
+
+    spawnMock.mockImplementation(() => ({
+      on: mainTreadEventEmitter,
+      stdout: {
+        on: stdoutEventEmitter,
+      },
+      stderr: {
+        on: stderrEventEmitter,
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(pathExistsMock).toBeCalledTimes(2);
+    expect(pathExistsMock).toBeCalledWith("/tmp/.code-workspace");
+    expect(pathExistsMock).toBeCalledWith(
+      "/tmp/node-extra-certificates/ca.crt"
+    );
+
+    expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
+      "out/server-main.js",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "3100",
+      "--without-connection-token",
+      "--default-workspace",
+      "/tmp/.code-workspace",
+    ]);
+
+    expect(env.NODE_EXTRA_CA_CERTS).not.toBeDefined();
+
+    expect(mainTreadEventEmitter).toBeCalledWith("close", expect.any(Function));
+    expect(stdoutEventEmitter).toBeCalledWith("data", expect.any(Function));
+    expect(stderrEventEmitter).toBeCalledWith("data", expect.any(Function));
+  });
+
+  test("should set SHELL env var to /bin/bash if unset and bash is installed", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    pathExistsMock.mockImplementation(async (path) => {
+      return "/tmp/.code-workspace" === path;
+    });
+
+    const execSyncMock = jest.fn(() => "");
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+      execSync: execSyncMock,
+    });
+
+    const mainTreadEventEmitter = jest.fn();
+    const stdoutEventEmitter = jest.fn();
+    const stderrEventEmitter = jest.fn();
+
+    spawnMock.mockImplementation(() => ({
+      on: mainTreadEventEmitter,
+      stdout: {
+        on: stdoutEventEmitter,
+      },
+      stderr: {
+        on: stderrEventEmitter,
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
+      "out/server-main.js",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "3100",
+      "--without-connection-token",
+      "--default-workspace",
+      "/tmp/.code-workspace",
+    ]);
+
+    expect(env.SHELL).toEqual("/bin/bash");
+  });
+
+  test("should set SHELL env var to /bin/sh if unset and bash is not installed", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    pathExistsMock.mockImplementation(async (path) => {
+      return "/tmp/.code-workspace" === path;
+    });
+
+    const execSyncMock = jest.fn(() => {
+      throw Error("test error");
+    });
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+      execSync: execSyncMock,
+    });
+
+    const mainTreadEventEmitter = jest.fn();
+    const stdoutEventEmitter = jest.fn();
+    const stderrEventEmitter = jest.fn();
+
+    spawnMock.mockImplementation(() => ({
+      on: mainTreadEventEmitter,
+      stdout: {
+        on: stdoutEventEmitter,
+      },
+      stderr: {
+        on: stderrEventEmitter,
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
+      "out/server-main.js",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "3100",
+      "--without-connection-token",
+      "--default-workspace",
+      "/tmp/.code-workspace",
+    ]);
+
+    expect(env.SHELL).toEqual("/bin/sh");
   });
 });
