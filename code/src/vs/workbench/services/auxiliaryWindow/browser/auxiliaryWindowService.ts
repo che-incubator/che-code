@@ -12,8 +12,6 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { isWeb } from 'vs/base/common/platform';
-import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
-import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 
 export const IAuxiliaryWindowService = createDecorator<IAuxiliaryWindowService>('auxiliaryWindowService');
 
@@ -26,22 +24,22 @@ export interface IAuxiliaryWindowService {
 
 export interface IAuxiliaryWindow extends IDisposable {
 
-	readonly onDidResize: Event<Dimension>;
+	readonly onWillLayout: Event<Dimension>;
 	readonly onDidClose: Event<void>;
 
 	readonly container: HTMLElement;
+
+	layout(): void;
 }
 
-type AuxiliaryWindow = Window & typeof globalThis;
+export type AuxiliaryWindow = Window & typeof globalThis;
 
 export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 
 	declare readonly _serviceBrand: undefined;
 
 	constructor(
-		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
-		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
-		@ILifecycleService private readonly lifecycleService: ILifecycleService
+		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService
 	) { }
 
 	open(): IAuxiliaryWindow {
@@ -51,6 +49,18 @@ export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 		disposables.add(registerWindow(auxiliaryWindow));
 		disposables.add(toDisposable(() => auxiliaryWindow.close()));
 
+		const { container, onWillLayout, onDidClose } = this.create(auxiliaryWindow, disposables);
+
+		return {
+			container,
+			onWillLayout: onWillLayout.event,
+			onDidClose: onDidClose.event,
+			layout: () => onWillLayout.fire(getClientArea(container)),
+			dispose: () => disposables.dispose()
+		};
+	}
+
+	protected create(auxiliaryWindow: AuxiliaryWindow, disposables: DisposableStore) {
 		this.patchMethods(auxiliaryWindow);
 
 		this.applyMeta(auxiliaryWindow);
@@ -58,17 +68,9 @@ export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 
 		const container = this.applyHTML(auxiliaryWindow, disposables);
 
-		const { onDidResize, onDidClose } = this.registerListeners(auxiliaryWindow, container, disposables);
+		const { onWillLayout, onDidClose } = this.registerListeners(auxiliaryWindow, container, disposables);
 
-		disposables.add(Event.once(this.lifecycleService.onDidShutdown)(() => disposables.dispose()));
-		disposables.add(Event.once(onDidClose.event)(() => disposables.dispose()));
-
-		return {
-			container,
-			onDidResize: onDidResize.event,
-			onDidClose: onDidClose.event,
-			dispose: () => disposables.dispose()
-		};
+		return { container, onWillLayout, onDidClose };
 	}
 
 	private applyMeta(auxiliaryWindow: AuxiliaryWindow): void {
@@ -87,31 +89,60 @@ export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 		}
 	}
 
-	private applyCSS(auxiliaryWindow: AuxiliaryWindow, disposables: DisposableStore): void {
+	protected applyCSS(auxiliaryWindow: AuxiliaryWindow, disposables: DisposableStore): void {
+		const mapOriginalToClone = new Map<Node /* original */, Node /* clone */>();
 
-		// Clone all style elements and stylesheet links from the window to the child window
-		for (const element of document.head.querySelectorAll('link[rel="stylesheet"], style')) {
-			auxiliaryWindow.document.head.appendChild(element.cloneNode(true));
+		function cloneNode(originalNode: Node): void {
+			const clonedNode = auxiliaryWindow.document.head.appendChild(originalNode.cloneNode(true));
+			mapOriginalToClone.set(originalNode, clonedNode);
 		}
 
-		// Running out of sources: listen to new stylesheets as they
-		// are being added to the main window and apply to child window
-		if (!this.environmentService.isBuilt) {
-			const observer = new MutationObserver(mutations => {
-				for (const mutation of mutations) {
-					if (mutation.type === 'childList') {
-						for (const node of mutation.addedNodes) {
-							if (node instanceof HTMLElement && node.tagName.toLowerCase() === 'style') {
-								auxiliaryWindow.document.head.appendChild(node.cloneNode(true));
-							}
+		// Clone all style elements and stylesheet links from the window to the child window
+		for (const originalNode of document.head.querySelectorAll('link[rel="stylesheet"], style')) {
+			cloneNode(originalNode);
+		}
+
+		// Listen to new stylesheets as they are being added or removed in the main window
+		// and apply to child window (including changes to existing stylesheets elements)
+		const observer = new MutationObserver(mutations => {
+			for (const mutation of mutations) {
+				if (
+					mutation.type !== 'childList' ||						// only interested in added/removed nodes
+					mutation.target.nodeName.toLowerCase() === 'title' || 	// skip over title changes that happen frequently
+					mutation.target.nodeName.toLowerCase() === 'script' || 	// block <script> changes that are unsupported anyway
+					mutation.target.nodeName.toLowerCase() === 'meta'		// do not observe <meta> elements for now
+				) {
+					continue;
+				}
+
+				for (const node of mutation.addedNodes) {
+
+					// <style>/<link> element was added
+					if (node instanceof HTMLElement && (node.tagName.toLowerCase() === 'style' || node.tagName.toLowerCase() === 'link')) {
+						cloneNode(node);
+					}
+
+					// text-node was changed, try to apply to our clones
+					else if (node.nodeType === Node.TEXT_NODE && node.parentNode) {
+						const clonedNode = mapOriginalToClone.get(node.parentNode);
+						if (clonedNode) {
+							clonedNode.textContent = node.textContent;
 						}
 					}
 				}
-			});
 
-			observer.observe(document.head, { childList: true });
-			disposables.add(toDisposable(() => observer.disconnect()));
-		}
+				for (const node of mutation.removedNodes) {
+					const clonedNode = mapOriginalToClone.get(node);
+					if (clonedNode) {
+						clonedNode.parentNode?.removeChild(clonedNode);
+						mapOriginalToClone.delete(node);
+					}
+				}
+			}
+		});
+
+		observer.observe(document.head, { childList: true, subtree: true });
+		disposables.add(toDisposable(() => observer.disconnect()));
 	}
 
 	private applyHTML(auxiliaryWindow: AuxiliaryWindow, disposables: DisposableStore): HTMLElement {
@@ -139,13 +170,13 @@ export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 			e.preventDefault();
 		}));
 
-		const onDidResize = disposables.add(new Emitter<Dimension>());
+		const onWillLayout = disposables.add(new Emitter<Dimension>());
 		disposables.add(addDisposableListener(auxiliaryWindow, EventType.RESIZE, () => {
 			const dimension = getClientArea(auxiliaryWindow.document.body);
 			position(container, 0, 0, 0, 0, 'relative');
 			size(container, dimension.width, dimension.height);
 
-			onDidResize.fire(dimension);
+			onWillLayout.fire(dimension);
 		}));
 
 		if (isWeb) {
@@ -157,7 +188,7 @@ export class BrowserAuxiliaryWindowService implements IAuxiliaryWindowService {
 			disposables.add(addDisposableListener(auxiliaryWindow.document.body, EventType.DROP, (e: DragEvent) => EventHelper.stop(e)));		// Prevent default navigation on drop
 		}
 
-		return { onDidResize, onDidClose };
+		return { onWillLayout, onDidClose };
 	}
 
 	protected patchMethods(auxiliaryWindow: AuxiliaryWindow): void {

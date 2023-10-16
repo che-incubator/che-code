@@ -27,7 +27,7 @@ import { ChatEditorOptions } from 'vs/workbench/contrib/chat/browser/chatOptions
 import { ChatViewPane } from 'vs/workbench/contrib/chat/browser/chatViewPane';
 import { CONTEXT_CHAT_REQUEST_IN_PROGRESS, CONTEXT_IN_CHAT_SESSION } from 'vs/workbench/contrib/chat/common/chatContextKeys';
 import { IChatContributionService } from 'vs/workbench/contrib/chat/common/chatContributionService';
-import { IChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
+import { ChatModelInitState, IChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
 import { IChatReplyFollowup, IChatService, ISlashCommand } from 'vs/workbench/contrib/chat/common/chatService';
 import { ChatViewModel, IChatResponseViewModel, isRequestVM, isResponseVM, isWelcomeVM } from 'vs/workbench/contrib/chat/common/chatViewModel';
 
@@ -247,12 +247,14 @@ export class ChatWidget extends Disposable implements IChatWidget {
 					getId: (element) => {
 						return ((isResponseVM(element) || isRequestVM(element)) ? element.dataId : element.id) +
 							// TODO? We can give the welcome message a proper VM or get rid of the rest of the VMs
-							((isWelcomeVM(element) && !this.viewModel?.isInitialized) ? '_initializing' : '') +
+							((isWelcomeVM(element) && this.viewModel) ? `_${ChatModelInitState[this.viewModel.initState]}` : '') +
 							// Ensure re-rendering an element once slash commands are loaded, so the colorization can be applied.
 							`${(isRequestVM(element) || isWelcomeVM(element)) && !!this.lastSlashCommands ? '_scLoaded' : ''}` +
 							// If a response is in the process of progressive rendering, we need to ensure that it will
 							// be re-rendered so progressive rendering is restarted, even if the model wasn't updated.
-							`${isResponseVM(element) && element.renderData ? `_${this.visibleChangeCount}` : ''}`;
+							`${isResponseVM(element) && element.renderData ? `_${this.visibleChangeCount}` : ''}` +
+							// Re-render once content references are loaded
+							(isResponseVM(element) ? `_${element.response.contentReferences.length}` : '');
 					},
 				}
 			});
@@ -264,6 +266,8 @@ export class ChatWidget extends Disposable implements IChatWidget {
 			const lastItem = treeItems[treeItems.length - 1]?.element;
 			if (lastItem && isResponseVM(lastItem) && lastItem.isComplete) {
 				this.renderFollowups(lastItem.replyFollowups);
+			} else if (lastItem && isWelcomeVM(lastItem)) {
+				this.renderFollowups(lastItem.sampleQuestions);
 			} else {
 				this.renderFollowups(undefined);
 			}
@@ -323,7 +327,8 @@ export class ChatWidget extends Disposable implements IChatWidget {
 			rendererDelegate
 		));
 		this._register(this.renderer.onDidClickFollowup(item => {
-			this.acceptInput(item);
+			// is this used anymore?
+			this.acceptInput(item.message);
 		}));
 
 		this.tree = <WorkbenchObjectTree<ChatTreeItem>>scopedInstantiationService.createInstance(
@@ -406,7 +411,10 @@ export class ChatWidget extends Disposable implements IChatWidget {
 		this.inputPart.render(container, '', this);
 
 		this._register(this.inputPart.onDidFocus(() => this._onDidFocus.fire()));
-		this._register(this.inputPart.onDidAcceptFollowup(followup => this.acceptInput(followup)));
+		this._register(this.inputPart.onDidAcceptFollowup(followup => {
+			// this.chatService.notifyUserAction
+			this.acceptInput(followup.message);
+		}));
 		this._register(this.inputPart.onDidChangeHeight(() => this.bodyDimension && this.layout(this.bodyDimension.height, this.bodyDimension.width)));
 	}
 
@@ -463,18 +471,26 @@ export class ChatWidget extends Disposable implements IChatWidget {
 		this.tree.domFocus();
 	}
 
+	setInputPlaceholder(placeholder: string): void {
+		this.viewModel?.setInputPlaceholder(placeholder);
+	}
+
+	resetInputPlaceholder(): void {
+		this.viewModel?.resetInputPlaceholder();
+	}
+
 	updateInput(value = ''): void {
 		this.inputPart.setValue(value);
 	}
 
-	async acceptInput(query?: string | IChatReplyFollowup): Promise<void> {
+	async acceptInput(query?: string): Promise<void> {
 		if (this.viewModel) {
 			this._onDidAcceptInput.fire();
 
 			const editorValue = this.inputPart.inputEditor.getValue();
 			this._chatAccessibilityService.acceptRequest();
 			const input = query ?? editorValue;
-			const usedSlashCommand = this.lookupSlashCommand(typeof input === 'string' ? input : input.message);
+			const usedSlashCommand = this.lookupSlashCommand(input);
 			const result = await this.chatService.sendRequest(this.viewModel.sessionId, input, usedSlashCommand);
 
 			if (result) {
