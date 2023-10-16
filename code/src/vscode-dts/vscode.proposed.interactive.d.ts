@@ -48,6 +48,12 @@ declare module 'vscode' {
 		wholeRange?: Range;
 	}
 
+	export interface InteractiveEditorProgressItem {
+		message?: string;
+		edits?: TextEdit[];
+		slashCommand?: InteractiveEditorSlashCommand;
+	}
+
 	export enum InteractiveEditorResponseFeedbackKind {
 		Unhelpful = 0,
 		Helpful = 1,
@@ -69,7 +75,7 @@ declare module 'vscode' {
 		// Create a session. The lifetime of this session is the duration of the editing session with the input mode widget.
 		prepareInteractiveEditorSession(context: TextDocumentContext, token: CancellationToken): ProviderResult<S>;
 
-		provideInteractiveEditorResponse(session: S, request: InteractiveEditorRequest, progress: Progress<{ message: string; edits: TextEdit[] }>, token: CancellationToken): ProviderResult<R>;
+		provideInteractiveEditorResponse(session: S, request: InteractiveEditorRequest, progress: Progress<InteractiveEditorProgressItem>, token: CancellationToken): ProviderResult<R>;
 
 		// eslint-disable-next-line local/vscode-dts-provider-naming
 		handleInteractiveEditorResponseFeedback?(session: S, response: R, kind: InteractiveEditorResponseFeedbackKind): void;
@@ -102,7 +108,7 @@ declare module 'vscode' {
 
 	export interface InteractiveRequest {
 		session: InteractiveSession;
-		message: string | InteractiveSessionReplyFollowup;
+		message: string;
 	}
 
 	export interface InteractiveResponseErrorDetails {
@@ -113,6 +119,15 @@ declare module 'vscode' {
 
 	export interface InteractiveResponseForProgress {
 		errorDetails?: InteractiveResponseErrorDetails;
+	}
+
+	export interface InteractiveContentReference {
+		reference: Uri | Location;
+	}
+
+	export interface InteractiveInlineContentReference {
+		inlineReference: Uri | Location;
+		title?: string; // eg symbol name
 	}
 
 	export interface InteractiveProgressContent {
@@ -153,7 +168,9 @@ declare module 'vscode' {
 		| InteractiveProgressId
 		| InteractiveProgressTask
 		| InteractiveProgressFileTree
-		| InteractiveProgressUsedContext;
+		| InteractiveProgressUsedContext
+		| InteractiveContentReference
+		| InteractiveInlineContentReference;
 
 	export interface InteractiveResponseCommand {
 		commandId: string;
@@ -187,6 +204,7 @@ declare module 'vscode' {
 
 	export interface InteractiveSessionProvider<S extends InteractiveSession = InteractiveSession> {
 		provideWelcomeMessage?(token: CancellationToken): ProviderResult<InteractiveWelcomeMessageContent[]>;
+		provideSampleQuestions?(token: CancellationToken): ProviderResult<InteractiveSessionReplyFollowup[]>;
 		provideFollowups?(session: S, token: CancellationToken): ProviderResult<(string | InteractiveSessionFollowup)[]>;
 		provideSlashCommands?(session: S, token: CancellationToken): ProviderResult<InteractiveSessionSlashCommand[]>;
 

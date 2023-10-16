@@ -237,13 +237,13 @@ export class InlineChatController implements IEditorContribution {
 
 		let widgetPosition: Position;
 		if (initialRender) {
-			widgetPosition = position ? Position.lift(position) : this._editor.getSelection().getEndPosition();
+			widgetPosition = position ? Position.lift(position) : this._editor.getSelection().getEndPosition().delta(-1);
 			this._zone.value.setContainerMargins();
 			this._zone.value.setWidgetMargins(widgetPosition);
 		} else {
 			assertType(this._activeSession);
 			assertType(this._strategy);
-			widgetPosition = this._strategy.getWidgetPosition() ?? this._zone.value.position ?? this._activeSession.wholeRange.value.getEndPosition();
+			widgetPosition = this._strategy.getWidgetPosition() ?? this._zone.value.position ?? this._activeSession.wholeRange.value.getStartPosition();
 			const needsMargin = this._strategy.needsMargin();
 			if (!needsMargin) {
 				this._zone.value.setWidgetMargins(widgetPosition, 0);
@@ -271,7 +271,7 @@ export class InlineChatController implements IEditorContribution {
 
 		this._showWidget(true, options.position);
 		this._zone.value.widget.updateInfo(localize('welcome.1', "AI-generated code may be incorrect"));
-		this._zone.value.widget.placeholder = this._getPlaceholderText();
+		this._updatePlaceholder();
 
 		if (!session) {
 			const createSessionCts = new CancellationTokenSource();
@@ -346,7 +346,7 @@ export class InlineChatController implements IEditorContribution {
 		updateWholeRangeDecoration();
 
 		this._zone.value.widget.updateSlashCommands(this._activeSession.session.slashCommands ?? []);
-		this._zone.value.widget.placeholder = this._getPlaceholderText();
+		this._updatePlaceholder();
 		this._zone.value.widget.updateInfo(this._activeSession.session.message ?? localize('welcome.1', "AI-generated code may be incorrect"));
 		this._zone.value.widget.preferredExpansionState = this._activeSession.lastExpansionState;
 		this._zone.value.widget.value = this._activeSession.lastInput?.value ?? this._zone.value.widget.value;
@@ -409,8 +409,23 @@ export class InlineChatController implements IEditorContribution {
 		}
 	}
 
+	private _placeholder: string | undefined = undefined;
+	setPlaceholder(text: string): void {
+		this._placeholder = text;
+		this._updatePlaceholder();
+	}
+
+	resetPlaceholder(): void {
+		this._placeholder = undefined;
+		this._updatePlaceholder();
+	}
+
+	private _updatePlaceholder(): void {
+		this._zone.value.widget.placeholder = this._getPlaceholderText();
+	}
+
 	private _getPlaceholderText(): string {
-		let result = this._activeSession?.session.placeholder ?? localize('default.placeholder', "Ask a question");
+		let result = this._placeholder ?? this._activeSession?.session.placeholder ?? localize('default.placeholder', "Ask a question");
 		if (InlineChatController._promptHistory.length > 0) {
 			const kb1 = this._keybindingService.lookupKeybinding('inlineChat.previousFromHistory')?.getLabel();
 			const kb2 = this._keybindingService.lookupKeybinding('inlineChat.nextFromHistory')?.getLabel();
@@ -427,7 +442,7 @@ export class InlineChatController implements IEditorContribution {
 		assertType(this._activeSession);
 		assertType(this._strategy);
 
-		this._zone.value.widget.placeholder = this._getPlaceholderText();
+		this._updatePlaceholder();
 
 		if (options.message) {
 			this.updateInput(options.message);
@@ -520,9 +535,7 @@ export class InlineChatController implements IEditorContribution {
 			requestCts.cancel();
 		});
 
-		const typeListener = this._zone.value.widget.onDidChangeInput(() => {
-			requestCts.cancel();
-		});
+		const typeListener = this._zone.value.widget.onDidChangeInput(() => requestCts.cancel());
 
 		const sw = StopWatch.create();
 		const request: IInlineChatRequest = {
@@ -538,14 +551,20 @@ export class InlineChatController implements IEditorContribution {
 		const progressEdits: TextEdit[][] = [];
 		const progress = new Progress<IInlineChatProgressItem>(async data => {
 			this._log('received chunk', data, request);
-			if (!request.live) {
-				throw new Error('Progress in NOT supported in non-live mode');
-			}
 			if (data.message) {
 				this._zone.value.widget.updateToolbar(false);
 				this._zone.value.widget.updateInfo(data.message);
 			}
+			if (data.slashCommand) {
+				const valueNow = this._zone.value.widget.value;
+				if (!valueNow.startsWith('/')) {
+					this._zone.value.widget.updateSlashCommandUsed(data.slashCommand);
+				}
+			}
 			if (data.edits) {
+				if (!request.live) {
+					throw new Error('Progress in NOT supported in non-live mode');
+				}
 				progressEdits.push(data.edits);
 				await this._makeChanges(progressEdits, false);
 			}

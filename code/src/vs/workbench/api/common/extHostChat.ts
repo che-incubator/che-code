@@ -140,6 +140,24 @@ export class ExtHostChat implements ExtHostChatShape {
 		return rawFollowups?.map(f => typeConvert.ChatFollowup.from(f));
 	}
 
+	async $provideSampleQuestions(handle: number, token: CancellationToken): Promise<IChatReplyFollowup[] | undefined> {
+		const entry = this._chatProvider.get(handle);
+		if (!entry) {
+			return undefined;
+		}
+
+		if (!entry.provider.provideSampleQuestions) {
+			return undefined;
+		}
+
+		const rawFollowups = await entry.provider.provideSampleQuestions(token);
+		if (!rawFollowups) {
+			return undefined;
+		}
+
+		return rawFollowups?.map(f => typeConvert.ChatReplyFollowup.from(f));
+	}
+
 	$removeRequest(handle: number, sessionId: number, requestId: string): void {
 		const entry = this._chatProvider.get(handle);
 		if (!entry) {
@@ -171,7 +189,7 @@ export class ExtHostChat implements ExtHostChatShape {
 
 		const requestObj: vscode.InteractiveRequest = {
 			session: realSession,
-			message: typeof request.message === 'string' ? request.message : typeConvert.ChatReplyFollowup.to(request.message),
+			message: request.message,
 			variables: {}
 		};
 
@@ -193,10 +211,9 @@ export class ExtHostChat implements ExtHostChatShape {
 					firstProgress = stopWatch.elapsed();
 				}
 
-				if ('responseId' in progress) {
-					this._proxy.$acceptResponseProgress(handle, sessionId, { requestId: progress.responseId });
-				} else if ('placeholder' in progress && 'resolvedContent' in progress) {
-					const resolvedContent = Promise.all([this._proxy.$acceptResponseProgress(handle, sessionId, { placeholder: progress.placeholder }), progress.resolvedContent]);
+				const convertedProgress = typeConvert.ChatResponseProgress.from(progress);
+				if ('placeholder' in progress && 'resolvedContent' in progress) {
+					const resolvedContent = Promise.all([this._proxy.$acceptResponseProgress(handle, sessionId, convertedProgress), progress.resolvedContent]);
 					raceCancellation(resolvedContent, token).then((res) => {
 						if (!res) {
 							return; /* Cancelled */
@@ -204,20 +221,8 @@ export class ExtHostChat implements ExtHostChatShape {
 						const [progressHandle, progressContent] = res;
 						this._proxy.$acceptResponseProgress(handle, sessionId, progressContent, progressHandle ?? undefined);
 					});
-				} else if ('content' in progress) {
-					this._proxy.$acceptResponseProgress(handle, sessionId, {
-						content: typeof progress.content === 'string' ? progress.content : typeConvert.MarkdownString.from(progress.content)
-					});
-				} else if ('documents' in progress) {
-					this._proxy.$acceptResponseProgress(handle, sessionId, {
-						documents: progress.documents.map(d => ({
-							uri: d.uri,
-							version: d.version,
-							ranges: d.ranges.map(r => typeConvert.Range.from(r))
-						}))
-					});
 				} else {
-					this._proxy.$acceptResponseProgress(handle, sessionId, progress);
+					this._proxy.$acceptResponseProgress(handle, sessionId, convertedProgress);
 				}
 			}
 		};
@@ -273,7 +278,7 @@ export class ExtHostChat implements ExtHostChatShape {
 	}
 
 	async $onDidPerformUserAction(event: IChatUserActionEvent): Promise<void> {
-		this._onDidPerformUserAction.fire(event);
+		this._onDidPerformUserAction.fire(event as any);
 	}
 
 	//#endregion
