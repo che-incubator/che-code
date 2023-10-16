@@ -9,6 +9,7 @@
  ***********************************************************************/
 
 import { env } from "process";
+import * as os from "os";
 
 import * as fs from "../src/fs-extra";
 import * as child_process from "child_process";
@@ -23,6 +24,10 @@ describe("Test VS Code launcher:", () => {
     delete env.VSCODE_DEFAULT_WORKSPACE;
     delete env.NODE_EXTRA_CA_CERTS;
     delete env.SHELL;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test("should fail if env.VSCODE_NODEJS_RUNTIME_DIR is not set", async () => {
@@ -343,6 +348,10 @@ describe("Test VS Code launcher:", () => {
     env.PROJECTS_ROOT = "/tmp/projects";
     env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
 
+    jest
+      .spyOn(os, "userInfo")
+      .mockImplementation(() => ({ shell: "/sbin/nologin" } as any));
+
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
@@ -396,6 +405,10 @@ describe("Test VS Code launcher:", () => {
     env.PROJECTS_ROOT = "/tmp/projects";
     env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
 
+    jest
+      .spyOn(os, "userInfo")
+      .mockImplementation(() => ({ shell: "/sbin/nologin" } as any));
+
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
@@ -444,5 +457,64 @@ describe("Test VS Code launcher:", () => {
     ]);
 
     expect(env.SHELL).toEqual("/bin/sh");
+  });
+
+  test("should not set SHELL env var if unset and /etc/passwd has a shell", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
+
+    jest
+      .spyOn(os, "userInfo")
+      .mockImplementation(() => ({ shell: "/bin/zsh" } as any));
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    pathExistsMock.mockImplementation(async (path) => {
+      return "/tmp/.code-workspace" === path;
+    });
+
+    const execSyncMock = jest.fn(() => {
+      throw Error("test error");
+    });
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+      execSync: execSyncMock,
+    });
+
+    const mainTreadEventEmitter = jest.fn();
+    const stdoutEventEmitter = jest.fn();
+    const stderrEventEmitter = jest.fn();
+
+    spawnMock.mockImplementation(() => ({
+      on: mainTreadEventEmitter,
+      stdout: {
+        on: stdoutEventEmitter,
+      },
+      stderr: {
+        on: stderrEventEmitter,
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
+      "out/server-main.js",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "3100",
+      "--without-connection-token",
+      "--default-workspace",
+      "/tmp/.code-workspace",
+    ]);
+
+    expect(env.SHELL).toBe(undefined);
   });
 });

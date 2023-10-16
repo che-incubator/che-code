@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+import { userInfo } from "os";
 import { env } from "process";
 import * as fs from "./fs-extra";
 
@@ -66,7 +67,7 @@ export class VSCodeLauncher {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
 
-    if (!env.SHELL) {
+    if (!env.SHELL && userInfo().shell === "/sbin/nologin") {
       // The SHELL env var is not set. In this case, Code will attempt to read the appropriate shell from /etc/passwd,
       // which can cause issues when cri-o injects /sbin/nologin when starting containers. Instead, we'll check if bash
       // is installed, and use that.
