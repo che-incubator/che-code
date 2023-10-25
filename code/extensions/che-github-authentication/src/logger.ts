@@ -13,12 +13,14 @@
 import { injectable } from 'inversify';
 import * as vscode from 'vscode';
 
+export const CHANNEL_NAME = 'Che GitHub Authentication';
+
 @injectable()
 export class Logger {
   private outputChannel: vscode.LogOutputChannel;
 
   constructor() {
-    this.outputChannel = vscode.window.createOutputChannel('Che GitHub Authentication', { log: true });
+    this.outputChannel = vscode.window.createOutputChannel(CHANNEL_NAME, { log: true });
   }
 
   info(message: string): void {

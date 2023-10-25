@@ -14,7 +14,7 @@ import { inject, injectable } from 'inversify';
 import * as vscode from 'vscode';
 import { ExtensionContext } from './extension-context';
 import { GitHubAuthProvider, GithubService } from './github';
-import { Logger } from './logger';
+import { CHANNEL_NAME, Logger } from './logger';
 
 @injectable()
 export class DeviceAuthentication {
@@ -35,7 +35,7 @@ export class DeviceAuthentication {
     this.logger.info('Remove Device Authentication Token command has been registered');
   }
 
-  async trigger(scopes = 'user:email'): Promise<string> {
+  async trigger(scopes = 'user:email'): Promise<string | undefined> {
     this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
 
     const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
@@ -57,10 +57,20 @@ export class DeviceAuthentication {
     const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow');
     this.logger.info(`Device Authentication: token for scopes: ${scopes} has been generated successfully`);
 
-    await this.githubService.persistDeviceAuthToken(token);
-    await this.gitHubAuthProvider.createSession([scopes]);
-    this.onTokenGenerated(scopes);
-    return token;
+    try {
+      await this.githubService.persistDeviceAuthToken(token);
+      await this.gitHubAuthProvider.createSession([scopes]);
+      this.onTokenGenerated(scopes);
+
+      return token;
+    } catch (error) {
+      const message = 'An error has occurred at the Device Authentication flow';
+
+      this.logger.error(`${message}: ${error.message}`);
+      vscode.window.showErrorMessage(`${message}, details are available in the ${CHANNEL_NAME} output channel.`);
+
+      return undefined;
+    }
   }
 
   async removeDeviceAuthToken(): Promise<void> {

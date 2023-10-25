@@ -21,7 +21,7 @@ import { Logger } from '../logger';
 import { K8SServiceImpl } from './k8s-service-impl';
 import { base64Decode, base64Encode, createLabelsSelector, randomString } from './utils';
 
-export const GIT_CREDENTIALS_PATH = path.resolve('/.git-credentials', 'credentials');
+const GIT_CREDENTIALS_PATH = path.resolve('/.git-credentials', 'credentials');
 const GIT_CREDENTIAL_LABEL = {
   'controller.devfile.io/git-credential': 'true'
 };
