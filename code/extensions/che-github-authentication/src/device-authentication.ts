@@ -18,67 +18,61 @@ import { Logger } from './logger';
 
 @injectable()
 export class DeviceAuthentication {
-	constructor(
-		@inject(Logger) private logger: Logger,
-		@inject(ExtensionContext) private extensionContext: ExtensionContext,
-		@inject(GitHubAuthProvider) private gitHubAuthProvider: GitHubAuthProvider,
-		@inject(Symbol.for('GithubServiceInstance')) private githubService: GithubService
-	) {
-		this.extensionContext.getContext().subscriptions.push(
-			vscode.commands.registerCommand('github-authentication.device-code-flow.authentication', async () => this.trigger()),
-		);
-		this.logger.info('Device Authentication command has been registered');
-	}
+  constructor(
+    @inject(Logger) private logger: Logger,
+    @inject(ExtensionContext) private extensionContext: ExtensionContext,
+    @inject(GitHubAuthProvider) private gitHubAuthProvider: GitHubAuthProvider,
+    @inject(Symbol.for('GithubServiceInstance')) private githubService: GithubService
+  ) {
+    this.extensionContext.getContext().subscriptions.push(
+      vscode.commands.registerCommand('github-authentication.device-code-flow.authentication', async () => this.trigger()),
+    );
+    this.logger.info('Device Authentication command has been registered');
 
-	async trigger(scopes = 'user:email'): Promise<string> {
-		this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
+    this.extensionContext.getContext().subscriptions.push(
+      vscode.commands.registerCommand('github-authentication.device-code-flow.remove-token', async () => this.removeDeviceAuthToken()),
+    );
+    this.logger.info('Remove Device Authentication Token command has been registered');
+  }
 
-		const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
-		this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${scopes}`);
+  async trigger(scopes = 'user:email'): Promise<string> {
+    this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
 
-		for (const session of sessionsToRemove) {
-			try {
-				this.logger.info(`Device Authentication: removing a session with scopes: ${session.scopes}`);
+    const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
+    this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${scopes}`);
 
-				await this.gitHubAuthProvider.removeSession(session.id);
+    for (const session of sessionsToRemove) {
+      try {
+        this.logger.info(`Device Authentication: removing a session with scopes: ${session.scopes}`);
 
-				this.logger.info(`Device Authentication: session with scopes: ${session.scopes} has been removed successfully`);
-			} catch (e) {
-				console.warn(e.message);
-				this.logger.warn(`Device Authentication: an error happened at removing a session with scopes: ${session.scopes}`);
-			}
-		}
+        await this.gitHubAuthProvider.removeSession(session.id);
 
-		const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow');
-		this.logger.info(`Device Authentication: token for scopes: ${scopes} has been generated successfully`);
+        this.logger.info(`Device Authentication: session with scopes: ${session.scopes} has been removed successfully`);
+      } catch (e) {
+        console.warn(e.message);
+        this.logger.warn(`Device Authentication: an error happened at removing a session with scopes: ${session.scopes}`);
+      }
+    }
 
-		await this.githubService.updateCachedToken(token);
-		await this.gitHubAuthProvider.createSession([scopes]);
+    const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow');
+    this.logger.info(`Device Authentication: token for scopes: ${scopes} has been generated successfully`);
 
-		this.onTokenGenerated(token, scopes);
-		return token;
-	}
+    await this.githubService.persistDeviceAuthToken(token);
+    await this.gitHubAuthProvider.createSession([scopes]);
+    this.onTokenGenerated(scopes);
+    return token;
+  }
 
-	private async onTokenGenerated(token: string, scopes: string): Promise<void> {
-		const githubTokenSecretExists = await this.githubService.githubTokenSecretExists();
-		if (githubTokenSecretExists) {
-			this.githubService.persistToken(token);
+  async removeDeviceAuthToken(): Promise<void> {
+    return this.githubService.removeDeviceAuthToken();
+  }
 
-			const message = `A new session has been created for ${scopes} scopes. Please reload window to apply it.`
-			const reloadNow = vscode.l10n.t('Reload Now');
-			const action = await vscode.window.showInformationMessage(message, reloadNow);
-			if (action === reloadNow) {
-				vscode.commands.executeCommand('workbench.action.reloadWindow');
-			}
-		} else {
-			const message = 'A new token was generated successfully. The workspace restarting is required to store the token to the git-credentials secret.'
-			const restartWorkspace = vscode.l10n.t('Restart Workspace');
-			const action = await vscode.window.showInformationMessage(message, restartWorkspace);
-			
-			if (action === restartWorkspace) {
-				await this.githubService.persistToken(token);
-				vscode.commands.executeCommand('che-remote.command.restartWorkspace');
-			}
-		}
-	}
+  private async onTokenGenerated(scopes: string): Promise<void> {
+    const message = `A new session has been created for ${scopes} scopes. Please reload window to apply it.`
+    const reloadNow = vscode.l10n.t('Reload Now');
+    const action = await vscode.window.showInformationMessage(message, reloadNow);
+    if (action === reloadNow) {
+      vscode.commands.executeCommand('workbench.action.reloadWindow');
+    }
+  }
 }

@@ -15,25 +15,25 @@ import * as vscode from 'vscode';
 
 @injectable()
 export class Logger {
-	private outputChannel: vscode.LogOutputChannel;
+  private outputChannel: vscode.LogOutputChannel;
 
-	constructor() {
-		this.outputChannel = vscode.window.createOutputChannel('Eclipse Che API', { log: true });
-	}
+  constructor() {
+    this.outputChannel = vscode.window.createOutputChannel('Eclipse Che API', { log: true });
+  }
 
-	info(message: string): void {
-		this.outputChannel.info(message);
-	}
+  info(message: string): void {
+    this.outputChannel.info(message);
+  }
 
-	warn(message: string): void {
-		this.outputChannel.warn(message);
-	}
+  warn(message: string): void {
+    this.outputChannel.warn(message);
+  }
 
-	error(message: string): void {
-		this.outputChannel.error(message);
-	}
+  error(message: string): void {
+    this.outputChannel.error(message);
+  }
 
-	trace(message: string): void {
-		this.outputChannel.trace(message);
-	}
+  trace(message: string): void {
+    this.outputChannel.trace(message);
+  }
 }

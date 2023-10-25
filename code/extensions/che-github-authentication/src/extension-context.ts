@@ -15,9 +15,9 @@ import * as vscode from 'vscode';
 
 @injectable()
 export class ExtensionContext {
-	constructor(private readonly context: vscode.ExtensionContext) { }
+  constructor(private readonly context: vscode.ExtensionContext) { }
 
-	getContext(): vscode.ExtensionContext {
-		return this.context;
-	}
+  getContext(): vscode.ExtensionContext {
+    return this.context;
+  }
 }

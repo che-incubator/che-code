@@ -9,17 +9,17 @@
  ***********************************************************************/
 
 /* eslint-disable header/header */
-import * as k8s from '@kubernetes/client-node';
 import {
   devworkspaceGroup,
   devworkspaceLatestVersion,
   devworkspacePlural,
   V1alpha2DevWorkspace
 } from '@devfile/api';
+import * as k8s from '@kubernetes/client-node';
 
 import { ApiType } from '@kubernetes/client-node';
 import { injectable } from 'inversify';
-import { K8SService, K8SRawResponse } from '../api/k8s-service';
+import { K8SRawResponse, K8SService } from '../api/k8s-service';
 
 const request = require('request');
 
@@ -86,13 +86,13 @@ export class K8SServiceImpl implements K8SService {
   }
 
   async getSecret(labelSelector?: string): Promise<Array<k8s.V1Secret>> {
-    const coreV1API = this.getCoreApi();
     const namespace = this.getDevWorkspaceNamespace();
     if (!namespace) {
       throw new Error('Can not get secrets: DEVWORKSPACE_NAMESPACE env variable is not defined');
     }
 
     try {
+      const coreV1API = this.getCoreApi();
       const { body } = await coreV1API.listNamespacedSecret(
         namespace,
         undefined,
@@ -126,6 +126,21 @@ export class K8SServiceImpl implements K8SService {
 
     const coreV1API = this.getCoreApi();
     await coreV1API.createNamespacedSecret(namespace, secret);
+  }
+
+  async deleteNamespacedSecret(secret: k8s.V1Secret): Promise<void> {
+    const namespace = this.getDevWorkspaceNamespace();
+    if (!namespace) {
+      throw new Error('Can not delete a secret: DEVWORKSPACE_NAMESPACE env variable is not defined');
+    }
+
+    const secretName = secret.metadata?.name;
+    if (!secretName) {
+      throw new Error('Can not delete a secret: secret name is not defined');
+    }
+
+    const coreV1API = this.getCoreApi();
+    await coreV1API.deleteNamespacedSecret(secretName, namespace);
   }
 
   async getDevWorkspace(): Promise<V1alpha2DevWorkspace> {

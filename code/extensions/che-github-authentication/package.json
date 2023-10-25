@@ -34,6 +34,12 @@
         "title": "Device Authentication",
         "category": "GitHub",
         "enablement": "github-authentication.device-code-flow.enabled"
+      },
+      {
+        "command": "github-authentication.device-code-flow.remove-token",
+        "title": "Remove Device Authentication Token",
+        "category": "GitHub",
+        "enablement": "github-authentication.device-code-flow.enabled"
       }
     ]
   },
