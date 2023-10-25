@@ -109,7 +109,7 @@ export class GithubServiceImpl implements GithubService {
     const deviceAuthSecrets = await this.k8sService.getSecret(DEVICE_AUTHENTICATION_LABEL_SELECTOR);
     if (deviceAuthSecrets.length < 1) {
       this.logger.warn('Github Service: device-authentication secret not found');
-      return;
+      throw new Error('device-authentication secret not found');
     }
 
     for (const secret of deviceAuthSecrets) {

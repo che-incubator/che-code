@@ -64,7 +64,15 @@ export class DeviceAuthentication {
   }
 
   async removeDeviceAuthToken(): Promise<void> {
-    return this.githubService.removeDeviceAuthToken();
+    try {
+      await this.githubService.removeDeviceAuthToken();
+      const message = 'The token was deleted successfully. Some operations may require Github Sign Out => Sign In to use another token.'
+      vscode.window.showInformationMessage(message);
+    } catch (error) {
+      const message = `Can not remove Device Authentication token: ${error.message}`;
+      vscode.window.showErrorMessage(message);
+    }
+
   }
 
   private async onTokenGenerated(scopes: string): Promise<void> {
