@@ -103,8 +103,6 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async removeDeviceAuthToken(): Promise<void> {
-    this.token = undefined;
-
     this.logger.info(`Github Service: got request for removing a device-authentication secret`);
     const deviceAuthSecrets = await this.k8sService.getSecret(DEVICE_AUTHENTICATION_LABEL_SELECTOR);
     if (deviceAuthSecrets.length < 1) {
@@ -155,8 +153,10 @@ export class GithubServiceImpl implements GithubService {
 
   /* Extracts tokens from the .git-credentials/credentials file */
   private async getGitCredentialTokens(): Promise<Array<string>> {
+    this.logger.info(`Github Service: looking for the github token in the ${GIT_CREDENTIALS_PATH} file...`);
     const tokens: string[] = [];
     if (!fs.existsSync(GIT_CREDENTIALS_PATH)) {
+      this.logger.info(`Github Service: ${GIT_CREDENTIALS_PATH} file does not exist`);
       return tokens;
     }
 
@@ -166,6 +166,7 @@ export class GithubServiceImpl implements GithubService {
       const token = line.substring(line.lastIndexOf(':') + 1, line.indexOf('@'));
       tokens.push(token);
     }
+    this.logger.info(`Github Service: found ${tokens.length} tokens in the ${GIT_CREDENTIALS_PATH} file`);
     return tokens;
   }
 
