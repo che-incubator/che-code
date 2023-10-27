@@ -27,6 +27,20 @@
         "label": "GitHub",
         "id": "github"
       }
+    ],
+    "commands": [
+      {
+        "command": "github-authentication.device-code-flow.authentication",
+        "title": "Device Authentication",
+        "category": "GitHub",
+        "enablement": "github-authentication.device-code-flow.enabled"
+      },
+      {
+        "command": "github-authentication.device-code-flow.remove-token",
+        "title": "Remove Device Authentication Token",
+        "category": "GitHub",
+        "enablement": "github-authentication.device-code-flow.enabled"
+      }
     ]
   },
   "main": "./out/extension.js",
@@ -43,9 +57,9 @@
     "@kubernetes/client-node": "^0.19.0",
     "node-fetch": "2.6.7",
     "uuid": "8.1.0",
-    "@vscode/extension-telemetry": "0.4.10",
+    "@vscode/extension-telemetry": "0.7.5",
     "vscode-nls": "^5.0.0",
-    "vscode-tas-client": "^0.1.31"
+    "vscode-tas-client": "^0.1.47"
   },
   "devDependencies": {
     "@types/node": "18.x",

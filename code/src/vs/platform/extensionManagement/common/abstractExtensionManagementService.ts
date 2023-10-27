@@ -25,7 +25,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
-import { excludedExtensions } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 
 export type ExtensionVerificationStatus = boolean | string;
 export type InstallableExtension = { readonly manifest: IExtensionManifest; extension: IGalleryExtension | URI; options: InstallOptions & InstallVSIXOptions };
@@ -259,9 +258,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 					const installed = await this.getInstalled(undefined, installExtensionTaskOptions.profileLocation);
 					const options: InstallExtensionTaskOptions = { ...installExtensionTaskOptions, donotIncludePackAndDependencies: true, context: { ...installExtensionTaskOptions.context, [EXTENSION_INSTALL_DEP_PACK_CONTEXT]: true } };
 					for (const { gallery, manifest } of distinct(allDepsAndPackExtensionsToInstall, ({ gallery }) => gallery.identifier.id)) {
-						if (excludedExtensions.includes(gallery.name)) {
-							continue;
-						}
 						installExtensionHasDependents = installExtensionHasDependents || !!manifest.extensionDependencies?.some(id => areSameExtensions({ id }, installExtensionTask.identifier));
 						const key = getInstallExtensionTaskKey(gallery);
 						const existingInstallingExtension = this.installingExtensions.get(key);
