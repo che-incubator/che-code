@@ -77,7 +77,6 @@ commands:
         podman build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
       group:
         kind: run
-        isDefault: true
 
   - id: podman-assemble-che-code
     exec:
@@ -94,4 +93,3 @@ commands:
         podman build -f build/dockerfiles/assembly.libc.Dockerfile -t che-code .
       group:
         kind: run
-        isDefault: true

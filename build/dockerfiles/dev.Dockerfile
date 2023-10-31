@@ -15,10 +15,8 @@ RUN dnf -y install libsecret libX11-devel libxkbcommon \
     "https://rpmfind.net/linux/centos/8-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-1.el8.x86_64.rpm" \
     "https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm" \
     "https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/zsh-5.5.1-6.el8_1.2.x86_64.rpm" \
-    util-linux-user
-
-# cleanup dnf cache
-RUN dnf -y clean all --enablerepo='*'
+    util-linux-user && \
+    dnf -y clean all --enablerepo='*'
 
 # Create `/etc/containers/containers.conf` configuration file
 # to increase amount of opened files
