@@ -14,13 +14,14 @@ import * as fs from 'fs-extra';
 import * as jsYaml from 'js-yaml';
 import * as vscode from 'vscode';
 import * as WS from 'ws';
+import { WebSocket } from 'ws';
 import { getOutputChannel } from './extension';
 
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
 
 	/** WebSocket connection to the machine-exec server. */
-	private connection: WS;
+	private connection: WebSocket;
 
 	private initPromise: Promise<void>;
 
@@ -32,7 +33,8 @@ export class MachineExecClient implements vscode.Disposable {
 		let resolveInit: () => void;
 		let rejectInit: (reason: any) => void;
 
-		this.connection = new WS('ws://localhost:3333/connect')
+		this.connection = new WebSocket('ws://localhost:3333/connect');
+		this.connection
 			.on('message', async (data: WS.Data) => {
 				// By default, VS Code communicates over WebSocket in a binary format (exchanging data frames).
 				// For easier debugging, let's log all incoming messages in a text format to the output channel.
@@ -210,7 +212,7 @@ export class TerminalSession {
 	id: number;
 
 	/** The WebSocket connection to the actual terminal. */
-	private connection: WS;
+	private connection: WebSocket;
 
 	private onOutputEmitter = new vscode.EventEmitter<string>();
 	private onExitEmitter = new vscode.EventEmitter<number>();
@@ -224,7 +226,7 @@ export class TerminalSession {
 	constructor(private machineExecClient: MachineExecClient, id: number) {
 		this.id = id;
 
-		this.connection = new WS(`ws://localhost:3333/attach/${id}`);
+		this.connection = new WebSocket(`ws://localhost:3333/attach/${id}`);
 		this.connection.on('message', (data: WS.Data) => {
 			this.onOutputEmitter.fire(data.toString());
 		});

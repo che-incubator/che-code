@@ -23,7 +23,7 @@ export class CodeWorkspace {
    *
    *****************************************************************************************************************/
   async generate(): Promise<void> {
-    console.log("# Generaing Workspace file...");
+    console.log("# Generating Workspace file...");
 
     if (!env.PROJECTS_ROOT) {
       console.log("  > env.PROJECTS_ROOT is not set, skip this step");

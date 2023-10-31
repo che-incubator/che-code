@@ -10,6 +10,7 @@ const dirs = [
 	'',
 	'build',
 	'extensions',
+	'extensions/che-activity-tracker',
 	'extensions/che-api',
 	'extensions/che-commands',
 	'extensions/che-port',

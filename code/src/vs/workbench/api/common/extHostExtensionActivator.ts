@@ -11,7 +11,6 @@ import { ExtensionIdentifier, ExtensionIdentifierMap } from 'vs/platform/extensi
 import { ExtensionActivationReason, MissingExtensionDependency } from 'vs/workbench/services/extensions/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { Barrier } from 'vs/base/common/async';
-import { excludedExtensions } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 
 /**
  * Represents the source code (module) of an extension.
@@ -273,10 +272,6 @@ export class ExtensionsActivator implements IDisposable {
 		const deps: ActivationOperation[] = [];
 		const depIds = (typeof currentExtension.extensionDependencies === 'undefined' ? [] : currentExtension.extensionDependencies);
 		for (const depId of depIds) {
-			if (excludedExtensions.includes(depId.substring('vscode.'.length))) {
-				continue;
-			}
-
 			if (this._isResolvedExtension(depId)) {
 				// This dependency is already resolved
 				continue;

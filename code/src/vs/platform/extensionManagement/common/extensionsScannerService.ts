@@ -263,8 +263,12 @@ export abstract class AbstractExtensionsScannerService extends Disposable implem
 		const manifest: IScannedExtensionManifest = JSON.parse(content);
 
 		// unset if false
-		metaData.isMachineScoped = metaData.isMachineScoped || undefined;
-		metaData.isBuiltin = metaData.isBuiltin || undefined;
+		if (metaData.isMachineScoped === false) {
+			delete metaData.isMachineScoped;
+		}
+		if (metaData.isBuiltin === false) {
+			delete metaData.isBuiltin;
+		}
 		manifest.__metadata = { ...manifest.__metadata, ...metaData };
 
 		await this.fileService.writeFile(joinPath(extensionLocation, 'package.json'), VSBuffer.fromString(JSON.stringify(manifest, null, '\t')));
@@ -529,10 +533,6 @@ type NlsConfiguration = {
 	translations: Translations;
 };
 
-export const excludedExtensions = [
-	'github-authentication',
-];
-
 class ExtensionsScanner extends Disposable {
 
 	constructor(
@@ -563,9 +563,7 @@ class ExtensionsScanner extends Disposable {
 			return [];
 		}
 		const extensions = await Promise.all<IRelaxedScannedExtension | null>(
-			stat.children
-			.filter(c => !excludedExtensions.includes(c.name))
-			.map(async c => {
+			stat.children.map(async c => {
 				if (!c.isDirectory) {
 					return null;
 				}

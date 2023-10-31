@@ -32,7 +32,8 @@
   "dependencies": {
     "vscode-nls": "^5.0.0",
     "axios": "0.21.2",
-    "@eclipse-che/che-devworkspace-generator": "0.0.1-96cdbb4"
+    "@eclipse-che/che-devworkspace-generator": "0.0.1-96cdbb4",
+    "https": "^1.0.0"
   },
   "devDependencies": {
     "jest": "27.3.1",
@@ -49,8 +50,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "che-remote.command.stopWorkspace",
-        "title": "%stopWorkspaceCommand%",
+        "command": "che-remote.command.stopWorkspaceAndRedirectToDashboard",
+        "title": "%stopWorkspaceAndRedirectToDashboard%",
         "enablement": "che-remote.workspace-enabled"
       },
       {
@@ -81,8 +82,8 @@
     "menus": {
       "statusBar/remoteIndicator": [
         {
-          "command": "che-remote.command.stopWorkspace",
-          "group": "remote_40_che_navigation@10",
+          "command": "che-remote.command.stopWorkspaceAndRedirectToDashboard",
+          "group": "remote_40_che_navigation@11",
           "when": "che-remote.workspace-enabled"
         },
         {

@@ -17,7 +17,8 @@ import * as k8s from '@kubernetes/client-node';
 import { inject, injectable } from 'inversify';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { K8sHelper, createLabelsSelector, filterCheSecrets, getDevfileAnnotation } from './k8s-helper';
+import { K8sHelper, filterCheSecrets, getDevfileAnnotation } from './k8s-helper';
+import { createLabelsSelector } from './utils';
 
 const GIT_CREDENTIAL_LABEL = {
   'controller.devfile.io/git-credential': 'true'
@@ -38,7 +39,6 @@ const DEVWORKSPACE_OPERATOR_DOCS_REFERENCE = 'https://github.com/devfile/devwork
 
 @injectable()
 export class ErrorHandler {
-  
   @inject(K8sHelper)
   private k8sHelper!: K8sHelper;
 
@@ -110,7 +110,7 @@ export class ErrorHandler {
   private async isWorkspaceManagedByChe(): Promise<Boolean> {
     const devWorkspace = await this.k8sHelper.getDevWorkspace();
     const devfileAnnotation = getDevfileAnnotation(devWorkspace.metadata?.annotations);
-    return devfileAnnotation ? true : false; 
+    return devfileAnnotation ? true : false;
   }
 
   private async suggestOpenDocumentation(message: string, buttonLabel: string, docsReference: string): Promise<void> {
