@@ -18,16 +18,6 @@ RUN dnf -y install libsecret libX11-devel libxkbcommon \
     util-linux-user && \
     dnf -y clean all --enablerepo='*'
 
-# Create `/etc/containers/containers.conf` configuration file
-# to increase amount of opened files
-#
-# [containers]
-# default_ulimits = [
-#  "nofile=65535:65535",
-# ]
-
-RUN (echo '[containers]'; echo 'default_ulimits = ['; echo ' "nofile=65535:65535",'; echo ']') >> /etc/containers/containers.conf
-
 COPY --chmod=664 /build/conf/dev/.p10k.zsh /home/user/.p10k.zsh
 
 # zsh support
