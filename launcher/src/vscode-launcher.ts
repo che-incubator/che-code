@@ -79,16 +79,16 @@ export class VSCodeLauncher {
     }
 
     if (env.HOSTNAME) {
-      // The HOSTNAME env var is used to store the name of current POD.
+      // The HOSTNAME env var is used to store name of the current pod.
       // But sometime it gets overwritten or even initialized to an empty value by the VS Code itself.
-      // To get the POD name when needed, we have to copy its value to another env var.
+      // To get the pod name when needed, we have to copy its value to another env var.
       env.DEVWORKSPACE_POD_NAME = env.HOSTNAME;
       console.log(
         `  > Setting DEVWORKSPACE_POD_NAME environment variable to ${env.DEVWORKSPACE_POD_NAME}`
       );
     } else {
       console.log(
-        `  > HOSTNAME environment variable is not set. It can lead to issues when getting the information about the current POD.`
+        `  > HOSTNAME environment variable is not set. Getting the information about the current pod may not be possible.`
       );
     }
 
