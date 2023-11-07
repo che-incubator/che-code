@@ -22,21 +22,22 @@ let resourceMonitorPLugin: ResourceMonitor;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const inversifyBinding = new InversifyBinding();
   const container = await inversifyBinding.initBindings();
-  const namespace = await getNamespace();
+  
+  const workspaceService = await getWorkspaceService();
+  const namespace = await workspaceService.getNamespace();
+  const podName = await workspaceService.getPodName();
+  
   resourceMonitorPLugin = container.get(ResourceMonitor);
-  resourceMonitorPLugin.start(context, namespace);
+  resourceMonitorPLugin.start(context, namespace, podName);
 }
 
-
-
-export async function getNamespace(): Promise<string> {
+export async function getWorkspaceService(): Promise<any> {
   const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
   if (!extensionApi) {
     throw new Error("Extension 'eclipse-che.api' is not installed");
   }
-    await extensionApi.activate();
-    const cheApi: any = extensionApi?.exports;
-    const workspaceService = cheApi.getWorkspaceService();
-    return workspaceService.getNamespace();
-  }
 
+  await extensionApi.activate();
+  const cheApi: any = extensionApi?.exports;
+  return cheApi.getWorkspaceService();
+}

@@ -14,6 +14,7 @@ export const WorkspaceService = Symbol('WorkspaceService');
 export interface WorkspaceService {
     getNamespace(): Promise<string>;
     getWorkspaceId(): Promise<string>;
+    getPodName(): Promise<string>;
     updateWorkspaceActivity(): Promise<void>;
     stop(): Promise<void>;
 }

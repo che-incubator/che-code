@@ -18,7 +18,6 @@ import { convertToBytes, convertToMilliCPU } from './units-converter';
 import { inject, injectable } from 'inversify';
 
 import { K8sHelper } from './k8s-helper';
-import { V1Pod } from '@kubernetes/client-node';
 
 @injectable()
 export class ResourceMonitor {
@@ -30,80 +29,99 @@ export class ResourceMonitor {
   private WARNING_COLOR = '#FFCC00';
   private DEFAULT_COLOR = '#FFFFFF';
   private DEFAULT_TOOLTIP = 'Workspace resources';
-  private MONITOR_BANNED = '$(ban) Resources';
-  private MONITOR_WAIT_METRICS = 'Waiting metrics...';
+  private MONITOR_BANNED = '$(error) Resources';
+  private MONITOR_WAIT_METRICS = '$(pulse) Waiting metrics...';
+
+  private MISSING_POD_NAME = "Failure to get workspace metrics. Workspace pod name is not configured.";
+  private MISSING_POD_NAME_WARNING = "Failure to get workspace metrics. Developer workspace pod name should be configured by setting DEVWORKSPACE_POD_NAME environment variable.";
 
   private warningMessage = '';
 
   private statusBarItem: vscode.StatusBarItem;
   private containers: Container[] = [];
+  
   private namespace!: string;
+  private podName!: string;
 
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
     this.statusBarItem.color = this.DEFAULT_COLOR;
-    this.statusBarItem.show();
-    this.statusBarItem.command = SHOW_RESOURCES_INFORMATION_COMMAND;
-    this.statusBarItem.tooltip = 'Resources Monitor';
   }
 
-  async start(context: vscode.ExtensionContext, namespace: string): Promise<void> {
+  async start(context: vscode.ExtensionContext, namespace: string, podName: string): Promise<void> {
     context.subscriptions.push(
       vscode.commands.registerCommand(SHOW_RESOURCES_INFORMATION_COMMAND, () => this.showDetailedInfo()),
       vscode.commands.registerCommand(SHOW_WARNING_MESSAGE_COMMAND, () => this.showWarningMessage())
     );
 
     this.namespace = namespace;
+    this.podName = podName;
+    
+    if (!podName) {
+      this.displayWithError(this.MISSING_POD_NAME, this.MISSING_POD_NAME_WARNING);
+      return;
+    }
+
     this.show();
   }
 
   async show(): Promise<void> {
-    await this.getContainersInfo();
+    await this.updateContainers();
     await this.requestMetricsServer();
+
+    this.statusBarItem.text = this.MONITOR_WAIT_METRICS;
+    this.statusBarItem.tooltip = 'Loading...';
+    this.statusBarItem.show();
+
+    setInterval(() => this.getMetrics(), 5000);
   }
 
-  async getWorkspacePod(): Promise<V1Pod | undefined> {
+  async displayWithError(tooltip: string, warning: string) {
+    this.statusBarItem.text = this.MONITOR_BANNED;
+    this.statusBarItem.tooltip = tooltip;
+    this.statusBarItem.command = SHOW_WARNING_MESSAGE_COMMAND;
+    this.statusBarItem.show();
+    
+    this.warningMessage = warning;
+  }
+
+  async updateContainers(): Promise<void> {
     try {
       const { body } = await this.k8sHelper
         .getCoreApi()
         .listNamespacedPod(this.namespace, undefined, undefined, undefined, undefined, undefined);
       for (const item of body.items) {
-        if (item.metadata?.name === process.env.HOSTNAME) {
-          return item;
+        if (item.metadata?.name === this.podName) {
+          item.spec?.containers.forEach(element => {
+            this.containers.push({
+              name: element.name,
+              cpuLimit: convertToMilliCPU(element.resources?.limits?.cpu),
+              memoryLimit: convertToBytes(element.resources?.limits?.memory),
+            });
+          });
+
+          return;
         }
       }
+
+      throw new Error(`Pod ${this.podName} is not found.`);
     } catch (e) {
-      throw new Error('Cannot get workspace pod. ' + e);
+      const msg = 'Failure to get workspace pod. ' + e.message;
+      this.displayWithError('Failure to get workspace pod', msg);
+      throw new Error(msg);
     }
-    return undefined;
-  }
-
-  async getContainersInfo(): Promise<Container[]> {
-    const wsPod = await this.getWorkspacePod();
-
-    wsPod?.spec?.containers.forEach(element => {
-      this.containers.push({
-        name: element.name,
-        cpuLimit: convertToMilliCPU(element.resources?.limits?.cpu),
-        memoryLimit: convertToBytes(element.resources?.limits?.memory),
-      });
-    });
-    return this.containers;
   }
 
   async requestMetricsServer(): Promise<void> {
     const result = await this.k8sHelper.sendRawQuery(this.METRICS_SERVER_ENDPOINT, { url: this.METRICS_SERVER_ENDPOINT });
     if (result.statusCode !== 200) {
-      this.statusBarItem.text = this.MONITOR_BANNED;
-      this.warningMessage = "Resource monitor won't be displayed. Metrics Server is not enabled on the cluster.";
-      this.statusBarItem.command = SHOW_WARNING_MESSAGE_COMMAND;
+      this.displayWithError('Metrics Server is not enabled', 'Resource monitor won\'t be displayed. Metrics Server is not enabled on the cluster.');
       throw new Error(`Cannot connect to Metrics Server. Status code: ${result.statusCode}. Error: ${result.data}`);
     }
-    setInterval(() => this.getMetrics(), 5000);
   }
 
   async getMetrics(): Promise<Container[]> {
-    const requestURL = `${this.METRICS_REQUEST_URL}${this.namespace}/pods/${process.env.HOSTNAME}`;
+    const requestURL = `${this.METRICS_REQUEST_URL}${this.namespace}/pods/${this.podName}`;
     const opts = { url: this.METRICS_SERVER_ENDPOINT };
     const response = await this.k8sHelper.sendRawQuery(requestURL, opts);
 
@@ -118,11 +136,13 @@ export class ResourceMonitor {
       }
       return this.containers;
     }
+
     this.statusBarItem.command = SHOW_RESOURCES_INFORMATION_COMMAND;
     const metrics: Metrics = JSON.parse(response.data);
     metrics.containers.forEach(element => {
       this.setUsedResources(element);
     });
+
     this.updateStatusBar();
     return this.containers;
   }
