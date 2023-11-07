@@ -533,10 +533,6 @@ type NlsConfiguration = {
 	translations: Translations;
 };
 
-export const excludedExtensions = [
-	'github-authentication',
-];
-
 class ExtensionsScanner extends Disposable {
 
 	constructor(
@@ -567,9 +563,7 @@ class ExtensionsScanner extends Disposable {
 			return [];
 		}
 		const extensions = await Promise.all<IRelaxedScannedExtension | null>(
-			stat.children
-			.filter(c => !excludedExtensions.includes(c.name))
-			.map(async c => {
+			stat.children.map(async c => {
 				if (!c.isDirectory) {
 					return null;
 				}

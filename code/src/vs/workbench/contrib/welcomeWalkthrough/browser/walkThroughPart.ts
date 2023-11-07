@@ -234,6 +234,8 @@ export class WalkThroughPart extends EditorPane {
 			(this.lastFocus || this.content).focus();
 		}
 		this.editorFocus.set(true);
+
+		super.focus();
 	}
 
 	arrowUp() {

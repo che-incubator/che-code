@@ -10,12 +10,14 @@
 
 /* eslint-disable header/header */
 
-import * as vscode from 'vscode';
-import { v4 } from 'uuid';
-import { AuthenticationSession } from 'vscode';
 import { Container } from 'inversify';
-import { K8sHelper } from './k8s-helper';
+import * as vscode from 'vscode';
+import { DeviceAuthentication } from './device-authentication';
 import { ErrorHandler } from './error-handler';
+import { ExtensionContext } from './extension-context';
+import { GitHubAuthProvider } from './github';
+import { K8sHelper } from './k8s-helper';
+import { Logger } from './logger';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const extensionApi = vscode.extensions.getExtension('eclipse-che.api');
@@ -26,80 +28,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const cheApi: any = extensionApi?.exports;
     const container = new Container();
 
+    const extensionContext = new ExtensionContext(context);
+    container.bind(ExtensionContext).toConstantValue(extensionContext);
+
     container.bind(Symbol.for('DevfileServiceInstance')).toConstantValue(cheApi.getDevfileService());
     container.bind(K8sHelper).toSelf().inSingletonScope();
-    container.bind(ErrorHandler).toSelf().inSingletonScope();
 
-    const errorHandler = container.get(ErrorHandler);
     const githubService = cheApi.getGithubService();
+    container.bind(Symbol.for('GithubServiceInstance')).toConstantValue(githubService);
 
-    const sessions: vscode.AuthenticationSession[] = context.workspaceState.get('sessions') || [];
-    const onDidChangeSessions = new vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
-    vscode.authentication.registerAuthenticationProvider('github', 'GitHub', {
-        onDidChangeSessions: onDidChangeSessions.event,
-        getSessions: async sessionScopes => {
-            const filteredSessions: AuthenticationSession[] = [];
-            for (const session of sessions) {
-                try {
-                    const tokenScopes: string[] = await githubService.getTokenScopes(session.accessToken);
-                    if (sessionScopes && sessionScopes.every(sessionScope => tokenScopes.some(
-                        tokenScope =>
-                            sessionScope === tokenScope
-                            // compare partial scope with a full group scope e.g. "read:user" with "user".
-                            || sessionScope.includes(tokenScope + ':')
-                            || sessionScope.includes(':' + tokenScope)))) {
-                        filteredSessions.push(session);
-                    }
-                } catch (e) {
-                    console.warn(e.message);
-                }
-            }
-            return filteredSessions;
-        },
-        createSession: async (scopes: string[]) => {
-            let token = '';
-            try {
-                token = await githubService.getToken();
-            } catch (error) {
-                errorHandler.onUnauthorizedError();
-                throw new Error(error.message);
-            }
+    container.bind(ErrorHandler).toSelf().inSingletonScope();
+    container.bind(Logger).toSelf().inSingletonScope();
 
-            let githubUser;
-            try {
-                githubUser = await githubService.getUser();
-            } catch (error) {
-                if (error && error.response && error.response.status === 401) {
-                    errorHandler.onUnauthorizedError();
-                }
-                throw new Error(error.message);
-            }
+    container.bind(GitHubAuthProvider).toSelf().inSingletonScope();
+    const authenticationProvider = container.get(GitHubAuthProvider);
+    vscode.authentication.registerAuthenticationProvider('github', 'GitHub', authenticationProvider);
 
-            const session = {
-                id: v4(),
-                accessToken: token,
-                account: { label: githubUser.login, id: githubUser.id.toString() },
-                scopes,
-            };
-            const sessionIndex = sessions.findIndex(s => s.id === session.id);
-            if (sessionIndex > -1) {
-                sessions.splice(sessionIndex, 1, session);
-            } else {
-                sessions.push(session);
-            }
-            context.workspaceState.update('sessions', sessions);
-            onDidChangeSessions.fire({ added: [session], removed: [], changed: [] });
-            return session;
-        },
-        removeSession: async (id: string) => {
-            const session = sessions.find(s => s.id === id);
-            if (session) {
-                sessions.splice(sessions.findIndex(s => s.id === id), 1);
-                context.workspaceState.update('sessions', sessions);
-                onDidChangeSessions.fire({ added: [], removed: [session], changed: [] });
-            }
-        },
-    });
+    container.bind(DeviceAuthentication).toSelf().inSingletonScope();
+    container.get(DeviceAuthentication);
 }
 
 export function deactivate(): void {

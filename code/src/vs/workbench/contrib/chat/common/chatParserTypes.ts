@@ -72,6 +72,10 @@ export class ChatRequestAgentPart implements IParsedChatRequestPart {
 	get promptText(): string {
 		return '';
 	}
+
+	get promptText(): string {
+		return '';
+	}
 }
 
 /**
@@ -84,6 +88,10 @@ export class ChatRequestAgentSubcommandPart implements IParsedChatRequestPart {
 
 	get text(): string {
 		return `${chatSubcommandLeader}${this.command.name}`;
+	}
+
+	get promptText(): string {
+		return '';
 	}
 
 	get promptText(): string {
@@ -122,6 +130,31 @@ export class ChatRequestDynamicReferencePart implements IParsedChatRequestPart {
 
 	get text(): string {
 		return `${chatVariableLeader}${this.referenceText}`;
+	}
+
+	get promptText(): string {
+		return `[${this.text}](values:${this.referenceText})`;
+	}
+
+	get promptText(): string {
+		return `/${this.slashCommand.command}`;
+	}
+}
+
+/**
+ * An invocation of a dynamic reference like '$file:'
+ */
+export class ChatRequestDynamicReferencePart implements IParsedChatRequestPart {
+	static readonly Kind = 'dynamic';
+	readonly kind = ChatRequestDynamicReferencePart.Kind;
+	constructor(readonly range: OffsetRange, readonly editorRange: IRange, readonly name: string, readonly arg: string, readonly data: URI) { }
+
+	get referenceText(): string {
+		return `${this.name}:${this.arg}`;
+	}
+
+	get text(): string {
+		return `$${this.referenceText}`;
 	}
 
 	get promptText(): string {

@@ -84,7 +84,7 @@ export class K8sHelper {
     const coreV1API = this.getCoreApi();
     const namespace = this.getDevWorkspaceNamespace();
     if (!namespace) {
-      throw new Error('Can not get git credential secrets: DEVWORKSPACE_NAMESPACE env variable is not defined');
+      throw new Error('Can not get secrets: DEVWORKSPACE_NAMESPACE env variable is not defined');
     }
 
     try {
@@ -103,7 +103,7 @@ export class K8sHelper {
     }
   }
 
-  protected getDevWorkspaceName(): string {
+  getDevWorkspaceName(): string {
     if (this.devWorkspaceName) {
       return this.devWorkspaceName;
     }
@@ -118,7 +118,7 @@ export class K8sHelper {
     throw new Error('Can not get Dev Workspace name');
   }
 
-  protected getDevWorkspaceNamespace(): string {
+  getDevWorkspaceNamespace(): string {
     if (this.devWorkspaceNamespace) {
       return this.devWorkspaceNamespace;
     }
@@ -152,10 +152,4 @@ export function getDevfileAnnotation(annotations?: { [key: string]: string }): s
     console.log('NO annotations');
     return undefined;
   }
-}
-
-export function createLabelsSelector(labels: { [key: string]: string; }): string {
-  return Object.entries(labels)
-    .map(([key, value]) => `${key}=${value}`)
-    .join(',');
 }

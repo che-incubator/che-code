@@ -280,6 +280,8 @@ export class SearchEditor extends AbstractTextCodeEditor<SearchEditorViewState> 
 		} else {
 			this.queryEditorWidget.focus();
 		}
+
+		super.focus();
 	}
 
 	focusSearchInput() {

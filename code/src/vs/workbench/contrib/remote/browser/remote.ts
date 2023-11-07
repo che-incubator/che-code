@@ -55,7 +55,6 @@ import { IRequestService } from 'vs/platform/request/common/request';
 import { CheDisconnectionHandler } from 'vs/workbench/contrib/remote/browser/che/remote';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
-import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { IWalkthroughsService } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedService';
 import { Schemas } from 'vs/base/common/network';
 
