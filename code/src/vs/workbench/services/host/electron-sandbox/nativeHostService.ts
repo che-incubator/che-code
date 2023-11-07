@@ -11,7 +11,7 @@ import { ILabelService, Verbosity } from 'vs/platform/label/common/label';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { IWindowOpenable, IOpenWindowOptions, isFolderToOpen, isWorkspaceToOpen, IOpenEmptyWindowOptions } from 'vs/platform/window/common/window';
 import { Disposable } from 'vs/base/common/lifecycle';
-import { NativeHostService } from 'vs/platform/native/electron-sandbox/nativeHostService';
+import { NativeHostService } from 'vs/platform/native/common/nativeHostService';
 import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/environment/electron-sandbox/environmentService';
 import { IMainProcessService } from 'vs/platform/ipc/common/mainProcessService';
 import { IAuxiliaryWindowService, isAuxiliaryWindow } from 'vs/workbench/services/auxiliaryWindow/browser/auxiliaryWindowService';
@@ -46,8 +46,8 @@ class WorkbenchHostService extends Disposable implements IHostService {
 
 	readonly onDidChangeFocus = Event.latch(
 		Event.any(
-			Event.map(Event.filter(this.nativeHostService.onDidFocusMainOrAuxiliaryWindow, id => (id === this.nativeHostService.windowId || !!this.auxiliaryWindowService.getWindowById(id)), this._store), () => this.hasFocus, this._store),
-			Event.map(Event.filter(this.nativeHostService.onDidBlurMainOrAuxiliaryWindow, id => (id === this.nativeHostService.windowId) || !!this.auxiliaryWindowService.getWindowById(id), this._store), () => this.hasFocus, this._store)
+			Event.map(Event.filter(this.nativeHostService.onDidFocusMainOrAuxiliaryWindow, id => (id === this.nativeHostService.windowId || !!this.auxiliaryWindowService.hasWindow(id)), this._store), () => this.hasFocus, this._store),
+			Event.map(Event.filter(this.nativeHostService.onDidBlurMainOrAuxiliaryWindow, id => (id === this.nativeHostService.windowId) || !!this.auxiliaryWindowService.hasWindow(id), this._store), () => this.hasFocus, this._store)
 		), undefined, this._store
 	);
 
@@ -75,23 +75,21 @@ class WorkbenchHostService extends Disposable implements IHostService {
 		const emitter = this._register(new Emitter<number>());
 
 		// Emit via native focus tracking
-		this._register(Event.filter(this.nativeHostService.onDidFocusMainOrAuxiliaryWindow, id => id === this.nativeHostService.windowId || !!this.auxiliaryWindowService.getWindowById(id), this._store)(id => emitter.fire(id)));
+		this._register(Event.filter(this.nativeHostService.onDidFocusMainOrAuxiliaryWindow, id => id === this.nativeHostService.windowId || !!this.auxiliaryWindowService.hasWindow(id), this._store)(id => emitter.fire(id)));
 
 		this._register(onDidRegisterWindow(({ window, disposables }) => {
 
 			// Emit via interval: immediately when opening an auxiliary window,
 			// it is possible that document focus has not yet changed, so we
 			// poll for a while to ensure we catch the event.
-			if (isAuxiliaryWindow(window)) {
-				disposables.add(disposableInterval(() => {
-					const hasFocus = window.document.hasFocus();
-					if (hasFocus) {
-						emitter.fire(window.vscodeWindowId);
-					}
+			disposables.add(disposableInterval(() => {
+				const hasFocus = window.document.hasFocus();
+				if (hasFocus) {
+					emitter.fire(window.vscodeWindowId);
+				}
 
-					return hasFocus;
-				}, 100, 20));
-			}
+				return hasFocus;
+			}, 100, 20));
 		}));
 
 		return Event.map(Event.latch(emitter.event, undefined, this._store), () => undefined, this._store);
@@ -143,8 +141,8 @@ class WorkbenchHostService extends Disposable implements IHostService {
 		return this.nativeHostService.openWindow(options);
 	}
 
-	toggleFullScreen(): Promise<void> {
-		return this.nativeHostService.toggleFullScreen();
+	toggleFullScreen(targetWindow: Window): Promise<void> {
+		return this.nativeHostService.toggleFullScreen({ targetWindowId: isAuxiliaryWindow(targetWindow) ? targetWindow.vscodeWindowId : undefined });
 	}
 
 	async moveTop(targetWindow: Window): Promise<void> {
