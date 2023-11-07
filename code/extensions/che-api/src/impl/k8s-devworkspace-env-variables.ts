@@ -34,7 +34,7 @@ export class K8sDevWorkspaceEnvVariables {
   private readonly workspaceNamespace!: string;
 
   /**
-   * workspacePodName - workspace POD name taken from environment variable, changes every time the workspace is started
+   * workspacePodName - workspace pod name taken from environment variable, changes every time the workspace is started
    */
   private readonly workspacePodName!: string;
 
