@@ -30,7 +30,7 @@ export interface IHoverService {
 	 * });
 	 * ```
 	 */
-	showHover(options: Readonly<IHoverOptions>, focus?: boolean): IHoverWidget | undefined;
+	showHover(options: IHoverOptions, focus?: boolean): IHoverWidget | undefined;
 
 	/**
 	 * Hides the hover if it was visible. This call will be ignored if the the hover is currently
@@ -156,6 +156,11 @@ export interface IHoverOptions {
 	 * element's container hiding on `focusout`.
 	 */
 	container?: HTMLElement;
+
+	/**
+	 * Whether to make the hover sticky, this means it will not be hidden when the mouse leaves the hover.
+	 */
+	sticky?: boolean;
 }
 
 export interface IHoverAction {
