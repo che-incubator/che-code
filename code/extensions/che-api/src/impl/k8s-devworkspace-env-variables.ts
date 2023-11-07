@@ -77,9 +77,6 @@ export class K8sDevWorkspaceEnvVariables {
       this.workspaceName = process.env.DEVWORKSPACE_NAME;
     }
 
-    // temporary patch
-    process.env.DEVWORKSPACE_POD_NAME = process.env.HOSTNAME;
-
     if (process.env.DEVWORKSPACE_POD_NAME === undefined) {
       console.error('Environment variable DEVWORKSPACE_POD_NAME is not set');
     } else {
