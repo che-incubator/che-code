@@ -1,4 +1,4 @@
-# che-code
+# test che-code
 
 Deploy `Code-OSS` (https://github.com/microsoft/vscode) on a Kubernetes cluster and connect with your Browser.
 
