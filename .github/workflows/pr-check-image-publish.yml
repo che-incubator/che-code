@@ -25,6 +25,7 @@ jobs:
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: pull-request-number
+
       - name: Grab pull request number
         run: |
           pr_number=$(cat "PR_NUMBER")
@@ -33,21 +34,25 @@ jobs:
             exit 1
           fi
           echo "PR_NUMBER=$pr_number" >> $GITHUB_ENV
+
       - name: PR sha
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           name: pull-request-sha
+
       - name: Grab pull request sha1
         run: |
           pr_sha=$(cat "PR_SHA")
           echo "PR_SHA=$pr_sha" >> $GITHUB_ENV
+
       - name: Login to Quay.io
         uses: docker/login-action@v2
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
           password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+
       - name: Increase Swap Space # implemented for the Linux system only
         if: runner.os == 'Linux'
         shell: bash
@@ -68,36 +73,59 @@ jobs:
 
           echo "Updated swap area:"
           sudo swapon --show 
-      - name: Download assembly image
+
+      - name: Download che-code image
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
-          name: action_image_artifact_assembly-pr
-          path: assembly-image/
-      - name: Load docker image
+          name: action_image_artifact_che-code-image
+          path: assembly/
+
+      - name: Load che-code image to Docker
         run: |
-          ls -la assembly-image/
-          docker load -i assembly-image/assembly-pr
+          ls -la assembly
+          docker load -i assembly/che-code-image
+
+      - name: Display docker images
+        run: |
+          docker images
+
       - name: Docker Push
         run: |
           export IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code:pr-${{env.PR_NUMBER}}-amd64
-          docker tag assembly-pr ${IMAGE_NAME}
+          docker tag che-code-image ${IMAGE_NAME}
           docker push ${IMAGE_NAME}
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-      - name: Download dev image
+
+      - name: Cleanup images
+        run: |
+          ls -la assembly
+          rm -rf assembly
+          docker system prune -af
+
+      - name: Download che-dev image
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
-          name: dev-image
-      - name: Load dev Docker image
+          name: action_image_artifact_che-dev-image
+          path: dev/
+
+      - name: Load che-code-dev image to Docker
         run: |
-          docker load -i dev-pr.tgz
+          ls -la dev
+          docker load -i dev/che-dev-image
+
+      - name: Display docker images
+        run: |
+          docker images
+
       - name: Docker Push
         run: |
           export DEV_IMAGE_NAME=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env.PR_NUMBER}}-dev-amd64
-          docker tag dev-pr ${DEV_IMAGE_NAME}
+          docker tag che-dev-image ${DEV_IMAGE_NAME}
           docker push ${DEV_IMAGE_NAME}
           echo "DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
+
       - name: 'Comment PR'
         uses: actions/github-script@v6
         with:
