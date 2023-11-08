@@ -16,36 +16,129 @@ name: Pull Request Check
 on: [pull_request]
 
 jobs:
-  build:
-    name: build
+  # build:
+  #   name: build
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       dist: [ 'musl', 'libc' ]
+  #       arch: ['amd64']
+  #   steps:
+
+  #     - name: Checkout che-code source code
+  #       uses: actions/checkout@v3
+
+  #     - name: Compile che-code
+  #       run: |
+  #         docker buildx build \
+  #           --platform linux/${{matrix.arch}} \
+  #           --progress=plain \
+  #           -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
+  #           -t linux-${{matrix.dist}}-${{matrix.arch}} .
+
+  #     - name: Upload image
+  #       uses: ishworkh/docker-image-artifact-upload@v1
+  #       with:
+  #         image: "linux-${{matrix.dist}}-${{matrix.arch}}"
+
+  # assemble:
+  #   name: assemble
+  #   runs-on: ubuntu-22.04
+  #   needs: build
+  #   steps:
+
+  #     - name: PR number
+  #       uses: dawidd6/action-download-artifact@v2
+  #       with:
+  #         workflow: ${{ github.event.workflow_run.workflow_id }}
+  #         name: pull-request-number
+  #     - name: Grab pull request number
+  #       run: |
+  #         pr_number=$(cat "PR_NUMBER")
+  #         if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+  #           echo "pr number invalid"
+  #           exit 1
+  #         fi
+  #         echo "PR_NUMBER=$pr_number" >> $GITHUB_ENV
+  #     - name: PR sha
+  #       uses: dawidd6/action-download-artifact@v2
+  #       with:
+  #         workflow: ${{ github.event.workflow_run.workflow_id }}
+  #         name: pull-request-sha
+  #     - name: Grab pull request sha1
+  #       run: |
+  #         pr_sha=$(cat "PR_SHA")
+  #         echo "PR_SHA=$pr_sha" >> $GITHUB_ENV
+  #     - name: Login to Quay.io
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: quay.io
+  #         username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
+  #         password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+
+  #     - name: Checkout che-code source code
+  #       uses: actions/checkout@v3
+
+  #     - name: Cleanup docker images
+  #       run: |
+  #         docker system prune -af
+
+  #     - name: Download linux-libc-amd64 image
+  #       uses: ishworkh/docker-image-artifact-download@v1
+  #       with:
+  #         image: "linux-libc-amd64"
+
+  #     - name: Download linux-musl-amd64 image
+  #       uses: ishworkh/docker-image-artifact-download@v1
+  #       with:
+  #         image: "linux-musl-amd64"
+
+  #     # - name: Login to Quay.io
+  #     #   uses: docker/login-action@v2
+  #     #   with:
+  #     #     registry: quay.io
+  #     #     username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
+  #     #     password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+
+  #     - name: Display docker images
+  #       run: |
+  #         docker images
+
+  #     - name: Assemble che-code
+  #       run: |
+  #         PR_NUMBER="${{ github.event.number }}"
+  #         echo "Pull request $PR_NUMBER"
+
+  #         IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code:pr-$PR_NUMBER-amd64"
+  #         echo "_IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
+
+  #         docker buildx build \
+  #           --platform linux/amd64 \
+  #           --progress=plain \
+  #           --push \
+  #           -f build/dockerfiles/assembly.Dockerfile \
+  #           -t ${IMAGE_NAME} .
+
+  #     - name: Display docker images (final)
+  #       run: |
+  #         docker images
+
+  #     - name: 'Comment PR'
+  #       uses: actions/github-script@v6
+  #       with:
+  #        script: |
+  #          const { repo: { owner, repo } } = context;
+  #          await github.rest.issues.createComment({
+  #             issue_number: context.issue.number,
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             body: `Pull Request Che-Code image published:\n👉 [${process.env._IMAGE_NAME}](https://${process.env._IMAGE_NAME})`
+  #           })
+
+  dev:
+    name: dev
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        dist: [ 'musl', 'libc' ]
-        arch: ['amd64']
-    steps:
-
-      - name: Checkout che-code source code
-        uses: actions/checkout@v3
-
-      - name: Compile che-code
-        run: |
-          docker buildx build \
-            --platform linux/${{matrix.arch}} \
-            --progress=plain \
-            -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
-            -t linux-${{matrix.dist}}-${{matrix.arch}} .
-
-      - name: Upload image
-        uses: ishworkh/docker-image-artifact-upload@v1
-        with:
-          image: "linux-${{matrix.dist}}-${{matrix.arch}}"
-
-  assemble:
-    name: assemble
-    runs-on: ubuntu-22.04
-    needs: build
     steps:
 
       - name: PR number
@@ -78,21 +171,7 @@ jobs:
           password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
 
       - name: Checkout che-code source code
-        uses: actions/checkout@v3
-
-      - name: Cleanup docker images
-        run: |
-          docker system prune -af
-
-      - name: Download linux-libc-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: "linux-libc-amd64"
-
-      - name: Download linux-musl-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: "linux-musl-amd64"
+        uses: actions/checkout@v2
 
       # - name: Login to Quay.io
       #   uses: docker/login-action@v2
@@ -100,56 +179,6 @@ jobs:
       #     registry: quay.io
       #     username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
       #     password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
-
-      - name: Display docker images
-        run: |
-          docker images
-
-      - name: Assemble che-code
-        run: |
-          PR_NUMBER="${{ github.event.number }}"
-          echo "Pull request $PR_NUMBER"
-
-          IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code:pr-$PR_NUMBER-amd64"
-          echo "_IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-
-          docker buildx build \
-            --platform linux/amd64 \
-            --progress=plain \
-            --push \
-            -f build/dockerfiles/assembly.Dockerfile \
-            -t ${IMAGE_NAME} .
-
-      - name: Display docker images (final)
-        run: |
-          docker images
-
-      - name: 'Comment PR'
-        uses: actions/github-script@v6
-        with:
-         script: |
-           const { repo: { owner, repo } } = context;
-           await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `Pull Request Che-Code image published:\n👉 [${process.env._IMAGE_NAME}](https://${process.env._IMAGE_NAME})`
-            })
-
-  dev:
-    name: dev
-    runs-on: ubuntu-22.04
-    steps:
-
-      - name: Checkout che-code source code
-        uses: actions/checkout@v2
-
-      - name: Login to Quay.io
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
-          password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
 
       - name: Build Che-Code Docker image
         run: |
