@@ -107,7 +107,11 @@ jobs:
         run: |
           docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t che-dev-image .
 
-      - name: Upload che-dev image
-        uses: ishworkh/docker-image-artifact-upload@v1
+      - name: Save che-dev image
+        run: |
+          docker save che-dev-image | gzip > che-dev-image.tgz
+
+      - uses: actions/upload-artifact@v3
         with:
-          image: "che-dev-image"
+          name: che-dev-image
+          path: che-dev-image.tgz
