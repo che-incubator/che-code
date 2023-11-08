@@ -92,8 +92,6 @@ export abstract class AbstractTextCodeEditor<T extends IEditorViewState> extends
 		super.focus();
 
 		this.editorControl?.focus();
-
-		super.focus();
 	}
 
 	override hasFocus(): boolean {

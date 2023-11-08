@@ -8,7 +8,6 @@ import { alert } from 'vs/base/browser/ui/aria/aria';
 import { mainWindow } from 'vs/base/browser/window';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
-import { localize } from 'vs/nls';
 import { AccessibilitySupport, CONTEXT_ACCESSIBILITY_MODE_ENABLED, IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -116,10 +115,5 @@ export class AccessibilityService extends Disposable implements IAccessibilitySe
 
 	alert(message: string): void {
 		alert(message);
-	}
-	alertCleared(): void {
-		if (this.isScreenReaderOptimized()) {
-			alert(localize('cleared', "Cleared"));
-		}
 	}
 }

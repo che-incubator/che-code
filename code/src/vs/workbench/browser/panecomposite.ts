@@ -151,8 +151,6 @@ export abstract class PaneComposite extends Composite implements IPaneComposite 
 	override focus(): void {
 		super.focus();
 		this.viewPaneContainer?.focus();
-
-		super.focus();
 	}
 
 	protected abstract createViewPaneContainer(parent: HTMLElement): ViewPaneContainer;

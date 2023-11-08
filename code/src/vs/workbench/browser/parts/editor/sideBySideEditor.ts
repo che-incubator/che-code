@@ -421,8 +421,6 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 		super.focus();
 
 		this.getLastFocusedEditorPane()?.focus();
-
-		super.focus();
 	}
 
 	private getLastFocusedEditorPane(): EditorPane | undefined {

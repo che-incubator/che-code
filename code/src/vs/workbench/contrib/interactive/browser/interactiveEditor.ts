@@ -677,8 +677,6 @@ export class InteractiveEditor extends EditorPane {
 
 		this._notebookWidget.value?.onShow();
 		this._codeEditorWidget.focus();
-
-		super.focus();
 	}
 
 	focusHistory() {
