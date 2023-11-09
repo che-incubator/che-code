@@ -39,6 +39,7 @@ jobs:
         uses: ishworkh/docker-image-artifact-upload@v1
         with:
           image: "linux-${{matrix.dist}}-${{matrix.arch}}"
+
   assemble:
     name: assemble
     needs: build
@@ -46,47 +47,71 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
       - name: Download linux-libc-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
           image: "linux-libc-amd64"
+
       - name: Download linux-musl image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
           image: "linux-musl-amd64"
+
       - name: Display docker images
         run: |
           docker images
+
       - name: Docker Build
         run: |
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --load -t assembly-pr .
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/assembly.Dockerfile --load -t che-code-image .
+
       - name: Upload assembly image
         uses: ishworkh/docker-image-artifact-upload@v1
         with:
-          image: "assembly-pr"
+          image: "che-code-image"
+
       - name: Store PR info
         run: |
           echo "${{ github.event.number }}" > PR_NUMBER
           echo "${{ github.event.pull_request.head.sha }}" > PR_SHA
-      - uses: actions/upload-artifact@v3
+
+      - name: Upload PR NUMBER
+        uses: actions/upload-artifact@v3
         with:
           name: pull-request-number
           path: PR_NUMBER
-      - uses: actions/upload-artifact@v3
+
+      - name: Upload PR SHA
+        uses: actions/upload-artifact@v3
         with:
           name: pull-request-sha
           path: PR_SHA
+
   dev:
     name: dev
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
       - name: Docker Build
         run: |
-          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t dev-pr .
-          docker save dev-pr | gzip > dev-pr.tgz
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --load -t che-dev-image .
+
+      - name: Save che-dev image
+        run: |
+          docker save che-dev-image | gzip > che-dev-image.tgz
+
       - uses: actions/upload-artifact@v3
         with:
-          name: dev-image
-          path: dev-pr.tgz
+          name: che-dev-image
+          path: che-dev-image.tgz
