@@ -19,61 +19,72 @@ import { WorkspaceService } from '../api/workspace-service';
 
 @injectable()
 export class K8sWorkspaceServiceImpl implements WorkspaceService {
-    @inject(K8SServiceImpl)
-    private k8SService!: K8SServiceImpl;
-  
-    @inject(K8sDevWorkspaceEnvVariables)
-    private env!: K8sDevWorkspaceEnvVariables;
+  @inject(K8SServiceImpl)
+  private k8SService!: K8SServiceImpl;
 
-    @inject(Symbol.for('AxiosInstance'))
-    private axiosInstance!: AxiosInstance;
-  
-    public async getNamespace(): Promise<string> {
-      return this.env.getWorkspaceNamespace();
-    }
-  
-    public async getWorkspaceId(): Promise<string> {
-      return this.env.getWorkspaceId();
-    }
+  @inject(K8sDevWorkspaceEnvVariables)
+  private env!: K8sDevWorkspaceEnvVariables;
 
-    public async updateWorkspaceActivity(): Promise<void> {
-      if (!process.env.MACHINE_EXEC_PORT) {
-        throw new Error('Environment variable MACHINE_EXEC_PORT not found.');
-      }
+  @inject(Symbol.for('AxiosInstance'))
+  private axiosInstance!: AxiosInstance;
 
-      const requestUrl = `http://127.0.0.1:${process.env.MACHINE_EXEC_PORT}/activity/tick`;
-      await this.axiosInstance.post(requestUrl);
-    }
-  
-   // stopping the workspace is changing the started state to false
-    public async stop(): Promise<void> {
-  
-      const customObjectsApi = this.k8SService.makeApiClient(k8s.CustomObjectsApi);
-      const group = 'workspace.devfile.io';
-      const version = 'v1alpha2';
-      const namespace = this.env.getWorkspaceNamespace();
-      const plural = 'devworkspaces';
-      const name = this.env.getWorkspaceName();
-      const patch = [
-        {
-          op: 'replace',
-          path: '/spec/started',
-          value: false,
-        },
-      ];
-  
-      const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
-      await customObjectsApi.patchNamespacedCustomObject(
-        group,
-        version,
-        namespace,
-        plural,
-        name,
-        patch,
-        undefined,
-        undefined,
-        undefined,
-        options
-      );
-    }
+  public async getNamespace(): Promise<string> {
+    return this.env.getWorkspaceNamespace();
   }
+
+  public async getWorkspaceId(): Promise<string> {
+    return this.env.getWorkspaceId();
+  }
+
+  public async getPodName(): Promise<string> {
+    return this.env.getWorkspacePodName();
+  }
+
+  private machineExecPortFault = false;
+
+  public async updateWorkspaceActivity(): Promise<void> {
+    if (this.machineExecPortFault) {
+      // no need to check the environment variable again
+      return;
+    }
+
+    if (!process.env.MACHINE_EXEC_PORT) {
+      this.machineExecPortFault = true;
+      throw new Error('Environment variable MACHINE_EXEC_PORT not found.');
+    }
+
+    const requestUrl = `http://127.0.0.1:${process.env.MACHINE_EXEC_PORT}/activity/tick`;
+    await this.axiosInstance.post(requestUrl);
+  }
+
+  // stopping the workspace is changing the started state to false
+  public async stop(): Promise<void> {
+    const customObjectsApi = this.k8SService.makeApiClient(k8s.CustomObjectsApi);
+    const group = 'workspace.devfile.io';
+    const version = 'v1alpha2';
+    const namespace = this.env.getWorkspaceNamespace();
+    const plural = 'devworkspaces';
+    const name = this.env.getWorkspaceName();
+    const patch = [
+      {
+        op: 'replace',
+        path: '/spec/started',
+        value: false,
+      },
+    ];
+
+    const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
+    await customObjectsApi.patchNamespacedCustomObject(
+      group,
+      version,
+      namespace,
+      plural,
+      name,
+      patch,
+      undefined,
+      undefined,
+      undefined,
+      options
+    );
+  }
+}

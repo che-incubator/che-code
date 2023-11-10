@@ -15,6 +15,8 @@ import { FlattenedDevfile } from "../src/flattened-devfile";
 
 describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
   test("should not return che-code endpoint if env.DEVWORKSPACE_FLATTENED_DEVFILE is not set", async () => {
+    delete env.DEVWORKSPACE_FLATTENED_DEVFILE;
+
     const devfile = new FlattenedDevfile();
 
     try {

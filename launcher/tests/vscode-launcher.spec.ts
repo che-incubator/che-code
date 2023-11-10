@@ -24,6 +24,8 @@ describe("Test VS Code launcher:", () => {
     delete env.VSCODE_DEFAULT_WORKSPACE;
     delete env.NODE_EXTRA_CA_CERTS;
     delete env.SHELL;
+    delete env.HOSTNAME;
+    delete env.DEVWORKSPACE_POD_NAME;
   });
 
   afterEach(() => {
@@ -516,5 +518,71 @@ describe("Test VS Code launcher:", () => {
     ]);
 
     expect(env.SHELL).toBe(undefined);
+  });
+
+  test("should set DEVWORKSPACE_POD_NAME env var if HOSTNAME env var is set", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.PROJECT_SOURCE = "/tmp/projects/sample-project";
+    env.SHELL = "/bin/testshell";
+
+    env.HOSTNAME = "test-host";
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+    });
+
+    spawnMock.mockImplementation(() => ({
+      on: jest.fn(),
+      stdout: {
+        on: jest.fn(),
+      },
+      stderr: {
+        on: jest.fn(),
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(env.DEVWORKSPACE_POD_NAME).toBe("test-host");
+  });
+
+  test("should not set DEVWORKSPACE_POD_NAME env var if HOSTNAME env var is missing", async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
+    env.PROJECTS_ROOT = "/tmp/projects";
+    env.PROJECT_SOURCE = "/tmp/projects/sample-project";
+    env.SHELL = "/bin/testshell";
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    const spawnMock = jest.fn();
+    Object.assign(child_process, {
+      spawn: spawnMock,
+    });
+
+    spawnMock.mockImplementation(() => ({
+      on: jest.fn(),
+      stdout: {
+        on: jest.fn(),
+      },
+      stderr: {
+        on: jest.fn(),
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(env.DEVWORKSPACE_POD_NAME).toBe(undefined);
   });
 });

@@ -26,38 +26,36 @@ export class K8sDevWorkspaceEnvVariables {
   /**
    * workspaceName - workspace name taken from environment variable, always the same at workspace lifecycle
    */
-
   private readonly workspaceName!: string;
-
 
   /**
    * workspaceNamespace - workspace namespace taken from environment variable, always the same at workspace lifecycle
    */
-
   private readonly workspaceNamespace!: string;
+
+  /**
+   * workspacePodName - workspace pod name taken from environment variable, changes every time the workspace is started
+   */
+  private readonly workspacePodName!: string;
 
   /**
    * devWorkspaceFlattenedDevfilePath - environment variable holding the path to the flattened devworkspace template spec
    */
-
   private readonly devWorkspaceFlattenedDevfilePath!: string;
 
   /**
    * projectsRoot - Root directory for projects, default being /projects
    */
-
   private readonly projectsRoot!: string;
 
   /**
    * pluginRegistryURL - Plugin registry public URL
    */
-
   private readonly pluginRegistryURL!: string;
 
   /**
    * dashboardURL - Dashboard URL
    */
-
   private readonly dashboardURL!: string;
 
   constructor() {
@@ -77,6 +75,12 @@ export class K8sDevWorkspaceEnvVariables {
       console.error('Environment variable DEVWORKSPACE_NAME is not set');
     } else {
       this.workspaceName = process.env.DEVWORKSPACE_NAME;
+    }
+
+    if (process.env.DEVWORKSPACE_POD_NAME === undefined) {
+      console.error('Environment variable DEVWORKSPACE_POD_NAME is not set');
+    } else {
+      this.workspacePodName = process.env.DEVWORKSPACE_POD_NAME;
     }
 
     if (process.env.DEVWORKSPACE_FLATTENED_DEVFILE === undefined) {
@@ -114,6 +118,10 @@ export class K8sDevWorkspaceEnvVariables {
 
   getWorkspaceNamespace(): string {
     return this.workspaceNamespace;
+  }
+
+  getWorkspacePodName(): string {
+    return this.workspacePodName;
   }
 
   getDevWorkspaceFlattenedDevfilePath(): string {
