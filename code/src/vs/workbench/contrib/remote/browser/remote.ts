@@ -57,6 +57,7 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
 import { IWalkthroughsService } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedService';
 import { Schemas } from 'vs/base/common/network';
+import { mainWindow } from 'vs/base/browser/window';
 
 interface IViewModel {
 	onDidChangeHelpInformation: Event<void>;
@@ -750,17 +751,17 @@ class VisibleProgress {
 class ReconnectionTimer implements IDisposable {
 	private readonly _parent: VisibleProgress;
 	private readonly _completionTime: number;
-	private readonly _token: any;
+	private readonly _renderInterval: IDisposable;
 
 	constructor(parent: VisibleProgress, completionTime: number) {
 		this._parent = parent;
 		this._completionTime = completionTime;
-		this._token = setInterval(() => this._render(), 1000);
+		this._renderInterval = dom.disposableWindowInterval(mainWindow, () => this._render(), 1000);
 		this._render();
 	}
 
 	public dispose(): void {
-		clearInterval(this._token);
+		this._renderInterval.dispose();
 	}
 
 	private _render() {

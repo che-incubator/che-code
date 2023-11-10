@@ -198,7 +198,7 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 
 	private loadAuthSessionFromElement(): Record<string, string> {
 		let authSessionInfo: (AuthenticationSessionInfo & { scopes: string[][] }) | undefined;
-		const authSessionElement = document.getElementById('vscode-workbench-auth-session');
+		const authSessionElement = mainWindow.document.getElementById('vscode-workbench-auth-session');
 		const authSessionElementAttribute = authSessionElement ? authSessionElement.getAttribute('data-settings') : undefined;
 		if (authSessionElementAttribute) {
 			try {
@@ -566,7 +566,7 @@ function readCookie(name: string): string | undefined {
 (function () {
 
 	// Find config by checking for DOM
-	const configElement = document.getElementById('vscode-workbench-web-configuration');
+	const configElement = mainWindow.document.getElementById('vscode-workbench-web-configuration');
 	const configElementAttribute = configElement ? configElement.getAttribute('data-settings') : undefined;
 	if (!configElement || !configElementAttribute) {
 		throw new Error('Missing web configuration element');
@@ -589,7 +589,7 @@ function readCookie(name: string): string | undefined {
 	}, undefined, 2));
 	
 	// Create workbench
-	create(document.body, {
+	create(mainWindow.document.body, {
 		...config,
 		...cheConfig,
 		windowIndicator: config.windowIndicator ?? { label: '$(remote)', tooltip: `${product.nameShort} Web` },
