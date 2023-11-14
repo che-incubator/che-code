@@ -172,11 +172,19 @@ export class PortsPlugin {
     // check now if the port is in workspace definition ?
     const matchingEndpoint = this.devfileEndpoints.find(endpoint => endpoint.targetPort === port.portNumber);
 
-    if (matchingEndpoint && matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_PRIVATE) {
-      this.outputChannel.appendLine(
-        `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as Private. Do not prompt to open it.`
-      );
-      return;
+    if (matchingEndpoint) {
+      if (matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_PRIVATE) {
+        this.outputChannel.appendLine(
+          `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as exposure: internal. Do not prompt to open it.`
+        );
+        return;
+      }
+      if (matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_NONE) {
+        this.outputChannel.appendLine(
+          `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as exposure: none. Do not prompt to open it.`
+        );
+        return;
+      }
     }
 
     // if not listening on 0.0.0.0 then raise a prompt to add a port redirect
