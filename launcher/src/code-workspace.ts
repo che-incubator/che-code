@@ -44,7 +44,7 @@ export class CodeWorkspace {
       return;
     }
 
-    // Folowing flow is common for default workspce location and
+    // Following flow is common for default workspce location and
     // for custom workspace file defined in env.VSCODE_DEFAULT_WORKSPACE
     const alternativePath = env.VSCODE_DEFAULT_WORKSPACE;
 
@@ -60,11 +60,8 @@ export class CodeWorkspace {
       // synchronize dependent projects
       this.synchronizeProjects(workspace, devfile.dependentProjects);
 
-      // synchronize starter proects
+      // synchronize starter projects
       this.synchronizeProjects(workspace, devfile.starterProjects);
-
-      // check for `${env.PROJECTS_ROOT}/.vscode/settings.json`
-      // copy all the settings to workspace file
 
       // write workspace file
       await this.writeWorkspaceFile(workspace, alternativePath);
