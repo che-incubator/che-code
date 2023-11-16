@@ -10,7 +10,21 @@
 
 import * as fs from "./fs-extra";
 import { env } from "process";
-import { FlattenedDevfile } from "./flattened-devfile";
+import { FlattenedDevfile, Project } from "./flattened-devfile";
+
+export interface Workspace {
+  folders: Folder[];
+  settings?: KeyValue;
+}
+
+export interface Folder {
+  name: string;
+  path: string;
+}
+
+export interface KeyValue {
+  [key: string]: string;
+}
 
 export function workspaceFilePath(): string {
   return `${env.PROJECTS_ROOT}/.code-workspace`;
@@ -30,54 +44,103 @@ export class CodeWorkspace {
       return;
     }
 
-    // skip if env.VSCODE_DEFAULT_WORKSPACE is defined and points to a real file
-    if (env.VSCODE_DEFAULT_WORKSPACE) {
-      if (
-        (await fs.pathExists(env.VSCODE_DEFAULT_WORKSPACE)) &&
-        (await fs.isFile(env.VSCODE_DEFAULT_WORKSPACE))
-      ) {
-        console.log(
-          "  > env.VSCODE_DEFAULT_WORKSPACE is defined, skip this step"
-        );
-        return;
-      } else {
-        console.log(
-          "  > env.VSCODE_DEFAULT_WORKSPACE must point on a workspace file"
-        );
-      }
-    }
+    // Folowing flow is common for default workspce location and
+    // for custom workspace file defined in env.VSCODE_DEFAULT_WORKSPACE
+    const alternativePath = env.VSCODE_DEFAULT_WORKSPACE;
 
     try {
-      // skip if workspace file is already exist
-      if (await fs.pathExists(workspaceFilePath())) {
-        console.log(
-          `  > Workspace file ${workspaceFilePath()} is already exist`
-        );
-        return;
-      }
+      // get workspace file
+      const workspace = await this.readWorkspaceFile(alternativePath);
 
-      // take all the projects from flattened devworkspace file
-      const projects = await new FlattenedDevfile().getProjects();
-      const folders = projects.map((p) => {
-        return {
-          name: p.name,
-          path: `${env.PROJECTS_ROOT}/${p.name}`,
-        };
-      });
+      const devfile = await new FlattenedDevfile().getDevfile();
 
-      const workspace = {
-        folders,
-      };
+      // synchronize projects
+      this.synchronizeProjects(workspace, devfile.projects);
 
-      // write .code-workspace file
-      const json = JSON.stringify(workspace, null, "\t");
-      await fs.writeFile(workspaceFilePath(), json);
+      // synchronize dependent projects
+      this.synchronizeProjects(workspace, devfile.dependentProjects);
 
-      console.log(`  > writing ${workspaceFilePath()}..`);
+      // synchronize starter proects
+      this.synchronizeProjects(workspace, devfile.starterProjects);
+
+      // check for `${env.PROJECTS_ROOT}/.vscode/settings.json`
+      // copy all the settings to workspace file
+
+      // write workspace file
+      await this.writeWorkspaceFile(workspace, );
+
     } catch (err) {
       console.error(
         `${err.message} Unable to generate che.code-workspace file`
       );
     }
+
   }
+
+  async isExist(workspaceFilePath: string | undefined): Promise<boolean> {
+    if (workspaceFilePath && 
+      (await fs.pathExists(workspaceFilePath)) &&
+      (await fs.isFile(workspaceFilePath))
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // should validate the content of read file
+  async readWorkspaceFile(alternativePath?: string): Promise<Workspace> {
+    let workspace;
+    if (await this.isExist(alternativePath)) {
+      workspace = JSON.parse(await fs.readFile(alternativePath!));
+    } else if (await this.isExist(workspaceFilePath())) {
+      workspace = JSON.parse(await fs.readFile(workspaceFilePath()));
+    } else {
+      workspace = {};
+    }
+
+    return workspace;
+  }
+
+  async writeWorkspaceFile(workspace: Workspace, alternativePath?: string): Promise<void> {
+    const json = JSON.stringify(workspace, null, "\t");
+    
+    if (await this.isExist(alternativePath)) {
+      console.log(`  > writing ${alternativePath}..`);
+      await fs.writeFile(alternativePath!, json);
+    } else {
+      console.log(`  > writing ${workspaceFilePath()}..`);
+      await fs.writeFile(workspaceFilePath(), json);
+    }
+  }
+
+  async synchronizeProjects(workspace: Workspace, projects: Project[] | undefined) {
+    if (!projects) {
+      return;
+    }
+
+    if (!workspace.folders) {
+      workspace.folders = [];
+    }
+
+    const existInWorkspace = (projectName: string): boolean => {
+      for (var i = 0; i < workspace.folders.length; i++) {
+        if (projectName === workspace.folders[i].name) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    projects.forEach(async (project) => {
+      if (!existInWorkspace(project.name)) {
+        workspace.folders.push({
+          name: project.name,
+          path: `${env.PROJECTS_ROOT}/${project.name}`,
+        });
+      }
+
+    });
+  }
+
 }

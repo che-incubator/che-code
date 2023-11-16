@@ -1,0 +1,58 @@
+attributes:
+  controller.devfile.io/scc: container-build
+  controller.devfile.io/storage-type: per-workspace
+commands:
+- apply:
+    component: che-code-injector
+  attributes:
+    controller.devfile.io/imported-by: editor
+  id: init-container-command
+- attributes:
+    controller.devfile.io/imported-by: editor
+  exec:
+    commandLine: nohup /checode/entrypoint-volume.sh > /checode/entrypoint-logs.txt
+      2>&1 &
+    component: dev
+  id: init-che-code-command
+components:
+- attributes:
+    controller.devfile.io/imported-by: editor
+  name: checode
+  volume: {}
+- attributes:
+    app.kubernetes.io/component: che-code-runtime
+    app.kubernetes.io/part-of: che-code.eclipse.org
+    controller.devfile.io/merged-contributions: editor
+  container:
+    image: quay.io/che-incubator/che-code-dev:insiders
+    sourceMapping: /projects
+    volumeMounts:
+    - name: checode
+      path: /checode
+  name: dev
+- name: projects
+  volume:
+    size: 3Gi
+events:
+  postStart:
+  - init-che-code-command
+  preStart:
+  - init-container-command
+projects:
+- git:
+    remotes:
+      url: https://github.com/che-incubator/che-code.git
+  name: che-code
+- git:
+    remotes:
+      url: https://github.com/eclipse-che/che-devfile-registry
+  name: che-devfile-registry
+- git:
+    remotes:
+      url: https://github.com/che-samples/web-nodejs-sample
+  name: web-nodejs-sample
+dependentProjects:
+- name: dependent-project
+  git:
+    remotes:
+      url: https://github.com/che-incubator/che-code.git
