@@ -31,7 +31,6 @@ import { ITerminalProfile, TerminalExitReason, TerminalIcon, TerminalLocation, T
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { PICK_WORKSPACE_FOLDER_COMMAND_ID } from 'vs/workbench/browser/actions/workspaceCommands';
 import { CLOSE_EDITOR_COMMAND_ID } from 'vs/workbench/browser/parts/editor/editorCommands';
-import { ResourceContextKey } from 'vs/workbench/common/contextkeys';
 import { Direction, ICreateTerminalOptions, IDetachedTerminalInstance, ITerminalEditorService, ITerminalGroupService, ITerminalInstance, ITerminalInstanceService, ITerminalService, IXtermTerminal } from 'vs/workbench/contrib/terminal/browser/terminal';
 import { TerminalQuickAccessProvider } from 'vs/workbench/contrib/terminal/browser/terminalQuickAccess';
 import { IRemoteTerminalAttachTarget, ITerminalConfigHelper, ITerminalProfileResolverService, ITerminalProfileService, TerminalCommandId } from 'vs/workbench/contrib/terminal/common/terminal';
@@ -434,8 +433,26 @@ export function registerTerminalActions() {
 	});
 
 	registerActiveInstanceAction({
+		id: TerminalCommandId.CopyLastCommand,
+		title: { value: localize('workbench.action.terminal.copyLastCommand', 'Copy Last Command'), original: 'Copy Last Command' },
+		precondition: ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated),
+		run: async (instance, c, accessor) => {
+			const clipboardService = accessor.get(IClipboardService);
+			const commands = instance.capabilities.get(TerminalCapability.CommandDetection)?.commands;
+			if (!commands || commands.length === 0) {
+				return;
+			}
+			const command = commands[commands.length - 1];
+			if (!command.command) {
+				return;
+			}
+			await clipboardService.writeText(command.command);
+		}
+	});
+
+	registerActiveInstanceAction({
 		id: TerminalCommandId.CopyLastCommandOutput,
-		title: { value: localize('workbench.action.terminal.copyLastCommand', 'Copy Last Command Output'), original: 'Copy Last Command Output' },
+		title: { value: localize('workbench.action.terminal.copyLastCommandOutput', 'Copy Last Command Output'), original: 'Copy Last Command Output' },
 		precondition: ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated),
 		run: async (instance, c, accessor) => {
 			const clipboardService = accessor.get(IClipboardService);
@@ -453,6 +470,28 @@ export function registerTerminalActions() {
 			}
 		}
 	});
+
+	registerActiveInstanceAction({
+		id: TerminalCommandId.CopyLastCommandAndLastCommandOutput,
+		title: { value: localize('workbench.action.terminal.copyLastCommandAndOutput', 'Copy Last Command and Output'), original: 'Copy Last Command and Output' },
+		precondition: ContextKeyExpr.or(TerminalContextKeys.processSupported, TerminalContextKeys.terminalHasBeenCreated),
+		run: async (instance, c, accessor) => {
+			const clipboardService = accessor.get(IClipboardService);
+			const commands = instance.capabilities.get(TerminalCapability.CommandDetection)?.commands;
+			if (!commands || commands.length === 0) {
+				return;
+			}
+			const command = commands[commands.length - 1];
+			if (!command?.hasOutput()) {
+				return;
+			}
+			const output = command.getOutput();
+			if (isString(output)) {
+				await clipboardService.writeText(`${command.command !== '' ? command.command + '\n' : ''}${output}`);
+			}
+		}
+	});
+
 
 	registerActiveInstanceAction({
 		id: TerminalCommandId.GoToRecentDirectory,
@@ -1312,7 +1351,7 @@ export function registerTerminalActions() {
 			primary: KeyMod.CtrlCmd | KeyCode.KeyW,
 			win: { primary: KeyMod.CtrlCmd | KeyCode.F4, secondary: [KeyMod.CtrlCmd | KeyCode.KeyW] },
 			weight: KeybindingWeight.WorkbenchContrib,
-			when: ContextKeyExpr.and(TerminalContextKeys.focus, ResourceContextKey.Scheme.isEqualTo(Schemas.vscodeTerminal), TerminalContextKeys.editorFocus)
+			when: ContextKeyExpr.and(TerminalContextKeys.focus, TerminalContextKeys.editorFocus)
 		},
 		run: (c, accessor) => accessor.get(ICommandService).executeCommand(CLOSE_EDITOR_COMMAND_ID)
 	});
