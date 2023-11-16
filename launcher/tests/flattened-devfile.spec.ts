@@ -81,5 +81,4 @@ describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
       "dependent-project",
     ]);
   });
-
 });

@@ -67,18 +67,17 @@ export class CodeWorkspace {
       // copy all the settings to workspace file
 
       // write workspace file
-      await this.writeWorkspaceFile(workspace, );
-
+      await this.writeWorkspaceFile(workspace, alternativePath);
     } catch (err) {
       console.error(
         `${err.message} Unable to generate che.code-workspace file`
       );
     }
-
   }
 
   async isExist(workspaceFilePath: string | undefined): Promise<boolean> {
-    if (workspaceFilePath && 
+    if (
+      workspaceFilePath &&
       (await fs.pathExists(workspaceFilePath)) &&
       (await fs.isFile(workspaceFilePath))
     ) {
@@ -102,9 +101,12 @@ export class CodeWorkspace {
     return workspace;
   }
 
-  async writeWorkspaceFile(workspace: Workspace, alternativePath?: string): Promise<void> {
+  async writeWorkspaceFile(
+    workspace: Workspace,
+    alternativePath?: string
+  ): Promise<void> {
     const json = JSON.stringify(workspace, null, "\t");
-    
+
     if (await this.isExist(alternativePath)) {
       console.log(`  > writing ${alternativePath}..`);
       await fs.writeFile(alternativePath!, json);
@@ -114,7 +116,10 @@ export class CodeWorkspace {
     }
   }
 
-  async synchronizeProjects(workspace: Workspace, projects: Project[] | undefined) {
+  async synchronizeProjects(
+    workspace: Workspace,
+    projects: Project[] | undefined
+  ) {
     if (!projects) {
       return;
     }
@@ -139,8 +144,6 @@ export class CodeWorkspace {
           path: `${env.PROJECTS_ROOT}/${project.name}`,
         });
       }
-
     });
   }
-
 }
