@@ -84,27 +84,6 @@ export class DevWorkspaceDevfileHandlerImpl implements DevfileHandler {
       } as Endpoint;
     });
 
-    // Add private JWT proxy ports
-    const jwtProxyEnv: string[] = Object.keys(process.env).filter(key =>
-      key.includes('_JWTPROXY_SERVICE_PORT_SERVER_')
-    );
-    jwtProxyEnv.forEach((key, index) => {
-      const value = process.env[key]!.toLocaleLowerCase() || '';
-      const port = parseInt(value);
-      if (!isNaN(port)) {
-        const endpoint: Endpoint = {
-          name: `jwt-proxy-${index + 1}`,
-          exposure: EndpointExposure.FROM_DEVFILE_PRIVATE,
-          url: '',
-          targetPort: port,
-          protocol: 'tcp',
-          type: 'jwt-proxy',
-          category: EndpointCategory.PLUGINS,
-        };
-        endpoints.push(endpoint);
-      }
-    });
-
     return endpoints;
   }
 }

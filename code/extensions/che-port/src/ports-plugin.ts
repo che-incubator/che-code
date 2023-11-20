@@ -172,20 +172,36 @@ export class PortsPlugin {
     // check now if the port is in workspace definition ?
     const matchingEndpoint = this.devfileEndpoints.find(endpoint => endpoint.targetPort === port.portNumber);
 
-    if (matchingEndpoint && matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_PRIVATE) {
-      this.outputChannel.appendLine(
-        `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as Private. Do not prompt to open it.`
-      );
-      return;
+    if (matchingEndpoint) {
+      if (matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_PRIVATE) {
+        this.outputChannel.appendLine(
+          `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as exposure: internal. Do not prompt to open it.`
+        );
+        return;
+      }
+      if (matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_NONE) {
+        this.outputChannel.appendLine(
+          `Endpoint ${matchingEndpoint.name} on port ${matchingEndpoint.targetPort} is defined as exposure: none. Do not prompt to open it.`
+        );
+        return;
+      }
     }
 
     // if not listening on 0.0.0.0 then raise a prompt to add a port redirect
     if (port.interfaceListen !== PortsPlugin.LISTEN_ALL_IPV4 && port.interfaceListen !== PortsPlugin.LISTEN_ALL_IPV6) {
-      const desc = `A new process is now listening on port ${port.portNumber} but is listening on interface ${port.interfaceListen} which is internal.
-        You should change to be remotely available. Would you want to add a redirect for this port so it becomes available ?`;
-      const err = `A new process is now listening on port ${port.portNumber} but is listening on interface ${port.interfaceListen} which is internal.
-        This port is not available outside. You should change the code to listen on 0.0.0.0 for example.`;
-      await this.askRedirect(port, desc, err);
+      if (matchingEndpoint && matchingEndpoint.exposure === EndpointExposure.FROM_DEVFILE_PUBLIC) {
+        const desc = `Process ${matchingEndpoint.name} is now listening on port ${matchingEndpoint.targetPort}, but it is listening on ${port.interfaceListen},
+          which is internal. You should change the code to listen on port 0.0.0.0 instead. Would you like to add a redirect to make this process available anyway?`;
+        const err = `Process ${matchingEndpoint.name} is now listening on port ${matchingEndpoint.targetPort}, but it is listening on ${port.interfaceListen},
+          which is internal. You should change the code to listen on port 0.0.0.0 instead.`;
+        await this.askRedirect(port, desc, err);
+      } else {
+        const desc = `A new process is now listening on port ${port.portNumber} but is listening on interface ${port.interfaceListen} which is internal.
+          You should change to be remotely available. Would you want to add a redirect for this port so it becomes available ?`;
+        const err = `A new process is now listening on port ${port.portNumber} but is listening on interface ${port.interfaceListen} which is internal.
+          This port is not available outside. You should change the code to listen on 0.0.0.0 for example.`;
+        await this.askRedirect(port, desc, err);
+      }
       return;
     }
 
