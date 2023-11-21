@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Red Hat, Inc.
+# Copyright (c) 2021-2023 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,7 +7,7 @@
 #
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:18.16.1-alpine3.18 as linux-musl-builder
+FROM docker.io/node:18.18.2-alpine3.18 as linux-musl-builder
 
 RUN apk add --update --no-cache \
     # Download some files
@@ -37,11 +37,14 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 # Initialize a git repository for code build tools
 RUN git init .
 
+# install yarn and node-gyp
+RUN npm install --global yarn@1 node-gyp@9
+
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
 
 # Grab dependencies
-RUN yarn
+RUN yarn install
 
 # Rebuild platform specific dependencies
 RUN npm rebuild

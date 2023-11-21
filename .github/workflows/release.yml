@@ -34,7 +34,7 @@ jobs:
         name: "Setup Node"
         uses: actions/setup-node@v3
         with:
-          node-version: "16"
+          node-version: "18"
       -
         name: Check existing tags
         run: |
@@ -60,6 +60,7 @@ jobs:
           git config --global user.email "mkuznets@redhat.com"
           git config --global pull.rebase true
           export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
+
           /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --tag-release
       #- name: Create failure MM message
         #if: failure()

@@ -1,6 +1,6 @@
 ## Running Visual Studio Code - Open Source ("Code - OSS") in a UBI9-based container
 `Node.js` is required to run `Code-OSS` (see required version [here](https://github.com/microsoft/vscode/wiki/How-to-Contribute#prerequisites)).
-This project includes [dockefiles](https://github.com/che-incubator/che-code/tree/main/build/dockerfiles) that based on the `ubi8/nodejs-16` image - an assembly contains `Node.js 16` that requires `OpenSSL 1`.
+This project includes [dockefiles](https://github.com/che-incubator/che-code/tree/main/build/dockerfiles) that based on the `ubi8/nodejs-18` image - an assembly contains `Node.js 18` that requires `OpenSSL 1`.
 
 One of the differences between `UBI8` and `UBI9` image is:
 - `UBI8` image uses `OpenSSL 1`
@@ -9,12 +9,12 @@ One of the differences between `UBI8` and `UBI9` image is:
  So, `Code-OSS` can be run in a `UBI8`-based container without additional requirements.
 
 In order to run `Code-OSS` in a `UBI9`-based container you'll need the following:
-- install `Node.js 16` which statically links against `OpenSSL 3`
+- install `Node.js 18` which statically links against `OpenSSL 3`
 - provide environment variable `VSCODE_NODEJS_RUNTIME_DIR` with the path to the installed node
 
 For example:
 ```
-FROM registry.access.redhat.com/ubi9/ubi:9.0.0-1576
+FROM registry.access.redhat.com/ubi9/ubi:9.2
 
 RUN dnf install -y nodejs
 ENV VSCODE_NODEJS_RUNTIME_DIR="/usr/bin"

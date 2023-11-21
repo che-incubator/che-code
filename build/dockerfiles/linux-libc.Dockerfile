@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Red Hat, Inc.
+# Copyright (c) 2021-2023 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-18
-FROM registry.access.redhat.com/ubi8/nodejs-18:1-71 as linux-libc-builder
+FROM registry.access.redhat.com/ubi8/nodejs-18:1 as linux-libc-builder
 
 USER root
 
@@ -47,7 +47,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     fi; } \
     && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum \
-    && npm install -g yarn@1.22.17
+    && npm install --global yarn@1 node-gyp@9
 
 #########################################################
 #
