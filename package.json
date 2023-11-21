@@ -10,5 +10,13 @@
     "build:min": "cd code && yarn gulp vscode-reh-web-linux-x64-min",
     "rebuild-native-modules": "cd code && npm rebuild"
   },
-  "license": "EPL-2.0"
+  "license": "EPL-2.0",
+  "dependencies": {
+    "node-gyp": "^9.4.1"
+  },
+  "engines": {
+    "node": ">= 18.18.2",
+    "npm": ">= 9.8.1",
+    "yarn": ">= 1.22.19"
+  }
 }
