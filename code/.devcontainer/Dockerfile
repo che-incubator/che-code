@@ -1,11 +1,3 @@
-# Copyright (c) 2021-2023 Red Hat, Inc.
-# This program and the accompanying materials are made
-# available under the terms of the Eclipse Public License 2.0
-# which is available at https://www.eclipse.org/legal/epl-2.0/
-#
-# SPDX-License-Identifier: EPL-2.0
-#
-
 FROM mcr.microsoft.com/devcontainers/typescript-node:18-bookworm
 
 ADD install-vscode.sh /root/
