@@ -37,8 +37,8 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 # Initialize a git repository for code build tools
 RUN git init .
 
-# install yarn and node-gyp
-RUN npm install --global yarn@1 node-gyp@9
+# install node-gyp (yarn already installed)
+RUN npm install --global node-gyp@9
 
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
