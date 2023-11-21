@@ -34,6 +34,7 @@ RUN for f in "/mnt/rootfs/bin/" "/mnt/rootfs/home/che" "/mnt/rootfs/etc/passwd" 
 
 COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /mnt/rootfs/bin/machine-exec
 COPY --chmod=755 /build/scripts/*.sh /mnt/rootfs/
+COPY --chmod=755 /build/remote-config /mnt/rootfs/remote/data/Machine/
 
 # Create all-in-one image
 FROM scratch
