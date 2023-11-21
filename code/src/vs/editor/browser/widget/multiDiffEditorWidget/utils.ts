@@ -3,12 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { ActionRunner, IAction } from 'vs/base/common/actions';
 
-export interface ActionSet<T> extends IDisposable {
-	readonly validActions: readonly T[];
-	readonly allActions: readonly T[];
-	readonly hasAutoFix: boolean;
-	readonly hasAIFix: boolean;
-	readonly allAIFixes: boolean;
+export class ActionRunnerWithContext extends ActionRunner {
+	constructor(private readonly _getContext: () => any) {
+		super();
+	}
+
+	protected override runAction(action: IAction, _context?: unknown): Promise<void> {
+		return super.runAction(action, this._getContext());
+	}
 }
