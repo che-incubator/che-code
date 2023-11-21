@@ -43,10 +43,6 @@ RUN npm install --global node-gyp@9
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
 
-RUN ELECTRON_VER="v25.9.4"; \
-    curl -sSL  https://artifacts.electronjs.org/headers/${ELECTRON_VER}/node-${ELECTRON_VER}-headers.tar.gz?force_headers_dist=1 -o /tmp/node-headers.tgz; \
-    npm config set tarball /tmp/node-headers.tgz
-
 # Grab dependencies
 RUN yarn install
 
