@@ -44,7 +44,7 @@ export class CodeWorkspace {
       return;
     }
 
-    // Following flow is common for default workspce location and
+    // Following flow is common for default workspace location and
     // for custom workspace file defined in env.VSCODE_DEFAULT_WORKSPACE
     const alternativePath = env.VSCODE_DEFAULT_WORKSPACE;
 
@@ -72,30 +72,22 @@ export class CodeWorkspace {
     }
   }
 
-  async isExist(workspaceFilePath: string | undefined): Promise<boolean> {
-    if (
-      workspaceFilePath &&
-      (await fs.pathExists(workspaceFilePath)) &&
-      (await fs.isFile(workspaceFilePath))
-    ) {
+  async fileExists(file: string | undefined): Promise<boolean> {
+    if (file && (await fs.pathExists(file)) && (await fs.isFile(file))) {
       return true;
     }
 
     return false;
   }
 
-  // should validate the content of read file
   async readWorkspaceFile(alternativePath?: string): Promise<Workspace> {
-    let workspace;
-    if (await this.isExist(alternativePath)) {
-      workspace = JSON.parse(await fs.readFile(alternativePath!));
-    } else if (await this.isExist(workspaceFilePath())) {
-      workspace = JSON.parse(await fs.readFile(workspaceFilePath()));
-    } else {
-      workspace = {};
+    if (await this.fileExists(alternativePath)) {
+      return JSON.parse(await fs.readFile(alternativePath!));
+    } else if (await this.fileExists(workspaceFilePath())) {
+      return JSON.parse(await fs.readFile(workspaceFilePath()));
     }
 
-    return workspace;
+    return {} as Workspace;
   }
 
   async writeWorkspaceFile(
@@ -104,7 +96,7 @@ export class CodeWorkspace {
   ): Promise<void> {
     const json = JSON.stringify(workspace, null, "\t");
 
-    if (await this.isExist(alternativePath)) {
+    if (await this.fileExists(alternativePath)) {
       console.log(`  > writing ${alternativePath}..`);
       await fs.writeFile(alternativePath!, json);
     } else {
@@ -115,8 +107,8 @@ export class CodeWorkspace {
 
   async synchronizeProjects(
     workspace: Workspace,
-    projects: Project[] | undefined
-  ) {
+    projects?: Project[]
+  ): Promise<void> {
     if (!projects) {
       return;
     }
@@ -125,17 +117,8 @@ export class CodeWorkspace {
       workspace.folders = [];
     }
 
-    const existInWorkspace = (projectName: string): boolean => {
-      for (var i = 0; i < workspace.folders.length; i++) {
-        if (projectName === workspace.folders[i].name) {
-          return true;
-        }
-      }
-      return false;
-    };
-
     projects.forEach(async (project) => {
-      if (!existInWorkspace(project.name)) {
+      if (!workspace.folders.some((folder) => folder.name === project.name)) {
         workspace.folders.push({
           name: project.name,
           path: `${env.PROJECTS_ROOT}/${project.name}`,
