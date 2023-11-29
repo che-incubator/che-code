@@ -1729,11 +1729,12 @@ class HistoryItemViewChangesAction extends Action2 {
 		super({
 			id: `workbench.scm.action.historyItemViewChanges`,
 			title: localize('historyItemViewChanges', "View Changes"),
-			icon: Codicon.tasklist,
+			icon: Codicon.diffMultiple,
 			f1: false,
 			menu: {
 				id: MenuId.SCMHistoryItem,
-				group: 'inline'
+				group: 'inline',
+				when: ContextKeyExpr.has('config.multiDiffEditor.experimental.enabled'),
 			}
 		});
 	}
@@ -1882,12 +1883,16 @@ class SCMInputWidgetToolbar extends WorkbenchToolBar {
 				primaryAction = actions.find(a => a.id === lastActionId) ?? actions[0];
 			}
 
+			if (primaryAction &&
+				primaryAction.id !== SCMInputCommandId.CancelAction &&
+				contextKeyService.getContextKeyValue(SCMInputContextKeys.ActionIsEnabled.key) === false) {
+				primaryAction.enabled = false;
+			}
+
 			this._ctxActionCount.set(actions.length);
 			this._dropdownActions = actions.length === 1 ? [] : actions;
 
 			container.classList.toggle('has-no-actions', actions.length === 0);
-			container.classList.toggle('disabled', contextKeyService.getContextKeyValue(SCMInputContextKeys.ActionIsEnabled.key) !== true);
-
 			super.setActions(primaryAction ? [primaryAction] : [], []);
 		};
 
