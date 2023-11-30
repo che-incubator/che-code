@@ -1310,7 +1310,7 @@ export class SCMAccessibilityProvider implements IListAccessibilityProvider<Tree
 		} else if (isSCMResourceGroup(element)) {
 			return element.label;
 		} else if (isSCMHistoryItemGroupTreeElement(element)) {
-			return `${stripIcons(element.label).trim()}${element.description ? `, ${element.description}` : ''}`;
+			return element.ariaLabel ?? `${element.label.trim()}${element.description ? `, ${element.description}` : ''}`;
 		} else if (isSCMHistoryItemTreeElement(element)) {
 			return `${stripIcons(element.label).trim()}${element.description ? `, ${element.description}` : ''}`;
 		} else if (isSCMHistoryItemChangeTreeElement(element)) {
@@ -1323,7 +1323,7 @@ export class SCMAccessibilityProvider implements IListAccessibilityProvider<Tree
 
 			return result.join(', ');
 		} else if (isSCMViewSeparator(element)) {
-			return element.label;
+			return element.ariaLabel ?? element.label;
 		} else {
 			const result: string[] = [];
 
@@ -3279,7 +3279,7 @@ class SCMTreeDataSource implements IAsyncDataSource<ISCMViewService, TreeElement
 				// Resources (Tree)
 				const children: TreeElement[] = [];
 				for (const node of inputOrElement.resourceTree.root.children) {
-					children.push(node.element ?? node);
+					children.push(node.element && node.childrenCount === 0 ? node.element : node);
 				}
 
 				return children;
@@ -3288,7 +3288,7 @@ class SCMTreeDataSource implements IAsyncDataSource<ISCMViewService, TreeElement
 			// Resources (Tree), History item changes (Tree)
 			const children: TreeElement[] = [];
 			for (const node of inputOrElement.children) {
-				children.push(node.element ?? node);
+				children.push(node.element && node.childrenCount === 0 ? node.element : node);
 			}
 
 			return children;
