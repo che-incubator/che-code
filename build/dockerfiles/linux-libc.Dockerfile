@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-18
-FROM registry.access.redhat.com/ubi8/nodejs-18:1-81 as linux-libc-builder
+FROM registry.access.redhat.com/ubi9/nodejs-18:1-70 as linux-libc-builder
 
 USER root
 
@@ -28,7 +28,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       libsecret \
       https://rpmfind.net/linux/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm"; \
     elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/libsecret-devel-0.18.6-1.el8.x86_64.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
       https://rpmfind.net/linux/centos/8-stream/BaseOS/aarch64/os/Packages/libsecret-devel-0.18.6-1.el8.aarch64.rpm \
@@ -45,7 +45,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17 \
     && npm install -g node-gyp@9.4.1
