@@ -23,15 +23,15 @@ RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
-      https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm"; \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
       libsecret \
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm"; \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libsecret-devel-0.20.4-4.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="\
       https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/aarch64/os/Packages/libsecret-devel-0.18.6-1.el8.aarch64.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
       libsecret"; \
     else \
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
