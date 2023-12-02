@@ -106,9 +106,9 @@ RUN [[ $(uname -m) == "x86_64" ]] &&  yarn playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
     ARCH=$(uname -m) && \
     yum install --nobest -y procps \
-        http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
+        https://rpmfind.net/linux/epel/9/Everything/${ARCH}/Packages/e/epel-release-9-7.el9.noarch.rpm \
+        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-9.0-23.el9.noarch.rpm \
+        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-9.0-23.el9.noarch.rpm
 
 RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
     PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
