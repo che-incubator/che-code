@@ -44,16 +44,21 @@ export class CodeWorkspace {
     let workspace: Workspace | undefined;
 
     try {
-
       if (env.VSCODE_DEFAULT_WORKSPACE) {
-        console.log(`  > env.VSCODE_DEFAULT_WORKSPACE environment variable is set to ${env.VSCODE_DEFAULT_WORKSPACE}`);
+        console.log(
+          `  > env.VSCODE_DEFAULT_WORKSPACE environment variable is set to ${env.VSCODE_DEFAULT_WORKSPACE}`
+        );
         if (await this.fileExists(env.VSCODE_DEFAULT_WORKSPACE)) {
-          console.log(`  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
+          console.log(
+            `  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
+          );
 
           path = env.VSCODE_DEFAULT_WORKSPACE;
           workspace = JSON.parse(await fs.readFile(path));
         } else {
-          console.log(`  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
+          console.log(
+            `  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
+          );
           return;
         }
       }
@@ -91,7 +96,9 @@ export class CodeWorkspace {
         saveRequired = true;
       }
 
-      if (await this.synchronizeProjects(workspace!, devfile.dependentProjects)) {
+      if (
+        await this.synchronizeProjects(workspace!, devfile.dependentProjects)
+      ) {
         saveRequired = true;
       }
 
@@ -107,7 +114,6 @@ export class CodeWorkspace {
 
       return path;
     } catch (err) {
-
       console.error(
         `${err.message} Unable to generate che.code-workspace file`
       );

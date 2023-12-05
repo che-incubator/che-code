@@ -93,9 +93,7 @@ describe("Test VS Code launcher:", () => {
     });
 
     pathExistsMock.mockImplementation(async (path) => {
-      return (
-        "/tmp/node-extra-certificates/ca.crt" === path
-      );
+      return "/tmp/node-extra-certificates/ca.crt" === path;
     });
 
     const spawnMock = jest.fn();

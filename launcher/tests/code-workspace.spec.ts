@@ -38,7 +38,7 @@ const WORKSPACE_WITH_ONE_PROJECT = `{
 \t\t\t"path": "/tmp/projects/web-nodejs-sample"
 \t\t}
 \t]
-}`;  
+}`;
 
 const WORKSPACE_WITH_FIVE_PROJECTS = `{
 \t"folders": [
@@ -355,7 +355,7 @@ describe("Test generating VS Code Workspace file:", () => {
     await codeWorkspace.generate();
 
     expect(pathExistsMock).toBeCalledTimes(1);
-    
+
     expect(readFileMock).not.toHaveBeenCalled();
     expect(writeFileMock).not.toHaveBeenCalled();
   });
@@ -395,11 +395,11 @@ describe("Test generating VS Code Workspace file:", () => {
       return undefined;
     });
 
-    pathExistsMock.mockImplementation(async path => {
+    pathExistsMock.mockImplementation(async (path) => {
       return "/tmp/projects/web-nodejs-sample/.code-workspace" === path;
     });
 
-    isFileMock.mockImplementation(async path => {
+    isFileMock.mockImplementation(async (path) => {
       return "/tmp/projects/web-nodejs-sample/.code-workspace" === path;
     });
 
@@ -411,7 +411,9 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(readFileMock).toBeCalledTimes(2);
     expect(writeFileMock).not.toHaveBeenCalled();
 
-    expect(workspaceFile).toEqual("/tmp/projects/web-nodejs-sample/.code-workspace");
+    expect(workspaceFile).toEqual(
+      "/tmp/projects/web-nodejs-sample/.code-workspace"
+    );
   });
 
   test("should create .code-workspace file including dependentProjects", async () => {

@@ -17,7 +17,6 @@ import * as child_process from "child_process";
 import { NODE_EXTRA_CERTIFICATE } from "./node-extra-certificate";
 
 export class VSCodeLauncher {
-  
   async launch(workspaceFile?: string): Promise<void> {
     console.log("# Launching VS Code...");
 
