@@ -15,10 +15,10 @@ import * as fs from "./fs-extra";
 import * as child_process from "child_process";
 
 import { NODE_EXTRA_CERTIFICATE } from "./node-extra-certificate";
-import { workspaceFilePath } from "./code-workspace";
 
 export class VSCodeLauncher {
-  async launch(): Promise<void> {
+  
+  async launch(workspaceFile?: string): Promise<void> {
     console.log("# Launching VS Code...");
 
     if (!env.VSCODE_NODEJS_RUNTIME_DIR) {
@@ -46,13 +46,8 @@ export class VSCodeLauncher {
       "--without-connection-token",
     ];
 
-    if (
-      env.VSCODE_DEFAULT_WORKSPACE &&
-      (await fs.pathExists(env.VSCODE_DEFAULT_WORKSPACE))
-    ) {
-      params.push("--default-workspace", env.VSCODE_DEFAULT_WORKSPACE);
-    } else if (await fs.pathExists(workspaceFilePath())) {
-      params.push("--default-workspace", workspaceFilePath());
+    if (workspaceFile) {
+      params.push("--default-workspace", workspaceFile);
     } else {
       if (!env.PROJECT_SOURCE) {
         throw new Error(
