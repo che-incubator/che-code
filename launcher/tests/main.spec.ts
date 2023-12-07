@@ -8,52 +8,52 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { Main } from "../src/main";
+import { Main } from '../src/main';
 
 const setDevWorkspaceIdMock = jest.fn();
-jest.mock("../src/devworkspace-id", () => ({
+jest.mock('../src/devworkspace-id', () => ({
   DevWorkspaceId: function () {
     return { configure: setDevWorkspaceIdMock };
   },
 }));
 
 const configureOpenVSIXRegistryMock = jest.fn();
-jest.mock("../src/openvsix-registry", () => ({
+jest.mock('../src/openvsix-registry', () => ({
   OpenVSIXRegistry: function () {
     return { configure: configureOpenVSIXRegistryMock };
   },
 }));
 
 const configureWebviewResourcesMock = jest.fn();
-jest.mock("../src/webview-resources", () => ({
+jest.mock('../src/webview-resources', () => ({
   WebviewResources: function () {
     return { configure: configureWebviewResourcesMock };
   },
 }));
 
 const configureNodeExtraCertificate = jest.fn();
-jest.mock("../src/node-extra-certificate", () => ({
+jest.mock('../src/node-extra-certificate', () => ({
   NodeExtraCertificate: function () {
     return { configure: configureNodeExtraCertificate };
   },
 }));
 
 const generateCodeWorkspace = jest.fn();
-jest.mock("../src/code-workspace", () => ({
+jest.mock('../src/code-workspace', () => ({
   CodeWorkspace: function () {
     return { generate: generateCodeWorkspace };
   },
 }));
 
 const launchVsCode = jest.fn();
-jest.mock("../src/vscode-launcher", () => ({
+jest.mock('../src/vscode-launcher', () => ({
   VSCodeLauncher: function () {
     return { launch: launchVsCode };
   },
 }));
 
-describe("Test main flow:", () => {
-  test("should configure all the stuff", async () => {
+describe('Test main flow:', () => {
+  test('should configure all the stuff', async () => {
     await new Main().start();
 
     expect(setDevWorkspaceIdMock).toBeCalled();

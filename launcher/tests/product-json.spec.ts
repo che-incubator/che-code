@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "../src/fs-extra";
-import { ProductJSON } from "../src/product-json";
+import * as fs from '../src/fs-extra';
+import { ProductJSON } from '../src/product-json';
 
 const TEST_SET_WEBVIEW_CONTENT_BASE_URL_TEMPLATE = `{
 \t"webviewContentExternalBaseUrlTemplate": "bar"
@@ -22,8 +22,8 @@ const TEST_SET_EXTENSIONS_GALLERY_URLS = `{
 \t}
 }`;
 
-describe("Test Product JSON wrapper:", () => {
-  test("should return getWebviewContentExternalBaseUrlTemplate", async () => {
+describe('Test Product JSON wrapper:', () => {
+  test('should return getWebviewContentExternalBaseUrlTemplate', async () => {
     Object.assign(fs, {
       readFile: async () => `{
           "webviewContentExternalBaseUrlTemplate": "foo"
@@ -33,10 +33,10 @@ describe("Test Product JSON wrapper:", () => {
     const productJson = await new ProductJSON().load();
 
     const uri = productJson.getWebviewContentExternalBaseUrlTemplate();
-    expect(uri).toEqual("foo");
+    expect(uri).toEqual('foo');
   });
 
-  test("should set .webviewContentExternalBaseUrlTemplate", async () => {
+  test('should set .webviewContentExternalBaseUrlTemplate', async () => {
     const writeFileMock = jest.fn();
 
     Object.assign(fs, {
@@ -47,16 +47,13 @@ describe("Test Product JSON wrapper:", () => {
     });
 
     const productJson = await new ProductJSON().load();
-    productJson.setWebviewContentExternalBaseUrlTemplate("bar");
+    productJson.setWebviewContentExternalBaseUrlTemplate('bar');
     await productJson.save();
 
-    expect(writeFileMock).toHaveBeenCalledWith(
-      "product.json",
-      TEST_SET_WEBVIEW_CONTENT_BASE_URL_TEMPLATE
-    );
+    expect(writeFileMock).toHaveBeenCalledWith('product.json', TEST_SET_WEBVIEW_CONTENT_BASE_URL_TEMPLATE);
   });
 
-  test("should return getExtensionsGalleryServiceURL", async () => {
+  test('should return getExtensionsGalleryServiceURL', async () => {
     Object.assign(fs, {
       readFile: async () => `{
           "extensionsGallery": {
@@ -69,26 +66,23 @@ describe("Test Product JSON wrapper:", () => {
     const product = await new ProductJSON().load();
 
     const uri = product.getExtensionsGalleryServiceURL();
-    expect(uri).toEqual("https://open-vsx.org/vscode/gallery");
+    expect(uri).toEqual('https://open-vsx.org/vscode/gallery');
   });
 
-  test("should set .extensionsGallery.serviceURL and .extensionsGallery.itemURL", async () => {
+  test('should set .extensionsGallery.serviceURL and .extensionsGallery.itemURL', async () => {
     const writeFileMock = jest.fn();
 
     Object.assign(fs, {
-      readFile: () => "{}",
+      readFile: () => '{}',
       writeFile: writeFileMock,
     });
 
     const product = await new ProductJSON().load();
 
-    product.setExtensionsGalleryServiceURL("https://localhost/gallery");
-    product.setExtensionsGalleryItemURL("https://localhost/item");
+    product.setExtensionsGalleryServiceURL('https://localhost/gallery');
+    product.setExtensionsGalleryItemURL('https://localhost/item');
     await product.save();
 
-    expect(writeFileMock).toHaveBeenCalledWith(
-      "product.json",
-      TEST_SET_EXTENSIONS_GALLERY_URLS
-    );
+    expect(writeFileMock).toHaveBeenCalledWith('product.json', TEST_SET_EXTENSIONS_GALLERY_URLS);
   });
 });

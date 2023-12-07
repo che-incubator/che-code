@@ -64,5 +64,9 @@
       "jsx",
       "json"
     ]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true
   }
 }

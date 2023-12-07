@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "./fs-extra";
+import * as fs from './fs-extra';
 
-export const NODE_EXTRA_CERTIFICATE_DIR = "/tmp/node-extra-certificates";
+export const NODE_EXTRA_CERTIFICATE_DIR = '/tmp/node-extra-certificates';
 export const NODE_EXTRA_CERTIFICATE = `${NODE_EXTRA_CERTIFICATE_DIR}/ca.crt`;
 
-const CHE_CERTIFICATE = "/tmp/che/secret/ca.crt";
-const PUBLIC_CERTS_DIR = "/public-certs";
+const CHE_CERTIFICATE = '/tmp/che/secret/ca.crt';
+const PUBLIC_CERTS_DIR = '/public-certs';
 
 export class NodeExtraCertificate {
   /*****************************************************************************************************************
@@ -26,27 +26,21 @@ export class NodeExtraCertificate {
    *
    *****************************************************************************************************************/
   async configure(): Promise<void> {
-    console.log("# Configuring Node extra certificates...");
+    console.log('# Configuring Node extra certificates...');
 
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
-      console.log(
-        `  > File ${NODE_EXTRA_CERTIFICATE} is already exist, skip this step`
-      );
+      console.log(`  > File ${NODE_EXTRA_CERTIFICATE} is already exist, skip this step`);
       return;
     }
 
-    let data = "";
+    let data = '';
 
     // Check if we have a custom Che CA certificate
     if (await fs.pathExists(CHE_CERTIFICATE)) {
       console.log(`  > found ${CHE_CERTIFICATE}`);
 
       let content = await fs.readFile(CHE_CERTIFICATE);
-      data += content
-        ? content.endsWith("\n")
-          ? content
-          : (content += "\n")
-        : "";
+      data += content ? (content.endsWith('\n') ? content : (content += '\n')) : '';
     }
 
     // Check if we have public certificates in /public-certs
@@ -59,17 +53,13 @@ export class NodeExtraCertificate {
         if (await fs.isFile(file)) {
           console.log(`  > found ${file}`);
           let content = await fs.readFile(file);
-          data += content
-            ? content.endsWith("\n")
-              ? content
-              : (content += "\n")
-            : "";
+          data += content ? (content.endsWith('\n') ? content : (content += '\n')) : '';
         }
       }
     }
 
     if (!data) {
-      console.log("  > did not find any key");
+      console.log('  > did not find any key');
       return;
     }
 

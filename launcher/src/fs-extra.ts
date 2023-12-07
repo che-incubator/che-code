@@ -16,14 +16,14 @@
  *   - it simplifies writing tests and allows to easily mock this module
  */
 
-import * as fs from "fs";
+import * as fs from 'fs';
 
 export async function readFile(file: string): Promise<string> {
-  return fs.readFileSync(file, "utf8");
+  return fs.readFileSync(file, 'utf8');
 }
 
 export async function writeFile(file: string, content: string): Promise<void> {
-  fs.writeFileSync(file, content, "utf8");
+  fs.writeFileSync(file, content, 'utf8');
 }
 
 export async function pathExists(path: string): Promise<boolean> {

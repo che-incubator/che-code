@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "../src/fs-extra";
+import * as fs from '../src/fs-extra';
 
-import * as path from "path";
-import { env } from "process";
-import { CodeWorkspace } from "../src/code-workspace";
+import * as path from 'path';
+import { env } from 'process';
+import { CodeWorkspace } from '../src/code-workspace';
 
 const WORKSPACE_JSON = `{
 \t"folders": [
@@ -86,7 +86,7 @@ const WORKSPACE_WITH_DEPENDENT_PROJECTS = `{
 \t]
 }`;
 
-describe("Test generating VS Code Workspace file:", () => {
+describe('Test generating VS Code Workspace file:', () => {
   beforeEach(() => {
     delete env.PROJECTS_ROOT;
     delete env.VSCODE_DEFAULT_WORKSPACE;
@@ -98,7 +98,7 @@ describe("Test generating VS Code Workspace file:", () => {
     });
   });
 
-  test("should return if env.PROJECTS_ROOT is not set", async () => {
+  test('should return if env.PROJECTS_ROOT is not set', async () => {
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
@@ -110,14 +110,10 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(pathExistsMock).toBeCalledTimes(0);
   });
 
-  test("should create default .code-workspace file", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
+  test('should create default .code-workspace file', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
 
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.yaml"
-    );
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
 
     const pathExistsMock = jest.fn();
     const writeFileMock = jest.fn();
@@ -145,19 +141,16 @@ describe("Test generating VS Code Workspace file:", () => {
     // should read only flattened.devworkspace.yaml
     expect(readFileMock).toBeCalledTimes(1);
 
-    expect(writeFileMock).toBeCalledWith(
-      "/tmp/projects/.code-workspace",
-      WORKSPACE_JSON
-    );
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_JSON);
   });
 
-  test("should update default .code-workspace file", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
+  test('should update default .code-workspace file', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
 
     env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
       __dirname,
-      "_data",
-      "flattened.devworkspace.with-five-projects.yaml"
+      '_data',
+      'flattened.devworkspace.with-five-projects.yaml'
     );
 
     const pathExistsMock = jest.fn();
@@ -179,7 +172,7 @@ describe("Test generating VS Code Workspace file:", () => {
         return originalReadFile(path);
       }
 
-      if (path === "/tmp/projects/.code-workspace") {
+      if (path === '/tmp/projects/.code-workspace') {
         return WORKSPACE_JSON;
       }
 
@@ -187,11 +180,11 @@ describe("Test generating VS Code Workspace file:", () => {
     });
 
     pathExistsMock.mockImplementation((path) => {
-      return "/tmp/projects/.code-workspace" === path;
+      return '/tmp/projects/.code-workspace' === path;
     });
 
     isFileMock.mockImplementation((path) => {
-      return "/tmp/projects/.code-workspace" === path;
+      return '/tmp/projects/.code-workspace' === path;
     });
 
     const codeWorkspace = new CodeWorkspace();
@@ -200,20 +193,13 @@ describe("Test generating VS Code Workspace file:", () => {
     // should read flattened.devworkspace.yaml and workspace file
     expect(readFileMock).toBeCalledTimes(2);
 
-    expect(writeFileMock).toBeCalledWith(
-      "/tmp/projects/.code-workspace",
-      WORKSPACE_WITH_FIVE_PROJECTS
-    );
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_FIVE_PROJECTS);
   });
 
-  test("should not update default .code-workspace file", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
+  test('should not update default .code-workspace file', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
 
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.yaml"
-    );
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
 
     const pathExistsMock = jest.fn();
     const writeFileMock = jest.fn();
@@ -234,7 +220,7 @@ describe("Test generating VS Code Workspace file:", () => {
         return originalReadFile(path);
       }
 
-      if (path === "/tmp/projects/.code-workspace") {
+      if (path === '/tmp/projects/.code-workspace') {
         return WORKSPACE_JSON;
       }
 
@@ -242,11 +228,11 @@ describe("Test generating VS Code Workspace file:", () => {
     });
 
     pathExistsMock.mockImplementation((path) => {
-      return "/tmp/projects/.code-workspace" === path;
+      return '/tmp/projects/.code-workspace' === path;
     });
 
     isFileMock.mockImplementation((path) => {
-      return "/tmp/projects/.code-workspace" === path;
+      return '/tmp/projects/.code-workspace' === path;
     });
 
     const codeWorkspace = new CodeWorkspace();
@@ -259,14 +245,14 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(writeFileMock).not.toHaveBeenCalled();
   });
 
-  test("should update extsting workspace file defined by env.VSCODE_DEFAULT_WORKSPACE", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/custom.code-workspace-file";
+  test('should update extsting workspace file defined by env.VSCODE_DEFAULT_WORKSPACE', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.VSCODE_DEFAULT_WORKSPACE = '/tmp/custom.code-workspace-file';
 
     env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
       __dirname,
-      "_data",
-      "flattened.devworkspace.with-five-projects.yaml"
+      '_data',
+      'flattened.devworkspace.with-five-projects.yaml'
     );
 
     const pathExistsMock = jest.fn();
@@ -284,7 +270,7 @@ describe("Test generating VS Code Workspace file:", () => {
     });
 
     readFileMock.mockImplementation(async (path) => {
-      if (path === "/tmp/custom.code-workspace-file") {
+      if (path === '/tmp/custom.code-workspace-file') {
         return WORKSPACE_JSON;
       }
 
@@ -296,11 +282,11 @@ describe("Test generating VS Code Workspace file:", () => {
     });
 
     pathExistsMock.mockImplementation((path) => {
-      return "/tmp/custom.code-workspace-file" === path;
+      return '/tmp/custom.code-workspace-file' === path;
     });
 
     isFileMock.mockImplementation((path) => {
-      return "/tmp/custom.code-workspace-file" === path;
+      return '/tmp/custom.code-workspace-file' === path;
     });
 
     const codeWorkspace = new CodeWorkspace();
@@ -309,24 +295,17 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(pathExistsMock).toBeCalledTimes(1);
     expect(isFileMock).toBeCalledTimes(1);
 
-    expect(pathExistsMock).toBeCalledWith("/tmp/custom.code-workspace-file");
-    expect(isFileMock).toBeCalledWith("/tmp/custom.code-workspace-file");
+    expect(pathExistsMock).toBeCalledWith('/tmp/custom.code-workspace-file');
+    expect(isFileMock).toBeCalledWith('/tmp/custom.code-workspace-file');
 
-    expect(writeFileMock).toBeCalledWith(
-      "/tmp/custom.code-workspace-file",
-      WORKSPACE_WITH_FIVE_PROJECTS
-    );
+    expect(writeFileMock).toBeCalledWith('/tmp/custom.code-workspace-file', WORKSPACE_WITH_FIVE_PROJECTS);
   });
 
-  test("should return if env.VSCODE_DEFAULT_WORKSPACE points on a wrong location", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/test.code-workspace";
+  test('should return if env.VSCODE_DEFAULT_WORKSPACE points on a wrong location', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.VSCODE_DEFAULT_WORKSPACE = '/tmp/test.code-workspace';
 
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.yaml"
-    );
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
 
     const pathExistsMock = jest.fn();
     const isFileMock = jest.fn();
@@ -360,14 +339,10 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(writeFileMock).not.toHaveBeenCalled();
   });
 
-  test("if workspace contains only one project, should find and use predefined workspace file", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
+  test('if workspace contains only one project, should find and use predefined workspace file', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
 
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.with-one-project.yaml"
-    );
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.with-one-project.yaml');
 
     const pathExistsMock = jest.fn();
     const isFileMock = jest.fn();
@@ -388,7 +363,7 @@ describe("Test generating VS Code Workspace file:", () => {
         return originalReadFile(path);
       }
 
-      if ("/tmp/projects/web-nodejs-sample/.code-workspace" === path) {
+      if ('/tmp/projects/web-nodejs-sample/.code-workspace' === path) {
         return WORKSPACE_WITH_ONE_PROJECT;
       }
 
@@ -396,11 +371,11 @@ describe("Test generating VS Code Workspace file:", () => {
     });
 
     pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/projects/web-nodejs-sample/.code-workspace" === path;
+      return '/tmp/projects/web-nodejs-sample/.code-workspace' === path;
     });
 
     isFileMock.mockImplementation(async (path) => {
-      return "/tmp/projects/web-nodejs-sample/.code-workspace" === path;
+      return '/tmp/projects/web-nodejs-sample/.code-workspace' === path;
     });
 
     const codeWorkspace = new CodeWorkspace();
@@ -411,19 +386,13 @@ describe("Test generating VS Code Workspace file:", () => {
     expect(readFileMock).toBeCalledTimes(2);
     expect(writeFileMock).not.toHaveBeenCalled();
 
-    expect(workspaceFile).toEqual(
-      "/tmp/projects/web-nodejs-sample/.code-workspace"
-    );
+    expect(workspaceFile).toEqual('/tmp/projects/web-nodejs-sample/.code-workspace');
   });
 
-  test("should create .code-workspace file including dependentProjects", async () => {
-    env.PROJECTS_ROOT = "/tmp/projects";
+  test('should create .code-workspace file including dependentProjects', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
 
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "dependentProjects.devworkspace.yaml"
-    );
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'dependentProjects.devworkspace.yaml');
 
     const pathExistsMock = jest.fn();
     const writeFileMock = jest.fn();
@@ -451,9 +420,6 @@ describe("Test generating VS Code Workspace file:", () => {
     // should read only flattened.devworkspace.yaml
     expect(readFileMock).toBeCalledTimes(1);
 
-    expect(writeFileMock).toBeCalledWith(
-      "/tmp/projects/.code-workspace",
-      WORKSPACE_WITH_DEPENDENT_PROJECTS
-    );
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_DEPENDENT_PROJECTS);
   });
 });
