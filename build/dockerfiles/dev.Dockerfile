@@ -34,24 +34,22 @@ ENV ZSH_DISABLE_COMPFIX="true"
 
 USER 10001
 
-ENV NODEJS_VERSION=18.16.1
+ENV NODEJS_VERSION=18.18.2
 
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0 \
+    PATH=$NVM_DIR/versions/node/v$NODEJS_VERSION/bin:$PATH
 
 RUN source $NVM_DIR/nvm.sh && \
     nvm install v$NODEJS_VERSION && \
     nvm alias default v$NODEJS_VERSION && \
-    nvm use v$NODEJS_VERSION && \
-    npm install --global npm@9.7.2 && \
-    npm install --global yarn@v1.22.19
-
-ENV PATH=$NVM_DIR/versions/node/v$NODEJS_VERSION/bin:$PATH
+    nvm use v$NODEJS_VERSION
 
 USER 0
+RUN npm install --global npm@9.7.2 yarn@v1 node-gyp@9
 
 # Set permissions on /home/user/.cache to allow the user to write
-RUN yarn global add node-gyp
+RUN yarn global add node-gyp@9
 RUN chgrp -R 0 /home/user/.cache && chmod -R g=u /home/user/.cache
 
 USER 10001
