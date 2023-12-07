@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Red Hat, Inc.
+# Copyright (c) 2021-2024 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-18
-FROM registry.access.redhat.com/ubi8/nodejs-18:1-86 as linux-libc-builder
+FROM registry.access.redhat.com/ubi8/nodejs-18:1-86 as linux-libc-ubi8-builder
 
 USER root
 
@@ -146,4 +146,4 @@ RUN yarn \
 
 # Store the content of the result
 FROM scratch as linux-libc-content
-COPY --from=linux-libc-builder /checode /checode-linux-libc
+COPY --from=linux-libc-ubi8-builder /checode /checode-linux-libc/ubi8
