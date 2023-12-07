@@ -37,5 +37,6 @@ libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
 if [ -n "$libc" ]; then
     /checode-linux-musl/node /checode-linux-musl/out/server-main.js --host "${CODE_HOST}" --port 3100
 else
+    # TODO: some changes are required here
     /checode-linux-libc/node /checode-linux-libc/out/server-main.js --host "${CODE_HOST}" --port 3100
 fi

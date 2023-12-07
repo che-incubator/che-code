@@ -65,16 +65,16 @@ commands:
 
   - id: podman-compile-libc
     exec:
-      label: Compile che-code in a container using Podman
+      label: Compile che-code in a ubi8-based container using Podman
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        echo "Compile libc mod"
-        cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
+        echo "Compile libc-ubi8 mod"
+        cp -f build/dockerfiles/linux-libc-ubi8.Dockerfile build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
         REMOVE_FROM="### Beginning of tests"
         REMOVE_TO="### Ending of tests"
-        sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/d" build/dockerfiles/linux-libc.no-test.Dockerfile
-        podman build -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+        sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/d" build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
+        podman build -f build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile -t linux-libc-ubi8-amd64 .
       group:
         kind: run
 
@@ -86,6 +86,10 @@ commands:
       commandLine: |
         echo "Build che-code image"
         cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.libc.Dockerfile
+        REPLACE="FROM linux-libc-ubi9-amd64 as linux-libc-ubi9-content"
+        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
+        REPLACE="COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9"
+        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
         REPLACE="FROM linux-musl-amd64 as linux-musl-content"
         sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
         REPLACE="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"

@@ -48,12 +48,12 @@ jobs:
       - name: rebase
         run: |
           ./rebase.sh
-      - name: Validate tests on libc image
+      - name: Validate tests on libc-ubi9 image
         env:
           # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc.Dockerfile .
+          docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc-ubi9.Dockerfile .
       - name: push changes
         run: |
           set -e

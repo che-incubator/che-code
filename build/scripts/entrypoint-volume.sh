@@ -31,9 +31,19 @@ nohup /checode/bin/machine-exec --url "0.0.0.0:${MACHINE_EXEC_PORT}" &
 # detect if we're using alpine/musl
 libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
 if [ -n "$libc" ]; then
-    cd /checode/checode-linux-musl || exit
+  cd /checode/checode-linux-musl || exit
 else
-    cd /checode/checode-linux-libc || exit
+  openssl_major_version=$(openssl version -v | cut -d' ' -f2 | cut -d'.' -f1)
+  echo "OpenSSL major version is $openssl_major_version."
+
+  if [ "$openssl_major_version" = "1" ]; then
+    cd /checode/checode-linux-libc/ubi8 || exit
+  elif [ "$openssl_major_version" = "3" ]; then
+    cd /checode/checode-linux-libc/ubi9 || exit
+  else
+    echo "Error: Unsupported OpenSSL major version $openssl_major_version."
+    exit 1
+  fi
 fi
 
 # Set the default path to the serverDataFolderName

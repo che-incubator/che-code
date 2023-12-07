@@ -35,23 +35,23 @@ jobs:
           #
           # truncate Dockerfile, remove section that runs tests
           #
-          cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
+          cp -f build/dockerfiles/linux-libc-ubi9.Dockerfile build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
           REMOVE_FROM="### Beginning of tests"
           REMOVE_TO="### Ending of tests"
-          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc.no-test.Dockerfile
+          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
           #
           # show the Dockerfile
           #
-          cat build/dockerfiles/linux-libc.no-test.Dockerfile
+          cat build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
       - name: Compile Che-Code editor
         run: |
           #
-          # build linux-libc-amd64:latest docker image
+          # build linux-libc-ubi9-amd64:latest docker image
           #
           docker image prune -a -f
-          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile -t linux-libc-ubi9-amd64 .
 
       - name: Build Che-Code Docker image
         run: |

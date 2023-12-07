@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [ 'musl', 'libc' ]
+        dist: [ 'musl', 'libc-ubi8', 'libc-ubi9' ]
         arch: ['amd64']
     runs-on: ubuntu-22.04
     steps:
@@ -54,10 +54,14 @@ jobs:
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Download linux-libc-amd64 image
+      - name: Download linux-libc-ubi8-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
-          image: "linux-libc-amd64"
+          image: "linux-libc-ubi8-amd64"
+      - name: Download linux-libc-ubi9-amd64 image
+        uses: ishworkh/docker-image-artifact-download@v1
+        with:
+          image: "linux-libc-ubi9-amd64"
       - name: Download linux-musl image
         uses: ishworkh/docker-image-artifact-download@v1
         with:

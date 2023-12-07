@@ -27,9 +27,10 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 ## Image build
 
 1. `docker build -f build/dockerfiles/linux-musl.Dockerfile -t linux-musl-amd64 .`
-2. `docker build -f build/dockerfiles/linux-libc.Dockerfile -t linux-libc-amd64 .`
-3. `export DOCKER_BUILDKIT=1`
-4. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
+2. `docker build -f build/dockerfiles/linux-libc-ubi8.Dockerfile -t linux-libc-ubi8-amd64 .`
+3. `docker build -f build/dockerfiles/linux-libc-ubi9.Dockerfile -t linux-libc-ubi9-amd64 .`
+4. `export DOCKER_BUILDKIT=1`
+5. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
 ## Developing with Eclipse Che®
 
@@ -242,7 +243,9 @@ $ ./branding/branding.sh
 ```
 $ docker build -f build/dockerfiles/linux-musl.Dockerfile -t linux-musl-amd64 .
 
-$ docker build -f build/dockerfiles/linux-libc.Dockerfile -t linux-libc-amd64 .
+$ docker build -f build/dockerfiles/linux-libc-ubi8.Dockerfile -t linux-libc-ubi8-amd64 .
+
+$ docker build -f build/dockerfiles/linux-libc-ubi9.Dockerfile -t linux-libc-ubi9-amd64 .
 
 $ export DOCKER_BUILDKIT=1
 

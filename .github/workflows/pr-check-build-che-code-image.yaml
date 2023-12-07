@@ -55,10 +55,15 @@ jobs:
         run: |
           docker system prune -af
 
-      - name: Download linux-libc-amd64 image
+      - name: Download linux-libc-ubi8-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
         with:
-          image: "linux-libc-amd64"
+          image: "linux-libc-ubi8-amd64"
+      
+      - name: Download linux-libc-ubi9-amd64 image
+        uses: ishworkh/docker-image-artifact-download@v1
+        with:
+          image: "linux-libc-ubi9-amd64"
 
       - name: Download linux-musl-amd64 image
         uses: ishworkh/docker-image-artifact-download@v1
