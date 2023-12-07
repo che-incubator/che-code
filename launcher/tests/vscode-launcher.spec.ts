@@ -82,67 +82,6 @@ describe("Test VS Code launcher:", () => {
     expect(pathExistsMock).toBeCalledTimes(0);
   });
 
-  test("should check env.VSCODE_DEFAULT_WORKSPACE and launch VS Code", async () => {
-    env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
-    env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
-    env.SHELL = "/bin/testshell";
-
-    const pathExistsMock = jest.fn();
-    Object.assign(fs, {
-      pathExists: pathExistsMock,
-    });
-
-    pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/.code-workspace" === path;
-    });
-
-    const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
-
-    const mainTreadEventEmitter = jest.fn();
-    const stdoutEventEmitter = jest.fn();
-    const stderrEventEmitter = jest.fn();
-
-    spawnMock.mockImplementation(() => ({
-      on: mainTreadEventEmitter,
-      stdout: {
-        on: stdoutEventEmitter,
-      },
-      stderr: {
-        on: stderrEventEmitter,
-      },
-    }));
-
-    const launcher = new VSCodeLauncher();
-    await launcher.launch();
-
-    expect(pathExistsMock).toBeCalledTimes(2);
-    expect(pathExistsMock).toBeCalledWith("/tmp/.code-workspace");
-    expect(pathExistsMock).toBeCalledWith(
-      "/tmp/node-extra-certificates/ca.crt"
-    );
-
-    expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
-      "out/server-main.js",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      "3100",
-      "--without-connection-token",
-      "--default-workspace",
-      "/tmp/.code-workspace",
-    ]);
-
-    expect(env.NODE_EXTRA_CA_CERTS).not.toBeDefined();
-
-    expect(mainTreadEventEmitter).toBeCalledWith("close", expect.any(Function));
-    expect(stdoutEventEmitter).toBeCalledWith("data", expect.any(Function));
-    expect(stderrEventEmitter).toBeCalledWith("data", expect.any(Function));
-  });
-
   test("should launch VS Code with /projects/.code-workspace workspace file and Node extra certificate", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
@@ -154,11 +93,7 @@ describe("Test VS Code launcher:", () => {
     });
 
     pathExistsMock.mockImplementation(async (path) => {
-      console.log(`> is path exist ${path}`);
-      return (
-        "/tmp/projects/.code-workspace" === path ||
-        "/tmp/node-extra-certificates/ca.crt" === path
-      );
+      return "/tmp/node-extra-certificates/ca.crt" === path;
     });
 
     const spawnMock = jest.fn();
@@ -177,10 +112,9 @@ describe("Test VS Code launcher:", () => {
     }));
 
     const launcher = new VSCodeLauncher();
-    await launcher.launch();
+    await launcher.launch("/tmp/projects/.code-workspace");
 
-    expect(pathExistsMock).toBeCalledTimes(2);
-    expect(pathExistsMock).toBeCalledWith("/tmp/projects/.code-workspace");
+    expect(pathExistsMock).toBeCalledTimes(1);
     expect(pathExistsMock).toBeCalledWith(
       "/tmp/node-extra-certificates/ca.crt"
     );
@@ -229,8 +163,7 @@ describe("Test VS Code launcher:", () => {
     const launcher = new VSCodeLauncher();
     await launcher.launch();
 
-    expect(pathExistsMock).toBeCalledTimes(2);
-    expect(pathExistsMock).toBeCalledWith("/tmp/projects/.code-workspace");
+    expect(pathExistsMock).toBeCalledTimes(1);
     expect(pathExistsMock).toBeCalledWith(
       "/tmp/node-extra-certificates/ca.crt"
     );
@@ -287,16 +220,11 @@ describe("Test VS Code launcher:", () => {
   test("should use SHELL env var when launching Code if set", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
     env.SHELL = "/bin/testshell";
 
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
-    });
-
-    pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/.code-workspace" === path;
     });
 
     const spawnMock = jest.fn();
@@ -319,10 +247,9 @@ describe("Test VS Code launcher:", () => {
     }));
 
     const launcher = new VSCodeLauncher();
-    await launcher.launch();
+    await launcher.launch("/tmp/.code-workspace");
 
-    expect(pathExistsMock).toBeCalledTimes(2);
-    expect(pathExistsMock).toBeCalledWith("/tmp/.code-workspace");
+    expect(pathExistsMock).toBeCalledTimes(1);
     expect(pathExistsMock).toBeCalledWith(
       "/tmp/node-extra-certificates/ca.crt"
     );
@@ -348,7 +275,6 @@ describe("Test VS Code launcher:", () => {
   test("should set SHELL env var to /bin/bash if unset and bash is installed", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
 
     jest
       .spyOn(os, "userInfo")
@@ -357,10 +283,6 @@ describe("Test VS Code launcher:", () => {
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
-    });
-
-    pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/.code-workspace" === path;
     });
 
     const execSyncMock = jest.fn(() => "");
@@ -386,7 +308,7 @@ describe("Test VS Code launcher:", () => {
     }));
 
     const launcher = new VSCodeLauncher();
-    await launcher.launch();
+    await launcher.launch("/tmp/.code-workspace");
 
     expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
       "out/server-main.js",
@@ -405,7 +327,6 @@ describe("Test VS Code launcher:", () => {
   test("should set SHELL env var to /bin/sh if unset and bash is not installed", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
 
     jest
       .spyOn(os, "userInfo")
@@ -414,10 +335,6 @@ describe("Test VS Code launcher:", () => {
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
-    });
-
-    pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/.code-workspace" === path;
     });
 
     const execSyncMock = jest.fn(() => {
@@ -445,7 +362,7 @@ describe("Test VS Code launcher:", () => {
     }));
 
     const launcher = new VSCodeLauncher();
-    await launcher.launch();
+    await launcher.launch("/tmp/.code-workspace");
 
     expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
       "out/server-main.js",
@@ -464,7 +381,6 @@ describe("Test VS Code launcher:", () => {
   test("should not set SHELL env var if unset and /etc/passwd has a shell", async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = "/tmp/vscode-nodejs-runtime";
     env.PROJECTS_ROOT = "/tmp/projects";
-    env.VSCODE_DEFAULT_WORKSPACE = "/tmp/.code-workspace";
 
     jest
       .spyOn(os, "userInfo")
@@ -473,10 +389,6 @@ describe("Test VS Code launcher:", () => {
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
-    });
-
-    pathExistsMock.mockImplementation(async (path) => {
-      return "/tmp/.code-workspace" === path;
     });
 
     const execSyncMock = jest.fn(() => {
@@ -504,7 +416,7 @@ describe("Test VS Code launcher:", () => {
     }));
 
     const launcher = new VSCodeLauncher();
-    await launcher.launch();
+    await launcher.launch("/tmp/.code-workspace");
 
     expect(spawnMock).toBeCalledWith("/tmp/vscode-nodejs-runtime/node", [
       "out/server-main.js",

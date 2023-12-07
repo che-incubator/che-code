@@ -10,10 +10,20 @@
 
 import * as fs from "./fs-extra";
 import { env } from "process";
-import { FlattenedDevfile } from "./flattened-devfile";
+import { FlattenedDevfile, Project } from "./flattened-devfile";
 
-export function workspaceFilePath(): string {
-  return `${env.PROJECTS_ROOT}/.code-workspace`;
+export interface Workspace {
+  folders: Folder[];
+  settings?: KeyValue;
+}
+
+export interface Folder {
+  name: string;
+  path: string;
+}
+
+export interface KeyValue {
+  [key: string]: string;
 }
 
 export class CodeWorkspace {
@@ -22,7 +32,7 @@ export class CodeWorkspace {
    * If does not exist, creates `.code-workspace` file in projects directory.
    *
    *****************************************************************************************************************/
-  async generate(): Promise<void> {
+  async generate(): Promise<string | undefined> {
     console.log("# Generating Workspace file...");
 
     if (!env.PROJECTS_ROOT) {
@@ -30,54 +40,119 @@ export class CodeWorkspace {
       return;
     }
 
-    // skip if env.VSCODE_DEFAULT_WORKSPACE is defined and points to a real file
-    if (env.VSCODE_DEFAULT_WORKSPACE) {
-      if (
-        (await fs.pathExists(env.VSCODE_DEFAULT_WORKSPACE)) &&
-        (await fs.isFile(env.VSCODE_DEFAULT_WORKSPACE))
-      ) {
-        console.log(
-          "  > env.VSCODE_DEFAULT_WORKSPACE is defined, skip this step"
-        );
-        return;
-      } else {
-        console.log(
-          "  > env.VSCODE_DEFAULT_WORKSPACE must point on a workspace file"
-        );
-      }
-    }
+    let path: string | undefined;
+    let workspace: Workspace | undefined;
 
     try {
-      // skip if workspace file is already exist
-      if (await fs.pathExists(workspaceFilePath())) {
+      if (env.VSCODE_DEFAULT_WORKSPACE) {
         console.log(
-          `  > Workspace file ${workspaceFilePath()} is already exist`
+          `  > env.VSCODE_DEFAULT_WORKSPACE environment variable is set to ${env.VSCODE_DEFAULT_WORKSPACE}`
         );
-        return;
+        if (await this.fileExists(env.VSCODE_DEFAULT_WORKSPACE)) {
+          console.log(
+            `  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
+          );
+
+          path = env.VSCODE_DEFAULT_WORKSPACE;
+          workspace = JSON.parse(await fs.readFile(path));
+        } else {
+          console.log(
+            `  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
+          );
+          return;
+        }
       }
 
-      // take all the projects from flattened devworkspace file
-      const projects = await new FlattenedDevfile().getProjects();
-      const folders = projects.map((p) => {
-        return {
-          name: p.name,
-          path: `${env.PROJECTS_ROOT}/${p.name}`,
-        };
-      });
+      const devfile = await new FlattenedDevfile().getDevfile();
+      let saveRequired = false;
 
-      const workspace = {
-        folders,
-      };
+      if (!path) {
+        // if there is only one project, try to find the workspace file
+        if (devfile.projects && devfile.projects.length === 1) {
+          const project = devfile.projects[0];
+          const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+          if (await this.fileExists(toFind)) {
+            console.log(`  > Using workspace file ${toFind}`);
 
-      // write .code-workspace file
-      const json = JSON.stringify(workspace, null, "\t");
-      await fs.writeFile(workspaceFilePath(), json);
+            path = toFind;
+            workspace = JSON.parse(await fs.readFile(path));
+          }
+        }
+      }
 
-      console.log(`  > writing ${workspaceFilePath()}..`);
+      if (!path) {
+        path = `${env.PROJECTS_ROOT}/.code-workspace`;
+        if (await this.fileExists(path)) {
+          console.log(`  > Using workspace file ${path}`);
+          workspace = JSON.parse(await fs.readFile(path));
+        } else {
+          console.log(`  > Creating new workspace file ${path}`);
+          workspace = {} as Workspace;
+          saveRequired = true;
+        }
+      }
+
+      if (await this.synchronizeProjects(workspace!, devfile.projects)) {
+        saveRequired = true;
+      }
+
+      if (
+        await this.synchronizeProjects(workspace!, devfile.dependentProjects)
+      ) {
+        saveRequired = true;
+      }
+
+      if (await this.synchronizeProjects(workspace!, devfile.starterProjects)) {
+        saveRequired = true;
+      }
+
+      // write workspace file only if it has been changed
+      if (saveRequired) {
+        const json = JSON.stringify(workspace, null, "\t");
+        await fs.writeFile(path, json);
+      }
+
+      return path;
     } catch (err) {
       console.error(
         `${err.message} Unable to generate che.code-workspace file`
       );
     }
+  }
+
+  async fileExists(file: string | undefined): Promise<boolean> {
+    if (file && (await fs.pathExists(file)) && (await fs.isFile(file))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  async synchronizeProjects(
+    workspace: Workspace,
+    projects?: Project[]
+  ): Promise<boolean> {
+    if (!projects) {
+      return false;
+    }
+
+    if (!workspace.folders) {
+      workspace.folders = [];
+    }
+
+    let synchronized = false;
+
+    projects.forEach(async (project) => {
+      if (!workspace.folders.some((folder) => folder.name === project.name)) {
+        workspace.folders.push({
+          name: project.name,
+          path: `${env.PROJECTS_ROOT}/${project.name}`,
+        });
+
+        synchronized = true;
+      }
+    });
+
+    return synchronized;
   }
 }

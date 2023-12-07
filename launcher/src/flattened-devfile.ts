@@ -13,7 +13,9 @@ import { env } from "process";
 import * as jsYaml from "js-yaml";
 
 export interface Devfile {
-  projects: Project[];
+  projects?: Project[];
+  dependentProjects?: Project[];
+  starterProjects?: Project[];
   components: Component[];
 }
 
@@ -60,7 +62,6 @@ export class FlattenedDevfile {
 
     if (!this.devfile) {
       const content = await fs.readFile(env.DEVWORKSPACE_FLATTENED_DEVFILE);
-
       this.devfile = jsYaml.load(content) as Devfile;
     }
 
@@ -87,10 +88,5 @@ export class FlattenedDevfile {
     }
 
     return cheCodeEndpointURI;
-  }
-
-  async getProjects(): Promise<Project[]> {
-    const devfile = await this.getDevfile();
-    return devfile.projects;
   }
 }

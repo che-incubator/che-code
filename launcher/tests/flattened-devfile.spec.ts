@@ -11,7 +11,7 @@
 import { env } from "process";
 import * as path from "path";
 
-import { FlattenedDevfile } from "../src/flattened-devfile";
+import { FlattenedDevfile, Project } from "../src/flattened-devfile";
 
 describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
   test("should not return che-code endpoint if env.DEVWORKSPACE_FLATTENED_DEVFILE is not set", async () => {
@@ -51,14 +51,34 @@ describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
       "flattened.devworkspace.yaml"
     );
 
-    const devfile = new FlattenedDevfile();
-    const projects = await devfile.getProjects();
+    const devfile = await new FlattenedDevfile().getDevfile();
+
+    expect(devfile.projects).toBeDefined();
+    expect(devfile.projects!.map((project) => project.name)).toStrictEqual([
+      "che-code",
+      "che-devfile-registry",
+      "web-nodejs-sample",
+    ]);
+  });
+
+  test("should contain dependentProjects", async () => {
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
+      __dirname,
+      "_data",
+      "dependentProjects.devworkspace.yaml"
+    );
+
+    const devfile = await new FlattenedDevfile().getDevfile();
+    const projects: Project[] = [];
+    projects.push(...devfile.projects!);
+    projects.push(...devfile.dependentProjects!);
 
     expect(projects).toBeDefined();
     expect(projects.map((project) => project.name)).toStrictEqual([
       "che-code",
       "che-devfile-registry",
       "web-nodejs-sample",
+      "dependent-project",
     ]);
   });
 });
