@@ -8,9 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "./fs-extra";
-import { env } from "process";
-import * as jsYaml from "js-yaml";
+import * as fs from './fs-extra';
+import { env } from 'process';
+import * as jsYaml from 'js-yaml';
 
 export interface Devfile {
   projects?: Project[];
@@ -55,9 +55,7 @@ export class FlattenedDevfile {
 
   async getDevfile(): Promise<Devfile> {
     if (!env.DEVWORKSPACE_FLATTENED_DEVFILE) {
-      throw new Error(
-        "  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
-      );
+      throw new Error('  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set');
     }
 
     if (!this.devfile) {
@@ -73,18 +71,12 @@ export class FlattenedDevfile {
     const cheCodeEndpointURI = devfile.components
       .find(
         (component) =>
-          component.attributes &&
-          "che-code-runtime" ===
-            component.attributes["app.kubernetes.io/component"]
+          component.attributes && 'che-code-runtime' === component.attributes['app.kubernetes.io/component']
       )
-      ?.container.endpoints.find((e) => "che-code" === e.name)?.attributes[
-      "controller.devfile.io/endpoint-url"
-    ];
+      ?.container.endpoints.find((e) => 'che-code' === e.name)?.attributes['controller.devfile.io/endpoint-url'];
 
     if (!cheCodeEndpointURI) {
-      throw new Error(
-        `Failure to find che-code endpoint in ${env.DEVWORKSPACE_FLATTENED_DEVFILE}`
-      );
+      throw new Error(`Failure to find che-code endpoint in ${env.DEVWORKSPACE_FLATTENED_DEVFILE}`);
     }
 
     return cheCodeEndpointURI;

@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { env } from "process";
-import * as path from "path";
+import { env } from 'process';
+import * as path from 'path';
 
-import { FlattenedDevfile, Project } from "../src/flattened-devfile";
+import { FlattenedDevfile, Project } from '../src/flattened-devfile';
 
-describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
-  test("should not return che-code endpoint if env.DEVWORKSPACE_FLATTENED_DEVFILE is not set", async () => {
+describe('Test operating wih DevWorkspace Flattened Devfile:', () => {
+  test('should not return che-code endpoint if env.DEVWORKSPACE_FLATTENED_DEVFILE is not set', async () => {
     delete env.DEVWORKSPACE_FLATTENED_DEVFILE;
 
     const devfile = new FlattenedDevfile();
@@ -24,49 +24,37 @@ describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
       fail();
     } catch (error) {
       expect(error.message).toBe(
-        "  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set"
+        '  > Unable to find flattened devworkspace file, env.DEVWORKSPACE_FLATTENED_DEVFILE is not set'
       );
     }
   });
 
-  test("should return che-code endpoint", async () => {
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.yaml"
-    );
+  test('should return che-code endpoint', async () => {
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
 
     const devfile = new FlattenedDevfile();
     const result = await devfile.getCheCodeEndpoint();
 
     expect(result).toBe(
-      "https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/"
+      'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/'
     );
   });
 
-  test("should return three projects", async () => {
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "flattened.devworkspace.yaml"
-    );
+  test('should return three projects', async () => {
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
 
     const devfile = await new FlattenedDevfile().getDevfile();
 
     expect(devfile.projects).toBeDefined();
     expect(devfile.projects!.map((project) => project.name)).toStrictEqual([
-      "che-code",
-      "che-devfile-registry",
-      "web-nodejs-sample",
+      'che-code',
+      'che-devfile-registry',
+      'web-nodejs-sample',
     ]);
   });
 
-  test("should contain dependentProjects", async () => {
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
-      __dirname,
-      "_data",
-      "dependentProjects.devworkspace.yaml"
-    );
+  test('should contain dependentProjects', async () => {
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'dependentProjects.devworkspace.yaml');
 
     const devfile = await new FlattenedDevfile().getDevfile();
     const projects: Project[] = [];
@@ -75,10 +63,10 @@ describe("Test operating wih DevWorkspace Flattened Devfile:", () => {
 
     expect(projects).toBeDefined();
     expect(projects.map((project) => project.name)).toStrictEqual([
-      "che-code",
-      "che-devfile-registry",
-      "web-nodejs-sample",
-      "dependent-project",
+      'che-code',
+      'che-devfile-registry',
+      'web-nodejs-sample',
+      'dependent-project',
     ]);
   });
 });

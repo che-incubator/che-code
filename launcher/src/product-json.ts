@@ -8,9 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "./fs-extra";
+import * as fs from './fs-extra';
 
-const PRODUCT_JSON = "product.json";
+const PRODUCT_JSON = 'product.json';
 
 export class ProductJSON {
   private json: any;
@@ -23,7 +23,7 @@ export class ProductJSON {
   }
 
   async save(): Promise<void> {
-    const serialized = JSON.stringify(this.json, null, "\t");
+    const serialized = JSON.stringify(this.json, null, '\t');
     await fs.writeFile(PRODUCT_JSON, serialized);
   }
 
@@ -31,9 +31,7 @@ export class ProductJSON {
     const url = this.json.webviewContentExternalBaseUrlTemplate;
 
     if (!url) {
-      throw new Error(
-        "Failure to find .webviewContentExternalBaseUrlTemplate in product.json."
-      );
+      throw new Error('Failure to find .webviewContentExternalBaseUrlTemplate in product.json.');
     }
 
     return url;
@@ -46,17 +44,13 @@ export class ProductJSON {
   getExtensionsGalleryServiceURL(): string {
     const gallery = this.json.extensionsGallery;
     if (!gallery) {
-      throw new Error(
-        "Failure to find .extensionsGallery.serviceUrl in product.json."
-      );
+      throw new Error('Failure to find .extensionsGallery.serviceUrl in product.json.');
     }
 
     const url = gallery.serviceUrl;
 
     if (!url) {
-      throw new Error(
-        "Failure to find .extensionsGallery.serviceUrl in product.json."
-      );
+      throw new Error('Failure to find .extensionsGallery.serviceUrl in product.json.');
     }
 
     return url;
@@ -75,16 +69,12 @@ export class ProductJSON {
   getExtensionsGalleryItemURL(): string {
     const gallery = this.json.extensionsGallery;
     if (!gallery) {
-      throw new Error(
-        "Failure to find .extensionsGallery.serviceUrl in product.json."
-      );
+      throw new Error('Failure to find .extensionsGallery.serviceUrl in product.json.');
     }
 
     const url = gallery.itemUrl;
     if (!url) {
-      throw new Error(
-        "Failure to find .extensionsGallery.itemUrl in product.json."
-      );
+      throw new Error('Failure to find .extensionsGallery.itemUrl in product.json.');
     }
 
     return url;

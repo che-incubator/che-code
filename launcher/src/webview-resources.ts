@@ -8,12 +8,12 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { env } from "process";
-import * as fs from "./fs-extra";
-import { FlattenedDevfile } from "./flattened-devfile";
-import { ProductJSON } from "./product-json";
+import { env } from 'process';
+import * as fs from './fs-extra';
+import { FlattenedDevfile } from './flattened-devfile';
+import { ProductJSON } from './product-json';
 
-import { FILE_EXTENSION_HOST_PROCESS, FILE_WORKBENCH_WEB_MAIN } from "./files";
+import { FILE_EXTENSION_HOST_PROCESS, FILE_WORKBENCH_WEB_MAIN } from './files';
 
 export class WebviewResources {
   /*****************************************************************************************************************
@@ -26,12 +26,10 @@ export class WebviewResources {
    *
    *****************************************************************************************************************/
   async configure(): Promise<void> {
-    console.log("# Configuring Webview Resources location...");
+    console.log('# Configuring Webview Resources location...');
 
-    if ("true" !== env.WEBVIEW_LOCAL_RESOURCES) {
-      console.log(
-        `  > env.WEBVIEW_LOCAL_RESOURCES is not set to 'true', skip this step`
-      );
+    if ('true' !== env.WEBVIEW_LOCAL_RESOURCES) {
+      console.log(`  > env.WEBVIEW_LOCAL_RESOURCES is not set to 'true', skip this step`);
       return;
     }
 
@@ -59,11 +57,7 @@ export class WebviewResources {
     }
   }
 
-  async update(
-    file: string,
-    currentURL: string,
-    newURL: string
-  ): Promise<void> {
+  async update(file: string, currentURL: string, newURL: string): Promise<void> {
     const content = await fs.readFile(file);
     const newContent = content.replace(currentURL, newURL);
     await fs.writeFile(file, newContent);

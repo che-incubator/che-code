@@ -8,9 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "./fs-extra";
-import { env } from "process";
-import { FlattenedDevfile, Project } from "./flattened-devfile";
+import * as fs from './fs-extra';
+import { env } from 'process';
+import { FlattenedDevfile, Project } from './flattened-devfile';
 
 export interface Workspace {
   folders: Folder[];
@@ -33,10 +33,10 @@ export class CodeWorkspace {
    *
    *****************************************************************************************************************/
   async generate(): Promise<string | undefined> {
-    console.log("# Generating Workspace file...");
+    console.log('# Generating Workspace file...');
 
     if (!env.PROJECTS_ROOT) {
-      console.log("  > env.PROJECTS_ROOT is not set, skip this step");
+      console.log('  > env.PROJECTS_ROOT is not set, skip this step');
       return;
     }
 
@@ -45,20 +45,14 @@ export class CodeWorkspace {
 
     try {
       if (env.VSCODE_DEFAULT_WORKSPACE) {
-        console.log(
-          `  > env.VSCODE_DEFAULT_WORKSPACE environment variable is set to ${env.VSCODE_DEFAULT_WORKSPACE}`
-        );
+        console.log(`  > env.VSCODE_DEFAULT_WORKSPACE environment variable is set to ${env.VSCODE_DEFAULT_WORKSPACE}`);
         if (await this.fileExists(env.VSCODE_DEFAULT_WORKSPACE)) {
-          console.log(
-            `  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
-          );
+          console.log(`  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
 
           path = env.VSCODE_DEFAULT_WORKSPACE;
           workspace = JSON.parse(await fs.readFile(path));
         } else {
-          console.log(
-            `  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`
-          );
+          console.log(`  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
           return;
         }
       }
@@ -96,9 +90,7 @@ export class CodeWorkspace {
         saveRequired = true;
       }
 
-      if (
-        await this.synchronizeProjects(workspace!, devfile.dependentProjects)
-      ) {
+      if (await this.synchronizeProjects(workspace!, devfile.dependentProjects)) {
         saveRequired = true;
       }
 
@@ -108,15 +100,13 @@ export class CodeWorkspace {
 
       // write workspace file only if it has been changed
       if (saveRequired) {
-        const json = JSON.stringify(workspace, null, "\t");
+        const json = JSON.stringify(workspace, null, '\t');
         await fs.writeFile(path, json);
       }
 
       return path;
     } catch (err) {
-      console.error(
-        `${err.message} Unable to generate che.code-workspace file`
-      );
+      console.error(`${err.message} Unable to generate che.code-workspace file`);
     }
   }
 
@@ -128,10 +118,7 @@ export class CodeWorkspace {
     return false;
   }
 
-  async synchronizeProjects(
-    workspace: Workspace,
-    projects?: Project[]
-  ): Promise<boolean> {
+  async synchronizeProjects(workspace: Workspace, projects?: Project[]): Promise<boolean> {
     if (!projects) {
       return false;
     }

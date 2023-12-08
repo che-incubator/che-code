@@ -8,30 +8,25 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { env } from "process";
-import { FILE_WORKBENCH_WEB_MAIN } from "./files";
-import * as fs from "./fs-extra";
+import { env } from 'process';
+import { FILE_WORKBENCH_WEB_MAIN } from './files';
+import * as fs from './fs-extra';
 
-const DEVWORKSPACE_ID_MASK =
-  "https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/";
+const DEVWORKSPACE_ID_MASK = 'https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/';
 
 export class DevWorkspaceId {
   async configure(): Promise<void> {
-    console.log("# Setting curent DevWorkspace ID to che-code...");
+    console.log('# Setting curent DevWorkspace ID to che-code...');
 
     if (!env.DEVWORKSPACE_ID) {
-      console.log("  > env.DEVWORKSPACE_ID is not set, skip this step");
+      console.log('  > env.DEVWORKSPACE_ID is not set, skip this step');
       return;
     }
 
     console.log(`  > apply DevWorkspace ID [${env.DEVWORKSPACE_ID}]`);
 
     try {
-      await this.update(
-        FILE_WORKBENCH_WEB_MAIN,
-        DEVWORKSPACE_ID_MASK,
-        env.DEVWORKSPACE_ID
-      );
+      await this.update(FILE_WORKBENCH_WEB_MAIN, DEVWORKSPACE_ID_MASK, env.DEVWORKSPACE_ID);
     } catch (err) {
       console.error(`${err.message} Webviews will not work if CDN disabled.`);
     }

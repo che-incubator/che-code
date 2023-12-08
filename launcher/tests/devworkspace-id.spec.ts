@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from "../src/fs-extra";
-import { env } from "process";
+import * as fs from '../src/fs-extra';
+import { env } from 'process';
 
-import { DevWorkspaceId } from "../src/devworkspace-id";
+import { DevWorkspaceId } from '../src/devworkspace-id';
 
 const ORIGIN_WORKBENCH_WEB_MAIN = `
 some code, some code, a mask to be replaced https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/, some code
@@ -21,12 +21,12 @@ const NEW_WORKBENCH_WEB_MAIN = `
 some code, some code, a mask to be replaced test-workspace-1234567890, some code
 `;
 
-describe("Test setting DevWorkspace ID to VS Code", () => {
+describe('Test setting DevWorkspace ID to VS Code', () => {
   beforeEach(() => {
     delete env.DEVWORKSPACE_ID;
   });
 
-  test("should return if env.DEVWORKSPACE_ID is not set", async () => {
+  test('should return if env.DEVWORKSPACE_ID is not set', async () => {
     const readFileMock = jest.fn();
     Object.assign(fs, {
       readFile: readFileMock,
@@ -38,8 +38,8 @@ describe("Test setting DevWorkspace ID to VS Code", () => {
     expect(readFileMock).toBeCalledTimes(0);
   });
 
-  test("should apply env.DEVWORKSPACE_ID", async () => {
-    env.DEVWORKSPACE_ID = "test-workspace-1234567890";
+  test('should apply env.DEVWORKSPACE_ID', async () => {
+    env.DEVWORKSPACE_ID = 'test-workspace-1234567890';
 
     const readFileMock = jest.fn();
     const writeFileMock = jest.fn();
@@ -55,9 +55,6 @@ describe("Test setting DevWorkspace ID to VS Code", () => {
     await devWorkspaceId.configure();
 
     expect(readFileMock).toBeCalledTimes(1);
-    expect(writeFileMock).toBeCalledWith(
-      "out/vs/workbench/workbench.web.main.js",
-      NEW_WORKBENCH_WEB_MAIN
-    );
+    expect(writeFileMock).toBeCalledWith('out/vs/workbench/workbench.web.main.js', NEW_WORKBENCH_WEB_MAIN);
   });
 });

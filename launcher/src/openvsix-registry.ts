@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { env } from "process";
-import { FILE_WORKBENCH_WEB_MAIN } from "./files";
-import * as fs from "./fs-extra";
-import { ProductJSON } from "./product-json";
+import { env } from 'process';
+import { FILE_WORKBENCH_WEB_MAIN } from './files';
+import * as fs from './fs-extra';
+import { ProductJSON } from './product-json';
 
 export class OpenVSIXRegistry {
   /*****************************************************************************************************************
@@ -25,38 +25,30 @@ export class OpenVSIXRegistry {
    *
    *****************************************************************************************************************/
   async configure(): Promise<void> {
-    console.log("# Configuring OpenVSIX registry...");
+    console.log('# Configuring OpenVSIX registry...');
 
     if (env.OPENVSX_REGISTRY_URL === undefined) {
-      console.log("  > env.OPENVSX_REGISTRY_URL is not set, skip this step");
+      console.log('  > env.OPENVSX_REGISTRY_URL is not set, skip this step');
       return;
     }
 
     try {
       let openvsxURL;
       if (env.OPENVSX_REGISTRY_URL) {
-        console.log(
-          `  > env.OPENVSX_REGISTRY_URL set to ${env.OPENVSX_REGISTRY_URL}`
-        );
-        openvsxURL = `${this.withoutTrailingSlash(
-          env.OPENVSX_REGISTRY_URL
-        )}/vscode`;
+        console.log(`  > env.OPENVSX_REGISTRY_URL set to ${env.OPENVSX_REGISTRY_URL}`);
+        openvsxURL = `${this.withoutTrailingSlash(env.OPENVSX_REGISTRY_URL)}/vscode`;
       } else if (env.CHE_PLUGIN_REGISTRY_URL) {
         console.log(
           `  > env.OPENVSX_REGISTRY_URL is empty, use env.CHE_PLUGIN_REGISTRY_URL ${env.CHE_PLUGIN_REGISTRY_URL}`
         );
-        let registryURL = this.withoutTrailingSlash(
-          env.CHE_PLUGIN_REGISTRY_URL
-        );
-        if (registryURL.endsWith("/v3")) {
+        let registryURL = this.withoutTrailingSlash(env.CHE_PLUGIN_REGISTRY_URL);
+        if (registryURL.endsWith('/v3')) {
           registryURL = registryURL.substring(0, registryURL.length - 3);
         }
 
         openvsxURL = `${registryURL}/openvsx/vscode`;
       } else {
-        console.error(
-          "  > CHE_PLUGIN_REGISTRY_URL environment variable is not set"
-        );
+        console.error('  > CHE_PLUGIN_REGISTRY_URL environment variable is not set');
         return;
       }
 
@@ -74,13 +66,7 @@ export class OpenVSIXRegistry {
       productJSON.setExtensionsGalleryItemURL(newItemURL);
       await productJSON.save();
 
-      await this.update(
-        FILE_WORKBENCH_WEB_MAIN,
-        serviceURL,
-        newServiceURL,
-        itemURL,
-        newItemURL
-      );
+      await this.update(FILE_WORKBENCH_WEB_MAIN, serviceURL, newServiceURL, itemURL, newItemURL);
     } catch (err) {
       console.error(`${err.message} Failure to configure OpenVSIX registry.`);
     }
@@ -102,7 +88,7 @@ export class OpenVSIXRegistry {
   }
 
   withoutTrailingSlash(url: string): string {
-    while (url.endsWith("/")) {
+    while (url.endsWith('/')) {
       url = url.substring(0, url.length - 1);
     }
 
