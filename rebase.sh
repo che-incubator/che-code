@@ -300,6 +300,20 @@ apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes() 
   git add code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/code/browser/workbench/workbench.ts file
+apply_code_src_vs_code_browser_workbench_workbench_changes() {
+
+  echo "  ⚙️ reworking code/src/vs/code/browser/workbench/workbench.ts..."
+  # reset the file from what is upstream
+  git checkout --theirs code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_replace code/src/vs/code/browser/workbench/workbench.ts
+  
+  # resolve the change
+  git add code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
+}
+
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -355,6 +369,8 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html" ]]; then
       apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
+    elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
+      apply_code_src_vs_code_browser_workbench_workbench_changes
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
