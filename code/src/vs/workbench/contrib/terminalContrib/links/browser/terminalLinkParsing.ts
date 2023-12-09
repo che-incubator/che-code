@@ -70,20 +70,26 @@ function generateLinkSuffixRegex(eolOnly: boolean) {
 	// - ColEnd  = 789
 	//
 	// These all support single quote ' in the place of " and [] in the place of ()
+	//
+	// See the tests for an exhaustive list of all supported formats
 	const lineAndColumnRegexClauses = [
 		// foo:339
 		// foo:339:12
 		// foo:339:12-789
+		// foo:339:12-341.789
 		// foo:339.12
 		// foo 339
 		// foo 339:12                              [#140780]
 		// foo 339.12
+		// foo#339
+		// foo#339:12                              [#190288]
+		// foo#339.12
 		// "foo",339
 		// "foo",339:12
 		// "foo",339.12
 		// "foo",339.12-789
 		// "foo",339.12-341.789
-		`(?::| |['"],)${r()}([:.]${c()}(?:-(?:${re()}\\.)?${ce()})?)?` + eolSuffix,
+		`(?::|#| |['"],)${r()}([:.]${c()}(?:-(?:${re()}\\.)?${ce()})?)?` + eolSuffix,
 		// The quotes below are optional           [#171652]
 		// "foo", line 339                         [#40468]
 		// "foo", line 339, col 12
@@ -197,7 +203,7 @@ function parseIntOptional(value: string | undefined): number | undefined {
 // characters the path is not allowed to _start_ with, the second `[]` includes characters not
 // allowed at all in the path. If the characters show up in both regexes the link will stop at that
 // character, otherwise it will stop at a space character.
-const linkWithSuffixPathCharacters = /(?<path>[^\s\|<>\[\({][^\s\|<>]*)$/;
+const linkWithSuffixPathCharacters = /(?<path>(?:file:\/\/\/)?[^\s\|<>\[\({][^\s\|<>]*)$/;
 
 export function detectLinks(line: string, os: OperatingSystem) {
 	// 1: Detect all links on line via suffixes first
@@ -304,7 +310,7 @@ function detectLinksViaSuffix(line: string): IParsedLink[] {
 }
 
 enum RegexPathConstants {
-	PathPrefix = '(?:\\.\\.?|\\~)',
+	PathPrefix = '(?:\\.\\.?|\\~|file:\/\/)',
 	PathSeparatorClause = '\\/',
 	// '":; are allowed in paths but they are often separators so ignore them
 	// Also disallow \\ to prevent a catastropic backtracking case #24795
@@ -324,10 +330,10 @@ enum RegexPathConstants {
 const unixLocalLinkClause = '(?:(?:' + RegexPathConstants.PathPrefix + '|(?:' + RegexPathConstants.ExcludedStartPathCharactersClause + RegexPathConstants.ExcludedPathCharactersClause + '*))?(?:' + RegexPathConstants.PathSeparatorClause + '(?:' + RegexPathConstants.ExcludedPathCharactersClause + ')+)+)';
 
 /**
- * A regex clause that matches the start of an absolute path on Windows, such as: `C:`, `c:` and
- * `\\?\C` (UNC path).
+ * A regex clause that matches the start of an absolute path on Windows, such as: `C:`, `c:`,
+ * `file:///c:` (uri) and `\\?\C:` (UNC path).
  */
-export const winDrivePrefix = '(?:\\\\\\\\\\?\\\\)?[a-zA-Z]:';
+export const winDrivePrefix = '(?:\\\\\\\\\\?\\\\|file:\\/\\/\\/)?[a-zA-Z]:';
 
 /**
  * A regex that matches Windows paths, such as `\\?\c:\foo`, `c:\foo`, `~\foo`, `.\foo`, `..\foo`
