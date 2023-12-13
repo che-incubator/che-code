@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [ 'musl', 'libc' ]
+        dist: [ 'musl', 'libc-ubi8', 'libc-ubi9' ]
         arch: ['amd64']
     steps:
 
