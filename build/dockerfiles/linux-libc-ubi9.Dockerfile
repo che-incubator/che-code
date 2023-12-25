@@ -66,48 +66,63 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
 
+RUN { \ 
+    if [[ $(uname -m) == "s390x" ]]; then \
+      NODE_ARCH="s390x"; \
+    elif [[ $(uname -m) == "ppc64le" ]]; then \ 
+      NODE_ARCH="ppc64le"; \
+    elif [[ $(uname -m) == "x86_64" ]]; then \
+      NODE_ARCH="x64"; \
+    elif [[ $(uname -m) == "aarch64" ]]; then \
+      NODE_ARCH="arm64"; \
+    else \
+      NODE_ARCH=""; \
+    fi; \ 
+    } \
+    && { \
+        if [ -n "$NODE_ARCH" ]; then \
+            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"'); \
+            NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"; \
+            echo "Downloading Node.js from ${NODE_URL}"; \
+            wget -q "${NODE_URL}"; \
+            tar -xf node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz; \
+            mv node-v${NODE_VERSION}-linux-${NODE_ARCH} /usr/local/nodejs; \
+        else echo "Warning: arch $(uname -m) not supported"; \
+        fi; \
+       }
+
+ENV PATH /usr/local/nodejs/bin:$PATH
+
 # Grab dependencies (and force to rebuild them)
 RUN yarn install --force
 
 # Compile
 RUN { \ 
     if [[ $(uname -m) == "s390x" ]]; then \
-      NODE_ARCH="s390x"; \
       BUILD_ARCH="s390x"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then \ 
-      NODE_ARCH="ppc64le"; \
       BUILD_ARCH="ppc64"; \
     elif [[ $(uname -m) == "x86_64" ]]; then \
-      NODE_ARCH="x64"; \
       BUILD_ARCH="x64"; \
     elif [[ $(uname -m) == "aarch64" ]]; then \
-      NODE_ARCH="arm64"; \
       BUILD_ARCH="arm64"; \
     else \
-      NODE_ARCH=""; \
-      BUILD_ARCH=$(echo "console.log(process.arch)" | node); \
+      BUILD_ARCH=""; \
     fi; \ 
     } \
-    && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
     && { \
-        if [ -n "$NODE_ARCH" ]; then \
-            NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"; \
-            echo "Downloading Node.js from ${NODE_URL}"; \
-            wget -q "${NODE_URL}"; \
-            tar -xf node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz; \
-            mv node-v${NODE_VERSION}-linux-${NODE_ARCH} nodejs; \
-            export PATH=/usr/local/nodejs/bin:$PATH; \
+        if [ -n "$BUILD_ARCH" ]; then \
+            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"'); \
+            CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/linux-${BUILD_ARCH}; \
+            mkdir -p $CACHE_NODE_PATH; \
+            echo "caching ${CACHE_NODE_PATH}" \
+            cp /usr/local/nodejs/bin/node ${CACHE_NODE_PATH}/node; \
+            # compile assembly
+            NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${BUILD_ARCH}-min; \
+            cp -r ../vscode-reh-web-linux-${BUILD_ARCH} /checode; \        
         else echo "Warning: arch $(uname -m) not supported"; \
         fi; \
-       } \
-    # cache node from this image to avoid to grab it from within the build
-    && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/linux-${BUILD_ARCH} \
-    && mkdir -p $CACHE_NODE_PATH \
-    && echo "caching ${CACHE_NODE_PATH}" \
-    && cp nodejs/bin/node ${CACHE_NODE_PATH}/node \
-    # compile assembly
-    && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${BUILD_ARCH}-min \
-    && cp -r ../vscode-reh-web-linux-${BUILD_ARCH} /checode
+    }
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
