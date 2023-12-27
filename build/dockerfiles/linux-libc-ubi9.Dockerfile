@@ -81,7 +81,7 @@ RUN { \
     } \
     && { \
         if [ -n "$NODE_ARCH" ]; then \
-            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"'); \
+            NODE_VERSION=18.18.2; \
             NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"; \
             echo "Downloading Node.js from ${NODE_URL}"; \
             wget -q "${NODE_URL}"; \
