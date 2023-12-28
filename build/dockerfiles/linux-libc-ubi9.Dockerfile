@@ -81,12 +81,12 @@ RUN { \
     } \
     && { \
         if [ -n "$NODE_ARCH" ]; then \
-            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"'); \
-            NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"; \
-            echo "Downloading Node.js from ${NODE_URL}"; \
-            wget -q "${NODE_URL}"; \
-            tar -xf node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz; \
-            mv node-v${NODE_VERSION}-linux-${NODE_ARCH} /usr/local/nodejs; \
+            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+            && NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+            && echo "Downloading Node.js from ${NODE_URL}" \
+            && wget -q "${NODE_URL}" \
+            && tar -xf node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz \
+            && mv node-v${NODE_VERSION}-linux-${NODE_ARCH} /usr/local/nodejs; \
         else echo "Warning: arch $(uname -m) not supported"; \
         fi; \
        }
@@ -112,14 +112,15 @@ RUN { \
     } \
     && { \
         if [ -n "$BUILD_ARCH" ]; then \
-            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"'); \
-            CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/linux-${BUILD_ARCH}; \
-            mkdir -p $CACHE_NODE_PATH; \
-            echo "caching ${CACHE_NODE_PATH}/node"; \
-            cp /usr/local/nodejs/bin/node ${CACHE_NODE_PATH}/node; \
+            # cache node to avoid to grab it within the build
+            NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+            && CACHE_NODE_PATH=/checode-compilation/.build/node/v${NODE_VERSION}/linux-${BUILD_ARCH} \
+            && mkdir -p $CACHE_NODE_PATH \
+            && echo "caching ${CACHE_NODE_PATH}/node" \
+            && cp /usr/local/nodejs/bin/node ${CACHE_NODE_PATH}/node \
             # compile assembly
-            NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${BUILD_ARCH}-min; \
-            cp -r ../vscode-reh-web-linux-${BUILD_ARCH} /checode; \        
+            && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${BUILD_ARCH}-min \
+            && cp -r ../vscode-reh-web-linux-${BUILD_ARCH} /checode; \        
         else echo "Warning: arch $(uname -m) not supported"; \
         fi; \
     }
