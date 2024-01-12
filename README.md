@@ -40,6 +40,21 @@ To test your changes in Eclipse Che run the following VS Code tasks:
 3. `run` to run the VS Code server
 4. Follow the suggested URL to test your changes.
 
+## How to test the Che-Code image built from an opened PR?
+
+There's [a GitHub Workflow]([url](https://github.com/che-incubator/che-code/blob/main/.github/workflows/pr-check-build-che-code-image.yaml)) that builds a Che-Code image from an opened PR. Once the image is built and published to the registry, you can find [a comment on the PR]([url](https://github.com/che-incubator/che-code/pull/317#issuecomment-1853891655)) with the image link. There are a few options to test it.
+1. In an existing and running Workspace, open the VS Code terminal and execute the following command (by providing the correct image link):
+```
+oc get dwt che-code-$DEVWORKSPACE_NAME -o yaml \
+  | sed 's|quay.io/che-incubator/che-code.*|https://quay.io/che-incubator-pull-requests/che-code:pr-317-amd64|' \
+  | oc apply -f -
+```
+Then, restart the Workspace using the `Restart Workspace` command from the bottom-left menu. The Workspace will be restarted with the editor running from the provided image.
+
+2. If the introduced in a PR changes require more modifications of the editor definitions, take any GitHub repository for testing and create a custom `.che/che-editor.yaml` file in the root, e.g. https://github.com/azatsarynnyy/java-spring-petclinic/blob/xterm/.che/che-editor.yaml. Make any required modifications to the custom `che-editor.yaml` in addition to the new image. Such an approach allows to fully override an editor definition for a new Workspace started from that repository.
+
+3. Also, it's possible to specify a custom editor definition through the `che-editor` parameter in the factory URL. It may help to test the editor with any test repository without the need to introduce changes to the test repository sources. In this case, a custom `che-editor.yaml` file can be published on GitHub gist, for example. Note, unlike the previous option, in this case, make sure your custom `che-editor.yaml` file is not wrapped into the top `inlcude:` section, but it starts with the `schemaVersion`.
+
 ## Updates and branches
 
 This repository has a main branch being rebased on the main remote branch of `Code-OSS`.
