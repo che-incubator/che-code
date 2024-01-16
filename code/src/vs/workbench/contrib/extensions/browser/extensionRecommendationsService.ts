@@ -113,7 +113,16 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 			this.remoteRecommendations.activate()
 		]);
 
-		this._register(Event.any(this.workspaceRecommendations.onDidChangeRecommendations, this.configBasedRecommendations.onDidChangeRecommendations, this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this._onDidChangeRecommendations.fire()));
+		// this._register(Event.any(
+		// 	this.workspaceRecommendations.onDidChangeRecommendations, 
+		// 	this.configBasedRecommendations.onDidChangeRecommendations, 
+		// 	this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this._onDidChangeRecommendations.fire()));
+
+		this._register(Event.any(
+			this.workspaceRecommendations.onDidChangeRecommendations, 
+			this.configBasedRecommendations.onDidChangeRecommendations, 
+			this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this.handleChangeRecommendations()));
+	
 		this._register(this.extensionRecommendationsManagementService.onDidChangeGlobalIgnoredRecommendation(({ extensionId, isRecommended }) => {
 			if (!isRecommended) {
 				const reason = this.getAllRecommendationsWithReason()[extensionId];
@@ -123,7 +132,22 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 			}
 		}));
 
+		console.log('>> ExtensionRecommendationsService :: sleeping...');
+		await this.sleep(3000);
+		console.log('>> ExtensionRecommendationsService :: process');
+
 		this.promptWorkspaceRecommendations();
+	}
+
+	private async handleChangeRecommendations(): Promise<void> {
+		console.log('>> ExtensionRecommendationsService :: handleChangeRecommendations');
+		this._onDidChangeRecommendations.fire();
+	}
+
+	private async sleep(milliseconds: number): Promise<void> {
+		return new Promise(resolve => {
+			setTimeout(resolve, milliseconds);
+		});
 	}
 
 	private isEnabled(): boolean {
