@@ -127,10 +127,7 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 			}
 		}));
 
-		console.log('>> ExtensionRecommendationsService :: sleeping...');
 		await new Promise(resolve => setTimeout(resolve, 3000));
-		console.log('>> ExtensionRecommendationsService :: process');
-
 		this.promptWorkspaceRecommendations();
 	}
 
