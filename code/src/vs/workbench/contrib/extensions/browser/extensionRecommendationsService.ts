@@ -113,11 +113,7 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 			this.remoteRecommendations.activate()
 		]);
 
-		this._register(Event.any(
-			this.workspaceRecommendations.onDidChangeRecommendations, 
-			this.configBasedRecommendations.onDidChangeRecommendations, 
-			this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this._onDidChangeRecommendations.fire()));
-
+		this._register(Event.any(this.workspaceRecommendations.onDidChangeRecommendations, this.configBasedRecommendations.onDidChangeRecommendations, this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this._onDidChangeRecommendations.fire()));
 		this._register(this.extensionRecommendationsManagementService.onDidChangeGlobalIgnoredRecommendation(({ extensionId, isRecommended }) => {
 			if (!isRecommended) {
 				const reason = this.getAllRecommendationsWithReason()[extensionId];
