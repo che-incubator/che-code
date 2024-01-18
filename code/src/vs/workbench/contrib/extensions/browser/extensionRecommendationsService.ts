@@ -123,6 +123,7 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 			}
 		}));
 
+		await new Promise(resolve => setTimeout(resolve, 3000));
 		this.promptWorkspaceRecommendations();
 	}
 
