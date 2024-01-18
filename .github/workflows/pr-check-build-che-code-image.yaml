@@ -104,7 +104,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request Che-Code image published:\n👉 [${process.env._IMAGE_NAME}](https://${process.env._IMAGE_NAME})`
+              body: `Pull Request Che-Code image published:\n👉 [${process.env._IMAGE_NAME}](https://${process.env._IMAGE_NAME})\n\n[![Dev](https://img.shields.io/static/v1?label=Test%20it%20on&message=Che%20dogfooding%20server%20&logo=eclipseche&color=FDB940&labelColor=525C86)](https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/f?url=https://github.com/che-incubator/che-code&&editor-image=https://${process.env._IMAGE_NAME}&policies.create=peruser)\n\n[![Dev](https://img.shields.io/static/v1?label=Test%20it%20on&message=DevSandbox%20(hosted%20by%20Red%20Hat)&logo=eclipseche&color=FDB940&labelColor=525C86)](https://devspaces.apps.sandbox-m4.g2pi.p1.openshiftapps.com/f?url=https://github.com/che-incubator/che-code&editor-image=https://${process.env._IMAGE_NAME}&policies.create=peruser)`
             })
 
   dev:
