@@ -222,9 +222,9 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 
 		const authAccount = JSON.stringify({ extensionId: 'vscode.github-authentication', key: 'github.auth' });
 		record[authAccount] = JSON.stringify(authSessionInfo.scopes.map(scopes => ({
-			id: authSessionInfo!.id,
+			id: authSessionInfo.id,
 			scopes,
-			accessToken: authSessionInfo!.accessToken
+			accessToken: authSessionInfo.accessToken
 		})));
 
 		return record;
