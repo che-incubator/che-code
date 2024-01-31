@@ -1342,7 +1342,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: ToggleAutoUpdateForExtensionAction.ID,
-			title: { value: ToggleAutoUpdateForExtensionAction.LABEL, original: 'Auto Update' },
+			title: ToggleAutoUpdateForExtensionAction.LABEL,
 			category: ExtensionsLocalizedLabel,
 			menu: {
 				id: MenuId.ExtensionContext,
@@ -1507,7 +1507,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.toggleApplyToAllProfiles',
-			title: { value: localize('workbench.extensions.action.toggleApplyToAllProfiles', "Apply Extension to all Profiles"), original: `Apply Extension to all Profiles` },
+			title: localize2('workbench.extensions.action.toggleApplyToAllProfiles', "Apply Extension to all Profiles"),
 			toggled: ContextKeyExpr.has('isApplicationScopedExtension'),
 			menu: {
 				id: MenuId.ExtensionContext,
@@ -1525,7 +1525,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: TOGGLE_IGNORE_EXTENSION_ACTION_ID,
-			title: { value: localize('workbench.extensions.action.toggleIgnoreExtension', "Sync This Extension"), original: `Sync This Extension` },
+			title: localize2('workbench.extensions.action.toggleIgnoreExtension', "Sync This Extension"),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '2_configure',
@@ -1542,7 +1542,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.ignoreRecommendation',
-			title: { value: localize('workbench.extensions.action.ignoreRecommendation', "Ignore Recommendation"), original: `Ignore Recommendation` },
+			title: localize2('workbench.extensions.action.ignoreRecommendation', "Ignore Recommendation"),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '3_recommendations',
@@ -1554,7 +1554,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.undoIgnoredRecommendation',
-			title: { value: localize('workbench.extensions.action.undoIgnoredRecommendation', "Undo Ignored Recommendation"), original: `Undo Ignored Recommendation` },
+			title: localize2('workbench.extensions.action.undoIgnoredRecommendation', "Undo Ignored Recommendation"),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '3_recommendations',
@@ -1566,7 +1566,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.addExtensionToWorkspaceRecommendations',
-			title: { value: localize('workbench.extensions.action.addExtensionToWorkspaceRecommendations', "Add to Workspace Recommendations"), original: `Add to Workspace Recommendations` },
+			title: localize2('workbench.extensions.action.addExtensionToWorkspaceRecommendations', "Add to Workspace Recommendations"),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '3_recommendations',
@@ -1578,7 +1578,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.removeExtensionFromWorkspaceRecommendations',
-			title: { value: localize('workbench.extensions.action.removeExtensionFromWorkspaceRecommendations', "Remove from Workspace Recommendations"), original: `Remove from Workspace Recommendations` },
+			title: localize2('workbench.extensions.action.removeExtensionFromWorkspaceRecommendations', "Remove from Workspace Recommendations"),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '3_recommendations',
@@ -1590,7 +1590,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.addToWorkspaceRecommendations',
-			title: { value: localize('workbench.extensions.action.addToWorkspaceRecommendations', "Add Extension to Workspace Recommendations"), original: `Add Extension to Workspace Recommendations` },
+			title: localize2('workbench.extensions.action.addToWorkspaceRecommendations', "Add Extension to Workspace Recommendations"),
 			category: localize('extensions', "Extensions"),
 			menu: {
 				id: MenuId.CommandPalette,
@@ -1613,7 +1613,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.addToWorkspaceFolderRecommendations',
-			title: { value: localize('workbench.extensions.action.addToWorkspaceFolderRecommendations', "Add Extension to Workspace Folder Recommendations"), original: `Add Extension to Workspace Folder Recommendations` },
+			title: localize2('workbench.extensions.action.addToWorkspaceFolderRecommendations', "Add Extension to Workspace Folder Recommendations"),
 			category: localize('extensions', "Extensions"),
 			menu: {
 				id: MenuId.CommandPalette,
@@ -1624,7 +1624,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.addToWorkspaceIgnoredRecommendations',
-			title: { value: localize('workbench.extensions.action.addToWorkspaceIgnoredRecommendations', "Add Extension to Workspace Ignored Recommendations"), original: `Add Extension to Workspace Ignored Recommendations` },
+			title: localize2('workbench.extensions.action.addToWorkspaceIgnoredRecommendations', "Add Extension to Workspace Ignored Recommendations"),
 			category: localize('extensions', "Extensions"),
 			menu: {
 				id: MenuId.CommandPalette,
@@ -1647,7 +1647,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.addToWorkspaceFolderIgnoredRecommendations',
-			title: { value: localize('workbench.extensions.action.addToWorkspaceFolderIgnoredRecommendations', "Add Extension to Workspace Folder Ignored Recommendations"), original: `Add Extension to Workspace Folder Ignored Recommendations` },
+			title: localize2('workbench.extensions.action.addToWorkspaceFolderIgnoredRecommendations', "Add Extension to Workspace Folder Ignored Recommendations"),
 			category: localize('extensions', "Extensions"),
 			menu: {
 				id: MenuId.CommandPalette,
