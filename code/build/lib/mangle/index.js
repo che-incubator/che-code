@@ -5,6 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mangler = void 0;
+const v8 = require("node:v8");
 const fs = require("fs");
 const path = require("path");
 const process_1 = require("process");
@@ -298,19 +299,17 @@ const skippedExportMangledSymbols = [
 class DeclarationData {
     fileName;
     node;
-    service;
     replacementName;
-    constructor(fileName, node, service, fileIdents) {
+    constructor(fileName, node, fileIdents) {
         this.fileName = fileName;
         this.node = node;
-        this.service = service;
         // Todo: generate replacement names based on usage count, with more used names getting shorter identifiers
         this.replacementName = fileIdents.next();
     }
-    get locations() {
+    getLocations(service) {
         if (ts.isVariableDeclaration(this.node)) {
             // If the const aliases any types, we need to rename those too
-            const definitionResult = this.service.getDefinitionAndBoundSpan(this.fileName, this.node.name.getStart());
+            const definitionResult = service.getDefinitionAndBoundSpan(this.fileName, this.node.name.getStart());
             if (definitionResult?.definitions && definitionResult.definitions.length > 1) {
                 return definitionResult.definitions.map(x => ({ fileName: x.fileName, offset: x.textSpan.start }));
             }
@@ -409,7 +408,7 @@ class Mangler {
                     if (isInAmbientContext(node)) {
                         return;
                     }
-                    this.allExportedSymbols.add(new DeclarationData(node.getSourceFile().fileName, node, service, fileIdents));
+                    this.allExportedSymbols.add(new DeclarationData(node.getSourceFile().fileName, node, fileIdents));
                 }
             }
             ts.forEachChild(node, visit);
@@ -533,7 +532,7 @@ class Mangler {
                 continue;
             }
             const newText = data.replacementName;
-            for (const { fileName, offset } of data.locations) {
+            for (const { fileName, offset } of data.getLocations(service)) {
                 queueRename(fileName, offset, newText);
             }
         }
@@ -620,7 +619,7 @@ class Mangler {
         }
         service.dispose();
         this.renameWorkerPool.terminate();
-        this.log(`Done: ${savedBytes / 1000}kb saved, memory-usage: ${JSON.stringify(process.memoryUsage())}`);
+        this.log(`Done: ${savedBytes / 1000}kb saved, memory-usage: ${JSON.stringify(v8.getHeapStatistics())}`);
         return result;
     }
 }
