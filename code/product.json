@@ -80,6 +80,11 @@
 				},
 				"publisherDisplayName": "Microsoft"
 			}
+		},
+		{
+			"name": "devfile.vscode-devfile",
+			"version": "0.0.2",
+			"repo": "https://github.com/devfile/vscode-walkthrough-extension"
 		}
 	],
 	"extensionEnabledApiProposals": {
