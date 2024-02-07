@@ -4183,7 +4183,6 @@ export enum ChatMessageRole {
 	System = 0,
 	User = 1,
 	Assistant = 2,
-	Function = 3,
 }
 
 export class ChatMessage implements vscode.ChatMessage {
@@ -4218,7 +4217,7 @@ export class ChatResponseMarkdownPart {
 	}
 }
 
-export class ChatResponseFilesPart {
+export class ChatResponseFileTreePart {
 	value: vscode.ChatResponseFileTree[];
 	baseUri: vscode.Uri;
 	constructor(value: vscode.ChatResponseFileTree[], baseUri: vscode.Uri) {
