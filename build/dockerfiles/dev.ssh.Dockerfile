@@ -40,6 +40,7 @@ RUN sed -i 's|HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /opt/ssh/ssh_host_ecds
 RUN sed -i 's|HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /opt/ssh/ssh_host_ed25519_key|' /opt/ssh/sshd_config
 
 RUN sed -i 's|#PubkeyAuthentication yes|PubkeyAuthentication yes|' /opt/ssh/sshd_config
+RUN sed -i 's|AuthorizedKeysFile	.ssh/authorized_keys|AuthorizedKeysFile /home/user/ssh/authorized_keys|' /opt/ssh/sshd_config
 
 # Enable DEBUG log. You can ignore this but this may help you debug any issue while enabling SSHD for the first time
 RUN sed -i 's|#LogLevel INFO|LogLevel DEBUG3|' /opt/ssh/sshd_config
@@ -55,6 +56,7 @@ RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/ss
 
 COPY --chown=0:0 /build/sshd.start /
 COPY --chown=0:0 /build/sshd.stop /
+COPY --chown=0:0 /build/sshd.connect /
 
 
 # Step 4. Fix permissions
