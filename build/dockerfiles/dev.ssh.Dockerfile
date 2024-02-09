@@ -53,8 +53,8 @@ RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/ss
 
 # Step 3. Confiure SSHD as systemd service
 
-COPY --chown=0:0 sshd.start /
-COPY --chown=0:0 sshd.stop /
+COPY --chown=0:0 /build/sshd.start /
+COPY --chown=0:0 /build/sshd.stop /
 
 
 # Step 4. Fix permissions
