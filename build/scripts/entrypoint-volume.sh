@@ -19,6 +19,12 @@ if ! whoami &> /dev/null; then
   fi
 fi
 
+# should prepare ssh keys
+mkdir -p /home/user/ssh
+ssh-keygen -q -N "" -t ed25519 -f /home/user/ssh/host_ed25519_key
+cp /home/user/ssh/host_ed25519_key.pub /home/user/ssh/authorized_keys
+
+
 # list checode
 ls -la /checode/
 
