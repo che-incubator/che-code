@@ -53,53 +53,17 @@ RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/ss
 
 
 # Step 3. Confiure SSHD as systemd service
-
 COPY --chown=0:0 /build/sshd.start /
 COPY --chown=0:0 /build/sshd.stop /
 COPY --chown=0:0 /build/sshd.connect /
 
 
 # Step 4. Fix permissions
-# RUN chmod 600 /opt/ssh/*
-# RUN chmod 644 /opt/ssh/sshd_config
-# RUN chown -R user. /opt/ssh/
-
 RUN chmod 644 /opt/ssh/*
 RUN chmod 664 /opt/ssh/sshd_config
 RUN chown -R user:root /opt/ssh/
 
 RUN chmod 774 /opt/ssh
-
-
-# ==================================================================================================
-
-# Authentication refused: bad ownership or modes for directory /home/user
-
-
-RUN mkdir /user-ssh2 && \
-    chown user:user /user-ssh2 && \
-    chmod 777 /user-ssh2
-
-RUN mkdir /home/user/.ssh
-RUN chown user:user /home/user/.ssh
-
-RUN mkdir /user-ssh && \
-    ssh-keygen -q -N "" -t ed25519 -f /user-ssh/id_ed25519 && \
-    cp /user-ssh/id_ed25519.pub /user-ssh/authorized_keys
-
-RUN chown user:root /user-ssh
-RUN chown user:root /user-ssh/id_ed25519
-RUN chown user:root /user-ssh/id_ed25519.pub
-RUN chown user:root /user-ssh/authorized_keys
-
-RUN chmod 770 /user-ssh
-RUN chmod 644 /user-ssh/id_ed25519
-RUN chmod 644 /user-ssh/id_ed25519.pub
-RUN chmod 644 /user-ssh/authorized_keys
-
-# ==================================================================================================
-
-
 
 USER 10001
 
