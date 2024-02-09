@@ -9,10 +9,10 @@
 
 schemaVersion: 2.1.0
 metadata:
-  name: che-code
+  name: ssh-test
 
 projects:
-  - name: che-code
+  - name: recommended-extensions-sample
     git:
       remotes:
         origin: https://github.com/vitaliy-guliy/recommended-extensions-sample
