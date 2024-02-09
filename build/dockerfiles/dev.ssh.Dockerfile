@@ -13,6 +13,92 @@ USER 0
 RUN dnf -y install libsecret openssh-server && \
     dnf -y clean all --enablerepo='*'
 
+# Follow the sample https://www.golinuxcloud.com/run-sshd-as-non-root-user-without-sudo/
+
+# Step 1. Generate SSH Host keys
+
+RUN mkdir /opt/ssh
+RUN echo "test1" > /tmp/test1
+
+RUN ssh-keygen -q -N "" -t dsa -f /opt/ssh/ssh_host_dsa_key && \
+    ssh-keygen -q -N "" -t rsa -b 4096 -f /opt/ssh/ssh_host_rsa_key && \
+    ssh-keygen -q -N "" -t ecdsa -f /opt/ssh/ssh_host_ecdsa_key && \
+    ssh-keygen -q -N "" -t ed25519 -f /opt/ssh/ssh_host_ed25519_key
+
+RUN ls -l /opt/ssh/
+
+# Step 2. Configure SSHH as non-root user
+
+RUN cp /etc/ssh/sshd_config /opt/ssh/
+
+# Use a non-privileged port
+RUN sed -i 's|#Port 22|Port 2022|' /opt/ssh/sshd_config
+
+# provide the new path containing these host keys
+RUN sed -i 's|HostKey /etc/ssh/ssh_host_rsa_key|HostKey /opt/ssh/ssh_host_rsa_key|' /opt/ssh/sshd_config
+RUN sed -i 's|HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /opt/ssh/ssh_host_ecdsa_key|' /opt/ssh/sshd_config
+RUN sed -i 's|HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /opt/ssh/ssh_host_ed25519_key|' /opt/ssh/sshd_config
+
+RUN sed -i 's|#PubkeyAuthentication yes|PubkeyAuthentication yes|' /opt/ssh/sshd_config
+
+# Enable DEBUG log. You can ignore this but this may help you debug any issue while enabling SSHD for the first time
+RUN sed -i 's|#LogLevel INFO|LogLevel DEBUG3|' /opt/ssh/sshd_config
+
+RUN sed -i 's|#StrictModes yes|StrictModes=no|' /opt/ssh/sshd_config
+
+
+# Provide a path to store PID file which is accessible by normal user for write purpose
+RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/sshd_config
+
+
+# Step 3. Confiure SSHD as systemd service
+
+COPY --chown=0:0 sshd.start /
+COPY --chown=0:0 sshd.stop /
+
+
+# Step 4. Fix permissions
+# RUN chmod 600 /opt/ssh/*
+# RUN chmod 644 /opt/ssh/sshd_config
+# RUN chown -R user. /opt/ssh/
+
+RUN chmod 644 /opt/ssh/*
+RUN chmod 664 /opt/ssh/sshd_config
+RUN chown -R user:root /opt/ssh/
+
+RUN chmod 774 /opt/ssh
+
+
+# ==================================================================================================
+
+# Authentication refused: bad ownership or modes for directory /home/user
+
+
+RUN mkdir /user-ssh2 && \
+    chown user:user /user-ssh2 && \
+    chmod 777 /user-ssh2
+
+RUN mkdir /home/user/.ssh
+RUN chown user:user /home/user/.ssh
+
+RUN mkdir /user-ssh && \
+    ssh-keygen -q -N "" -t ed25519 -f /user-ssh/id_ed25519 && \
+    cp /user-ssh/id_ed25519.pub /user-ssh/authorized_keys
+
+RUN chown user:root /user-ssh
+RUN chown user:root /user-ssh/id_ed25519
+RUN chown user:root /user-ssh/id_ed25519.pub
+RUN chown user:root /user-ssh/authorized_keys
+
+RUN chmod 770 /user-ssh
+RUN chmod 644 /user-ssh/id_ed25519
+RUN chmod 644 /user-ssh/id_ed25519.pub
+RUN chmod 644 /user-ssh/authorized_keys
+
+# ==================================================================================================
+
+
+
 USER 10001
 
 RUN echo "============================================================" && \
