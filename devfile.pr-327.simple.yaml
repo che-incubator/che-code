@@ -37,7 +37,6 @@ components:
 
         - exposure: public
           name: sshd
-          protocol: tcp
           targetPort: 2022
 
   - name: projects
