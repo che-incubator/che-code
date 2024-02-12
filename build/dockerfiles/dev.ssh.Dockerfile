@@ -7,7 +7,6 @@
 #
 
 FROM quay.io/devfile/universal-developer-image:latest
-# FROM quay.io/vgulyy/universal-developer-image:sshd
 
 USER 0
 
@@ -52,7 +51,7 @@ RUN sed -i 's|#StrictModes yes|StrictModes=no|' /opt/ssh/sshd_config
 RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/sshd_config
 
 RUN echo > /etc/security/access.conf && \
-    echo "-:ALL:EXCEPT root user" > /etc/security/access.conf
+    echo "-:ALL:EXCEPT root user" >> /etc/security/access.conf
 
 # Step 3. Confiure SSHD as systemd service
 COPY --chown=0:0 /build/sshd.start /
@@ -68,7 +67,3 @@ RUN chown -R user:root /opt/ssh/
 RUN chmod 774 /opt/ssh
 
 USER 10001
-
-RUN echo "============================================================" && \
-    ls -la /home && \
-    echo "============================================================"
