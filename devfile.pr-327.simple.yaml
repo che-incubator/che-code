@@ -37,20 +37,8 @@ components:
 
         - exposure: public
           name: sshd
-          targetPort: 22
-
-  - name: ubuntu
-    container:
-      image: quay.io/vgulyy/ssh-ubuntu:test
-      memoryLimit: 2Gi
-      memoryRequest: 512Mi
-      cpuRequest: 500m
-      cpuLimit: 3500m
-
-      endpoints:
-        - exposure: public
-          name: sshdd
           targetPort: 2022
+          protocol: tcp
 
   - name: projects
     volume:
