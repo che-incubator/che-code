@@ -10,7 +10,7 @@ FROM quay.io/devfile/universal-developer-image:latest
 
 USER 0
 
-RUN dnf -y install libsecret openssh-server && \
+RUN dnf -y install libsecret openssh-server dropbear && \
     dnf -y clean all --enablerepo='*'
 
 # Follow the sample https://www.golinuxcloud.com/run-sshd-as-non-root-user-without-sudo/
