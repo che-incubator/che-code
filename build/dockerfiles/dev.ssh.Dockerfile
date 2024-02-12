@@ -6,7 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM quay.io/devfile/universal-developer-image:latest
+# FROM quay.io/devfile/universal-developer-image:latest
+FROM quay.io/vgulyy/universal-developer-image:sshd
 
 USER 0
 
@@ -18,7 +19,6 @@ RUN dnf -y install libsecret openssh-server && \
 # Step 1. Generate SSH Host keys
 
 RUN mkdir /opt/ssh
-RUN echo "test1" > /tmp/test1
 
 RUN ssh-keygen -q -N "" -t dsa -f /opt/ssh/ssh_host_dsa_key && \
     ssh-keygen -q -N "" -t rsa -b 4096 -f /opt/ssh/ssh_host_rsa_key && \
