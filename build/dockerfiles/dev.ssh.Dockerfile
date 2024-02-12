@@ -50,6 +50,8 @@ RUN sed -i 's|#StrictModes yes|StrictModes=no|' /opt/ssh/sshd_config
 # Provide a path to store PID file which is accessible by normal user for write purpose
 RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/sshd_config
 
+RUN echo "account include base-account" > /etc/pam.d/sshd.pam
+
 
 # Add script to start and stop the service
 COPY --chown=0:0 /build/sshd.start /
