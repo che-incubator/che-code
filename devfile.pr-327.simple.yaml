@@ -24,7 +24,7 @@ components:
   - name: dev
     container:
       image: quay.io/che-incubator-pull-requests/che-code-dev:pr-327-dev-amd64
-      memoryLimit: 12Gi
+      memoryLimit: 8Gi
       memoryRequest: 512Mi
       cpuRequest: 500m
       cpuLimit: 3500m
@@ -37,6 +37,19 @@ components:
 
         - exposure: public
           name: sshd
+          targetPort: 22
+
+  - name: ubuntu
+    container:
+      image: quay.io/vgulyy/ssh-ubuntu:test
+      memoryLimit: 2Gi
+      memoryRequest: 512Mi
+      cpuRequest: 500m
+      cpuLimit: 3500m
+
+      endpoints:
+        - exposure: public
+          name: sshdd
           targetPort: 2022
 
   - name: projects
