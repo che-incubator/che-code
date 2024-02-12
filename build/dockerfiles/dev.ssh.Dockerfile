@@ -50,12 +50,9 @@ RUN sed -i 's|#StrictModes yes|StrictModes=no|' /opt/ssh/sshd_config
 # Provide a path to store PID file which is accessible by normal user for write purpose
 RUN sed -i 's|#PidFile /var/run/sshd.pid|PidFile /opt/ssh/sshd.pid|' /opt/ssh/sshd_config
 
-RUN echo > /etc/security/access.conf && \
-    echo "-:ALL:EXCEPT root user" >> /etc/security/access.conf
 
-# Step 3. Confiure SSHD as systemd service
+# Add script to start and stop the service
 COPY --chown=0:0 /build/sshd.start /
-COPY --chown=0:0 /build/sshd.stop /
 COPY --chown=0:0 /build/sshd.connect /
 
 
@@ -65,5 +62,7 @@ RUN chmod 664 /opt/ssh/sshd_config
 RUN chown -R user:root /opt/ssh/
 
 RUN chmod 774 /opt/ssh
+
+EXPOSE 2022
 
 USER 10001

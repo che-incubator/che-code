@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/usr/sbin/sshd -t -f /opt/ssh/sshd_config -E /tmp/sshd.log
