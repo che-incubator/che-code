@@ -35,6 +35,11 @@ components:
           protocol: http
           targetPort: 8000
 
+        - exposure: public
+          name: sshd
+          protocol: tcp
+          targetPort: 2022
+
   - name: projects
     volume:
       size: 7Gi
