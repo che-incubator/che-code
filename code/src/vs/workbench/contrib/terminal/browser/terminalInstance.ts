@@ -418,6 +418,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 				const projectsRoot = envs.map.get('PROJECTS_ROOT');
 				if (projectsRoot) {
 					this.shellLaunchConfig.cwd = projectsRoot.value
+					console.log('>>> use Projects ROOT: ', projectsRoot.value);
 				}
 			}
 		}
