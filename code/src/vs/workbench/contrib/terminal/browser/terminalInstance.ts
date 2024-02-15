@@ -409,6 +409,9 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 			const activeWorkspaceRootUri = this._historyService.getLastActiveWorkspaceRoot();
 			this._workspaceFolder = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;
 		}
+		if (!this._workspaceFolder && !this.shellLaunchConfig.cwd) {
+			this.shellLaunchConfig.cwd = '/projects';
+		}
 
 		const scopedContextKeyService = this._register(_contextKeyService.createScoped(this._wrapperElement));
 		this._scopedContextKeyService = scopedContextKeyService;
