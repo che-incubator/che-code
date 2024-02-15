@@ -71,7 +71,7 @@ import { getTerminalResourcesFromDragEvent, getTerminalUri } from 'vs/workbench/
 import { TerminalWidgetManager } from 'vs/workbench/contrib/terminal/browser/widgets/widgetManager';
 import { LineDataEventAddon } from 'vs/workbench/contrib/terminal/browser/xterm/lineDataEventAddon';
 import { XtermTerminal, getXtermScaledDimensions } from 'vs/workbench/contrib/terminal/browser/xterm/xtermTerminal';
-import { IEnvironmentVariableInfo } from 'vs/workbench/contrib/terminal/common/environmentVariable';
+import { IEnvironmentVariableInfo, IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
 import { getCommandHistory, getDirectoryHistory } from 'vs/workbench/contrib/terminal/common/history';
 import { DEFAULT_COMMANDS_TO_SKIP_SHELL, ITerminalProcessManager, ITerminalProfileResolverService, ProcessState, TERMINAL_CREATION_COMMANDS, TERMINAL_VIEW_ID, TerminalCommandId } from 'vs/workbench/contrib/terminal/common/terminal';
 import { TERMINAL_BACKGROUND_COLOR } from 'vs/workbench/contrib/terminal/common/terminalColorRegistry';
@@ -88,6 +88,7 @@ import type { IMarker, Terminal as XTermTerminal } from '@xterm/xterm';
 import { AccessibilityCommandId } from 'vs/workbench/contrib/accessibility/common/accessibilityCommands';
 import { terminalStrings } from 'vs/workbench/contrib/terminal/common/terminalStrings';
 import { shouldPasteTerminalText } from 'vs/workbench/contrib/terminal/common/terminalClipboard';
+import { EnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariableService';
 
 const enum Constants {
 	/**
@@ -364,7 +365,8 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		@IOpenerService private readonly _openerService: IOpenerService,
 		@ICommandService private readonly _commandService: ICommandService,
 		@IAudioCueService private readonly _audioCueService: IAudioCueService,
-		@IViewDescriptorService private readonly _viewDescriptorService: IViewDescriptorService
+		@IViewDescriptorService private readonly _viewDescriptorService: IViewDescriptorService,
+		@IEnvironmentVariableService private readonly _environmentVariableService: EnvironmentVariableService
 	) {
 		super();
 
@@ -409,8 +411,15 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 			const activeWorkspaceRootUri = this._historyService.getLastActiveWorkspaceRoot();
 			this._workspaceFolder = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;
 		}
+
 		if (!this._workspaceFolder && !this.shellLaunchConfig.cwd) {
-			this.shellLaunchConfig.cwd = '/projects';
+			const envs = this._environmentVariableService.collections.get('eclipse-che.api');
+			if (envs) {
+				const projectsRoot = envs.map.get('PROJECTS_ROOT');
+				if (projectsRoot) {
+					this.shellLaunchConfig.cwd = projectsRoot.value
+				}
+			}
 		}
 
 		const scopedContextKeyService = this._register(_contextKeyService.createScoped(this._wrapperElement));
