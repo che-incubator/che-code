@@ -20,7 +20,7 @@ import { Range } from 'vs/editor/common/core/range';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
-import { NewSymbolName, Rejection, RenameLocation, RenameProvider, WorkspaceEdit } from 'vs/editor/common/languages';
+import { Rejection, RenameLocation, RenameProvider, WorkspaceEdit } from 'vs/editor/common/languages';
 import { ITextModel } from 'vs/editor/common/model';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
@@ -210,11 +210,11 @@ class RenameController implements IEditorContribution {
 		const cts2 = new EditorStateCancellationTokenSource(this.editor, CodeEditorStateFlag.Position | CodeEditorStateFlag.Value, loc.range, this._cts.token);
 
 		const model = this.editor.getModel(); // @ulugbekna: assumes editor still has a model, otherwise, cts1 should've been cancelled
-		const newNameCandidates = Promise.all(
-			this._languageFeaturesService.newSymbolNamesProvider
-				.all(model)
-				.map(provider => provider.provideNewSymbolNames(model, loc.range, cts2.token)) // TODO@ulugbekna: make sure this works regardless if the result is then-able
-		).then((candidates) => candidates.filter((c): c is NewSymbolName[] => !!c).flat());
+
+		const renameCandidatesCts = new CancellationTokenSource(cts2.token);
+		const newSymbolNamesProviders = this._languageFeaturesService.newSymbolNamesProvider.all(model);
+		// TODO@ulugbekna: providers should get timeout token (use createTimeoutCancellation(x))
+		const newSymbolNameProvidersResults = newSymbolNamesProviders.map(p => p.provideNewSymbolNames(model, loc.range, renameCandidatesCts.token));
 
 		const selection = this.editor.getSelection();
 		let selectionStart = 0;
@@ -226,7 +226,7 @@ class RenameController implements IEditorContribution {
 		}
 
 		const supportPreview = this._bulkEditService.hasPreviewHandler() && this._configService.getValue<boolean>(this.editor.getModel().uri, 'editor.rename.enablePreview');
-		const inputFieldResult = await this._renameInputField.getInput(loc.range, loc.text, selectionStart, selectionEnd, supportPreview, newNameCandidates, cts2.token);
+		const inputFieldResult = await this._renameInputField.getInput(loc.range, loc.text, selectionStart, selectionEnd, supportPreview, newSymbolNameProvidersResults, renameCandidatesCts);
 
 		// no result, only hint to focus the editor or not
 		if (typeof inputFieldResult === 'boolean') {
