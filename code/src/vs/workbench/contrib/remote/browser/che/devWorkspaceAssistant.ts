@@ -120,6 +120,7 @@ export class DevWorkspaceAssistant {
 
 	async restartWorkspace(): Promise<void> {
 		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
+		await new Promise(resolve => setTimeout(resolve, 2000));
 		this.startWorkspace();
 	}
 
