@@ -68,10 +68,12 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
 	const dashboardUrl = k8sDevWorkspaceEnvVariables.getDashboardURL();
 	const workspaceNamespace = k8sDevWorkspaceEnvVariables.getWorkspaceNamespace();
 	const workspaceName = k8sDevWorkspaceEnvVariables.getWorkspaceName();
+	const projectsRoot = k8sDevWorkspaceEnvVariables.getProjectsRoot();
 	
 	_extensionContext.environmentVariableCollection.append('DASHBOARD_URL', dashboardUrl);
 	_extensionContext.environmentVariableCollection.append('WORKSPACE_NAME', workspaceName);
 	_extensionContext.environmentVariableCollection.append('WORKSPACE_NAMESPACE', workspaceNamespace);
+	_extensionContext.environmentVariableCollection.append('PROJECTS_ROOT', projectsRoot);
 
     return api;
 }
