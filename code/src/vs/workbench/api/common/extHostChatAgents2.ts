@@ -9,12 +9,13 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { Emitter } from 'vs/base/common/event';
 import { IMarkdownString } from 'vs/base/common/htmlContent';
+import { Iterable } from 'vs/base/common/iterator';
 import { DisposableMap, DisposableStore } from 'vs/base/common/lifecycle';
 import { StopWatch } from 'vs/base/common/stopwatch';
 import { assertType } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
-import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
+import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { ExtHostChatAgentsShape2, IChatAgentCompletionItem, IChatAgentHistoryEntryDto, IMainContext, MainContext, MainThreadChatAgentsShape2 } from 'vs/workbench/api/common/extHost.protocol';
 import { CommandsConverter, ExtHostCommands } from 'vs/workbench/api/common/extHostCommands';
@@ -233,7 +234,7 @@ export class ExtHostChatAgents2 implements ExtHostChatAgentsShape2 {
 			res.push(new extHostTypes.ChatRequestTurn(h.request.message, h.request.command, h.request.variables.variables.map(typeConvert.ChatAgentResolvedVariable.to), { extensionId: '', participant: h.request.agentId }));
 
 			// RESPONSE turn
-			const parts = coalesce(h.response.map(r => typeConvert.ChatResponsePart.from(r, this.commands.converter)));
+			const parts = coalesce(h.response.map(r => typeConvert.ChatResponsePart.fromContent(r, this.commands.converter)));
 			res.push(new extHostTypes.ChatResponseTurn(parts, result, { extensionId: '', participant: h.request.agentId }, h.request.command));
 		}
 
@@ -261,6 +262,16 @@ export class ExtHostChatAgents2 implements ExtHostChatAgentsShape2 {
 
 		const ehResult = typeConvert.ChatAgentResult.to(result);
 		return (await agent.provideFollowups(ehResult, token))
+			.filter(f => {
+				// The followup must refer to a participant that exists from the same extension
+				const isValid = !f.participant || Iterable.some(
+					this._agents.values(),
+					a => a.id === f.participant && ExtensionIdentifier.equals(a.extension.identifier, agent.extension.identifier));
+				if (!isValid) {
+					this._logService.warn(`[@${agent.id}] ChatFollowup refers to an invalid participant: ${f.participant}`);
+				}
+				return isValid;
+			})
 			.map(f => typeConvert.ChatFollowup.from(f, request));
 	}
 
@@ -391,7 +402,7 @@ class ExtHostChatAgent {
 
 				return {
 					name: c.name,
-					description: c.description,
+					description: c.description ?? '',
 					followupPlaceholder: c.isSticky2?.placeholder,
 					isSticky: c.isSticky2?.isSticky ?? c.isSticky,
 					sampleRequest: c.sampleRequest
