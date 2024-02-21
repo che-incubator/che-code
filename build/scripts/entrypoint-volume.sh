@@ -40,9 +40,11 @@ else
   if command -v openssl &> /dev/null; then
     echo "OpenSSL command is available, the version is: $(openssl version -v)"  
     openssl_major_version=$(openssl version -v | cut -d' ' -f2 | cut -d'.' -f1)
-  else 
-    echo "OpenSSL command is not available, trying to detect OpenSSL version..."
+  elif command -v rpm &> /dev/null; then 
+    echo "OpenSSL command is not available, trying to detect OpenSSL version using rpm..."
     openssl_major_version=$(rpm -qa | grep openssl-libs | cut -d'-' -f3 | cut -d'.' -f1)
+  else 
+    echo "OpenSSL and rpm commands are not available"
   fi
   
   # ubi8- or ubi9-based assembly is used depending on the openssl version
@@ -57,8 +59,9 @@ else
     echo "Using linux-libc ubi9-based assembly..."
     cd /checode/checode-linux-libc/ubi9 || exit
   else
-    echo "WARNING: Unsupported OpenSSL major version $openssl_major_version, linux-libc ubi8-based assembly will be used by default..."
-    cd /checode/checode-linux-libc/ubi8 || exit
+    echo "WARNING: Unsupported OpenSSL major version $openssl_major_version, linux-libc ubi9-based assembly will be used by default..."
+    export LD_LIBRARY_PATH="/checode/checode-linux-libc/ubi9/ld_libs:$LD_LIBRARY_PATH"
+    cd /checode/checode-linux-libc/ubi9 || exit
   fi
 fi
 
