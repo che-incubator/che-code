@@ -33,7 +33,7 @@ export interface ISpeechToTextEvent {
 	readonly text?: string;
 }
 
-export interface ISpeechToTextSession extends IDisposable {
+export interface ISpeechToTextSession {
 	readonly onDidChange: Event<ISpeechToTextEvent>;
 }
 
@@ -48,7 +48,7 @@ export interface IKeywordRecognitionEvent {
 	readonly text?: string;
 }
 
-export interface IKeywordRecognitionSession extends IDisposable {
+export interface IKeywordRecognitionSession {
 	readonly onDidChange: Event<IKeywordRecognitionEvent>;
 }
 
@@ -79,7 +79,7 @@ export interface ISpeechService {
 	 * Starts to transcribe speech from the default microphone. The returned
 	 * session object provides an event to subscribe for transcribed text.
 	 */
-	createSpeechToTextSession(token: CancellationToken): ISpeechToTextSession;
+	createSpeechToTextSession(token: CancellationToken, context?: string): ISpeechToTextSession;
 
 	readonly onDidStartKeywordRecognition: Event<void>;
 	readonly onDidEndKeywordRecognition: Event<void>;
