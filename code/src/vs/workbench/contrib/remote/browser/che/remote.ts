@@ -116,8 +116,6 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
-		console.log(`> handleStateChange milliseconds: ${millisSinceLastIncomingData}, type: ${type.toString()}`);
-
 		if (PersistentConnectionEventType.ConnectionLost === type && this.devWorkspaceAssistant.isRestarting()) {
 			this.devWorkspaceAssistant.startWorkspace();
 		}
