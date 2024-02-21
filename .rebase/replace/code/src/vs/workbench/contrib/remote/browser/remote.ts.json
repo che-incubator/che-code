@@ -13,22 +13,22 @@
     },
 	{
 		"from": "super();",
-		"by": "super();\\\n\\\t\\\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService);"
+		"by": "super();\\\n\\\t\\\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);"
 	},
 	{
 		"from": "case PersistentConnectionEventType.ConnectionLost:",
-		"by": "case PersistentConnectionEventType.ConnectionLost:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+		"by": "case PersistentConnectionEventType.ConnectionLost:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
 	},
 	{
 		"from": "case PersistentConnectionEventType.ReconnectionWait:",
-		"by": "case PersistentConnectionEventType.ReconnectionWait:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+		"by": "case PersistentConnectionEventType.ReconnectionWait:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
 	},
 	{
 		"from": "case PersistentConnectionEventType.ReconnectionRunning:",
-		"by": "case PersistentConnectionEventType.ReconnectionRunning:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+		"by": "case PersistentConnectionEventType.ReconnectionRunning:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
 	},
 	{
 		"from": "case PersistentConnectionEventType.ReconnectionPermanentFailure:",
-		"by": "case PersistentConnectionEventType.ReconnectionPermanentFailure:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tthis.cheDisconnectionHandler.handle(e.type);\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
+		"by": "case PersistentConnectionEventType.ReconnectionPermanentFailure:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
 	}
 ]
