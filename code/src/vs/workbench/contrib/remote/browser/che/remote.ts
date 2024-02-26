@@ -116,9 +116,9 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
-		if (PersistentConnectionEventType.ConnectionLost === type && this.devWorkspaceAssistant.isRestarting()) {
-			this.devWorkspaceAssistant.startWorkspace();
-		}
+		// if (PersistentConnectionEventType.ConnectionLost === type && this.devWorkspaceAssistant.isRestarting()) {
+		// 	this.devWorkspaceAssistant.startWorkspace();
+		// }
 
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);

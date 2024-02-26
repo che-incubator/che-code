@@ -48,8 +48,6 @@ export class DevWorkspaceAssistant {
 	private getDevWorkspaceUrl: string | undefined;
 	private startingDevWorkspaceUrl: string | undefined;
 
-	private restarting = false;
-
 	constructor(
 		private commandService: ICommandService,
 		private requestService: IRequestService,
@@ -122,13 +120,11 @@ export class DevWorkspaceAssistant {
 		this.getDevWorkspaceUrl = `${dashboardUrl}/dashboard/api/namespace/${workspaceNamespace}/devworkspaces/${workspaceName}`;
 	}
 
-	isRestarting(): boolean {
-		return this.restarting;
-	}
-
 	async restartWorkspace(): Promise<void> {
+		console.log('> send signal to STOP workspace');
 		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
-		this.restarting = true;
+
+		console.log('> display POPUP');
 
 		this.progressService.withProgress(
 			{
@@ -141,6 +137,22 @@ export class DevWorkspaceAssistant {
 			() => new Promise(() => {}),
 			() => this.startWorkspace()
 		);
+
+		console.log('> set INTERVAL');
+		setInterval(async () => {
+			console.log('> get workspace STATE');
+
+			try {
+				const result = await this.getDevWorkspace();
+				console.log(`> got status: ${result.status.phase}`);
+				if (DevWorkspaceStatus.STOPPED === result.status.phase) {
+					this.startWorkspace();
+				}
+
+			} catch (e) {
+				console.error('> FAILURE to get workspace STATE', e);
+			}
+		}, 2000);
 	}
 
 	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {
