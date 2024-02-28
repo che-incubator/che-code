@@ -366,6 +366,9 @@ export class ChatService extends Disposable implements IChatService {
 
 			const provider = this._providers.get(model.providerId);
 			if (!provider) {
+				console.log('>> ###################################################################');
+				console.log('>> Initilize session error. Unknown provider ' + model.providerId);
+				console.log('>> ###################################################################');
 				throw new Error(`Unknown provider: ${model.providerId}`);
 			}
 
@@ -449,6 +452,9 @@ export class ChatService extends Disposable implements IChatService {
 		await model.waitForInitialization();
 		const provider = this._providers.get(model.providerId);
 		if (!provider) {
+			console.log('>> ###################################################################');
+			console.log('>> Send request error. Unknown provider ' + model.providerId);
+			console.log('>> ###################################################################');
 			throw new Error(`Unknown provider: ${model.providerId}`);
 		}
 
@@ -627,6 +633,9 @@ export class ChatService extends Disposable implements IChatService {
 		await model.waitForInitialization();
 		const provider = this._providers.get(model.providerId);
 		if (!provider) {
+			console.log('>> ###################################################################');
+			console.log('>> Remove request error. Unknown provider ' + model.providerId);
+			console.log('>> ###################################################################');
 			throw new Error(`Unknown provider: ${model.providerId}`);
 		}
 
@@ -691,6 +700,10 @@ export class ChatService extends Disposable implements IChatService {
 	}
 
 	registerProvider(provider: IChatProvider): IDisposable {
+		console.log('>> ###################################################################');
+		console.log('>> Register provider ' + provider.id);
+		console.log('>> ###################################################################');
+
 		this.trace('registerProvider', `Adding new chat provider`);
 
 		if (this._providers.has(provider.id)) {
