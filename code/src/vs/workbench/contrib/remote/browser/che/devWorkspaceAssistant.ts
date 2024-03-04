@@ -13,6 +13,7 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/commands';
 import { asJson, IRequestService } from 'vs/platform/request/common/request';
 import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
+import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
 
 export enum DevWorkspaceStatus {
 	FAILED = 'Failed',
@@ -50,7 +51,8 @@ export class DevWorkspaceAssistant {
 	constructor(
 		private commandService: ICommandService,
 		private requestService: IRequestService,
-		private environmentVariableService: IEnvironmentVariableService) {
+		private environmentVariableService: IEnvironmentVariableService,
+		private progressService: IProgressService) {
 		CommandsRegistry.registerCommand('che-remote.command.restartWorkspace', () => {
 			this.restartWorkspace();
 		});
@@ -120,7 +122,30 @@ export class DevWorkspaceAssistant {
 
 	async restartWorkspace(): Promise<void> {
 		await this.commandService.executeCommand('che-remote.command.stopWorkspace');
-		this.startWorkspace();
+
+		this.progressService.withProgress(
+			{
+				location: ProgressLocation.Dialog,
+				buttons: ['Reload Now'],
+				detail: 'Your workspace will be restarted soon',
+				title: 'Workspace is restarting...',
+				sticky: true
+			},
+			() => new Promise(() => {}),
+			() => this.startWorkspace()
+		);
+
+		setInterval(async () => {
+			try {
+				const result = await this.getDevWorkspace();
+				if (DevWorkspaceStatus.STOPPED === result.status.phase) {
+					this.startWorkspace();
+				}
+
+			} catch (e) {
+				console.error(e);
+			}
+		}, 2000);
 	}
 
 	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {

@@ -19,6 +19,7 @@ import { IRequestService } from 'vs/platform/request/common/request';
 import { ReloadWindowAction } from 'vs/workbench/browser/actions/windowActions';
 import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from 'vs/workbench/contrib/remote/browser/che/devWorkspaceAssistant';
 import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
+import { IProgressService } from 'vs/platform/progress/common/progress';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RELOAD_WINDOW_LABEL = nls.localize('reloadWindow', "Reload Window");
@@ -65,12 +66,13 @@ export class CheDisconnectionHandler {
 		private dialogService: IDialogService,
 		private notificationService: INotificationService,
 		requestService: IRequestService,
-		environmentVariableService: IEnvironmentVariableService
+		environmentVariableService: IEnvironmentVariableService,
+		progressService: IProgressService
 	) {
-		this.devWorkspaceAssistant = new DevWorkspaceAssistant(commandService, requestService, environmentVariableService);
+		this.devWorkspaceAssistant = new DevWorkspaceAssistant(commandService, requestService, environmentVariableService, progressService);
 	}
 
-	canHandle(millisSinceLastIncomingData: number): boolean {
+	private canHandle(millisSinceLastIncomingData: number): boolean {
 		// the Che handler is waiting for the user action - so, the default behaviour should NOT be applied
 		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING) {
 			return true;
@@ -88,7 +90,7 @@ export class CheDisconnectionHandler {
 		return true;
 	}
 
-	async handle(type: PersistentConnectionEventType): Promise<void> {
+	private async handle(type: PersistentConnectionEventType): Promise<void> {
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
 			return;
 		}
@@ -111,6 +113,15 @@ export class CheDisconnectionHandler {
 		}
 
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
+	}
+
+	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
+		if (this.canHandle(millisSinceLastIncomingData)) {
+			this.handle(type);
+			return true;
+		}
+
+		return false;
 	}
 
 	// handle disconnection when dev workspace is not stopped

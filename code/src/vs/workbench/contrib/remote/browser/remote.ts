@@ -802,7 +802,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 		@ITelemetryService telemetryService: ITelemetryService
 	) {
 		super();
-		this.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService);
+		this.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);
 		const connection = remoteAgentService.getConnection();
 		if (connection) {
 			let quickInputVisible = false;
@@ -902,8 +902,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 				}
 				switch (e.type) {
 					case PersistentConnectionEventType.ConnectionLost:
-						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
-							this.cheDisconnectionHandler.handle(e.type);
+						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
 							break;
 						}
 						reconnectionToken = e.reconnectionToken;
@@ -934,8 +933,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionWait:
-						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
-							this.cheDisconnectionHandler.handle(e.type);
+						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
 							break;
 						}
 						if (visibleProgress) {
@@ -946,8 +944,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionRunning:
-						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
-							this.cheDisconnectionHandler.handle(e.type);
+						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
 							break;
 						}
 						reconnectionToken = e.reconnectionToken;
@@ -991,8 +988,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionPermanentFailure:
-						if (this.cheDisconnectionHandler.canHandle(e.millisSinceLastIncomingData)) {
-							this.cheDisconnectionHandler.handle(e.type);
+						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
 							break;
 						}
 						reconnectionToken = e.reconnectionToken;
