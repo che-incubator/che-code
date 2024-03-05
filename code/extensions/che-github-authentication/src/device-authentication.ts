@@ -35,7 +35,7 @@ export class DeviceAuthentication {
     this.logger.info('Remove Device Authentication Token command has been registered');
   }
 
-  async trigger(scopes = 'user:email'): Promise<string | undefined> {
+  async trigger(scopes = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
     this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
 
     const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
