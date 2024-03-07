@@ -27,17 +27,16 @@ export class DeviceAuthentication {
     this.extensionContext.getContext().subscriptions.push(
       vscode.commands.registerCommand('github-authentication.device-code-flow.authentication', async () => this.trigger()),
     );
-    this.logger.info('Device Authentication command has been registered');
 
     this.extensionContext.getContext().subscriptions.push(
       vscode.commands.registerCommand('github-authentication.device-code-flow.remove-token', async () => this.removeDeviceAuthToken()),
     );
-    this.logger.info('Remove Device Authentication Token command has been registered');
   }
 
   async trigger(scopes = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
     this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
     console.log(`>> trigger.scopes [${scopes}]`);
+    await vscode.window.showInformationMessage(`>> trigger.scopes [${scopes}]`, 'TEST');
 
     const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
     this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${scopes}`);

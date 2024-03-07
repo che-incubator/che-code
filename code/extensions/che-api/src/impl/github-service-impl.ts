@@ -46,17 +46,23 @@ export class GithubServiceImpl implements GithubService {
   }
 
   private checkToken(): void {
+    console.log(`> GithubServiceImpl :: checkToken. this.token [${this.token}]`);
+
     if (!this.token) {
       throw new Error('GitHub authentication token is not setup');
     }
   }
 
   async getToken(): Promise<string> {
+    console.log('> GithubServiceImpl :: getToken');
+
     this.checkToken();
     return this.token!;
   }
 
   async getUser(): Promise<GithubUser> {
+    console.log('> GithubServiceImpl :: getUser');
+
     this.checkToken();
     const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${this.token}` },
@@ -65,6 +71,8 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async getTokenScopes(token: string): Promise<string[]> {
+    console.log(`> GithubServiceImpl :: getTokenScopes [${token}]`);
+
     this.checkToken();
     const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
@@ -73,6 +81,8 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async persistDeviceAuthToken(token: string): Promise<void> {
+    console.log(`> GithubServiceImpl :: persistDeviceAuthToken [${token}]`);
+
     this.token = token;
     this.logger.info(`Github Service: adding token to the device-authentication secret...`);
 
@@ -103,6 +113,8 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async removeDeviceAuthToken(): Promise<void> {
+    console.log('> GithubServiceImpl :: removeDeviceAuthToken');
+
     this.logger.info(`Github Service: got request for removing a device-authentication secret`);
     const deviceAuthSecrets = await this.k8sService.getSecret(DEVICE_AUTHENTICATION_LABEL_SELECTOR);
     if (deviceAuthSecrets.length < 1) {
@@ -121,6 +133,8 @@ export class GithubServiceImpl implements GithubService {
   }
 
   private async iniitializeToken(): Promise<void> {
+    console.log('> GithubServiceImpl :: iniitializeToken');
+
     this.logger.info('Github Service: extracting token...');
 
     const deviceAuthToken = await this.getDeviceAuthToken();
