@@ -37,6 +37,7 @@ export class DeviceAuthentication {
 
   async trigger(scopes = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
     this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
+    console.log(`>> trigger.scopes [${scopes}]`);
 
     const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
     this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${scopes}`);
