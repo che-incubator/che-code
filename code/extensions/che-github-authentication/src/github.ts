@@ -49,10 +49,18 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     @inject(Symbol.for('GithubServiceInstance')) private githubService: GithubService
   ) {
     this.sessions = this.extensionContext.getContext().workspaceState.get('sessions') || [];
+
+    console.log('--------------------------------------------------------------------');
+    for (const s of this.sessions) {
+      console.log(`>>> session [${s.id}] account [${s.account}] token [${s.accessToken}] scopes [${s.scopes}]`);
+    }
+    console.log('--------------------------------------------------------------------');
+
   }
 
   async getSessions(sessionScopes?: string[]): Promise<vscode.AuthenticationSession[]> {
     this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${sessionScopes}`);
+    console.log(`> GitHubAuthProvider :: getSessions for scopes [${sessionScopes}]`);
 
     const sortedScopes = sessionScopes?.sort() || [];
     const filteredSessions = sortedScopes.length
@@ -69,6 +77,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
     }
     this.logger.info(`GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${sessionScopes}`);
+    
+    console.log(`> GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${sessionScopes}`);
+
+    for (const s of filteredSessions) {
+      console.log(`> session [${s.id}] token [${s.accessToken}] account [${s.account}] scopes [${s.scopes}]`);
+    }
+
     return filteredSessions;
   }
 
