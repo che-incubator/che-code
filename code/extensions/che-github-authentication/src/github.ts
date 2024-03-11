@@ -69,7 +69,9 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     for (const session of filteredSessions) {
       try {
-        await this.githubService.getTokenScopes(session.accessToken);
+        console.log(`  >> getting scopes for session ${session.id}`);
+        const scopes = await this.githubService.getTokenScopes(session.accessToken);
+        console.log(`  >> received scopes ${scopes}`);
       } catch (e) {
         filteredSessions.splice(this.sessions.findIndex(s => s.id === session.id), 1);
         this.logger.info(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${sessionScopes}`);

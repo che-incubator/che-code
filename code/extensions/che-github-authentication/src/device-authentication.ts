@@ -33,13 +33,27 @@ export class DeviceAuthentication {
     );
   }
 
-  async trigger(scopes = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
-    this.logger.info(`Device Authentication is triggered for scopes: ${scopes}`);
-    console.log(`>> trigger.scopes [${scopes}]`);
-    await vscode.window.showInformationMessage(`>> trigger.scopes [${scopes}]`, 'TEST');
+  private toArray(scopes: string): string[] {
+    console.log(`    > to array [${scopes}]`);
+    if (scopes) {
+      const arr = scopes.split(',');
+      console.log(`    > spltted array ${arr}`);
+    }
 
-    const sessionsToRemove = await this.gitHubAuthProvider.getSessions([scopes]);
-    this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${scopes}`);
+    return ['user:email'];
+  }
+
+  async trigger(s = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
+    this.logger.info(`Device Authentication is triggered for scopes: ${s}`);
+    console.log(`>> trigger.scopes [${s}]`);
+    
+    await vscode.window.showInformationMessage(`>> trigger.scopes [${s}]`, 'TEST');
+
+    const arr = this.toArray(s);
+    console.log(`> scopes array [${arr}]`);
+
+    const sessionsToRemove = await this.gitHubAuthProvider.getSessions(arr);
+    this.logger.info(`Device Authentication: found ${sessionsToRemove.length} existing sessions with scopes: ${s}`);
 
     for (const session of sessionsToRemove) {
       try {
@@ -55,12 +69,12 @@ export class DeviceAuthentication {
     }
 
     const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow');
-    this.logger.info(`Device Authentication: token for scopes: ${scopes} has been generated successfully`);
+    this.logger.info(`Device Authentication: token for scopes: ${s} has been generated successfully`);
 
     try {
       await this.githubService.persistDeviceAuthToken(token);
-      await this.gitHubAuthProvider.createSession([scopes]);
-      this.onTokenGenerated(scopes);
+      await this.gitHubAuthProvider.createSession(arr);
+      this.onTokenGenerated(s);
 
       return token;
     } catch (error) {
