@@ -68,8 +68,10 @@ export class DeviceAuthentication {
       }
     }
 
-    const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow');
+    const token = await vscode.commands.executeCommand<string>('github-authentication.device-code-flow', s);
     this.logger.info(`Device Authentication: token for scopes: ${s} has been generated successfully`);
+    
+    console.log(`>>>>> Device Authentication: token for scopes: ${s} has been generated successfully`);
 
     try {
       await this.githubService.persistDeviceAuthToken(token);
