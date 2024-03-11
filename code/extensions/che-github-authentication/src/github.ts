@@ -57,13 +57,34 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     console.log('------------------------------------------------------------------------------------------');
   }
 
-  async getSessions(sessionScopes?: string[]): Promise<vscode.AuthenticationSession[]> {
-    this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${sessionScopes}`);
-    console.log(`> GitHubAuthProvider :: getSessions for scopes [${sessionScopes}]`);
+  async getSessions(scopes?: string[]): Promise<vscode.AuthenticationSession[]> {
+    this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${scopes}`);
+    console.log('.........................................................................');
+    console.log(`> GitHubAuthProvider :: getSessions for scopes [${scopes}]`);
 
-    const sortedScopes = sessionScopes?.sort() || [];
-    const filteredSessions = sortedScopes.length
-      ? this.sessions.filter(session => arrayEquals([...session.scopes].sort(), sortedScopes))
+    // if (scopes === undefined) {
+    //   scopes = [];
+    // }
+
+    const hasScopes = function (sessionScopes: string[], matchScopes: string[]): boolean {
+      console.log(`     > go search in ${sessionScopes.toString()}`);
+
+      for (const s of matchScopes) {
+        if (!sessionScopes.includes(s)) {
+          console.log(`         > scope ${s} NOT FOUND!`);
+          return false;
+        }
+
+        console.log(`         > scope ${s} found`);
+      }
+
+      return true;
+    };
+
+    // const sortedScopes = scopes?.sort() || [];
+    const filteredSessions = (scopes && scopes.length)
+      // ? this.sessions.filter(session => arrayEquals([...session.scopes].sort(), sortedScopes))
+      ? this.sessions.filter(session => hasScopes([...session.scopes], scopes!))
       : this.sessions;
 
     for (const session of filteredSessions) {
@@ -73,13 +94,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         console.log(`  >> received scopes ${scopes}`);
       } catch (e) {
         filteredSessions.splice(this.sessions.findIndex(s => s.id === session.id), 1);
-        this.logger.info(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${sessionScopes}`);
+        this.logger.info(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${scopes}`);
         console.warn(e.message);
       }
     }
-    this.logger.info(`GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${sessionScopes}`);
+    this.logger.info(`GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${scopes}`);
     
-    console.log(`> GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${sessionScopes}`);
+    console.log(`> GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${scopes}`);
 
     for (const s of filteredSessions) {
       console.log(`> session [${s.id}] token [${s.accessToken}] account [${s.account}] scopes [${s.scopes}]`);
