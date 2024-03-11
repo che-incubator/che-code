@@ -16,7 +16,7 @@ import * as vscode from 'vscode';
 import { ErrorHandler } from './error-handler';
 import { ExtensionContext } from './extension-context';
 import { Logger } from './logger';
-import { arrayEquals } from './utils';
+// import { arrayEquals } from './utils';
 
 export interface GithubUser {
   login: string;
