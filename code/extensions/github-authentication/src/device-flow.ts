@@ -101,5 +101,3 @@ export async function getToken(scopes: string): Promise<string> {
 	logger.info(`the token was provided successfully!`);
 	return token;
 }
-
-

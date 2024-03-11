@@ -25,7 +25,7 @@ export class DeviceAuthentication {
     @inject(Symbol.for('GithubServiceInstance')) private githubService: GithubService
   ) {
     this.extensionContext.getContext().subscriptions.push(
-      vscode.commands.registerCommand('github-authentication.device-code-flow.authentication', async () => this.trigger()),
+      vscode.commands.registerCommand('github-authentication.device-code-flow.authentication', async () => this.trigger(undefined)),
     );
 
     this.extensionContext.getContext().subscriptions.push(
@@ -38,12 +38,18 @@ export class DeviceAuthentication {
     if (scopes) {
       const arr = scopes.split(',');
       console.log(`    > spltted array ${arr}`);
+      return arr;
     }
 
     return ['user:email'];
   }
 
-  async trigger(s = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
+  // async trigger(s = 'project,read:org,read:user,repo,user:email,workflow,public_repo'): Promise<string | undefined> {
+  async trigger(s: string | undefined): Promise<string | undefined> {
+    if (!s) {
+      s = 'project,read:org,read:user,repo,user:email,workflow,public_repo';
+    }
+
     this.logger.info(`Device Authentication is triggered for scopes: ${s}`);
     console.log(`>> trigger.scopes [${s}]`);
     
@@ -74,7 +80,8 @@ export class DeviceAuthentication {
     console.log(`>>>>> Device Authentication: token for scopes: ${s} has been generated successfully`);
 
     try {
-      await this.githubService.persistDeviceAuthToken(token);
+      await this.githubService.persistDeviceAuthToken(token, arr);
+      console.log(`>> Device Authentication: ask to create new GitHub session with scopes ${arr.toString()}`);
       await this.gitHubAuthProvider.createSession(arr);
       this.onTokenGenerated(s);
 

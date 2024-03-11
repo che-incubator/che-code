@@ -27,7 +27,7 @@ export interface GithubService {
      * A new secret will be created if there is no secret yet.
      * Note: The existing token will be owerriten by the given one.   
      */
-    persistDeviceAuthToken(token: string): Promise<void>;
+    persistDeviceAuthToken(token: string, scopes: string[]): Promise<void>;
 
     /* Removes Device Authentication secret, extracts a token from another source (.git-credentials/credentials file or git-credentials secret) */
     removeDeviceAuthToken(): Promise<void>;

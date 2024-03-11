@@ -27,7 +27,7 @@ export interface GithubUser {
 
 export interface GithubService {
   getToken(): Promise<string>;
-  persistDeviceAuthToken(token: string): Promise<void>;
+  persistDeviceAuthToken(token: string, scopes: string[]): Promise<void>;
   removeDeviceAuthToken(): Promise<void>;
   getUser(): Promise<GithubUser>;
   getTokenScopes(token: string): Promise<string[]>;
@@ -50,12 +50,11 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   ) {
     this.sessions = this.extensionContext.getContext().workspaceState.get('sessions') || [];
 
-    console.log('--------------------------------------------------------------------');
+    console.log('GitHubAuthProvider :: constructor :: list f sessions -------------------------------------');
     for (const s of this.sessions) {
       console.log(`>>> session [${s.id}] account [${s.account}] token [${s.accessToken}] scopes [${s.scopes}]`);
     }
-    console.log('--------------------------------------------------------------------');
-
+    console.log('------------------------------------------------------------------------------------------');
   }
 
   async getSessions(sessionScopes?: string[]): Promise<vscode.AuthenticationSession[]> {
@@ -91,6 +90,11 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
   async createSession(scopes: string[]): Promise<vscode.AuthenticationSession> {
     this.logger.info(`GitHubAuthProvider: CREATE SESSION for scopes: ${JSON.stringify(scopes)}`);
+    
+    console.log(`>> GitHubAuthProvider: CREATE SESSION for scopes: ${JSON.stringify(scopes)}`);
+    console.log(`>> GitHubAuthProvider: CREATE SESSION for scopes: ${scopes.toString()}`);
+    console.log(`>> GitHubAuthProvider: scopes length ${scopes.length}`);
+
     let token = '';
     try {
       token = await this.githubService.getToken();

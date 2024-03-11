@@ -84,8 +84,9 @@ export class GithubServiceImpl implements GithubService {
     return result.headers['x-oauth-scopes'].split(', ');
   }
 
-  async persistDeviceAuthToken(token: string): Promise<void> {
-    console.log(`> GithubServiceImpl :: persistDeviceAuthToken [${token}]`);
+  async persistDeviceAuthToken(token: string, scopes: string[]): Promise<void> {
+    console.log(`> GithubServiceImpl :: persistDeviceAuthToken [${token}] scopes [${scopes.toString()}]`);
+    
     this.logger.info(`> GithubServiceImpl :: persistDeviceAuthToken [${token}]`);
 
     this.token = token;
@@ -96,7 +97,7 @@ export class GithubServiceImpl implements GithubService {
       this.logger.info(`Github Service: device-authentication secret not found, creating a new secret...`);
 
       const namespace = this.k8sService.getDevWorkspaceNamespace();
-      const newSecret = toDeviceAuthSecret(token, namespace);
+      const newSecret = toDeviceAuthSecret(token, scopes, namespace);
       await this.k8sService.createNamespacedSecret(newSecret);
 
       this.logger.info(`Github Service: device-authentication secret was created successfully!`);
@@ -107,7 +108,7 @@ export class GithubServiceImpl implements GithubService {
     this.logger.info(`Github Service: updating exsting device-authentication secret...`);
 
     const data = {
-      token: base64Encode(`${token}`)
+      token: base64Encode(`${token}:${scopes.toString()}`)
     };
 
     const updatedSecret = { ...deviceAuthSecret, data };
@@ -144,9 +145,11 @@ export class GithubServiceImpl implements GithubService {
 
     this.logger.info('Github Service: extracting token...');
 
-    const deviceAuthToken = await this.getDeviceAuthToken();
-    if (deviceAuthToken) {
-      this.token = deviceAuthToken;
+    const deviceAuthTokenPair = await this.getDeviceAuthTokenPair();
+    if (deviceAuthTokenPair) {
+      console.log(`>> GithubServiceImpl :: got token pair [${deviceAuthTokenPair}]`);
+
+      this.token = deviceAuthTokenPair.split(':')[0];
       this.logger.info('Github Service: Device Authentication token is used');
       return;
     }
@@ -161,12 +164,11 @@ export class GithubServiceImpl implements GithubService {
   }
 
   /* Extracts a token from the device-authentication secret */
-  private async getDeviceAuthToken(): Promise<string | undefined> {
+  private async getDeviceAuthTokenPair(): Promise<string | undefined> {
     const deviceAuthSecrets = await this.k8sService.getSecret(DEVICE_AUTHENTICATION_LABEL_SELECTOR);
     this.logger.info(`Github Service: found ${deviceAuthSecrets.length} device-authentication secrets`);
     if (deviceAuthSecrets.length > 0) {
-      const decodedToken = base64Decode(deviceAuthSecrets[0].data!.token);
-      return decodedToken;
+      return base64Decode(deviceAuthSecrets[0].data!.token);
     } else {
       return undefined;
     }
@@ -213,7 +215,8 @@ export class GithubServiceImpl implements GithubService {
   }
 }
 
-function toDeviceAuthSecret(token: string, namespace: string): k8s.V1Secret {
+function toDeviceAuthSecret(token: string, scopes: string[], namespace: string): k8s.V1Secret {
+  console.log(`> toDeviceAuthSecret [${token}:${scopes.toString()}]`);
   return {
     apiVersion: 'v1',
     kind: 'Secret',
@@ -226,7 +229,7 @@ function toDeviceAuthSecret(token: string, namespace: string): k8s.V1Secret {
     },
     type: 'Opaque',
     data: {
-      token: base64Encode(`${token}`)
+      token: base64Encode(`${token}:${scopes.toString()}`),
     },
   };
 }
