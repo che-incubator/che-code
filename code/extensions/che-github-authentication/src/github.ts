@@ -103,7 +103,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     console.log(`> GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${scopes}`);
 
     for (const s of filteredSessions) {
-      console.log(`> session [${s.id}] token [${s.accessToken}] account [${s.account}] scopes [${s.scopes}]`);
+      console.log(`> session [${s.id}] token [${s.accessToken}] account [${JSON.stringify(s.account)}] scopes [${s.scopes}]`);
     }
 
     return filteredSessions;
