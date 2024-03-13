@@ -354,13 +354,15 @@ export class ChatService extends Disposable implements IChatService {
 	}
 
 	private reinitializeModel(model: ChatModel): void {
+		console.log('>> Cat Service :: reinitialize model');
+
 		this.trace('reinitializeModel', `Start reinit`);
 		this.initializeSession(model, CancellationToken.None);
 	}
 
 	private async initializeSession(model: ChatModel, token: CancellationToken): Promise<void> {
 		try {
-			this.trace('initializeSession', `Initialize session ${model.sessionId}`);
+			console.log('initializeSession', `Initialize session ${model.sessionId}`);
 			model.startInitialize();
 			await this.extensionService.activateByEvent(`onInteractiveSession:${model.providerId}`);
 
@@ -376,14 +378,14 @@ export class ChatService extends Disposable implements IChatService {
 			try {
 				session = await provider.prepareSession(token) ?? undefined;
 			} catch (err) {
-				this.trace('initializeSession', `Provider initializeSession threw: ${err}`);
+				console.log('initializeSession', `Provider initializeSession threw: ${err}`);
 			}
 
 			if (!session) {
 				throw new Error('Provider returned no session');
 			}
 
-			this.trace('startSession', `Provider returned session`);
+			console.log('startSession', `Provider returned session`);
 
 			const defaultAgent = this.chatAgentService.getDefaultAgent();
 			if (!defaultAgent) {

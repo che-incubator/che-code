@@ -49,22 +49,17 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   ) {
     this.sessions = this.extensionContext.getContext().workspaceState.get('sessions') || [];
 
-    console.log('GitHubAuthProvider :: constructor :: list f sessions -------------------------------------');
+    console.log('GitHubAuthProvider :: sessions -------------------------------------');
     for (const s of this.sessions) {
-      console.log(`>>> session [${s.id}] account [${s.account}] token [${s.accessToken}] scopes [${s.scopes}]`);
+      console.log(`    >>> session [${s.id}] account [${JSON.stringify(s.account)}] token [${s.accessToken}] scopes [${s.scopes}]`);
     }
     console.log('------------------------------------------------------------------------------------------');
-    console.log();
-    console.log();
-    console.log();
+    console.log(' ');
+    console.log('  ');
+    console.log('   ');
   }
 
   async getSessions(scopes?: string[]): Promise<vscode.AuthenticationSession[]> {
-    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-    this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${scopes}`);
-    // console.log(new Error().stack);
-    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-
     console.log(`> GitHubAuthProvider :: getSessions for scopes [${scopes}]`);
 
     const match = function (sessionScopes: string[], matchScopes: string[]): boolean {
@@ -86,18 +81,12 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         // do we need to check the scopes here?
       } catch (e) {
         filteredSessions.splice(this.sessions.findIndex(s => s.id === session.id), 1);
-        this.logger.info(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${scopes}`);
+        console.log(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${scopes}`);
         console.warn(e.message);
       }
     }
-    this.logger.info(`GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${scopes}`);
-    
-    console.log(`> GitHubAuthProvider: GET sessions - found ${filteredSessions.length} sessions for scopes: ${scopes}`);
 
-    for (const s of filteredSessions) {
-      console.log(`> session [${s.id}] token [${s.accessToken}] account [${JSON.stringify(s.account)}] scopes [${s.scopes}]`);
-    }
-
+    console.log(`> GitHubAuthProvider: Returning ${filteredSessions.length} sessions for scopes: ${scopes}`);
     return filteredSessions;
   }
 

@@ -52,17 +52,11 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async getToken(): Promise<string> {
-    console.log('> GithubServiceImpl :: getToken');
-    this.logger.info('> GithubServiceImpl :: getToken');
-
     this.checkToken();
     return this.token!;
   }
 
   async getUser(): Promise<GithubUser> {
-    console.log('> GithubServiceImpl :: getUser');
-    this.logger.info('> GithubServiceImpl :: getUser');
-
     this.checkToken();
     const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${this.token}` },
@@ -71,17 +65,11 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async getTokenScopes(token: string): Promise<string[]> {
-    console.log(`> GithubServiceImpl :: getTokenScopes for [${token}]`);
-
     this.checkToken();
     const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    // return result.headers['x-oauth-scopes'].split(', ');
-
-    const scopes = result.headers['x-oauth-scopes'].split(', ');
-    console.log(`> GithubServiceImpl :: got scopes [${scopes.toString()}]`);
-    return scopes;
+    return result.headers['x-oauth-scopes'].split(', ');
   }
 
   async persistDeviceAuthToken(token: string, scopes: string[]): Promise<void> {

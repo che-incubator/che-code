@@ -242,8 +242,6 @@ export class WebClientServer {
 	 * Handle HTTP requests for /
 	 */
 	private async _handleRoot(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
-		console.log('>>>>>>>>>>>>>>> HANDLE ROOT');
-
 		const queryConnectionToken = parsedUrl.query[connectionTokenQueryName];
 		if (typeof queryConnectionToken === 'string') {
 			// We got a connection token as a query parameter.
