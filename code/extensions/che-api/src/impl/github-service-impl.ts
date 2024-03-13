@@ -42,13 +42,10 @@ export class GithubServiceImpl implements GithubService {
     @inject(K8SServiceImpl) private readonly k8sService: K8SServiceImpl,
     @inject(Symbol.for('AxiosInstance')) private readonly axiosInstance: AxiosInstance
   ) {
-    this.iniitializeToken();
+    this.initializeToken();
   }
 
   private checkToken(): void {
-    console.log(`> GithubServiceImpl :: checkToken. this.token [${this.token}]`);
-    this.logger.info(`> GithubServiceImpl :: checkToken. this.token [${this.token}]`);
-
     if (!this.token) {
       throw new Error('GitHub authentication token is not setup');
     }
@@ -74,14 +71,17 @@ export class GithubServiceImpl implements GithubService {
   }
 
   async getTokenScopes(token: string): Promise<string[]> {
-    console.log(`> GithubServiceImpl :: getTokenScopes [${token}]`);
-    this.logger.info(`> GithubServiceImpl :: getTokenScopes [${token}]`);
+    console.log(`> GithubServiceImpl :: getTokenScopes for [${token}]`);
 
     this.checkToken();
     const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    return result.headers['x-oauth-scopes'].split(', ');
+    // return result.headers['x-oauth-scopes'].split(', ');
+
+    const scopes = result.headers['x-oauth-scopes'].split(', ');
+    console.log(`> GithubServiceImpl :: got scopes [${scopes.toString()}]`);
+    return scopes;
   }
 
   async persistDeviceAuthToken(token: string, scopes: string[]): Promise<void> {
@@ -136,12 +136,12 @@ export class GithubServiceImpl implements GithubService {
     }
 
     // another token should be used by the Github Service after removing the Device Authentication token
-    this.iniitializeToken();
+    this.initializeToken();
   }
 
-  private async iniitializeToken(): Promise<void> {
-    console.log('> GithubServiceImpl :: iniitializeToken');
-    this.logger.info('> GithubServiceImpl :: iniitializeToken');
+  private async initializeToken(): Promise<void> {
+    console.log('> GithubServiceImpl :: initializeToken');
+    this.logger.info('> GithubServiceImpl :: initializeToken');
 
     this.logger.info('Github Service: extracting token...');
 

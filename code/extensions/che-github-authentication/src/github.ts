@@ -16,7 +16,6 @@ import * as vscode from 'vscode';
 import { ErrorHandler } from './error-handler';
 import { ExtensionContext } from './extension-context';
 import { Logger } from './logger';
-// import { arrayEquals } from './utils';
 
 export interface GithubUser {
   login: string;
@@ -55,43 +54,36 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       console.log(`>>> session [${s.id}] account [${s.account}] token [${s.accessToken}] scopes [${s.scopes}]`);
     }
     console.log('------------------------------------------------------------------------------------------');
+    console.log();
+    console.log();
+    console.log();
   }
 
   async getSessions(scopes?: string[]): Promise<vscode.AuthenticationSession[]> {
     this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${scopes}`);
-    console.log('.........................................................................');
+    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+    console.log(new Error().stack);
+    console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+
     console.log(`> GitHubAuthProvider :: getSessions for scopes [${scopes}]`);
 
-    // if (scopes === undefined) {
-    //   scopes = [];
-    // }
-
-    const hasScopes = function (sessionScopes: string[], matchScopes: string[]): boolean {
-      console.log(`     > go search in ${sessionScopes.toString()}`);
-
+    const match = function (sessionScopes: string[], matchScopes: string[]): boolean {
       for (const s of matchScopes) {
         if (!sessionScopes.includes(s)) {
-          console.log(`         > scope ${s} NOT FOUND!`);
           return false;
         }
-
-        console.log(`         > scope ${s} found`);
       }
-
       return true;
     };
 
-    // const sortedScopes = scopes?.sort() || [];
     const filteredSessions = (scopes && scopes.length)
-      // ? this.sessions.filter(session => arrayEquals([...session.scopes].sort(), sortedScopes))
-      ? this.sessions.filter(session => hasScopes([...session.scopes], scopes!))
+      ? this.sessions.filter(session => match([...session.scopes], scopes!))
       : this.sessions;
 
     for (const session of filteredSessions) {
       try {
-        console.log(`  >> getting scopes for session ${session.id}`);
-        const scopes = await this.githubService.getTokenScopes(session.accessToken);
-        console.log(`  >> received scopes ${scopes}`);
+        await this.githubService.getTokenScopes(session.accessToken);
+        // do we need to check the scopes here?
       } catch (e) {
         filteredSessions.splice(this.sessions.findIndex(s => s.id === session.id), 1);
         this.logger.info(`GitHubAuthProvider: GET sessions - removing one session for scopes: ${scopes}`);
