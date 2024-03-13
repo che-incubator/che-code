@@ -60,9 +60,9 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   }
 
   async getSessions(scopes?: string[]): Promise<vscode.AuthenticationSession[]> {
-    this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${scopes}`);
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-    console.log(new Error().stack);
+    this.logger.info(`GitHubAuthProvider: GET SESSIONS for scopes: ${scopes}`);
+    // console.log(new Error().stack);
     console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
 
     console.log(`> GitHubAuthProvider :: getSessions for scopes [${scopes}]`);
