@@ -387,6 +387,7 @@ export class ChatService extends Disposable implements IChatService {
 
 			const defaultAgent = this.chatAgentService.getDefaultAgent();
 			if (!defaultAgent) {
+				console.log('>>>> NO DEFAULT AGENT EXPECTED !!!!!!!!!!!');
 				throw new Error('No default agent');
 			}
 
