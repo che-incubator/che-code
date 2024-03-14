@@ -136,8 +136,6 @@ export class ChatAgentService extends Disposable implements IChatAgentService {
 	}
 
 	registerAgent(agent: IChatAgent): IDisposable {
-		console.log(`>>> ChatAgentService :: registerAgent [${agent.id}] from extension [${agent.extensionId}]`);
-
 		if (this._agents.has(agent.id)) {
 			throw new Error(`Already registered an agent with id ${agent.id}`);
 		}
@@ -161,9 +159,6 @@ export class ChatAgentService extends Disposable implements IChatAgentService {
 	}
 
 	getDefaultAgent(): IChatAgent | undefined {
-		console.log('>>> getDefaultAgent :: getDefaultAgent');
-		console.log(`    > registered agents: ${this._agents.size}`);
-
 		return Iterable.find(this._agents.values(), a => !!a.agent.metadata.isDefault)?.agent;
 	}
 

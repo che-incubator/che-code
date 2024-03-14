@@ -354,23 +354,18 @@ export class ChatService extends Disposable implements IChatService {
 	}
 
 	private reinitializeModel(model: ChatModel): void {
-		console.log('>> Cat Service :: reinitialize model');
-
 		this.trace('reinitializeModel', `Start reinit`);
 		this.initializeSession(model, CancellationToken.None);
 	}
 
 	private async initializeSession(model: ChatModel, token: CancellationToken): Promise<void> {
 		try {
-			console.log('initializeSession', `Initialize session ${model.sessionId}`);
+			this.trace('initializeSession', `Initialize session ${model.sessionId}`);
 			model.startInitialize();
 			await this.extensionService.activateByEvent(`onInteractiveSession:${model.providerId}`);
 
 			const provider = this._providers.get(model.providerId);
 			if (!provider) {
-				console.log('>> ###################################################################');
-				console.log('>> Initilize session error. Unknown provider ' + model.providerId);
-				console.log('>> ###################################################################');
 				throw new Error(`Unknown provider: ${model.providerId}`);
 			}
 
@@ -378,18 +373,17 @@ export class ChatService extends Disposable implements IChatService {
 			try {
 				session = await provider.prepareSession(token) ?? undefined;
 			} catch (err) {
-				console.log('initializeSession', `Provider initializeSession threw: ${err}`);
+				this.trace('initializeSession', `Provider initializeSession threw: ${err}`);
 			}
 
 			if (!session) {
 				throw new Error('Provider returned no session');
 			}
 
-			console.log('startSession', `Provider returned session`);
+			this.trace('startSession', `Provider returned session`);
 
 			const defaultAgent = this.chatAgentService.getDefaultAgent();
 			if (!defaultAgent) {
-				console.log('>>>> NO DEFAULT AGENT EXPECTED !!!!!!!!!!!');
 				throw new Error('No default agent');
 			}
 
@@ -455,9 +449,6 @@ export class ChatService extends Disposable implements IChatService {
 		await model.waitForInitialization();
 		const provider = this._providers.get(model.providerId);
 		if (!provider) {
-			console.log('>> ###################################################################');
-			console.log('>> Send request error. Unknown provider ' + model.providerId);
-			console.log('>> ###################################################################');
 			throw new Error(`Unknown provider: ${model.providerId}`);
 		}
 
@@ -636,9 +627,6 @@ export class ChatService extends Disposable implements IChatService {
 		await model.waitForInitialization();
 		const provider = this._providers.get(model.providerId);
 		if (!provider) {
-			console.log('>> ###################################################################');
-			console.log('>> Remove request error. Unknown provider ' + model.providerId);
-			console.log('>> ###################################################################');
 			throw new Error(`Unknown provider: ${model.providerId}`);
 		}
 
@@ -703,10 +691,6 @@ export class ChatService extends Disposable implements IChatService {
 	}
 
 	registerProvider(provider: IChatProvider): IDisposable {
-		console.log('>> ###################################################################');
-		console.log('>> Register provider ' + provider.id);
-		console.log('>> ###################################################################');
-
 		this.trace('registerProvider', `Adding new chat provider`);
 
 		if (this._providers.has(provider.id)) {

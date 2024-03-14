@@ -40,7 +40,6 @@ export class ExtHostAuthentication implements ExtHostAuthenticationShape {
 		return await this._getSessionTaskSingler.getOrCreate(`${extensionId} ${providerId} ${sortedScopes}`, async () => {
 			await this._proxy.$ensureProvider(providerId);
 			const extensionName = requestingExtension.displayName || requestingExtension.name;
-			console.log('>>>> GET SESSION HERE..........');
 			return this._proxy.$getSession(providerId, scopes, extensionId, extensionName, options);
 		});
 	}
