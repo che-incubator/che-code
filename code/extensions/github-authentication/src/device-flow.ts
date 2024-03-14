@@ -55,10 +55,6 @@ export async function initialize(context: vscode.ExtensionContext): Promise<void
 }
 
 async function getFlowTriggerOptions(scopes?: string): Promise<FlowTriggerOptions> {
-	console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-	console.log(`>> getFlowTriggerOptions for scopes ${scopes}`);
-	console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
-
 	if (flowOptions) {
 		return scopes ? { ...flowOptions, scopes } : flowOptions;
 	}

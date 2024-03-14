@@ -133,9 +133,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 			return sessions;
 		});
 
-		this._logger.info(`> GitHubAuthenticationProvider :: vscode.authentication.registerAuthenticationProvider [${this._githubServer.friendlyName}]`);
-		console.log(`> GitHubAuthenticationProvider :: vscode.authentication.registerAuthenticationProvider [${this._githubServer.friendlyName}]`);
-
 		this._disposable = vscode.Disposable.from(
 			this._telemetryReporter,
 			vscode.authentication.registerAuthenticationProvider(type, this._githubServer.friendlyName, this, { supportsMultipleAccounts: false }),
@@ -152,9 +149,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 	}
 
 	async getSessions(scopes?: string[]): Promise<vscode.AuthenticationSession[]> {
-		this._logger.info(`> GitHubAuthenticationProvider :: getSessions for scopes [${scopes}]`);
-		console.log(`> GitHubAuthenticationProvider :: getSessions for scopes [${scopes}]`);
-
 		// For GitHub scope list, order doesn't matter so we immediately sort the scopes
 		const sortedScopes = scopes?.sort() || [];
 		this._logger.info(`Getting sessions for ${sortedScopes.length ? sortedScopes.join(',') : 'all scopes'}...`);

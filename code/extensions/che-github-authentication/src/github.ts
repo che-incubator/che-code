@@ -32,6 +32,7 @@ export interface GithubService {
   getTokenScopes(token: string): Promise<string[]>;
 }
 
+// TODO: I want to give this class more friendly name
 @injectable()
 export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   private readonly sessions: vscode.AuthenticationSession[];
