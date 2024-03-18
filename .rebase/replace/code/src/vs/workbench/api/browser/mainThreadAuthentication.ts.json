@@ -1,0 +1,6 @@
+[
+    {
+        "from": "// We may need to prompt because we don't have a valid session",
+        "by": "// We may need to prompt because we don't have a valid session\\\n\\\t\\\tif (options.silent) {\\\n\\\t\\\t\\\toptions.silent = false;\\\n\\\t\\\t\\\toptions.createIfNone = true;\\\n\\\t\\\t}\\\n"
+    }
+]

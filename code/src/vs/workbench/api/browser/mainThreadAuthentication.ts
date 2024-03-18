@@ -152,12 +152,12 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		}
 
 		// We may need to prompt because we don't have a valid session
-		// modal flows
 		if (options.silent) {
 			options.silent = false;
 			options.createIfNone = true;
 		}
 
+		// modal flows
 		if (options.createIfNone || options.forceNewSession) {
 			const providerName = this.authenticationService.getLabel(providerId);
 			const detail = (typeof options.forceNewSession === 'object') ? options.forceNewSession.detail : undefined;
