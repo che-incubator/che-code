@@ -155,7 +155,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		// modal flows
 		console.log(`>>>>> EXISTING options.silent: ${options.silent}`);
 
-		options.silent = false;
 		if (options.silent) {
 			options.silent = false;
 			options.createIfNone = true;
