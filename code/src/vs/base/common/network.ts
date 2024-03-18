@@ -7,6 +7,7 @@ import * as errors from 'vs/base/common/errors';
 import * as platform from 'vs/base/common/platform';
 import { equalsIgnoreCase, startsWithIgnoreCase } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
+import * as paths from 'vs/base/common/path';
 
 export namespace Schemas {
 
@@ -144,7 +145,7 @@ class RemoteAuthoritiesImpl {
 	private readonly _connectionTokens: { [authority: string]: string | undefined } = Object.create(null);
 	private _preferredWebSchema: 'http' | 'https' = 'http';
 	private _delegate: ((uri: URI) => URI) | null = null;
-	// private _remoteResourcesPath: string = `/${Schemas.vscodeRemoteResource}`;
+	private _serverRootPath: string = '/';
 
 	setPreferredWebSchema(schema: 'http' | 'https') {
 		this._preferredWebSchema = schema;
@@ -154,8 +155,12 @@ class RemoteAuthoritiesImpl {
 		this._delegate = delegate;
 	}
 
-	setServerRootPath(serverRootPath: string): void {
-	//	this._remoteResourcesPath = `${serverRootPath}/${Schemas.vscodeRemoteResource}`;
+	setServerRootPath(product: { quality?: string; commit?: string }, serverBasePath: string | undefined): void {
+		this._serverRootPath = getServerRootPath(product, serverBasePath);
+	}
+
+	getServerRootPath(): string {
+		return this._serverRootPath;
 	}
 
 	set(authority: string, host: string, port: number): void {
@@ -191,7 +196,6 @@ class RemoteAuthoritiesImpl {
 		if (typeof connectionToken === 'string') {
 			query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
 		}
-
 		return URI.from({
 			scheme: platform.isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
 			authority: `${host}:${port}`,
@@ -202,6 +206,10 @@ class RemoteAuthoritiesImpl {
 }
 
 export const RemoteAuthorities = new RemoteAuthoritiesImpl();
+
+export function getServerRootPath(product: { quality?: string; commit?: string }, basePath: string | undefined): string {
+	return paths.posix.join(basePath ?? '/', `${product.quality ?? 'oss'}-${product.commit ?? 'dev'}`);
+}
 
 /**
  * A string pointing to a path inside the app. It should not begin with ./ or ../
