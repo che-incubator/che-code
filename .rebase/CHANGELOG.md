@@ -20,3 +20,17 @@ https://github.com/che-incubator/che-code/pull/326
 
 - code/product.json
 ---
+
+#### @benoitf @RomanNikitenko  
+https://github.com/che-incubator/che-code/pull/43/commits/d04ac87e51e09d3f2328efb2bdcdcd23a259b969 \
+https://github.com/che-incubator/che-code/pull/337/commits/875893566c2acd0bb7031ac3db9d7002ca36feb1#diff-bf304bf7a29dbc8f1d0cbb3219344cd3aeb6d8262394731c63bc40326a8760ce
+
+- code/src/vs/base/common/network.ts
+---
+
+
+#### @benoitf 
+https://github.com/che-incubator/che-code/commit/eed0a5213ba1b29b810d53f6365aaa2294165845#diff-2735bf66f14ee64b9ce6fdc30355a5e3085ae96a791cd01d65843a8dcef7c166
+
+- code/src/vs/server/webClientServer.ts
+---
