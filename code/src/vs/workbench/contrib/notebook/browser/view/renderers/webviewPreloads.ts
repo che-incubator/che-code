@@ -159,10 +159,36 @@ async function webviewPreloads(ctx: PreloadContext) {
 				}
 			};
 		};
+	function getOutputContainer(event: FocusEvent | MouseEvent) {
+		for (const node of event.composedPath()) {
+			if (node instanceof HTMLElement && node.classList.contains('output')) {
+				return {
+					id: node.id
+				};
+			}
+		}
+		return;
+	}
+	let lastFocusedOutput: { id: string } | undefined = undefined;
+	const handleOutputFocusOut = (event: FocusEvent) => {
+		const outputFocus = event && getOutputContainer(event);
+		if (!outputFocus) {
+			return;
+		}
+		// Possible we're tabbing through the elements of the same output.
+		// Lets see if focus is set back to the same output.
+		lastFocusedOutput = undefined;
+		setTimeout(() => {
+			if (lastFocusedOutput?.id === outputFocus.id) {
+				return;
+			}
+			postNotebookMessage<webviewMessages.IOutputBlurMessage>('outputBlur', outputFocus);
+		}, 0);
+	};
 
 	// check if an input element is focused within the output element
-	const checkOutputInputFocus = () => {
-
+	const checkOutputInputFocus = (e: FocusEvent) => {
+		lastFocusedOutput = getOutputContainer(e);
 		const activeElement = window.document.activeElement;
 		if (!activeElement) {
 			return;
@@ -182,16 +208,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 			return;
 		}
 
-		let outputFocus: { id: string } | undefined = undefined;
-		for (const node of event.composedPath()) {
-			if (node instanceof HTMLElement && node.classList.contains('output')) {
-				outputFocus = {
-					id: node.id
-				};
-				break;
-			}
-		}
-
+		const outputFocus = lastFocusedOutput = getOutputContainer(event);
 		for (const node of event.composedPath()) {
 			if (node instanceof HTMLAnchorElement && node.href) {
 				if (node.href.startsWith('blob:')) {
@@ -253,6 +270,53 @@ async function webviewPreloads(ctx: PreloadContext) {
 			postNotebookMessage<webviewMessages.IOutputFocusMessage>('outputFocus', outputFocus);
 		}
 	};
+	const selectOutputContents = (cellOrOutputId: string) => {
+		const selection = window.getSelection();
+		if (!selection) {
+			return;
+		}
+		const cellOutputContainer = window.document.getElementById(cellOrOutputId);
+		if (!cellOutputContainer) {
+			return;
+		}
+		selection.removeAllRanges();
+		const range = document.createRange();
+		range.selectNode(cellOutputContainer);
+		selection.addRange(range);
+
+	};
+
+	const onPageUpDownSelectionHandler = (e: KeyboardEvent) => {
+		if (!lastFocusedOutput?.id || !e.shiftKey) {
+			return;
+		}
+		// We want to handle just `Shift + PageUp/PageDown` & `Shift + Cmd + ArrowUp/ArrowDown` (for mac)
+		if (!(e.code === 'PageUp' || e.code === 'PageDown') && !(e.metaKey && (e.code === 'ArrowDown' || e.code === 'ArrowUp'))) {
+			return;
+		}
+		const outputContainer = window.document.getElementById(lastFocusedOutput.id);
+		const selection = window.getSelection();
+		if (!outputContainer || !selection?.anchorNode) {
+			return;
+		}
+
+		// These should change the scroll position, not adjust the selected cell in the notebook
+		e.stopPropagation(); // We don't want the notebook to handle this.
+		e.preventDefault(); // We will handle selection.
+
+		const { anchorNode, anchorOffset } = selection;
+		const range = document.createRange();
+		if (e.code === 'PageDown' || e.code === 'ArrowDown') {
+			range.setStart(anchorNode, anchorOffset);
+			range.setEnd(outputContainer, 1);
+		}
+		else {
+			range.setStart(outputContainer, 0);
+			range.setEnd(anchorNode, anchorOffset);
+		}
+		selection.removeAllRanges();
+		selection.addRange(range);
+	};
 
 	const handleDataUrl = async (data: string | ArrayBuffer | null, downloadName: string) => {
 		postNotebookMessage<webviewMessages.IClickedDataUrlMessage>('clicked-data-url', {
@@ -277,6 +341,8 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 	window.document.body.addEventListener('click', handleInnerClick);
 	window.document.body.addEventListener('focusin', checkOutputInputFocus);
+	window.document.body.addEventListener('focusout', handleOutputFocusOut);
+	window.document.body.addEventListener('keydown', onPageUpDownSelectionHandler);
 
 	interface RendererContext extends rendererApi.RendererContext<unknown> {
 		readonly onDidChangeSettings: Event<RenderOptions>;
@@ -455,15 +521,30 @@ async function webviewPreloads(ctx: PreloadContext) {
 		}
 	};
 
-	function scrollWillGoToParent(event: WheelEvent) {
+	let scrollTimeout: any /* NodeJS.Timeout */ | undefined;
+	let scrolledElement: Element | undefined;
+	function flagRecentlyScrolled(node: Element) {
+		scrolledElement = node;
+		node.setAttribute('recentlyScrolled', 'true');
+		clearTimeout(scrollTimeout);
+		scrollTimeout = setTimeout(() => { scrolledElement?.removeAttribute('recentlyScrolled'); }, 300);
+	}
+
+	function eventTargetShouldHandleScroll(event: WheelEvent) {
 		for (let node = event.target as Node | null; node; node = node.parentNode) {
 			if (!(node instanceof Element) || node.id === 'container' || node.classList.contains('cell_container') || node.classList.contains('markup') || node.classList.contains('output_container')) {
 				return false;
 			}
 
+			if (node.hasAttribute('recentlyScrolled') && scrolledElement === node) {
+				flagRecentlyScrolled(node);
+				return true;
+			}
+
 			// scroll up
 			if (event.deltaY < 0 && node.scrollTop > 0) {
 				// there is still some content to scroll
+				flagRecentlyScrolled(node);
 				return true;
 			}
 
@@ -481,6 +562,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 					continue;
 				}
 
+				flagRecentlyScrolled(node);
 				return true;
 			}
 		}
@@ -489,7 +571,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 	}
 
 	const handleWheel = (event: WheelEvent & { wheelDeltaX?: number; wheelDeltaY?: number; wheelDelta?: number }) => {
-		if (event.defaultPrevented || scrollWillGoToParent(event)) {
+		if (event.defaultPrevented || eventTargetShouldHandleScroll(event)) {
 			return;
 		}
 		postNotebookMessage<webviewMessages.IWheelMessage>('did-scroll-wheel', {
@@ -1574,6 +1656,9 @@ async function webviewPreloads(ctx: PreloadContext) {
 			}
 			case 'focus-output':
 				focusFirstFocusableOrContainerInOutput(event.data.cellOrOutputId, event.data.alternateId);
+				break;
+			case 'select-output-contents':
+				selectOutputContents(event.data.cellOrOutputId);
 				break;
 			case 'decorations': {
 				let outputContainer = window.document.getElementById(event.data.cellId);

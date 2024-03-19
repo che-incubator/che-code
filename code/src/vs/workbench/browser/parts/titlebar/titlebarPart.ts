@@ -49,12 +49,12 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { EditorCommandsContextActionRunner } from 'vs/workbench/browser/parts/editor/editorTabsControl';
 import { IEditorCommandsContext, IEditorPartOptionsChangeEvent, IToolbarActions } from 'vs/workbench/common/editor';
-import { mainWindow } from 'vs/base/browser/window';
+import { CodeWindow, mainWindow } from 'vs/base/browser/window';
 import { ACCOUNTS_ACTIVITY_TILE_ACTION, GLOBAL_ACTIVITY_TITLE_ACTION } from 'vs/workbench/browser/parts/titlebar/titlebarActions';
 import { IView } from 'vs/base/browser/ui/grid/grid';
-import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
+import { createInstantHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
 import { IBaseActionViewItemOptions } from 'vs/base/browser/ui/actionbar/actionViewItems';
-import { IHoverDelegate } from 'vs/base/browser/ui/iconLabel/iconHoverDelegate';
+import { IHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 
 export interface ITitleVariable {
 	readonly name: string;
@@ -111,7 +111,7 @@ export class BrowserTitleService extends MultiWindowParts<BrowserTitlebarPart> i
 
 		// Focus action
 		const that = this;
-		registerAction2(class FocusTitleBar extends Action2 {
+		this._register(registerAction2(class FocusTitleBar extends Action2 {
 
 			constructor() {
 				super({
@@ -125,7 +125,7 @@ export class BrowserTitleService extends MultiWindowParts<BrowserTitlebarPart> i
 			run(): void {
 				that.getPartByDocument(getActiveDocument()).focus();
 			}
-		});
+		}));
 	}
 
 	//#region Auxiliary Titlebar Parts
@@ -258,7 +258,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 	constructor(
 		id: string,
-		targetWindow: Window,
+		targetWindow: CodeWindow,
 		editorGroupsContainer: IEditorGroupsContainer | 'main',
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
 		@IConfigurationService protected readonly configurationService: IConfigurationService,
@@ -282,7 +282,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		this.windowTitle = this._register(instantiationService.createInstance(WindowTitle, targetWindow, editorGroupsContainer));
 
-		this.hoverDelegate = this._register(getDefaultHoverDelegate('element', true));
+		this.hoverDelegate = this._register(createInstantHoverDelegate());
 
 		this.registerListeners(getWindowId(targetWindow));
 	}
@@ -728,7 +728,8 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	}
 
 	private get activityActionsEnabled(): boolean {
-		return !this.isAuxiliary && this.configurationService.getValue<ActivityBarPosition>(LayoutSettings.ACTIVITY_BAR_LOCATION) === ActivityBarPosition.TOP;
+		const activityBarPosition = this.configurationService.getValue<ActivityBarPosition>(LayoutSettings.ACTIVITY_BAR_LOCATION);
+		return !this.isAuxiliary && (activityBarPosition === ActivityBarPosition.TOP || activityBarPosition === ActivityBarPosition.BOTTOM);
 	}
 
 	get hasZoomableElements(): boolean {
