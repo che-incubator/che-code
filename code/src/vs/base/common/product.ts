@@ -191,6 +191,7 @@ export interface IProductConfiguration {
 	readonly commonlyUsedSettings?: string[];
 	readonly aiGeneratedWorkspaceTrust?: IAiGeneratedWorkspaceTrust;
 	readonly gitHubEntitlement?: IGitHubEntitlement;
+	readonly chatWelcomeView?: IChatWelcomeView;
 }
 
 export interface ITunnelApplicationConfig {
@@ -303,4 +304,10 @@ export interface IGitHubEntitlement {
 	enablementKey: string;
 	confirmationMessage: string;
 	confirmationAction: string;
+}
+
+export interface IChatWelcomeView {
+	welcomeViewId: string;
+	welcomeViewTitle: string;
+	welcomeViewContent: string;
 }
