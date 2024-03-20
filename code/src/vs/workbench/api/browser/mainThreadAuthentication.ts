@@ -152,6 +152,8 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 	}
 
 	private async doGetSession(providerId: string, scopes: string[], extensionId: string, extensionName: string, options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
+		console.log(`>> extension [${extensionId}] wants to get a session. Provider [${providerId}], scopes [${scopes? scopes.toString() : 'default'}] options [${options ? JSON.stringify(options) : 'undefined'}]`);
+		
 		const sessions = await this.authenticationService.getSessions(providerId, scopes, true);
 		const provider = this.authenticationService.getProvider(providerId);
 
