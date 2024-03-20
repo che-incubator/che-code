@@ -235,8 +235,7 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		}
 
 		// passive flows (silent or default)
-		// ( turn off the silent to allow the extensions to get a session )
-		options.silent = false;
+		console.log(`  > sessions.length ${sessions.length}`);
 		if (!options.silent) {
 			// If there is a potential session, but the extension doesn't have access to it, use the "grant access" flow,
 			// otherwise request a new one.
