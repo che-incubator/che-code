@@ -113,6 +113,8 @@ export class AuthenticationService extends Disposable implements IAuthentication
 	}
 
 	registerAuthenticationProvider(id: string, authenticationProvider: IAuthenticationProvider): void {
+		console.log(`>>> authenticationService :: registerAuthenticationProvider id [${id}], provider.label [${authenticationProvider.label}]`);
+
 		this._authenticationProviders.set(id, authenticationProvider);
 		const disposableStore = new DisposableStore();
 		disposableStore.add(authenticationProvider.onDidChangeSessions(e => this._onDidChangeSessions.fire({

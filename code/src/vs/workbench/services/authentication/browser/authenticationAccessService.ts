@@ -50,15 +50,18 @@ export class AuthenticationAccessService extends Disposable implements IAuthenti
 		const trustedExtensionAuthAccess = this._productService.trustedExtensionAuthAccess;
 		if (Array.isArray(trustedExtensionAuthAccess)) {
 			if (trustedExtensionAuthAccess.includes(extensionId)) {
+				console.log('    > return TRUE');
 				return true;
 			}
 		} else if (trustedExtensionAuthAccess?.[providerId]?.includes(extensionId)) {
+			console.log('    > return TRUE [2]');
 			return true;
 		}
 
 		const allowList = this.readAllowedExtensions(providerId, accountName);
 		const extensionData = allowList.find(extension => extension.id === extensionId);
 		if (!extensionData) {
+			console.log('    > return UNDEFINED');
 			return undefined;
 		}
 		// This property didn't exist on this data previously, inclusion in the list at all indicates allowance

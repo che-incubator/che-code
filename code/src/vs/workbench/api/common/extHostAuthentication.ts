@@ -74,6 +74,7 @@ export class ExtHostAuthentication implements ExtHostAuthenticationShape {
 	}
 
 	registerAuthenticationProvider(id: string, label: string, provider: vscode.AuthenticationProvider, options?: vscode.AuthenticationProviderOptions): vscode.Disposable {
+		console.log(`>>> extHostAuthentication :: registerAuthenticationProvider id [${id}], label [${label}]`);
 		if (this._authenticationProviders.get(id)) {
 			throw new Error(`An authentication provider with id '${id}' is already registered.`);
 		}
