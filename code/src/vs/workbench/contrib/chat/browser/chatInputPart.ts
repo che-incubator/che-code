@@ -47,10 +47,22 @@ import { IChatFollowup } from 'vs/workbench/contrib/chat/common/chatService';
 import { IChatResponseViewModel } from 'vs/workbench/contrib/chat/common/chatViewModel';
 import { IChatHistoryEntry, IChatWidgetHistoryService } from 'vs/workbench/contrib/chat/common/chatWidgetHistoryService';
 import { getSimpleCodeEditorWidgetOptions, getSimpleEditorOptions } from 'vs/workbench/contrib/codeEditor/browser/simpleEditorOptions';
+import { IEditorConstructionOptions } from 'vs/editor/browser/config/editorConfiguration';
 
 const $ = dom.$;
 
 const INPUT_EDITOR_MAX_HEIGHT = 250;
+
+interface IChatInputPartOptions {
+	renderFollowups: boolean;
+	renderStyle?: 'default' | 'compact';
+	menus: {
+		executeToolbar: MenuId;
+		inputSideToolbar?: MenuId;
+		telemetrySource?: string;
+	};
+	editorOverflowWidgetsDomNode?: HTMLElement;
+}
 
 export class ChatInputPart extends Disposable implements IHistoryNavigationWidget {
 	static readonly INPUT_SCHEME = 'chatSessionInput';
@@ -120,11 +132,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 	constructor(
 		// private readonly editorOptions: ChatEditorOptions, // TODO this should be used
 		private readonly location: ChatAgentLocation,
-		private readonly options: {
-			renderFollowups: boolean;
-			renderStyle?: 'default' | 'compact';
-			menus: { executeToolbar: MenuId; inputSideToolbar?: MenuId; telemetrySource?: string };
-		},
+		private readonly options: IChatInputPartOptions,
 		@IChatWidgetHistoryService private readonly historyService: IChatWidgetHistoryService,
 		@IModelService private readonly modelService: IModelService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -231,7 +239,13 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 	 */
 	async acceptInput(userQuery?: string, inputState?: any): Promise<void> {
 		if (userQuery) {
-			this.history.add({ text: userQuery, state: inputState });
+			let element = this.history.getHistory().find(candidate => candidate.text === userQuery);
+			if (!element) {
+				element = { text: userQuery, state: inputState };
+			} else {
+				element.state = inputState;
+			}
+			this.history.add(element);
 		}
 
 		if (this.accessibilityService.isScreenReaderOptimized() && isMacintosh) {
@@ -273,7 +287,8 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		this.historyNavigationBackwardsEnablement = historyNavigationBackwardsEnablement;
 		this.historyNavigationForewardsEnablement = historyNavigationForwardsEnablement;
 
-		const options = getSimpleEditorOptions(this.configurationService);
+		const options: IEditorConstructionOptions = getSimpleEditorOptions(this.configurationService);
+		options.overflowWidgetsDomNode = this.options.editorOverflowWidgetsDomNode;
 		options.readOnly = false;
 		options.ariaLabel = this._getAriaLabel();
 		options.fontFamily = DEFAULT_FONT_FAMILY;

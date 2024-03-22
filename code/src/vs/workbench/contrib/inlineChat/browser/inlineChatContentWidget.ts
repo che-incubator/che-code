@@ -18,6 +18,7 @@ import { Session } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSessi
 import { ChatWidget } from 'vs/workbench/contrib/chat/browser/chatWidget';
 import { ChatAgentLocation } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { editorBackground, editorForeground, inputBackground } from 'vs/platform/theme/common/colorRegistry';
+import { ChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
 
 export class InlineChatContentWidget implements IContentWidget {
 
@@ -36,6 +37,8 @@ export class InlineChatContentWidget implements IContentWidget {
 
 	private _visible: boolean = false;
 	private _focusNext: boolean = false;
+
+	private readonly _defaultChatModel: ChatModel;
 	private readonly _widget: ChatWidget;
 
 	constructor(
@@ -43,11 +46,14 @@ export class InlineChatContentWidget implements IContentWidget {
 		@IInstantiationService instaService: IInstantiationService,
 	) {
 
+		this._defaultChatModel = this._store.add(instaService.createInstance(ChatModel, `inlineChatDefaultModel/editorContentWidgetPlaceholder`, undefined));
+
 		this._widget = instaService.createInstance(
 			ChatWidget,
 			ChatAgentLocation.Editor,
 			{ resource: true },
 			{
+				editorOverflowWidgetsDomNode: _editor.getOverflowWidgetsDomNode(),
 				renderStyle: 'compact',
 				renderInputOnTop: true,
 				supportsFileReferences: false,
@@ -64,8 +70,9 @@ export class InlineChatContentWidget implements IContentWidget {
 			}
 		);
 		this._store.add(this._widget);
-		this._store.add(this._widget.onDidChangeHeight(() => _editor.layoutContentWidget(this)));
 		this._widget.render(this._inputContainer);
+		this._widget.setModel(this._defaultChatModel, {});
+		this._store.add(this._widget.inputEditor.onDidContentSizeChange(() => _editor.layoutContentWidget(this)));
 
 		this._domNode.tabIndex = -1;
 		this._domNode.className = 'inline-chat-content-widget interactive-session';
@@ -78,7 +85,9 @@ export class InlineChatContentWidget implements IContentWidget {
 
 		const tracker = dom.trackFocus(this._domNode);
 		this._store.add(tracker.onDidBlur(() => {
-			if (this._visible) {
+			if (this._visible
+				// && !"ON"
+			) {
 				this._onDidBlur.fire();
 			}
 		}));
@@ -163,6 +172,7 @@ export class InlineChatContentWidget implements IContentWidget {
 		if (this._visible) {
 			this._visible = false;
 			this._editor.removeContentWidget(this);
+			this._widget.saveState();
 			this._widget.setVisible(false);
 		}
 	}
