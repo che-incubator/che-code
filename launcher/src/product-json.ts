@@ -12,6 +12,10 @@ import * as fs from './fs-extra';
 
 const PRODUCT_JSON = 'product.json';
 
+export interface AuthAccessRecord {
+  [key: string]: string[];
+}
+
 export class ProductJSON {
   private json: any;
 
@@ -89,4 +93,13 @@ export class ProductJSON {
 
     gallery.itemUrl = url;
   }
+
+  getTrustedExtensionAuthAccess(): string[] | AuthAccessRecord | undefined {
+    return this.json.trustedExtensionAuthAccess;
+  }
+
+  setTrustedExtensionAuthAccess(trustedExtensionAuthAccess: string[] | AuthAccessRecord | undefined) {
+    this.json.trustedExtensionAuthAccess = trustedExtensionAuthAccess;
+  }
+
 }
