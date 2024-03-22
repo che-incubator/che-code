@@ -19,6 +19,7 @@ import { ChatWidget } from 'vs/workbench/contrib/chat/browser/chatWidget';
 import { ChatAgentLocation } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { editorBackground, editorForeground, inputBackground } from 'vs/platform/theme/common/colorRegistry';
 import { ChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
+import { Range } from 'vs/editor/common/core/range';
 
 export class InlineChatContentWidget implements IContentWidget {
 
@@ -119,8 +120,8 @@ export class InlineChatContentWidget implements IContentWidget {
 	beforeRender(): IDimension | null {
 
 		const contentWidth = this._editor.getLayoutInfo().contentWidth;
-		const minWidth = Math.round(contentWidth * 0.33);
-		const maxWidth = Math.round(contentWidth * 0.66);
+		const minWidth = Math.round(contentWidth * 0.38);
+		const maxWidth = Math.round(contentWidth * 0.82);
 
 		const width = clamp(220, minWidth, maxWidth);
 
@@ -158,6 +159,7 @@ export class InlineChatContentWidget implements IContentWidget {
 			this._visible = true;
 			this._focusNext = true;
 
+			this._editor.revealRangeNearTopIfOutsideViewport(Range.fromPositions(position));
 			this._widget.inputEditor.setValue('');
 
 			const wordInfo = this._editor.getModel()?.getWordAtPosition(position);
