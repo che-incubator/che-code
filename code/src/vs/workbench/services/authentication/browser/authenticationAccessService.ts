@@ -48,6 +48,7 @@ export class AuthenticationAccessService extends Disposable implements IAuthenti
 	isAccessAllowed(providerId: string, accountName: string, extensionId: string): boolean | undefined {
 		console.log(`>> isAccessAllowed. providerId [${providerId}], accountName [${accountName}] extensionId [${extensionId}]`);
 		const trustedExtensionAuthAccess = this._productService.trustedExtensionAuthAccess;
+		console.log(`> got trustedExtensionAuthAccess: ${trustedExtensionAuthAccess}`);
 		
 		if (Array.isArray(trustedExtensionAuthAccess)) {
 			console.log('    > productService.trustedExtensionAuthAccess is ARRAY');
