@@ -38,16 +38,13 @@ export class TrustedExtensions {
 
       let access = productJSON.getTrustedExtensionAuthAccess();
       if (access === undefined) {
-
         console.log('> access is UNDEFINED');
         access = [];
         access.push(...extensions);
         console.log(`> access [${access.toString()}]`);
         productJSON.setTrustedExtensionAuthAccess(access);
         productJSONChanged = true;
-
       } else if (Array.isArray(access)) {
-        
         console.log('>> access is ARRAY');
 
         for (const e of extensions) {
@@ -59,7 +56,6 @@ export class TrustedExtensions {
 
         console.log(`> access [${access.toString()}]`);
       } else {
-
         console.log(`>> access is not an ARRAY. Type is: ${typeof access}`);
 
         const newList: string[] = [];
@@ -90,7 +86,6 @@ export class TrustedExtensions {
         if (productJSONChanged) {
           productJSON.setTrustedExtensionAuthAccess(newList);
         }
-
       }
 
       if (productJSONChanged) {

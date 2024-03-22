@@ -147,7 +147,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
         }
       },
 
-      writeFile: writeFileMock
+      writeFile: writeFileMock,
     });
 
     // test
@@ -182,5 +182,4 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
 
     expect(savedProductJson).toBe(PRODUCT_JSON_WITH_FOUR_EXTENSIONS);
   });
-
 });

@@ -101,5 +101,4 @@ export class ProductJSON {
   setTrustedExtensionAuthAccess(trustedExtensionAuthAccess: string[] | AuthAccessRecord | undefined) {
     this.json.trustedExtensionAuthAccess = trustedExtensionAuthAccess;
   }
-
 }
