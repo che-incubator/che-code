@@ -118,5 +118,7 @@ fi
 
 echo "[INFO] Node.js dir for running VS Code: $VSCODE_NODEJS_RUNTIME_DIR"
 
+cp product.json product.json.backup
+
 # Run launcher
 "$VSCODE_NODEJS_RUNTIME_DIR/node" ./launcher/entrypoint.js
