@@ -98,6 +98,9 @@
 			"textSearchProvider"
 		]
 	},
+	"trustedExtensionAuthAccess": [
+		"{{publisher}}.{{id}}"
+	],
 	"sendASmile": {
 		"reportIssueUrl": "https://github.com/eclipse/che/issues/new?assignees=&labels=kind%2Fbug&template=bug_report.yml",
 		"requestFeatureUrl": "https://github.com/eclipse/che/issues/new?assignees=&labels=kind%2Fenhancement&template=enhancement.yaml"

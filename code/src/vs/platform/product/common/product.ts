@@ -55,6 +55,37 @@ else {
 	// Built time configuration (do NOT modify)
 	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as IProductConfiguration;
 
+	// need to add something here
+	try {
+		const href = `${window.location.href}oss-dev/static/product.json`;
+		console.log(`>> TRY TO GET product.json from ${href}`);
+
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open("GET", href, false);
+		xmlhttp.send();
+		if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
+			const content = xmlhttp.responseText;
+			console.log('>>>> GOT product.json');
+			console.log(content);
+
+			const json = JSON.parse(content);
+			if (json && json.licenseFileName) {
+				console.log(`>> got license file name ${json.licenseFileName}`)
+			} else {
+				console.log('>> something wrong with product.json');
+			}
+		}
+		else {
+			// TODO Throw exception
+			console.log('>>>> FAILURE getting product.json');
+			console.log(`http status: ${xmlhttp.status}`);
+			console.log(`http readyState: ${xmlhttp.readyState}`);
+		}
+
+	} catch (err) {
+		console.error(`>>>> ERROR ${err.message}`, err);
+	}
+
 	// Running out of sources
 	if (Object.keys(product).length === 0) {
 		Object.assign(product, {
