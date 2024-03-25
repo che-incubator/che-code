@@ -15,40 +15,22 @@ export function loadFromFileSystem(): IProductConfiguration {
 
     // const href = `${window.location.href}oss-dev/static/product.json`;
     const href = `./oss-dev/static/product.json`;
-    // const href = `./oss-dev/static/product.json`;
-    console.log(`>> TRY TO GET product.json from ${href}`);
+    console.log(`>> Load product.json from ${href}`);
 
 	try {
 		var xmlhttp = new XMLHttpRequest();
 		xmlhttp.open("GET", href, false);
 		xmlhttp.send();
 
-        console.log(`> status ${xmlhttp.status}`);
-        console.log(`> readyState ${xmlhttp.readyState}`);
-
 		if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
-			const content = xmlhttp.responseText;
-			console.log('>>>> GOT product.json');
-			console.log(content);
-
-			const json = JSON.parse(content);
-			if (json && json.licenseFileName) {
-				console.log(`>> got license file name ${json.licenseFileName}`)
-			} else {
-				console.log('>> something wrong with product.json');
-			}
-
-            return json;
+			return JSON.parse(xmlhttp.responseText);
 		}
 		else {
 			// TODO Throw exception
-			console.log('>>>> FAILURE getting product.json');
-			console.log(`http status: ${xmlhttp.status}`);
-			console.log(`http readyState: ${xmlhttp.readyState}`);
+			console.log(`Request to get product.json failed. HTTP status: ${xmlhttp.status}, readyState: ${xmlhttp.readyState}`);
 		}
-
 	} catch (err) {
-		console.error(`>>>> ERROR ${err.message}`, err);
+		console.error(err);
 	}
 
     throw new Error(`Unable to load product.json from ${href}.`);

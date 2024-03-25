@@ -6,7 +6,7 @@
 import { env } from 'vs/base/common/process';
 import { IProductConfiguration } from 'vs/base/common/product';
 import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';
-import { loadFromFileSystem } from './che/product';
+import { loadFromFileSystem } from 'vs/platform/product/common/che/product';
 
 /**
  * @deprecated You MUST use `IProductService` if possible.
@@ -59,8 +59,6 @@ else {
 
 	// Running out of sources
 	if (Object.keys(product).length === 0) {
-		console.log('> Init product.json with default values');
-
 		Object.assign(product, {
 			version: '1.87.0-dev',
 			nameShort: 'Code - OSS Dev',
