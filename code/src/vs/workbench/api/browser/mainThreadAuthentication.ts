@@ -152,8 +152,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 	}
 
 	private async doGetSession(providerId: string, scopes: string[], extensionId: string, extensionName: string, options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
-		console.log(`>> doGetSession :: extension [${extensionId}] wants to get a session. Provider [${providerId}], scopes [${scopes? scopes.toString() : 'default'}] options [${options ? JSON.stringify(options) : 'undefined'}]`);
-
 		const sessions = await this.authenticationService.getSessions(providerId, scopes, true);
 		const provider = this.authenticationService.getProvider(providerId);
 
@@ -235,7 +233,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		}
 
 		// passive flows (silent or default)
-		console.log(`>> sessions.length ${sessions.length}`);
 		if (!options.silent) {
 			// If there is a potential session, but the extension doesn't have access to it, use the "grant access" flow,
 			// otherwise request a new one.
@@ -247,7 +244,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 	}
 
 	async $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string, options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
-		console.log(`>> $getSession. providerId:[${providerId}], scopes:[${scopes.toString()}], extensionId:[${extensionId}], options:[${JSON.stringify(options)}]`);
 		const session = await this.doGetSession(providerId, scopes, extensionId, extensionName, options);
 
 		if (session) {

@@ -12,7 +12,7 @@ import * as fs from './fs-extra';
 
 const PRODUCT_JSON = 'product.json';
 
-export interface AuthAccessRecord {
+export interface Record {
   [key: string]: string[];
 }
 
@@ -94,11 +94,11 @@ export class ProductJSON {
     gallery.itemUrl = url;
   }
 
-  getTrustedExtensionAuthAccess(): string[] | AuthAccessRecord | undefined {
+  getTrustedExtensionAuthAccess(): string[] | Record | undefined {
     return this.json.trustedExtensionAuthAccess;
   }
 
-  setTrustedExtensionAuthAccess(trustedExtensionAuthAccess: string[] | AuthAccessRecord | undefined) {
+  setTrustedExtensionAuthAccess(trustedExtensionAuthAccess: string[] | Record | undefined) {
     this.json.trustedExtensionAuthAccess = trustedExtensionAuthAccess;
   }
 }

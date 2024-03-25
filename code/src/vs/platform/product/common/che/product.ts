@@ -12,12 +12,9 @@
 import { IProductConfiguration } from 'vs/base/common/product';
 
 export function loadFromFileSystem(): IProductConfiguration {
-
-    // const href = `${window.location.href}oss-dev/static/product.json`;
     const href = `./oss-dev/static/product.json`;
-    console.log(`>> Load product.json from ${href}`);
 
-	try {
+    try {
 		var xmlhttp = new XMLHttpRequest();
 		xmlhttp.open("GET", href, false);
 		xmlhttp.send();
@@ -25,10 +22,8 @@ export function loadFromFileSystem(): IProductConfiguration {
 		if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
 			return JSON.parse(xmlhttp.responseText);
 		}
-		else {
-			// TODO Throw exception
-			console.log(`Request to get product.json failed. HTTP status: ${xmlhttp.status}, readyState: ${xmlhttp.readyState}`);
-		}
+
+        console.log(`Request failed with status: ${xmlhttp.status}, readyState: ${xmlhttp.readyState}`);
 	} catch (err) {
 		console.error(err);
 	}

@@ -46,29 +46,18 @@ export class AuthenticationAccessService extends Disposable implements IAuthenti
 	}
 
 	isAccessAllowed(providerId: string, accountName: string, extensionId: string): boolean | undefined {
-		console.log(`>> isAccessAllowed. providerId [${providerId}], accountName [${accountName}] extensionId [${extensionId}]`);
 		const trustedExtensionAuthAccess = this._productService.trustedExtensionAuthAccess;
-		console.log(`> got trustedExtensionAuthAccess: ${trustedExtensionAuthAccess}`);
-		
 		if (Array.isArray(trustedExtensionAuthAccess)) {
-			console.log('    > productService.trustedExtensionAuthAccess is ARRAY');
-			console.log(`    > array [${trustedExtensionAuthAccess.toString()}]`);
-		
 			if (trustedExtensionAuthAccess.includes(extensionId)) {
-				console.log('    > return TRUE');
 				return true;
 			}
 		} else if (trustedExtensionAuthAccess?.[providerId]?.includes(extensionId)) {
-			console.log('    > productService.trustedExtensionAuthAccess is OBJECT');
-
-			console.log('    > return TRUE [2]');
 			return true;
 		}
 
 		const allowList = this.readAllowedExtensions(providerId, accountName);
 		const extensionData = allowList.find(extension => extension.id === extensionId);
 		if (!extensionData) {
-			console.log('    > return UNDEFINED');
 			return undefined;
 		}
 		// This property didn't exist on this data previously, inclusion in the list at all indicates allowance
