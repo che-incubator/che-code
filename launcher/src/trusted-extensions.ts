@@ -41,7 +41,7 @@ export class TrustedExtensions {
         console.log('> access is UNDEFINED');
         access = [];
         access.push(...extensions);
-        console.log(`> access [${access.toString()}]`);
+        console.log(`> result [${access.toString()}]`);
         productJSON.setTrustedExtensionAuthAccess(access);
         productJSONChanged = true;
       } else if (Array.isArray(access)) {
@@ -54,7 +54,7 @@ export class TrustedExtensions {
           }
         }
 
-        console.log(`> access [${access.toString()}]`);
+        console.log(`> result [${access.toString()}]`);
       } else {
         console.log(`>> access is not an ARRAY. Type is: ${typeof access}`);
 
