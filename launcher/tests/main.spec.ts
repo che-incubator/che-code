@@ -60,6 +60,7 @@ describe('Test main flow:', () => {
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
+    // should add here test for truested extensions
 
     expect(generateCodeWorkspace).toBeCalled();
 
