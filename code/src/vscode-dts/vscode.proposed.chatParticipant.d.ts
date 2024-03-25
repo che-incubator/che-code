@@ -226,11 +226,6 @@ declare module 'vscode' {
 		sampleRequest?: string;
 
 		/**
-		 * Whether invoking the participant puts the chat into a persistent mode, where the participant is automatically added to the chat input for the next message.
-		 */
-		isSticky?: boolean;
-
-		/**
 		 * An event that fires whenever feedback for a result is received, e.g. when a user up- or down-votes
 		 * a result.
 		 *
@@ -392,7 +387,7 @@ declare module 'vscode' {
 		 * @param value A uri or location
 		 * @returns This stream.
 		 */
-		reference(value: Uri | Location): ChatResponseStream;
+		reference(value: Uri | Location | { variableName: string; value?: Uri | Location }): ChatResponseStream;
 
 		/**
 		 * Pushes a part to this stream.
@@ -430,8 +425,8 @@ declare module 'vscode' {
 	}
 
 	export class ChatResponseReferencePart {
-		value: Uri | Location;
-		constructor(value: Uri | Location);
+		value: Uri | Location | { variableName: string; value?: Uri | Location };
+		constructor(value: Uri | Location | { variableName: string; value?: Uri | Location });
 	}
 
 	export class ChatResponseCommandButtonPart {
