@@ -5,11 +5,14 @@
 
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
+import { ResourceMap } from 'vs/base/common/map';
 import { marked } from 'vs/base/common/marked/marked';
 import { ThemeIcon } from 'vs/base/common/themables';
 import { URI } from 'vs/base/common/uri';
+import { TextEdit } from 'vs/editor/common/languages';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
+import { annotateVulnerabilitiesInText } from 'vs/workbench/contrib/chat/common/annotations';
 import { IChatAgentCommand, IChatAgentData, IChatAgentResult } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { ChatModelInitState, IChatModel, IChatRequestModel, IChatResponseModel, IChatWelcomeMessageContent, IResponse } from 'vs/workbench/contrib/chat/common/chatModel';
 import { IParsedChatRequest } from 'vs/workbench/contrib/chat/common/chatParserTypes';
@@ -116,10 +119,12 @@ export interface IChatResponseViewModel {
 	readonly avatarIcon?: URI | ThemeIcon;
 	readonly agent?: IChatAgentData;
 	readonly slashCommand?: IChatAgentCommand;
+	readonly agentOrSlashCommandDetected: boolean;
 	readonly response: IResponse;
 	readonly usedContext: IChatUsedContext | undefined;
 	readonly contentReferences: ReadonlyArray<IChatContentReference>;
 	readonly progressMessages: ReadonlyArray<IChatProgressMessage>;
+	readonly edits: ResourceMap<TextEdit[]>;
 	readonly isComplete: boolean;
 	readonly isCanceled: boolean;
 	readonly isStale: boolean;
@@ -255,10 +260,15 @@ export class ChatViewModel extends Disposable implements IChatViewModel {
 	}
 
 	updateCodeBlockTextModels(model: IChatRequestViewModel | IChatResponseViewModel) {
-		const content = isRequestVM(model) ? model.messageText : model.response.asString();
-		const renderer = new marked.Renderer();
+		let content: string;
+		if (isRequestVM(model)) {
+			content = model.messageText;
+		} else {
+			content = annotateVulnerabilitiesInText(model.response.value).map(x => x.content.value).join('');
+		}
 
 		let codeBlockIndex = 0;
+		const renderer = new marked.Renderer();
 		renderer.code = (value, languageId) => {
 			languageId ??= '';
 			const newText = this.fixCodeText(value, languageId);
@@ -378,6 +388,10 @@ export class ChatResponseViewModel extends Disposable implements IChatResponseVi
 		return this._model.slashCommand;
 	}
 
+	get agentOrSlashCommandDetected() {
+		return this._model.agentOrSlashCommandDetected;
+	}
+
 	get response(): IResponse {
 		return this._model.response;
 	}
@@ -392,6 +406,10 @@ export class ChatResponseViewModel extends Disposable implements IChatResponseVi
 
 	get progressMessages(): ReadonlyArray<IChatProgressMessage> {
 		return this._model.progressMessages;
+	}
+
+	get edits(): ResourceMap<TextEdit[]> {
+		return this._model.edits;
 	}
 
 	get isComplete() {
