@@ -15,22 +15,20 @@ export class TrustedExtensions {
   async configure(): Promise<void> {
     console.log('# Configuring Trusted Extensions...');
 
-    if (env.TRUSTED_EXTENSIONS === undefined) {
-      console.log('  > env.TRUSTED_EXTENSIONS is not set, skip this step');
+    if (!env.VSCODE_TRUSTED_EXTENSIONS) {
+      console.log('  > env.VSCODE_TRUSTED_EXTENSIONS is not defined, skip this step');
       return;
     }
 
     try {
-      const extensions = env.TRUSTED_EXTENSIONS.split(',');
-      console.log(`> extensions: ${extensions.length}`);
-
+      const extensions = env.VSCODE_TRUSTED_EXTENSIONS.split(',');
       if (!extensions.length) {
-        console.log('  > env.TRUSTED_EXTENSIONS is empty, skip this step');
+        console.log('  > env.VSCODE_TRUSTED_EXTENSIONS is empty, skip this step');
         return;
       }
 
       for (const e of extensions) {
-        console.log(`  > extension ${e}`);
+        console.log(`  > add ${e}`);
       }
 
       const productJSON = await new ProductJSON().load();
@@ -38,61 +36,25 @@ export class TrustedExtensions {
 
       let access = productJSON.getTrustedExtensionAuthAccess();
       if (access === undefined) {
-        console.log('> access is UNDEFINED');
-        access = [];
-        access.push(...extensions);
-        console.log(`> result [${access.toString()}]`);
-        productJSON.setTrustedExtensionAuthAccess(access);
+        productJSON.setTrustedExtensionAuthAccess([...extensions]);
         productJSONChanged = true;
       } else if (Array.isArray(access)) {
-        console.log('>> access is ARRAY');
-
         for (const e of extensions) {
           if (!access.includes(e)) {
             access.push(e);
             productJSONChanged = true;
           }
         }
-
-        console.log(`> result [${access.toString()}]`);
       } else {
-        console.log(`>> access is not an ARRAY. Type is: ${typeof access}`);
-
-        const newList: string[] = [];
-
-        for (const key of Object.keys(access)) {
-          console.log(`>>> key [${key}]`);
-          for (const e of access[key]) {
-            console.log(`    > extension [${e}]`);
-            if (!newList.includes(e)) {
-              newList.push(e);
-            }
-          }
-        }
-
-        console.log('> combined extensions');
-        for (const e of newList) {
-          console.log(`  > extension [${e}]`);
-        }
-
-        // add missing
-        for (const e of extensions) {
-          if (!newList.includes(e)) {
-            newList.push(e);
-            productJSONChanged = true;
-          }
-        }
-
-        if (productJSONChanged) {
-          productJSON.setTrustedExtensionAuthAccess(newList);
-        }
+        console.log('  > Unexpected type of trustedExtensionAuthAccess in product.json. Skip this step');
+        return;
       }
 
       if (productJSONChanged) {
         await productJSON.save();
       }
     } catch (err) {
-      console.error(`${err.message} Failure to configure OpenVSIX registry.`);
+      console.error(`${err.message} Failure to configure truested extensions in produt.json.`);
     }
   }
 }

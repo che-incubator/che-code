@@ -42,20 +42,9 @@ const PRODUCT_JSON_WITH_EXTENSIONS_ALTERNATIVE = `{
 		],
 		"gitlab": [
 			"redhat.yaml",
-			"redhat.openshift",
-			"devfile.vscode-devfile"
+			"redhat.openshift"
 		]
 	}
-}`;
-
-const PRODUCT_JSON_WITH_FOUR_EXTENSIONS = `{
-	"version": "1.0.0",
-	"trustedExtensionAuthAccess": [
-		"redhat.yaml",
-		"redhat.openshift",
-		"devfile.vscode-devfile",
-		"redhat.vscode-xml"
-	]
 }`;
 
 describe('Test Configuring of Trusted Extensions Auth Access:', () => {
@@ -63,7 +52,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
   const originalWriteFile = fs.writeFile;
 
   beforeEach(() => {
-    delete env.TRUSTED_EXTENSIONS_AUTH_ACCESS;
+    delete env.VSCODE_TRUSTED_EXTENSIONS;
 
     Object.assign(fs, {
       readFile: originalReadFile,
@@ -71,7 +60,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     });
   });
 
-  test('should skip if TRUSTED_EXTENSIONS is not set', async () => {
+  test('should skip if VSCODE_TRUSTED_EXTENSIONS is not set', async () => {
     const readFileMock = jest.fn();
     Object.assign(fs, {
       readFile: readFileMock,
@@ -81,11 +70,26 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     const trust = new TrustedExtensions();
     await trust.configure();
 
-    expect(readFileMock).toBeCalledTimes(0);
+    expect(readFileMock).not.toHaveBeenCalled();
   });
 
-  test('should add new trustedExtensionAuthAccess:array section', async () => {
-    env.TRUSTED_EXTENSIONS = 'redhat.yaml,redhat.openshift';
+  test('should skip if VSCODE_TRUSTED_EXTENSIONS is empty', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = '';
+
+    const readFileMock = jest.fn();
+    Object.assign(fs, {
+      readFile: readFileMock,
+      writeFile: jest.fn(),
+    });
+
+    const trust = new TrustedExtensions();
+    await trust.configure();
+
+    expect(readFileMock).not.toHaveBeenCalled();
+  });
+
+  test('should add new trustedExtensionAuthAccess section', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'redhat.yaml,redhat.openshift';
 
     let savedProductJson;
 
@@ -110,8 +114,8 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS);
   });
 
-  test('should add extensions to existing trustedExtensionAuthAccess:array section', async () => {
-    env.TRUSTED_EXTENSIONS = 'devfile.vscode-devfile';
+  test('should add extensions to existing trustedExtensionAuthAccess section', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'devfile.vscode-devfile';
 
     let savedProductJson;
 
@@ -136,8 +140,8 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     expect(savedProductJson).toBe(PRODUCT_JSON_THREE_EXTENSIONS);
   });
 
-  test('should NOT add extensions to trustedExtensionAuthAccess:array section if extensions is already in the list', async () => {
-    env.TRUSTED_EXTENSIONS = 'redhat.openshift';
+  test('should NOT add extensions to trustedExtensionAuthAccess section if extensions is already in the list', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'redhat.openshift';
 
     const writeFileMock = jest.fn();
     Object.assign(fs, {
@@ -157,11 +161,10 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     expect(writeFileMock).not.toHaveBeenCalled();
   });
 
-  test('should replace trustedExtensionAuthAccess object on array and add extensions', async () => {
-    env.TRUSTED_EXTENSIONS = 'devfile.vscode-devfile,redhat.vscode-xml';
+  test('should do nothing if trustedExtensionAuthAccess is object', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'devfile.vscode-devfile,redhat.vscode-xml';
 
-    let savedProductJson;
-
+    const writeFileMock = jest.fn();
     Object.assign(fs, {
       readFile: async (file: string) => {
         if ('product.json' === file) {
@@ -169,17 +172,13 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
         }
       },
 
-      writeFile: async (file: string, data: string) => {
-        if ('product.json' === file) {
-          savedProductJson = data;
-        }
-      },
+      writeFile: writeFileMock,
     });
 
     // test
     const trust = new TrustedExtensions();
     await trust.configure();
 
-    expect(savedProductJson).toBe(PRODUCT_JSON_WITH_FOUR_EXTENSIONS);
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 });
