@@ -62,7 +62,7 @@ export class TrustedExtensions {
         await productJSON.save();
       }
     } catch (err) {
-      console.error(`${err.message} Failure to configure trusted extensions in produt.json.`);
+      console.error(`${err.message} Failure to configure trusted extensions in product.json.`);
     }
   }
 }
