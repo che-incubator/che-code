@@ -33,6 +33,8 @@ export class BrowserSecretStorageService extends BaseSecretStorageService {
 	}
 
 	override get(key: string): Promise<string | undefined> {
+		console.log(`> BrowserSecretStorageService :: get. key [${key}]`);
+
 		if (this._secretStorageProvider) {
 			return this._embedderSequencer!.queue(key, () => this._secretStorageProvider!.get(key));
 		}
@@ -41,6 +43,8 @@ export class BrowserSecretStorageService extends BaseSecretStorageService {
 	}
 
 	override set(key: string, value: string): Promise<void> {
+		console.log(`> BrowserSecretStorageService :: set. key [${key}] value [${value}]`);
+
 		if (this._secretStorageProvider) {
 			return this._embedderSequencer!.queue(key, async () => {
 				await this._secretStorageProvider!.set(key, value);
@@ -52,6 +56,8 @@ export class BrowserSecretStorageService extends BaseSecretStorageService {
 	}
 
 	override delete(key: string): Promise<void> {
+		console.log(`> BrowserSecretStorageService :: delete. key [${key}]`);
+
 		if (this._secretStorageProvider) {
 			return this._embedderSequencer!.queue(key, async () => {
 				await this._secretStorageProvider!.delete(key);

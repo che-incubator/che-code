@@ -39,6 +39,8 @@ export class NativeSecretStorageService extends BaseSecretStorageService {
 	}
 
 	override set(key: string, value: string): Promise<void> {
+		console.log(`> NativeSecretStorageService :: BrowserSecretStorageService :: set. key [${key}] value [${value}]`);
+
 		this._sequencer.queue(key, async () => {
 			await this.resolvedStorageService;
 

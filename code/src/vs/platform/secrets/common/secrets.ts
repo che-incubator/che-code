@@ -47,6 +47,8 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 		@ILogService protected readonly _logService: ILogService,
 	) {
 		super();
+
+		console.log(`>> BaseSecretStorageService :: constructor. In memory: ${_useInMemoryStorage}`);
 	}
 
 	/**
@@ -63,6 +65,8 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	get(key: string): Promise<string | undefined> {
+		console.log(`> BaseSecretStorageService :: get. key [${key}]`);
+
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
@@ -91,6 +95,8 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	set(key: string, value: string): Promise<void> {
+		console.log(`> BaseSecretStorageService :: set. key [${key}] value [${value}]`);
+
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
@@ -113,6 +119,8 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	delete(key: string): Promise<void> {
+		console.log(`> BaseSecretStorageService :: delete. key [${key}]`);
+
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
