@@ -23,20 +23,16 @@ export class TrustedExtensions {
     try {
       const extensions: string[] = [];
 
-      const tmp = env.VSCODE_TRUSTED_EXTENSIONS.split(',');
-      for (const e of tmp) {
-        if (e) {
-          extensions.push(e);
+      for (const extension of env.VSCODE_TRUSTED_EXTENSIONS.split(',')) {
+        if (extension) {
+          extensions.push(extension);
+          console.log(`  > add ${extension}`);
         }
       }
 
       if (!extensions.length) {
         console.log('  > env.VSCODE_TRUSTED_EXTENSIONS does not specify any extension');
         return;
-      }
-
-      for (const e of extensions) {
-        console.log(`  > add ${e}`);
       }
 
       const productJSON = await new ProductJSON().load();
@@ -47,9 +43,9 @@ export class TrustedExtensions {
         productJSON.setTrustedExtensionAuthAccess([...extensions]);
         productJSONChanged = true;
       } else if (Array.isArray(access)) {
-        for (const e of extensions) {
-          if (!access.includes(e)) {
-            access.push(e);
+        for (const extension of extensions) {
+          if (!access.includes(extension)) {
+            access.push(extension);
             productJSONChanged = true;
           }
         }
