@@ -50,6 +50,7 @@ const PRODUCT_JSON_WITH_EXTENSIONS_ALTERNATIVE = `{
 describe('Test Configuring of Trusted Extensions Auth Access:', () => {
   const originalReadFile = fs.readFile;
   const originalWriteFile = fs.writeFile;
+  const originalConsoleLog = console.log;
 
   beforeEach(() => {
     delete env.VSCODE_TRUSTED_EXTENSIONS;
@@ -57,6 +58,10 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     Object.assign(fs, {
       readFile: originalReadFile,
       writeFile: originalWriteFile,
+    });
+
+    Object.assign(console, {
+      log: originalConsoleLog,
     });
   });
 
@@ -88,8 +93,27 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     expect(readFileMock).not.toHaveBeenCalled();
   });
 
+  test('should skip if VSCODE_TRUSTED_EXTENSIONS has wrong value', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = ',,,';
+
+    const readFileMock = jest.fn();
+    Object.assign(fs, {
+      readFile: readFileMock,
+      writeFile: jest.fn(),
+    });
+
+    const spy = jest.spyOn(console, 'log');
+
+    const trust = new TrustedExtensions();
+    await trust.configure();
+
+    expect(readFileMock).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith('# Configuring Trusted Extensions...');
+    expect(spy).toHaveBeenCalledWith('  > env.VSCODE_TRUSTED_EXTENSIONS does not specify any extension');
+  });
+
   test('should add new trustedExtensionAuthAccess section', async () => {
-    env.VSCODE_TRUSTED_EXTENSIONS = 'redhat.yaml,redhat.openshift';
+    env.VSCODE_TRUSTED_EXTENSIONS = ',,redhat.yaml,redhat.openshift';
 
     let savedProductJson;
 
@@ -115,7 +139,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
   });
 
   test('should add extensions to existing trustedExtensionAuthAccess section', async () => {
-    env.VSCODE_TRUSTED_EXTENSIONS = 'devfile.vscode-devfile';
+    env.VSCODE_TRUSTED_EXTENSIONS = 'devfile.vscode-devfile,,';
 
     let savedProductJson;
 

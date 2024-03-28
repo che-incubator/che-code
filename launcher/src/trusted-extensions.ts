@@ -21,9 +21,17 @@ export class TrustedExtensions {
     }
 
     try {
-      const extensions = env.VSCODE_TRUSTED_EXTENSIONS.split(',');
+      const extensions: string[] = [];
+
+      const tmp = env.VSCODE_TRUSTED_EXTENSIONS.split(',');
+      for (const e of tmp) {
+        if (e) {
+          extensions.push(e);
+        }
+      }
+
       if (!extensions.length) {
-        console.log('  > env.VSCODE_TRUSTED_EXTENSIONS is empty, skip this step');
+        console.log('  > env.VSCODE_TRUSTED_EXTENSIONS does not specify any extension');
         return;
       }
 
