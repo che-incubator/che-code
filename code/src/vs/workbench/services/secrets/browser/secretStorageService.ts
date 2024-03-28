@@ -26,6 +26,8 @@ export class BrowserSecretStorageService extends BaseSecretStorageService {
 		// in-memory base class implementation instead.
 		super(true, storageService, encryptionService, logService);
 
+		console.log(`>> BrowserSecretStorageService :: constructor`);
+
 		if (environmentService.options?.secretStorageProvider) {
 			this._secretStorageProvider = environmentService.options.secretStorageProvider;
 			this._embedderSequencer = new SequencerByKey<string>();
