@@ -6,6 +6,7 @@
 import { env } from 'vs/base/common/process';
 import { IProductConfiguration } from 'vs/base/common/product';
 import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';
+import { loadFromFileSystem } from 'vs/platform/product/common/che/product';
 
 /**
  * @deprecated You MUST use `IProductService` if possible.
@@ -54,6 +55,7 @@ else {
 
 	// Built time configuration (do NOT modify)
 	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as IProductConfiguration;
+	product = loadFromFileSystem();
 
 	// Running out of sources
 	if (Object.keys(product).length === 0) {

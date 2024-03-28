@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';",
+        "by": "import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';\\\nimport { loadFromFileSystem } from 'vs/platform/product/common/che/product';"
+    },
+    {
+        "from": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as IProductConfiguration;",
+        "by": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as IProductConfiguration;\\\n\\\tproduct = loadFromFileSystem();"
+    }
+]

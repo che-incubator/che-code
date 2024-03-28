@@ -42,7 +42,7 @@ export class GithubServiceImpl implements GithubService {
     @inject(K8SServiceImpl) private readonly k8sService: K8SServiceImpl,
     @inject(Symbol.for('AxiosInstance')) private readonly axiosInstance: AxiosInstance
   ) {
-    this.iniitializeToken();
+    this.initializeToken();
   }
 
   private checkToken(): void {
@@ -117,10 +117,10 @@ export class GithubServiceImpl implements GithubService {
     }
 
     // another token should be used by the Github Service after removing the Device Authentication token
-    this.iniitializeToken();
+    this.initializeToken();
   }
 
-  private async iniitializeToken(): Promise<void> {
+  private async initializeToken(): Promise<void> {
     this.logger.info('Github Service: extracting token...');
 
     const deviceAuthToken = await this.getDeviceAuthToken();
