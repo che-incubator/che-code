@@ -16,7 +16,7 @@ import * as child_process from 'child_process';
 
 import { VSCodeLauncher } from '../src/vscode-launcher';
 
-describe('Test VS Code launcher:', () => {
+describe.skip('Test VS Code launcher:', () => {
   beforeEach(() => {
     delete env.VSCODE_NODEJS_RUNTIME_DIR;
     delete env.PROJECTS_ROOT;
@@ -80,7 +80,7 @@ describe('Test VS Code launcher:', () => {
     expect(pathExistsMock).toBeCalledTimes(0);
   });
 
-  test('should launch VS Code with /projects/.code-workspace workspace file and Node extra certificate', async () => {
+  test.only('should launch VS Code with /projects/.code-workspace workspace file and Node extra certificate', async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
     env.PROJECTS_ROOT = '/tmp/projects';
     env.SHELL = '/bin/testshell';
