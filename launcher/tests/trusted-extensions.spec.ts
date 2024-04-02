@@ -109,7 +109,10 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
 
     expect(readFileMock).not.toHaveBeenCalled();
     expect(spy).toHaveBeenCalledWith('# Configuring Trusted Extensions...');
-    expect(spy).toHaveBeenCalledWith('  > env.VSCODE_TRUSTED_EXTENSIONS does not specify any extension');
+    expect(spy).toHaveBeenCalledWith('  > env.VSCODE_TRUSTED_EXTENSIONS is set to [,,,]');
+    expect(spy).toHaveBeenCalledWith(
+      '  > ERROR: The variable provided most likely has wrong format. It should specify one or more extensions separated by comma.'
+    );
   });
 
   test('should add new trustedExtensionAuthAccess section', async () => {
@@ -204,5 +207,41 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     await trust.configure();
 
     expect(writeFileMock).not.toHaveBeenCalled();
+  });
+
+  test('should add only two extenions matching the regexp', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'redhat.yaml,redhat.openshift,red hat.java';
+
+    let savedProductJson;
+
+    Object.assign(fs, {
+      readFile: async (file: string) => {
+        if ('product.json' === file) {
+          return PRODUCT_JSON_SIMPLE;
+        }
+      },
+
+      writeFile: async (file: string, data: string) => {
+        if ('product.json' === file) {
+          savedProductJson = data;
+        }
+      },
+    });
+
+    const spy = jest.spyOn(console, 'log');
+
+    // test
+    const trust = new TrustedExtensions();
+    await trust.configure();
+
+    expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS);
+
+    expect(spy).toHaveBeenCalledWith('# Configuring Trusted Extensions...');
+    expect(spy).toHaveBeenCalledWith(
+      '  > env.VSCODE_TRUSTED_EXTENSIONS is set to [redhat.yaml,redhat.openshift,red hat.java]'
+    );
+    expect(spy).toHaveBeenCalledWith('  > add redhat.yaml');
+    expect(spy).toHaveBeenCalledWith('  > add redhat.openshift');
+    expect(spy).toHaveBeenCalledWith('  > failure to add [red hat.java] because of wrong identifier');
   });
 });

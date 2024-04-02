@@ -20,18 +20,26 @@ export class TrustedExtensions {
       return;
     }
 
+    console.log(`  > env.VSCODE_TRUSTED_EXTENSIONS is set to [${env.VSCODE_TRUSTED_EXTENSIONS}]`);
+
     try {
       const extensions: string[] = [];
 
       for (const extension of env.VSCODE_TRUSTED_EXTENSIONS.split(',')) {
         if (extension) {
-          extensions.push(extension);
-          console.log(`  > add ${extension}`);
+          if (extension.match(/^[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-.]*$/)) {
+            extensions.push(extension);
+            console.log(`  > add ${extension}`);
+          } else {
+            console.log(`  > failure to add [${extension}] because of wrong identifier`);
+          }
         }
       }
 
       if (!extensions.length) {
-        console.log('  > env.VSCODE_TRUSTED_EXTENSIONS does not specify any extension');
+        console.log(
+          '  > ERROR: The variable provided most likely has wrong format. It should specify one or more extensions separated by comma.'
+        );
         return;
       }
 
