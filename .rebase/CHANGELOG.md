@@ -3,6 +3,12 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @vitaliy-guliy
+https://github.com/che-incubator/che-code/pull/339
+
+- code/src/vs/platform/product/common/product.ts
+---
+
+#### @vitaliy-guliy
 https://github.com/che-incubator/che-code/pull/331
 
 - code/src/vs/workbench/contrib/remote/browser/remote.ts
@@ -26,7 +32,6 @@ https://github.com/che-incubator/che-code/pull/337/commits/875893566c2acd0bb7031
 
 - code/src/vs/base/common/network.ts
 ---
-
 
 #### @benoitf 
 https://github.com/che-incubator/che-code/commit/eed0a5213ba1b29b810d53f6365aaa2294165845#diff-2735bf66f14ee64b9ce6fdc30355a5e3085ae96a791cd01d65843a8dcef7c166
