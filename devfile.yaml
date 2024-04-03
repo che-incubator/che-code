@@ -28,7 +28,7 @@ components:
 
   - name: projects
     volume:
-      size: 7Gi
+      size: 12Gi
 
 commands:
   - id: yarn-prepare
