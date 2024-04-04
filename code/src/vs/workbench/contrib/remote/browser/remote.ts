@@ -58,6 +58,7 @@ import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/commo
 import { IWalkthroughsService } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedService';
 import { Schemas } from 'vs/base/common/network';
 import { mainWindow } from 'vs/base/browser/window';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
 
 interface IViewModel {
 	onDidChangeHelpInformation: Event<void>;
@@ -464,10 +465,11 @@ class HelpPanel extends ViewPane {
 		@IWorkbenchEnvironmentService protected readonly environmentService: IWorkbenchEnvironmentService,
 		@IThemeService themeService: IThemeService,
 		@ITelemetryService telemetryService: ITelemetryService,
+		@IHoverService hoverService: IHoverService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IWalkthroughsService private readonly walkthroughsService: IWalkthroughsService,
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService, hoverService);
 	}
 
 	protected override renderBody(container: HTMLElement): void {
