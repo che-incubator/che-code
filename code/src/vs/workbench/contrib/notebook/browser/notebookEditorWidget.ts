@@ -303,8 +303,8 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		@INotebookExecutionService private readonly notebookExecutionService: INotebookExecutionService,
 		@INotebookExecutionStateService private readonly notebookExecutionStateService: INotebookExecutionStateService,
 		@IEditorProgressService private editorProgressService: IEditorProgressService,
-		@INotebookLoggingService readonly logService: INotebookLoggingService,
-		@IKeybindingService readonly keybindingService: IKeybindingService,
+		@INotebookLoggingService private readonly logService: INotebookLoggingService,
+		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@ICodeEditorService codeEditorService: ICodeEditorService
 	) {
 		super();
@@ -2426,6 +2426,8 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 			if (itemDOM && itemDOM.ownerDocument.activeElement && itemDOM.contains(itemDOM.ownerDocument.activeElement)) {
 				(itemDOM.ownerDocument.activeElement as HTMLElement).blur();
 			}
+
+			this._webview?.blurOutput();
 
 			cell.updateEditState(CellEditState.Preview, 'focusNotebookCell');
 			cell.focusMode = CellFocusMode.Container;
