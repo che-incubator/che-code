@@ -586,8 +586,8 @@ function readCookie(name: string): string | undefined {
 	let secretStorageKeyPath = readCookie('vscode-secret-key-path');
 	console.log(`>> secretStorageKeyPath: [${secretStorageKeyPath}]`);
 
-	secretStorageKeyPath = '/home/user/my-secrets';
-	console.log(`>> secretStorageKeyPath replaced: [${secretStorageKeyPath}]`);
+	// secretStorageKeyPath = '/home/user/my-secrets';
+	// console.log(`>> secretStorageKeyPath replaced: [${secretStorageKeyPath}]`);
 
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
@@ -610,7 +610,8 @@ function readCookie(name: string): string | undefined {
 		settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
+		// secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
+		secretStorageProvider: !secretStorageKeyPath
 			? undefined /* with a remote without embedder-preferred storage, store on the remote */
 			: new LocalStorageSecretStorageProvider(secretStorageCrypto),
 	});
