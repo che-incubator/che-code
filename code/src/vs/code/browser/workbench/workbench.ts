@@ -175,7 +175,9 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 
 	constructor(
 		private readonly crypto: ISecretStorageCrypto,
-	) { }
+	) {
+		console.log('>> LocalStorageSecretStorageProvider :: construcor');
+	}
 
 	private async load(): Promise<Record<string, string>> {
 		const record = this.loadAuthSessionFromElement();
@@ -231,16 +233,22 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 	}
 
 	async get(key: string): Promise<string | undefined> {
+		console.log(`>> LocalStorageSecretStorageProvider :: get [${key}]`);
+
 		const secrets = await this._secretsPromise;
 		return secrets[key];
 	}
 	async set(key: string, value: string): Promise<void> {
+		console.log(`>> LocalStorageSecretStorageProvider :: set [${key}] value [${value}]`);
+
 		const secrets = await this._secretsPromise;
 		secrets[key] = value;
 		this._secretsPromise = Promise.resolve(secrets);
 		this.save();
 	}
 	async delete(key: string): Promise<void> {
+		console.log(`>> LocalStorageSecretStorageProvider :: delete [${key}]`);
+
 		const secrets = await this._secretsPromise;
 		delete secrets[key];
 		this._secretsPromise = Promise.resolve(secrets);
@@ -575,7 +583,12 @@ function readCookie(name: string): string | undefined {
 
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
-	const secretStorageKeyPath = readCookie('vscode-secret-key-path');
+	let secretStorageKeyPath = readCookie('vscode-secret-key-path');
+	console.log(`>> secretStorageKeyPath: [${secretStorageKeyPath}]`);
+
+	secretStorageKeyPath = '/home/user/my-secrets';
+	console.log(`>> secretStorageKeyPath replaced: [${secretStorageKeyPath}]`);
+
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
 	console.log('Creating workbench with config ', JSON.stringify({

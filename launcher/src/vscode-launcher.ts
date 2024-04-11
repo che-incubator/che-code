@@ -44,10 +44,8 @@ export class VSCodeLauncher {
       params.push('--default-folder', env.PROJECT_SOURCE);
     }
 
-    params.push('--log', 'info');
-    params.push('--server-data-dir', '/projects/.vscode-remote');
-
-    params.push('--do-not-sync');
+    params.push('--enable-sync');
+    // params.push('--do-not-sync');
     params.push('--start-server');
 
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
