@@ -75,10 +75,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
         try {
           await updateDevfile(cheApi);
+        } catch (error) {
+          console.error(`Failed to update Devfile: ${error}`);
+          vscode.window.showErrorMessage(`Failed to update Devfile: ${error}`);
+          return;
+        }
+
+        try {
           await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
         } catch (error) {
-          console.error(`Something went wrong for the 'Restart From Local Devfile' action: ${error}`);
-          vscode.window.showErrorMessage(`Can not restart the workspace from the local devfile: ${error}`);
+          console.error(`Failed to restart the workspace: ${error}`);
+          vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
         }
       })
     );
@@ -90,6 +97,8 @@ export function deactivate(): void {
 }
 
 async function updateDevfile(cheApi: any): Promise<void> {
+  console.log('>> Updating devfile...');
+
   const devfileService: {
     get(): Promise<any>;
     getRaw(): Promise<string>;
@@ -99,10 +108,14 @@ async function updateDevfile(cheApi: any): Promise<void> {
 
   const projectPath = process.env.PROJECT_SOURCE
   let devfilePath: string | undefined = `${projectPath}/${DEVFILE_NAME}`;
+  console.log(`> devfile path 1: [${devfilePath}]`);
 
   let devfileExists = await fs.pathExists(devfilePath);
+  
   if (!devfileExists) {
     devfilePath = `${projectPath}/${DOT_DEVFILE_NAME}`;
+    console.log(`> devfile path 2: [${devfilePath}]`);
+
     devfileExists = await fs.pathExists(devfilePath);
   }
 
@@ -116,13 +129,16 @@ async function updateDevfile(cheApi: any): Promise<void> {
   }
 
   const currentDevfile = await devfileService.get();
-  const projects = currentDevfile.projects || [];
+  const currentProjects = currentDevfile.projects || [];
+  console.log(`>> current projects: ${currentProjects.length}`);
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
   const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
-    newContent.devWorkspace.spec!.template!.projects = projects;
+    console.log(`>> new projects: ${newContent.devWorkspace.spec!.template!.projects!.length}`);
+    
+    newContent.devWorkspace.spec!.template!.projects = currentProjects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
   } else {
     throw new Error('An error occurred while generating new devfile context');
