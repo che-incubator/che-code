@@ -937,9 +937,7 @@ export class TimelinePane extends ViewPane {
 			},
 			keyboardNavigationLabelProvider: new TimelineKeyboardNavigationLabelProvider(),
 			multipleSelectionSupport: false,
-			overrideStyles: {
-				listBackground: this.getBackgroundColor()
-			}
+			overrideStyles: this.getLocationBasedColors().listOverrideStyles,
 		});
 
 		this._register(this.tree.onContextMenu(e => this.onContextMenu(this.commands, e)));
@@ -1230,7 +1228,7 @@ const timelinePin = registerIcon('timeline-pin', Codicon.pin, localize('timeline
 const timelineUnpin = registerIcon('timeline-unpin', Codicon.pinned, localize('timelineUnpin', 'Icon for the unpin timeline action.'));
 
 class TimelinePaneCommands extends Disposable {
-	private sourceDisposables: DisposableStore;
+	private readonly sourceDisposables: DisposableStore;
 
 	constructor(
 		private readonly pane: TimelinePane,
