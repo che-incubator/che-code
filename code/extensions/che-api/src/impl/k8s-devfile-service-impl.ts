@@ -71,6 +71,8 @@ export class K8sDevfileServiceImpl implements DevfileService {
 
 
   async updateDevfile(devfile: V1alpha2DevWorkspaceSpecTemplate): Promise<void> {
+    console.log('>>> update devfile...');
+
     // Grab custom resource object
     const customObjectsApi = this.k8SService.makeApiClient(k8s.CustomObjectsApi);
     const group = 'workspace.devfile.io';
@@ -88,17 +90,25 @@ export class K8sDevfileServiceImpl implements DevfileService {
         'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH,
       },
     };
-    await customObjectsApi.patchNamespacedCustomObject(
-      group,
-      version,
-      this.env.getWorkspaceNamespace(),
-      'devworkspaces',
-      this.env.getWorkspaceName(),
-      patch,
-      undefined,
-      undefined,
-      undefined,
-      options
-    );
+
+    try {
+      await customObjectsApi.patchNamespacedCustomObject(
+        group,
+        version,
+        this.env.getWorkspaceNamespace(),
+        'devworkspaces',
+        this.env.getWorkspaceName(),
+        patch,
+        undefined,
+        undefined,
+        undefined,
+        options
+      );
+
+    } catch (err) {
+      console.log('ERROR', err);
+      throw err;
+    }
+
   }
 }

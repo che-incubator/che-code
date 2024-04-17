@@ -130,6 +130,7 @@ async function updateDevfile(cheApi: any): Promise<void> {
 
   const currentDevfile = await devfileService.get();
   const currentProjects = currentDevfile.projects || [];
+  
   console.log(`>> current projects: ${currentProjects.length}`);
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   
@@ -137,8 +138,7 @@ async function updateDevfile(cheApi: any): Promise<void> {
   const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
     console.log(`>> new projects: ${newContent.devWorkspace.spec!.template!.projects!.length}`);
-    
-    newContent.devWorkspace.spec!.template!.projects = currentProjects;
+    // newContent.devWorkspace.spec!.template!.projects = currentProjects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
   } else {
     throw new Error('An error occurred while generating new devfile context');
