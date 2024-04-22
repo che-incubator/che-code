@@ -75,7 +75,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
       vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
         try {
-          await updateDevfile(cheApi);
+          const updated = await updateDevfile(cheApi);
+          if (!updated) {
+            return;
+          }
         } catch (error) {
           console.error(`Failed to update Devfile: ${error}`);
           vscode.window.showErrorMessage(`Failed to update Devfile: ${error}`);
@@ -110,7 +113,7 @@ async function isFile(filePath: string): Promise<boolean> {
   return false;
 }
 
-async function getDevfilePath(): Promise<string | undefined> {
+async function selectDevfile(): Promise<string | undefined> {
   console.log(`> use PROJECTS_ROOT: ${process.env.PROJECTS_ROOT}`);
   if (!process.env.PROJECTS_ROOT) {
     process.env.PROJECTS_ROOT = '/projects';
@@ -153,7 +156,7 @@ async function getDevfilePath(): Promise<string | undefined> {
   return undefined;
 }
 
-async function updateDevfile(cheApi: any): Promise<void> {
+async function updateDevfile(cheApi: any): Promise<boolean> {
   console.log('>> Updating devfile...');
 
   const devfileService: {
@@ -163,10 +166,10 @@ async function updateDevfile(cheApi: any): Promise<void> {
   } = cheApi.getDevfileService();
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
-  const devfilePath = await getDevfilePath();
+  const devfilePath = await selectDevfile();
   if (!devfilePath) {
     console.log('> cancelled!!!');
-    return;
+    return false;
   }
 
   const currentDevfile = await devfileService.get();
@@ -185,6 +188,8 @@ async function updateDevfile(cheApi: any): Promise<void> {
     }
     // newContent.devWorkspace.spec!.template!.projects = currentProjects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
+
+    return true;
   } else {
     console.log('>> Unable to generate the devfile for some reasons');
     throw new Error('An error occurred while generating new devfile context');
