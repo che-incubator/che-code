@@ -161,26 +161,14 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  // const currentDevfile = await devfileService.get();
-  // const currentProjects = currentDevfile.projects || [];
-  // console.log(`>> current projects: ${currentProjects.length}`);
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
   const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
-    // if (newContent.devWorkspace.spec!.template!.projects) {
-    //   console.log(`>> new projects: ${newContent.devWorkspace.spec!.template!.projects!.length}`);
-    // } else {
-    //   console.log('>> generated devfile does not contain any project');
-    // }
-
-    // newContent.devWorkspace.spec!.template!.projects = currentProjects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
-
     return true;
   } else {
-    // console.log('>> Unable to generate the devfile for some reasons');
     throw new Error('An error occurred while generating new devfile context');
   }
 }
