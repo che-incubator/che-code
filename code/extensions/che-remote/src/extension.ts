@@ -113,16 +113,12 @@ async function isFile(filePath: string): Promise<boolean> {
 }
 
 async function selectDevfile(): Promise<string | undefined> {
-  if (!process.env.PROJECTS_ROOT) {
-    process.env.PROJECTS_ROOT = '/projects';
-  }
-
   const devfileItems: vscode.QuickPickItem[] = [];
 
   const projects = await fs.readdir(process.env.PROJECTS_ROOT as string);
   for (const project of projects) {
     for (const devfileName of DEVFILE_NAMES) {
-      const devfilePath = path.join(process.env.PROJECTS_ROOT, project, devfileName);
+      const devfilePath = path.join(process.env.PROJECTS_ROOT!, project, devfileName);
       if (await isFile(devfilePath)) {
         devfileItems.push({
           label: devfilePath,
