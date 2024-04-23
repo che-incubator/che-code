@@ -38,6 +38,13 @@ jest.mock('../src/node-extra-certificate', () => ({
   },
 }));
 
+const configureTustedExtensions = jest.fn();
+jest.mock('../src/trusted-extensions', () => ({
+  TrustedExtensions: function () {
+    return { configure: configureTustedExtensions };
+  },
+}));
+
 const generateCodeWorkspace = jest.fn();
 jest.mock('../src/code-workspace', () => ({
   CodeWorkspace: function () {
@@ -60,6 +67,7 @@ describe('Test main flow:', () => {
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
+    expect(configureTustedExtensions).toBeCalled();
 
     expect(generateCodeWorkspace).toBeCalled();
 

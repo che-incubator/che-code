@@ -21,7 +21,7 @@ import { Range } from 'vs/editor/common/core/range';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
-import { Rejection, RenameLocation, RenameProvider, WorkspaceEdit } from 'vs/editor/common/languages';
+import { NewSymbolNameTriggerKind, Rejection, RenameLocation, RenameProvider, WorkspaceEdit } from 'vs/editor/common/languages';
 import { ITextModel } from 'vs/editor/common/model';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
@@ -231,7 +231,7 @@ class RenameController implements IEditorContribution {
 
 		const newSymbolNamesProviders = this._languageFeaturesService.newSymbolNamesProvider.all(model);
 
-		const requestRenameSuggestions = (cts: CancellationToken) => newSymbolNamesProviders.map(p => p.provideNewSymbolNames(model, loc.range, cts));
+		const requestRenameSuggestions = (triggerKind: NewSymbolNameTriggerKind, cts: CancellationToken) => newSymbolNamesProviders.map(p => p.provideNewSymbolNames(model, loc.range, triggerKind, cts));
 
 		trace('creating rename input field and awaiting its result');
 		const supportPreview = this._bulkEditService.hasPreviewHandler() && this._configService.getValue<boolean>(this.editor.getModel().uri, 'editor.rename.enablePreview');
@@ -239,7 +239,7 @@ class RenameController implements IEditorContribution {
 			loc.range,
 			loc.text,
 			supportPreview,
-			requestRenameSuggestions,
+			newSymbolNamesProviders.length > 0 ? requestRenameSuggestions : undefined,
 			cts2
 		);
 		trace('received response from rename input field');
@@ -357,12 +357,12 @@ class RenameController implements IEditorContribution {
 
 			kind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the rename operation was cancelled or accepted.' };
 			languageId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Document language ID.' };
-			nRenameSuggestionProviders: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Number of rename providers for this document.'; isMeasurement: true };
+			nRenameSuggestionProviders: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Number of rename providers for this document.' };
 
 			source?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the new name came from the input field or rename suggestions.' };
-			nRenameSuggestions?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Number of rename suggestions user has got'; isMeasurement: true };
-			timeBeforeFirstInputFieldEdit?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Milliseconds before user edits the input field for the first time'; isMeasurement: true };
-			wantsPreview?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'If user wanted preview.'; isMeasurement: true };
+			nRenameSuggestions?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Number of rename suggestions user has got' };
+			timeBeforeFirstInputFieldEdit?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Milliseconds before user edits the input field for the first time' };
+			wantsPreview?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'If user wanted preview.' };
 		};
 
 		const value: RenameInvokedEvent =
@@ -492,8 +492,7 @@ registerAction2(class FocusNextRenameSuggestion extends Action2 {
 			precondition: CONTEXT_RENAME_INPUT_VISIBLE,
 			keybinding: [
 				{
-					primary: KeyCode.Tab,
-					secondary: [KeyCode.DownArrow],
+					primary: KeyCode.DownArrow,
 					weight: KeybindingWeight.EditorContrib + 99,
 				}
 			]
@@ -521,8 +520,7 @@ registerAction2(class FocusPreviousRenameSuggestion extends Action2 {
 			precondition: CONTEXT_RENAME_INPUT_VISIBLE,
 			keybinding: [
 				{
-					primary: KeyMod.Shift | KeyCode.Tab,
-					secondary: [KeyCode.UpArrow],
+					primary: KeyCode.UpArrow,
 					weight: KeybindingWeight.EditorContrib + 99,
 				}
 			]
