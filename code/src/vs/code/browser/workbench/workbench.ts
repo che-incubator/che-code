@@ -601,7 +601,7 @@ function readCookie(name: string): string | undefined {
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
 		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageSecretStorageProvider(secretStorageCrypto) // with a remote, we don't use a local secret storage provider
 	}, undefined, 2));
-	
+
 	// Create workbench
 	create(mainWindow.document.body, {
 		...config,
@@ -610,8 +610,7 @@ function readCookie(name: string): string | undefined {
 		settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		// secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
-		secretStorageProvider: !secretStorageKeyPath
+		secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
 			? undefined /* with a remote without embedder-preferred storage, store on the remote */
 			: new LocalStorageSecretStorageProvider(secretStorageCrypto),
 	});
