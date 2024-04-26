@@ -10,7 +10,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { ISecretStorageProvider, ISecretStorageService, BaseSecretStorageService } from 'vs/platform/secrets/common/secrets';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IBrowserWorkbenchEnvironmentService } from 'vs/workbench/services/environment/browser/environmentService';
-import { CheSecretStorageProvider } from './che/cheSecretStorageProvider';
+import { CheSecretStorageProvider } from 'vs/workbench/services/secrets/browser/che/cheSecretStorageProvider';
 
 export class BrowserSecretStorageService extends BaseSecretStorageService {
 

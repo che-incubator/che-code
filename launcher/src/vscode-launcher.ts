@@ -44,10 +44,6 @@ export class VSCodeLauncher {
       params.push('--default-folder', env.PROJECT_SOURCE);
     }
 
-    params.push('--enable-sync');
-    // params.push('--do-not-sync');
-    params.push('--start-server');
-
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
