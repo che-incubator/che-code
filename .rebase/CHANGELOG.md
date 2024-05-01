@@ -51,3 +51,9 @@ https://github.com/che-incubator/che-code/pull/193
 
 - code/src/vs/workbench/contrib/terminal/browser/terminal.contribution.ts
 ---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/353
+
+- code/src/vs/server/node/extensionHostConnection.ts
+---

@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { getNLSConfiguration } from 'vs/server/node/remoteLanguagePacks';",
+        "by": "import { getNLSConfiguration } from 'vs/server/node/remoteLanguagePacks';\\\nimport { getResolvedPathEnvVar } from 'vs/server/node/che/utils';"
+    },
+    {
+        "from": "setCaseInsensitive(env, 'PATH', PATH);",
+        "by": "PATH = getResolvedPathEnvVar(PATH, processEnv.PATH);\\\n\\\tsetCaseInsensitive(env, 'PATH', PATH);"
+    }
+]
