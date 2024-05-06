@@ -84,12 +84,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           return;
         }
 
-        // try {
-        //   await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
-        // } catch (error) {
-        //   console.error(`Failed to restart the workspace: ${error}`);
-        //   vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
-        // }
+        try {
+          await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
+        } catch (error) {
+          console.error(`Failed to restart the workspace: ${error}`);
+          vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
+        }
       })
     );
   }
@@ -112,6 +112,8 @@ async function isFile(filePath: string): Promise<boolean> {
   return false;
 }
 
+const SELECT_DEVFILE = '/projects/*';
+
 async function selectDevfile(): Promise<string | undefined> {
   const devfileItems: vscode.QuickPickItem[] = [];
 
@@ -129,16 +131,22 @@ async function selectDevfile(): Promise<string | undefined> {
     }
   }
 
-  if (devfileItems.length === 1) {
-    return devfileItems[0].label;
-  } else if (devfileItems.length > 1) {
-    const devfileItem = await vscode.window.showQuickPick(devfileItems, {
-      title: 'Select a Devfile to be applied to the current workspace',
-    });
+  devfileItems.push({
+    kind: vscode.QuickPickItemKind.Separator,
+    label: 'alternative'
+  });
 
-    if (devfileItem) {
-      return devfileItem.label;
-    }
+  devfileItems.push({
+    label: SELECT_DEVFILE,
+    detail: 'Select a Devfile with a different name'
+  });
+
+  const devfileItem = await vscode.window.showQuickPick(devfileItems, {
+    title: 'Select a Devfile to be applied to the current workspace',
+  });
+
+  if (devfileItem) {
+    return devfileItem.label;
   }
 
   return undefined;
@@ -150,10 +158,20 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     getRaw(): Promise<string>;
     updateDevfile(devfile: any): Promise<void>;
   } = cheApi.getDevfileService();
-
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
-  const devfilePath = await selectDevfile();
+  let devfilePath = await selectDevfile();
+  if (SELECT_DEVFILE === devfilePath) {
+    const uri = await vscode.window.showOpenDialog({
+      canSelectFolders: false
+    });
+    if (uri && uri.length) {
+      devfilePath = uri[0].path;
+    } else {
+      return false;
+    }
+  }
+
   if (!devfilePath) {
     return false;
   }
@@ -161,38 +179,9 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
-  // const newContent = await devWorkspaceGenerator.generateDevfileContext(
-  //   {
-  //     devfilePath,
-  //     editorContent: EDITOR_CONTENT_STUB,
-  //     pluginRegistryUrl, projects: []
-  //   },
-  //   axiosInstance);
-
-  const devfileContent = await fs.readFile(devfilePath, 'utf8');
-  console.log('------------------------------------------------------------------');
-  console.log(devfileContent);
-  console.log('------------------------------------------------------------------');
-
-  const newContent = await devWorkspaceGenerator.generateDevfileContext(
-    {
-      devfileContent,
-      editorContent: EDITOR_CONTENT_STUB,
-      pluginRegistryUrl, projects: []
-    },
-    axiosInstance);
-
+  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
-    console.log('> a devfile has been generated successfully');
-    console.log('==================================================================');
-    console.log(newContent);
-    console.log('==================================================================');
-      
-    let a = 2;
-    if (a === 3) {
-      await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
-    }
-
+    await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
     return true;
   } else {
     throw new Error('An error occurred while generating new devfile context');
