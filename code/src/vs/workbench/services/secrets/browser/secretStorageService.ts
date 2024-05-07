@@ -10,7 +10,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { ISecretStorageProvider, ISecretStorageService, BaseSecretStorageService } from 'vs/platform/secrets/common/secrets';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IBrowserWorkbenchEnvironmentService } from 'vs/workbench/services/environment/browser/environmentService';
-import { CheSecretStorageProvider } from 'vs/workbench/services/secrets/browser/che/cheSecretStorageProvider';
 
 export class BrowserSecretStorageService extends BaseSecretStorageService {
 
@@ -29,8 +28,7 @@ export class BrowserSecretStorageService extends BaseSecretStorageService {
 
 		console.log(`>> BrowserSecretStorageService :: constructor`);
 
-		this._secretStorageProvider = new CheSecretStorageProvider();
-		this._embedderSequencer = new SequencerByKey<string>();
+		console.log(' >> options', JSON.stringify(environmentService, undefined, 2));
 
 		if (environmentService.options?.secretStorageProvider) {
 			this._secretStorageProvider = environmentService.options.secretStorageProvider;
