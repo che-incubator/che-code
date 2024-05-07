@@ -112,8 +112,6 @@ async function isFile(filePath: string): Promise<boolean> {
   return false;
 }
 
-const SELECT_DEVFILE = '/projects/*';
-
 async function selectDevfile(): Promise<string | undefined> {
   const devfileItems: vscode.QuickPickItem[] = [];
 
@@ -137,7 +135,7 @@ async function selectDevfile(): Promise<string | undefined> {
   });
 
   devfileItems.push({
-    label: SELECT_DEVFILE,
+    label: `${process.env.PROJECTS_ROOT!}/*`,
     detail: 'Select a Devfile with a different name'
   });
 
@@ -161,7 +159,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
   let devfilePath = await selectDevfile();
-  if (SELECT_DEVFILE === devfilePath) {
+  if (`${process.env.PROJECTS_ROOT!}/*` === devfilePath) {
     const uri = await vscode.window.showOpenDialog({
       canSelectFolders: false
     });
