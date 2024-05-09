@@ -26,6 +26,7 @@ const workbenchPromise = new DeferredPromise<IWorkbench>();
  * @param options for setting up the workbench
  */
 export function create(domElement: HTMLElement, options: IWorkbenchConstructionOptions): IDisposable {
+	console.log('Creating workbench with config', JSON.stringify(options, undefined, 2));
 
 	// Mark start of workbench
 	mark('code/didLoadWorkbenchMain');

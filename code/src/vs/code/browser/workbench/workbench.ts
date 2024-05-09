@@ -110,6 +110,7 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	 * The actual key is (clientKey XOR serverKey)
 	 */
 	private async getKey(clientKey: Uint8Array): Promise<CryptoKey> {
+		console.log(`>> getKey`);
 		if (!clientKey || clientKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 			throw Error('Invalid length for clientKey');
 		}
@@ -134,8 +135,9 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	}
 
 	private async getServerKeyPart(): Promise<Uint8Array> {
+		console.log(`>> getServerKeyPart()`);
 		if (this._serverKey) {
-			return this._serverKey;
+			// return this._serverKey;
 		}
 
 		let attempt = 0;
@@ -143,11 +145,17 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 
 		while (attempt <= 3) {
 			try {
+				console.log(`>>>> fetching key from [${this.authEndpoint}]`);
+
 				const res = await fetch(this.authEndpoint, { credentials: 'include', method: 'POST' });
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
+
 				const serverKey = new Uint8Array(await await res.arrayBuffer());
+
+				// const serverKey = new TextEncoder().encode('12345678901234567890123456789012');
+
 				if (serverKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 					throw Error(`The key retrieved by the server is not ${AESConstants.KEY_LENGTH} bit long.`);
 				}
@@ -175,11 +183,10 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 
 	constructor(
 		private readonly crypto: ISecretStorageCrypto,
-	) {
-		console.log('>> LocalStorageSecretStorageProvider :: construcor');
-	}
+	) { }
 
 	private async load(): Promise<Record<string, string>> {
+		console.log(`>> LocalStorageSecretStorageProvider :: load`);
 		const record = this.loadAuthSessionFromElement();
 		// Get the secrets from localStorage
 		const encrypted = localStorage.getItem(this._storageKey);
@@ -583,24 +590,18 @@ function readCookie(name: string): string | undefined {
 
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
+
 	let secretStorageKeyPath = readCookie('vscode-secret-key-path');
 	console.log(`>> secretStorageKeyPath: [${secretStorageKeyPath}]`);
 
-	// secretStorageKeyPath = '/home/user/my-secrets';
-	// console.log(`>> secretStorageKeyPath replaced: [${secretStorageKeyPath}]`);
+	// secretStorageKeyPath = '/test/secret-key';
+	secretStorageKeyPath = '/oss-dev/static/out/public-key';
+	// secretStorageKeyPath = '/_vscode-cli/mint-key';
 
-	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
+	let secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
-	console.log('Creating workbench with config ', JSON.stringify({
-		...config,
-		...cheConfig,
-		settingsSyncOptions: config.settingsSyncOptions ? {
-			enabled: config.settingsSyncOptions.enabled,
-		} : undefined,
-		workspaceProvider: WorkspaceProvider.create(config),
-		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageSecretStorageProvider(secretStorageCrypto) // with a remote, we don't use a local secret storage provider
-	}, undefined, 2));
+
+	// secretStorageCrypto = new Base64Crypto();
 
 	// Create workbench
 	create(mainWindow.document.body, {

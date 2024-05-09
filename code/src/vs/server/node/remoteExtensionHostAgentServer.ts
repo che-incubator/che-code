@@ -99,6 +99,16 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 	public async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
 		// Only serve GET requests
 		if (req.method !== 'GET') {
+			if (req.method === 'POST') {
+				// https://vitaliy-guliy-che-code-dev.apps.che-dev.x6e0.p1.openshiftapps.com/oss-dev/static/out/public-key
+				console.log(`>> requested POST to ${req.url}`);
+
+				if ('/oss-dev/static/out/public-key' === req.url) {
+					console.log('>> RETURNING KEY');
+					return void res.end('12345678901234567890123456789012');
+				}
+			}
+
 			return serveError(req, res, 405, `Unsupported method ${req.method}`);
 		}
 
