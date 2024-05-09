@@ -16,7 +16,7 @@ import * as child_process from 'child_process';
 
 import { VSCodeLauncher } from '../src/vscode-launcher';
 
-describe.skip('Test VS Code launcher:', () => {
+describe('Test VS Code launcher:', () => {
   beforeEach(() => {
     delete env.VSCODE_NODEJS_RUNTIME_DIR;
     delete env.PROJECTS_ROOT;

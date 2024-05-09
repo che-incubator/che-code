@@ -47,8 +47,6 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 		@ILogService protected readonly _logService: ILogService,
 	) {
 		super();
-
-		console.log(`>> BaseSecretStorageService :: constructor. In memory: ${_useInMemoryStorage}`);
 	}
 
 	/**
@@ -65,8 +63,6 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	get(key: string): Promise<string | undefined> {
-		console.log(`> BaseSecretStorageService :: get. key [${key}]`);
-
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
@@ -95,8 +91,6 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	set(key: string, value: string): Promise<void> {
-		console.log(`> BaseSecretStorageService :: set. key [${key}] value [${value}]`);
-
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
@@ -119,8 +113,6 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	}
 
 	delete(key: string): Promise<void> {
-		console.log(`> BaseSecretStorageService :: delete. key [${key}]`);
-
 		return this._sequencer.queue(key, async () => {
 			const storageService = await this.resolvedStorageService;
 
@@ -134,7 +126,7 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 	private async initialize(): Promise<IStorageService> {
 		let storageService;
 		if (!this._useInMemoryStorage && await this._encryptionService.isEncryptionAvailable()) {
-			console.log(`[SecretStorageService] Encryption is available, using persisted storage`);
+			this._logService.trace(`[SecretStorageService] Encryption is available, using persisted storage`);
 			this._type = 'persisted';
 			storageService = this._storageService;
 		} else {
@@ -142,7 +134,7 @@ export class BaseSecretStorageService extends Disposable implements ISecretStora
 			if (this._type === 'in-memory') {
 				return this._storageService;
 			}
-			console.log('[SecretStorageService] Encryption is not available, falling back to in-memory storage');
+			this._logService.trace('[SecretStorageService] Encryption is not available, falling back to in-memory storage');
 			this._type = 'in-memory';
 			storageService = this._register(new InMemoryStorageService());
 		}

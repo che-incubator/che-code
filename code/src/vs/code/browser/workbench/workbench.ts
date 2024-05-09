@@ -601,8 +601,6 @@ function readCookie(name: string): string | undefined {
 	let secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
 
-	// secretStorageCrypto = new Base64Crypto();
-
 	// Create workbench
 	create(mainWindow.document.body, {
 		...config,
@@ -611,9 +609,8 @@ function readCookie(name: string): string | undefined {
 		settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
 		workspaceProvider: WorkspaceProvider.create(config),
 		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		// secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
-		// 	? undefined /* with a remote without embedder-preferred storage, store on the remote */
-		// 	: new LocalStorageSecretStorageProvider(secretStorageCrypto),
-		secretStorageProvider: new LocalStorageSecretStorageProvider(secretStorageCrypto),
+		secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
+			? undefined /* with a remote without embedder-preferred storage, store on the remote */
+			: new LocalStorageSecretStorageProvider(secretStorageCrypto),
 	});
 })();

@@ -22,17 +22,14 @@ export class ExtHostSecretState implements ExtHostSecretStateShape {
 	}
 
 	get(extensionId: string, key: string): Promise<string | undefined> {
-		console.log(`> ExtHostSecretState :: get. extensionId [${extensionId}] key [${key}]`);
 		return this._proxy.$getPassword(extensionId, key);
 	}
 
 	store(extensionId: string, key: string, value: string): Promise<void> {
-		console.log(`> ExtHostSecretState :: store. extensionId [${extensionId}] key [${key}] value [${value}]`);
 		return this._proxy.$setPassword(extensionId, key, value);
 	}
 
 	delete(extensionId: string, key: string): Promise<void> {
-		console.log(`> ExtHostSecretState :: delete. extensionId [${extensionId}] key [${key}]`);
 		return this._proxy.$deletePassword(extensionId, key);
 	}
 }
