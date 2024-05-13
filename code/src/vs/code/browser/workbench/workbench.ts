@@ -46,7 +46,7 @@ const enum AESConstants {
 
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	// private _serverKey: Uint8Array | undefined;
-	private serverKeyValue = '{{AES-GCM-CRYPT}}{{DEFAULT-KEY}}';
+	private serverKeyValue = '{{LOCAL-STORAGE}}{{DEFAULT-KEY}}';
 	private _serverKey: Uint8Array | undefined = new TextEncoder().encode(this.serverKeyValue);
 
 	/** Gets whether the algorithm is supported; requires a secure context */
