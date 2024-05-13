@@ -79,7 +79,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return;
           }
         } catch (error) {
-          console.error(`Failed to update Devfile: ${error}`);
           vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
           return;
         }
@@ -87,7 +86,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         try {
           await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
         } catch (error) {
-          console.error(`Failed to restart the workspace: ${error}`);
           vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
         }
       })
