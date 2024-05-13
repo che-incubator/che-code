@@ -174,8 +174,16 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
+  const action = await vscode.window.showInformationMessage(
+    'Workspace restart', {
+      modal: true, detail: `Your workspace will be restarted from ${devfilePath}. This action is not revertable.`
+    }, 'Restart');
+  if ('Restart' !== action) {
+    return false;
+  }
+
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-  
+
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
   const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
