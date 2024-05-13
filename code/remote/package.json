@@ -37,5 +37,8 @@
     "yazl": "^2.4.3",
     "ws": "8.2.3",
     "js-yaml": "^4.1.0"
+  },
+  "resolutions": {
+    "node-gyp-build": "4.8.1"
   }
 }

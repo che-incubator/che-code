@@ -22,7 +22,7 @@ import { CommandsConverter, ExtHostCommands } from 'vs/workbench/api/common/extH
 import * as typeConvert from 'vs/workbench/api/common/extHostTypeConverters';
 import * as extHostTypes from 'vs/workbench/api/common/extHostTypes';
 import { ChatAgentLocation, IChatAgentRequest, IChatAgentResult } from 'vs/workbench/contrib/chat/common/chatAgents';
-import { IChatContentReference, IChatFollowup, IChatUserActionEvent, InteractiveSessionVoteDirection } from 'vs/workbench/contrib/chat/common/chatService';
+import { IChatContentReference, IChatFollowup, IChatUserActionEvent, ChatAgentVoteDirection } from 'vs/workbench/contrib/chat/common/chatService';
 import { checkProposedApiEnabled, isProposedApiEnabled } from 'vs/workbench/services/extensions/common/extensions';
 import { Dto } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 import type * as vscode from 'vscode';
@@ -68,17 +68,31 @@ class ChatAgentResponseStream {
 				}
 			}
 
-			const _report = (progress: IChatProgressDto, task?: () => Thenable<string | void>) => {
+			const _report = (progress: IChatProgressDto, task?: (progress: vscode.Progress<vscode.ChatResponseWarningPart | vscode.ChatResponseReferencePart>) => Thenable<string | void>) => {
 				// Measure the time to the first progress update with real markdown content
 				if (typeof this._firstProgress === 'undefined' && 'content' in progress) {
 					this._firstProgress = this._stopWatch.elapsed();
 				}
 
-				Promise.all([this._proxy.$handleProgressChunk(this._request.requestId, progress), task ? task() : undefined]).then(([handle, res]) => {
-					if (typeof handle === 'number' && task) {
-						this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatTaskResult.from(res), handle);
-					}
-				});
+				this._proxy.$handleProgressChunk(this._request.requestId, progress)
+					.then((handle) => {
+						if (handle) {
+							task?.({
+								report: (p) => {
+									if (extHostTypes.MarkdownString.isMarkdownString(p.value)) {
+										this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatResponseWarningPart.from(<vscode.ChatResponseWarningPart>p), handle);
+										return;
+									} else {
+										this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatResponseReferencePart.from(<vscode.ChatResponseReferencePart>p), handle);
+									}
+								}
+							}).then((res) => {
+								if (typeof handle === 'number') {
+									this._proxy.$handleProgressChunk(this._request.requestId, typeConvert.ChatTaskResult.from(res), handle);
+								}
+							});
+						}
+					});
 			};
 
 			this._apiObject = {
@@ -121,7 +135,7 @@ class ChatAgentResponseStream {
 					_report(dto);
 					return this;
 				},
-				progress(value, task?: (() => Thenable<string | void>)) {
+				progress(value, task?: ((progress: vscode.Progress<vscode.ChatResponseWarningPart>) => Thenable<string | void>)) {
 					throwIfDone(this.progress);
 					const part = new extHostTypes.ChatResponseProgressPart2(value, task);
 					const dto = task ? typeConvert.ChatTask.from(part) : typeConvert.ChatResponseProgressPart.from(part);
@@ -359,7 +373,7 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 			.map(f => typeConvert.ChatFollowup.from(f, request));
 	}
 
-	$acceptFeedback(handle: number, result: IChatAgentResult, vote: InteractiveSessionVoteDirection, reportIssue?: boolean): void {
+	$acceptFeedback(handle: number, result: IChatAgentResult, vote: ChatAgentVoteDirection, reportIssue?: boolean): void {
 		const agent = this._agents.get(handle);
 		if (!agent) {
 			return;
@@ -368,10 +382,10 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 		const ehResult = typeConvert.ChatAgentResult.to(result);
 		let kind: extHostTypes.ChatResultFeedbackKind;
 		switch (vote) {
-			case InteractiveSessionVoteDirection.Down:
+			case ChatAgentVoteDirection.Down:
 				kind = extHostTypes.ChatResultFeedbackKind.Unhelpful;
 				break;
-			case InteractiveSessionVoteDirection.Up:
+			case ChatAgentVoteDirection.Up:
 				kind = extHostTypes.ChatResultFeedbackKind.Helpful;
 				break;
 		}

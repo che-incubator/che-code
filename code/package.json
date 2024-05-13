@@ -1,7 +1,7 @@
 {
   "name": "che-code",
   "version": "1.90.0",
-  "distro": "fec0321a3182f40f776709b5ac183c59a120a2b6",
+  "distro": "b545c05b2646e72d172e58e08b9315e5e8478296",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -119,7 +119,7 @@
     "@types/kerberos": "^1.1.2",
     "@types/minimist": "^1.2.1",
     "@types/mocha": "^9.1.1",
-    "@types/node": "18.x",
+    "@types/node": "20.x",
     "@types/sinon": "^10.0.2",
     "@types/sinon-test": "^2.4.2",
     "@types/trusted-types": "^1.0.6",
@@ -150,7 +150,7 @@
     "cssnano": "^6.0.3",
     "debounce": "^1.0.0",
     "deemon": "^1.8.0",
-    "electron": "28.2.8",
+    "electron": "29.3.1",
     "eslint": "8.36.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-jsdoc": "^46.5.0",
@@ -219,6 +219,9 @@
     "yaserver": "^0.4.0",
     "@types/ws": "8.2.0",
     "@types/js-yaml": "^4.0.5"
+  },
+  "resolutions": {
+    "node-gyp-build": "4.8.1"
   },
   "repository": {
     "type": "git",
