@@ -45,14 +45,18 @@ const enum AESConstants {
 }
 
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
-	private _serverKey: Uint8Array | undefined;
+	// private _serverKey: Uint8Array | undefined;
+	private serverKeyValue = '{{AES-GCM-CRYPT}}{{DEFAULT-KEY}}';
+	private _serverKey: Uint8Array | undefined = new TextEncoder().encode(this.serverKeyValue);
 
 	/** Gets whether the algorithm is supported; requires a secure context */
 	public static supported() {
 		return !!crypto.subtle;
 	}
 
-	constructor(private readonly authEndpoint: string) { }
+	constructor(private readonly authEndpoint: string) {
+		console.log(`>> ServerKeyedAESCrypto :: constructor. Init with [${this.serverKeyValue}]`);
+	}
 
 	async seal(data: string): Promise<string> {
 		// Get a new key and IV on every change, to avoid the risk of reusing the same key and IV pair with AES-GCM
@@ -137,7 +141,8 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	private async getServerKeyPart(): Promise<Uint8Array> {
 		console.log(`>> getServerKeyPart()`);
 		if (this._serverKey) {
-			// return this._serverKey;
+			console.log(`>> returning existing key [${this._serverKey}]`);
+			return this._serverKey;
 		}
 
 		let attempt = 0;
@@ -591,12 +596,8 @@ function readCookie(name: string): string | undefined {
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
 
-	let secretStorageKeyPath = readCookie('vscode-secret-key-path');
+	let secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
 	console.log(`>> secretStorageKeyPath: [${secretStorageKeyPath}]`);
-
-	// secretStorageKeyPath = '/test/secret-key';
-	secretStorageKeyPath = '/oss-dev/static/out/public-key';
-	// secretStorageKeyPath = '/_vscode-cli/mint-key';
 
 	let secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
