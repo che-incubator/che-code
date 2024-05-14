@@ -45,18 +45,14 @@ const enum AESConstants {
 }
 
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
-	// private _serverKey: Uint8Array | undefined;
-	private serverKeyValue = '{{LOCAL-STORAGE}}/{{SECURE-KEY}}';
-	private _serverKey: Uint8Array | undefined = new TextEncoder().encode(this.serverKeyValue);
+	private _serverKey: Uint8Array | undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');
 
 	/** Gets whether the algorithm is supported; requires a secure context */
 	public static supported() {
 		return !!crypto.subtle;
 	}
 
-	constructor(private readonly authEndpoint: string) {
-		console.log(`>> ServerKeyedAESCrypto :: constructor. Init with [${this.serverKeyValue}]`);
-	}
+	constructor(private readonly authEndpoint: string) { }
 
 	async seal(data: string): Promise<string> {
 		// Get a new key and IV on every change, to avoid the risk of reusing the same key and IV pair with AES-GCM
@@ -114,7 +110,6 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	 * The actual key is (clientKey XOR serverKey)
 	 */
 	private async getKey(clientKey: Uint8Array): Promise<CryptoKey> {
-		console.log(`>> getKey`);
 		if (!clientKey || clientKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 			throw Error('Invalid length for clientKey');
 		}
@@ -139,9 +134,7 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	}
 
 	private async getServerKeyPart(): Promise<Uint8Array> {
-		console.log(`>> getServerKeyPart()`);
 		if (this._serverKey) {
-			console.log(`>> returning existing key [${this._serverKey}]`);
 			return this._serverKey;
 		}
 
@@ -150,17 +143,12 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 
 		while (attempt <= 3) {
 			try {
-				console.log(`>>>> fetching key from [${this.authEndpoint}]`);
-
 				const res = await fetch(this.authEndpoint, { credentials: 'include', method: 'POST' });
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 
 				const serverKey = new Uint8Array(await await res.arrayBuffer());
-
-				// const serverKey = new TextEncoder().encode('12345678901234567890123456789012');
-
 				if (serverKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 					throw Error(`The key retrieved by the server is not ${AESConstants.KEY_LENGTH} bit long.`);
 				}

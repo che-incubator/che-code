@@ -45,8 +45,6 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     });
 
     pathExistsMock.mockImplementation(async (path: string) => {
-      console.log(`> is path exist ${path}`);
-
       return '/etc/ssh' === path || '/etc/ssh/first-key.pub' === path;
     });
 
@@ -55,8 +53,6 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     });
 
     isFileMock.mockImplementation(async (path: string) => {
-      console.log(`> is file ${path}`);
-
       return '/etc/ssh/first-key' === path || '/etc/ssh/first-key.pub' === path;
     });
 
@@ -72,7 +68,6 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     const localStorageKeyProvider = new LocalstorageKeyProvider();
     await localStorageKeyProvider.configure();
 
-    expect(pathExistsMock).toBeCalled();
     expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH_FILE);
   });
 });

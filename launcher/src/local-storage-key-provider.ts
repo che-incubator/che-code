@@ -25,11 +25,9 @@ export class LocalstorageKeyProvider {
 
     try {
       const publicKeyFile = await this.findPublicKeyFile();
-      console.log(`  > foud key file [${publicKeyFile}]`);
+      console.log(`  > foud key file ${publicKeyFile}`);
 
       const secret = await this.getPartOfPublicKey(publicKeyFile);
-      console.log(`  > secret: ${secret}`);
-
       await this.update(FILE_WORKBENCH, SERVER_KEY_MASK, secret);
     } catch (err) {
       console.error(err.message);
@@ -70,17 +68,14 @@ export class LocalstorageKeyProvider {
   }
 
   async update(file: string, text: string, newText: string): Promise<void> {
-    console.log(`  > updaing ${file}`);
-
     const content = await fs.readFile(file);
     const newContent = content.replace(text, newText);
 
     if (content === newContent) {
-      console.log('    >>> search string is not found');
+      console.log(`  > ${file} is not updated`);
     } else {
-      console.log('    >>> replaced!');
+      await fs.writeFile(file, newContent);
+      console.log(`  > ${file} has been updated`);
     }
-
-    await fs.writeFile(file, newContent);
   }
 }
