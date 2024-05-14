@@ -3,6 +3,12 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @vitaliy-guliy
+https://github.com/che-incubator/che-code/pull/340
+
+- code/src/vs/code/browser/workbench/workbench.ts
+---
+
+#### @vitaliy-guliy
 https://github.com/che-incubator/che-code/pull/339
 
 - code/src/vs/platform/product/common/product.ts
