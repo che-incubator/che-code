@@ -147,7 +147,6 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
-
 				const serverKey = new Uint8Array(await await res.arrayBuffer());
 				if (serverKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 					throw Error(`The key retrieved by the server is not ${AESConstants.KEY_LENGTH} bit long.`);
@@ -179,7 +178,6 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 	) { }
 
 	private async load(): Promise<Record<string, string>> {
-		console.log(`>> LocalStorageSecretStorageProvider :: load`);
 		const record = this.loadAuthSessionFromElement();
 		// Get the secrets from localStorage
 		const encrypted = localStorage.getItem(this._storageKey);
@@ -233,22 +231,16 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 	}
 
 	async get(key: string): Promise<string | undefined> {
-		console.log(`>> LocalStorageSecretStorageProvider :: get [${key}]`);
-
 		const secrets = await this._secretsPromise;
 		return secrets[key];
 	}
 	async set(key: string, value: string): Promise<void> {
-		console.log(`>> LocalStorageSecretStorageProvider :: set [${key}] value [${value}]`);
-
 		const secrets = await this._secretsPromise;
 		secrets[key] = value;
 		this._secretsPromise = Promise.resolve(secrets);
 		this.save();
 	}
 	async delete(key: string): Promise<void> {
-		console.log(`>> LocalStorageSecretStorageProvider :: delete [${key}]`);
-
 		const secrets = await this._secretsPromise;
 		delete secrets[key];
 		this._secretsPromise = Promise.resolve(secrets);
