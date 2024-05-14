@@ -11,11 +11,11 @@
 import * as fs from '../src/fs-extra';
 import { LocalstorageKeyProvider } from '../src/local-storage-key-provider';
 
-const ORIGIN_WORKBENCH_WEB_MAIN = `
-some code, some code, a mask to be replaced {{LOCAL-STORAGE}}{{DEFAULT-KEY}}, some code
+const ORIGIN_WORKBENCH_FILE = `
+some code, some code, a mask to be replaced {{LOCAL-STORAGE}}/{{SECURE-KEY}}, some code
 `;
 
-const NEW_WORKBENCH_WEB_MAIN = `
+const NEW_WORKBENCH_FILE = `
 some code, some code, a mask to be replaced 1234567890ABCDEFGHIJKLMNOPQRSTUV, some code
 `;
 
@@ -64,8 +64,8 @@ describe('Test setting of Local Storage public key to VS Code', () => {
       switch (file) {
         case '/etc/ssh/first-key.pub':
           return 'ssh-rsa 1111222233334444555566667777888899990000AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZ';
-        case 'out/vs/workbench/workbench.web.main.js':
-          return ORIGIN_WORKBENCH_WEB_MAIN;
+        case 'out/vs/code/browser/workbench/workbench.js':
+          return ORIGIN_WORKBENCH_FILE;
       }
     });
 
@@ -73,6 +73,6 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     await localStorageKeyProvider.configure();
 
     expect(pathExistsMock).toBeCalled();
-    expect(writeFileMock).toBeCalledWith('out/vs/workbench/workbench.web.main.js', NEW_WORKBENCH_WEB_MAIN);
+    expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH_FILE);
   });
 });

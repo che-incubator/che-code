@@ -93,7 +93,6 @@ async function start() {
 	/** @type {string | import('net').AddressInfo | null} */
 	let address = null;
 	const server = http.createServer(async (req, res) => {
-		console.log('>> request ' + req.method + ' ' + req.url);
 		if (firstRequest) {
 			firstRequest = false;
 			perf.mark('code/server/firstRequest');
@@ -127,8 +126,6 @@ async function start() {
 			? { path: sanitizeStringArg(parsedArgs['socket-path']) }
 			: { host, port: await parsePort(host, sanitizeStringArg(parsedArgs['port'])) }
 	);
-	console.log(`>> nodeListenOptions: ${JSON.stringify(nodeListenOptions, undefined, 2)}`);
-
 	server.listen(nodeListenOptions, async () => {
 		let output = Array.isArray(product.serverGreeting) && product.serverGreeting.length ? `\n\n${product.serverGreeting.join('\n')}\n\n` : ``;
 
@@ -148,9 +145,9 @@ async function start() {
 			throw new Error('Unexpected server address');
 		}
 
-		output += `> Server bound to ${typeof address === 'string' ? address : `${address.address}:${address.port} (${address.family})`}\n`;
+		output += `Server bound to ${typeof address === 'string' ? address : `${address.address}:${address.port} (${address.family})`}\n`;
 		// Do not change this line. VS Code looks for this in the output.
-		output += `> Extension host agent listening on ${typeof address === 'string' ? address : address.port}\n`;
+		output += `Extension host agent listening on ${typeof address === 'string' ? address : address.port}\n`;
 		console.log(output);
 
 		perf.mark('code/server/started');

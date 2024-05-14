@@ -46,7 +46,7 @@ const enum AESConstants {
 
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	// private _serverKey: Uint8Array | undefined;
-	private serverKeyValue = '{{LOCAL-STORAGE}}{{DEFAULT-KEY}}';
+	private serverKeyValue = '{{LOCAL-STORAGE}}/{{SECURE-KEY}}';
 	private _serverKey: Uint8Array | undefined = new TextEncoder().encode(this.serverKeyValue);
 
 	/** Gets whether the algorithm is supported; requires a secure context */
@@ -595,11 +595,8 @@ function readCookie(name: string): string | undefined {
 
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
-
-	let secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
-	console.log(`>> secretStorageKeyPath: [${secretStorageKeyPath}]`);
-
-	let secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
+	const secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
+	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
 
 	// Create workbench

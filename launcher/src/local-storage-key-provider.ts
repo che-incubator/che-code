@@ -8,10 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { FILE_WORKBENCH_WEB_MAIN } from './files';
+import { FILE_WORKBENCH } from './files';
 import * as fs from './fs-extra';
 
-const SERVER_KEY_MASK = '{{LOCAL-STORAGE}}{{DEFAULT-KEY}}';
+const SERVER_KEY_MASK = '{{LOCAL-STORAGE}}/{{SECURE-KEY}}';
 
 const CERTS_DIR = '/etc/ssh';
 
@@ -28,9 +28,9 @@ export class LocalstorageKeyProvider {
       console.log(`  > foud key file [${publicKeyFile}]`);
 
       const secret = await this.getPartOfPublicKey(publicKeyFile);
-      console.log(`> secret: ${secret}`);
+      console.log(`  > secret: ${secret}`);
 
-      await this.update(FILE_WORKBENCH_WEB_MAIN, SERVER_KEY_MASK, secret);
+      await this.update(FILE_WORKBENCH, SERVER_KEY_MASK, secret);
     } catch (err) {
       console.error(err.message);
     }
@@ -70,8 +70,17 @@ export class LocalstorageKeyProvider {
   }
 
   async update(file: string, text: string, newText: string): Promise<void> {
+    console.log(`  > updaing ${file}`);
+
     const content = await fs.readFile(file);
     const newContent = content.replace(text, newText);
+
+    if (content === newContent) {
+      console.log('    >>> search string is not found');
+    } else {
+      console.log('    >>> replaced!');
+    }
+
     await fs.writeFile(file, newContent);
   }
 }
