@@ -49,7 +49,7 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     });
 
     readdirMock.mockImplementation(async (path: string) => {
-      return ['first-key', 'second-key', 'first-key.pub', 'second-key.pub'];
+      return ['some-file', 'first-key', 'second-key', 'first-key.pub', 'second-key.pub'];
     });
 
     isFileMock.mockImplementation(async (path: string) => {
