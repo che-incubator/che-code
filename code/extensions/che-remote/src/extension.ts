@@ -15,9 +15,9 @@ import { Main as DevWorkspaceGenerator } from '@eclipse-che/che-devworkspace-gen
 import * as fs from 'fs-extra';
 import * as vscode from 'vscode';
 import { axiosInstance } from './axios-certificate-authority';
+import * as path from 'path';
 
-const DEVFILE_NAME = 'devfile.yaml';
-const DOT_DEVFILE_NAME = '.devfile.yaml';
+const DEVFILE_NAMES = ['.devfile.yaml', 'devfile.yaml'];
 const EDITOR_CONTENT_STUB: string = `
 schemaVersion: 2.2.0
 metadata:
@@ -74,11 +74,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
       vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
         try {
-          await updateDevfile(cheApi);
+          const updated = await updateDevfile(cheApi);
+          if (!updated) {
+            return;
+          }
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
+          return;
+        }
+
+        try {
           await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
         } catch (error) {
-          console.error(`Something went wrong for the 'Restart From Local Devfile' action: ${error}`);
-          vscode.window.showErrorMessage(`Can not restart the workspace from the local devfile: ${error}`);
+          vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
         }
       })
     );
@@ -89,7 +97,58 @@ export function deactivate(): void {
 
 }
 
-async function updateDevfile(cheApi: any): Promise<void> {
+async function isFile(filePath: string): Promise<boolean> {
+  try {
+    if (await fs.pathExists(filePath)) {
+      const stat = await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
+      return stat.type === vscode.FileType.File;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return false;
+}
+
+async function selectDevfile(): Promise<string | undefined> {
+  const devfileItems: vscode.QuickPickItem[] = [];
+
+  const projects = await fs.readdir(process.env.PROJECTS_ROOT as string);
+  for (const project of projects) {
+    for (const devfileName of DEVFILE_NAMES) {
+      const devfilePath = path.join(process.env.PROJECTS_ROOT!, project, devfileName);
+      if (await isFile(devfilePath)) {
+        devfileItems.push({
+          label: devfilePath,
+          detail: project
+        });
+        break;
+      }
+    }
+  }
+
+  devfileItems.push({
+    kind: vscode.QuickPickItemKind.Separator,
+    label: 'alternative'
+  });
+
+  devfileItems.push({
+    label: `${process.env.PROJECTS_ROOT!}/*`,
+    detail: 'Select a Devfile with a different name'
+  });
+
+  const devfileItem = await vscode.window.showQuickPick(devfileItems, {
+    title: 'Select a Devfile to be applied to the current workspace',
+  });
+
+  if (devfileItem) {
+    return devfileItem.label;
+  }
+
+  return undefined;
+}
+
+async function updateDevfile(cheApi: any): Promise<boolean> {
   const devfileService: {
     get(): Promise<any>;
     getRaw(): Promise<string>;
@@ -97,33 +156,37 @@ async function updateDevfile(cheApi: any): Promise<void> {
   } = cheApi.getDevfileService();
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
-  const projectPath = process.env.PROJECT_SOURCE
-  let devfilePath: string | undefined = `${projectPath}/${DEVFILE_NAME}`;
-
-  let devfileExists = await fs.pathExists(devfilePath);
-  if (!devfileExists) {
-    devfilePath = `${projectPath}/${DOT_DEVFILE_NAME}`;
-    devfileExists = await fs.pathExists(devfilePath);
+  let devfilePath = await selectDevfile();
+  if (`${process.env.PROJECTS_ROOT!}/*` === devfilePath) {
+    const uri = await vscode.window.showOpenDialog({
+      canSelectFolders: false
+    });
+    if (uri && uri.length) {
+      devfilePath = uri[0].path;
+    } else {
+      return false;
+    }
   }
 
-  if (!devfileExists) {
-    devfilePath = await vscode.window.showInputBox({ title: 'Path to the devfile', value: `${projectPath}/` });
-    devfileExists = devfilePath ? await fs.pathExists(devfilePath) : false;
+  if (!devfilePath) {
+    return false;
   }
 
-  if (!devfileExists) {
-    throw new Error(`The devfile was not found at: ${devfilePath}`);
+  const action = await vscode.window.showInformationMessage(
+    'Workspace restart', {
+      modal: true, detail: `Your workspace will be restarted from ${devfilePath}. This action is not revertable.`
+    }, 'Restart');
+  if ('Restart' !== action) {
+    return false;
   }
 
-  const currentDevfile = await devfileService.get();
-  const projects = currentDevfile.projects || [];
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-  
+
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
   const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
   if (newContent) {
-    newContent.devWorkspace.spec!.template!.projects = projects;
     await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
+    return true;
   } else {
     throw new Error('An error occurred while generating new devfile context');
   }
