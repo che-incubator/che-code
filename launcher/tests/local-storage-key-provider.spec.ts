@@ -65,7 +65,7 @@ describe('Test setting of Local Storage public key to VS Code', () => {
       }
     });
 
-    const localStorageKeyProvider = new LocalstorageKeyProvider();
+    const localStorageKeyProvider = new LocalStorageKeyProvider();
     await localStorageKeyProvider.configure();
 
     expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH_FILE);
