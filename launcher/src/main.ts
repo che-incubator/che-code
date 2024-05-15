@@ -12,7 +12,7 @@ import { CodeWorkspace } from './code-workspace';
 import { DevWorkspaceId } from './devworkspace-id';
 import { NodeExtraCertificate } from './node-extra-certificate';
 import { OpenVSIXRegistry } from './openvsix-registry';
-import { LocalstorageKeyProvider } from './local-storage-key-provider';
+import { LocalStorageKeyProvider } from './local-storage-key-provider';
 import { TrustedExtensions } from './trusted-extensions';
 import { VSCodeLauncher } from './vscode-launcher';
 import { WebviewResources } from './webview-resources';
