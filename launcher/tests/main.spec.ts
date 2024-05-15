@@ -74,7 +74,7 @@ describe('Test main flow:', () => {
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
-    expect(configureLocalstorageKeyProvider).toBeCalled();
+    expect(configureLocalStorageKeyProvider).toBeCalled();
     expect(configureTustedExtensions).toBeCalled();
 
     expect(generateCodeWorkspace).toBeCalled();
