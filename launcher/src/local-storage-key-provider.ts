@@ -19,7 +19,7 @@ const CERTS_DIR = '/etc/ssh';
  * Finds a public key in `/etc/ssh` and initializes VS Code with 32 bytes (every fourth character) of the key.
  * The key is used to encrypt/decrypt the extension secrets stored in browser local storage.
  */
-export class LocalstorageKeyProvider {
+export class LocalStorageKeyProvider {
   async configure(): Promise<void> {
     console.log('# Injecting server public key to che-code...');
 
