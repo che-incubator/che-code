@@ -9,7 +9,7 @@
  ***********************************************************************/
 
 import * as fs from '../src/fs-extra';
-import { LocalstorageKeyProvider } from '../src/local-storage-key-provider';
+import { LocalStorageKeyProvider } from '../src/local-storage-key-provider';
 
 const ORIGIN_WORKBENCH_FILE = `
 some code, some code, a mask to be replaced {{LOCAL-STORAGE}}/{{SECURE-KEY}}, some code
