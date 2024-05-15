@@ -25,7 +25,7 @@ export class LocalStorageKeyProvider {
 
     try {
       const publicKeyFile = await this.findPublicKeyFile();
-      console.log(`  > foud key file ${publicKeyFile}`);
+      console.log(`  > found key file ${publicKeyFile}`);
 
       const secret = await this.getPartOfPublicKey(publicKeyFile);
       await this.update(FILE_WORKBENCH, SERVER_KEY_MASK, secret);
