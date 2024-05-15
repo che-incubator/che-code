@@ -41,7 +41,7 @@ jest.mock('../src/node-extra-certificate', () => ({
 const configureLocalstorageKeyProvider = jest.fn();
 jest.mock('../src/local-storage-key-provider', () => ({
   LocalStorageKeyProvider: function () {
-    return { configure: configureLocalstorageKeyProvider };
+    return { configure: configureLocalStorageKeyProvider };
   },
 }));
 
