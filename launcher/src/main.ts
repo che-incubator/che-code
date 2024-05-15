@@ -29,7 +29,7 @@ export class Main {
     await new OpenVSIXRegistry().configure();
     await new WebviewResources().configure();
     await new NodeExtraCertificate().configure();
-    await new LocalstorageKeyProvider().configure();
+    await new LocalStorageKeyProvider().configure();
     await new TrustedExtensions().configure();
 
     const workspaceFile = await new CodeWorkspace().generate();
