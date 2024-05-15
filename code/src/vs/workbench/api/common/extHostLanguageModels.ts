@@ -159,7 +159,8 @@ export class ExtHostLanguageModels implements ExtHostLanguageModelsShape {
 			name: metadata.name ?? '',
 			family: metadata.family ?? '',
 			version: metadata.version,
-			tokens: metadata.tokens,
+			maxInputTokens: metadata.maxInputTokens ?? metadata.tokens,
+			maxOutputTokens: metadata.maxOutputTokens ?? metadata.tokens,
 			auth,
 			targetExtensions: metadata.extensions
 		});
@@ -261,7 +262,7 @@ export class ExtHostLanguageModels implements ExtHostLanguageModelsShape {
 					family: data.metadata.family,
 					version: data.metadata.version,
 					name: data.metadata.name,
-					contextSize: data.metadata.tokens,
+					maxInputTokens: data.metadata.maxInputTokens,
 					countTokens(text, token) {
 						if (!that._allLanguageModelData.has(identifier)) {
 							throw extHostTypes.LanguageModelError.NotFound(identifier);
@@ -281,10 +282,6 @@ export class ExtHostLanguageModels implements ExtHostLanguageModelsShape {
 			}
 
 			result.push(apiObject);
-		}
-
-		if (result.length === 0) {
-			return undefined;
 		}
 
 		return result;
