@@ -10,4 +10,6 @@
 
 export const FILE_WORKBENCH_WEB_MAIN = 'out/vs/workbench/workbench.web.main.js';
 
+export const FILE_WORKBENCH = 'out/vs/code/browser/workbench/workbench.js';
+
 export const FILE_EXTENSION_HOST_PROCESS = 'out/vs/workbench/api/node/extensionHostProcess.js';

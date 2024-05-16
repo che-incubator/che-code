@@ -38,6 +38,13 @@ jest.mock('../src/node-extra-certificate', () => ({
   },
 }));
 
+const configureLocalStorageKeyProvider = jest.fn();
+jest.mock('../src/local-storage-key-provider', () => ({
+  LocalStorageKeyProvider: function () {
+    return { configure: configureLocalStorageKeyProvider };
+  },
+}));
+
 const configureTustedExtensions = jest.fn();
 jest.mock('../src/trusted-extensions', () => ({
   TrustedExtensions: function () {
@@ -67,6 +74,7 @@ describe('Test main flow:', () => {
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
+    expect(configureLocalStorageKeyProvider).toBeCalled();
     expect(configureTustedExtensions).toBeCalled();
 
     expect(generateCodeWorkspace).toBeCalled();
