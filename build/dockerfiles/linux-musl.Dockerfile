@@ -34,6 +34,10 @@ COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# workaround for https://github.com/nodejs/node/issues/51555
+ENV DISABLE_V8_COMPILE_CACHE=1
+
 # Initialize a git repository for code build tools
 RUN git init .
 
