@@ -50,13 +50,18 @@ export class CodeWorkspace {
           console.log(`  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
 
           path = env.VSCODE_DEFAULT_WORKSPACE;
-          workspace = JSON.parse(await fs.readFile(path));
+          workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
         } else {
-          console.log(`  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
+          console.log(`  > ERROR: failure to read workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
           return;
         }
       }
+    } catch (err) {
+      console.error(`Failure to read workspace file. ${err.message}`);
+      return;
+    }
 
+    try {
       const devfile = await new FlattenedDevfile().getDevfile();
       let saveRequired = false;
 
@@ -106,8 +111,14 @@ export class CodeWorkspace {
 
       return path;
     } catch (err) {
-      console.error(`${err.message} Unable to generate che.code-workspace file`);
+      console.error(`Unable to generate che.code-workspace file. ${err.message}`);
     }
+  }
+
+  // finds and removes each comma, after which there is no any attribute, object or array
+  sanitize(content: string): string {
+    const regex = /\,(?!\s*?[\{\[\"\'\w])/g;
+    return content.replace(regex, '');
   }
 
   async fileExists(file: string | undefined): Promise<boolean> {
