@@ -87,7 +87,6 @@ const WORKSPACE_WITH_DEPENDENT_PROJECTS = `{
 }`;
 
 describe('Test generating VS Code Workspace file:', () => {
-
   const originalReadFile = fs.readFile;
 
   beforeEach(() => {
