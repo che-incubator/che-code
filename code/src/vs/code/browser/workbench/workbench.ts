@@ -45,7 +45,7 @@ const enum AESConstants {
 }
 
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
-	private _serverKey: Uint8Array | undefined;
+	private _serverKey: Uint8Array | undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');
 
 	/** Gets whether the algorithm is supported; requires a secure context */
 	public static supported() {
@@ -575,20 +575,10 @@ function readCookie(name: string): string | undefined {
 
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
-	const secretStorageKeyPath = readCookie('vscode-secret-key-path');
+	const secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
-	console.log('Creating workbench with config ', JSON.stringify({
-		...config,
-		...cheConfig,
-		settingsSyncOptions: config.settingsSyncOptions ? {
-			enabled: config.settingsSyncOptions.enabled,
-		} : undefined,
-		workspaceProvider: WorkspaceProvider.create(config),
-		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		credentialsProvider: config.remoteAuthority ? undefined : new LocalStorageSecretStorageProvider(secretStorageCrypto) // with a remote, we don't use a local secret storage provider
-	}, undefined, 2));
-	
+
 	// Create workbench
 	create(mainWindow.document.body, {
 		...config,
