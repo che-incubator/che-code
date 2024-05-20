@@ -140,16 +140,18 @@ export class CodeWorkspace {
 
     let synchronized = false;
 
-    projects.forEach(async (project) => {
-      if (!workspace.folders.some((folder) => folder.name === project.name)) {
-        workspace.folders.push({
-          name: project.name,
-          path: `${env.PROJECTS_ROOT}/${project.name}`,
-        });
+    for (const project of projects) {
+      if (await fs.pathExists(`${env.PROJECTS_ROOT}/${project.name}`)) {
+        if (!workspace.folders.some((folder) => folder.name === project.name)) {
+          workspace.folders.push({
+            name: project.name,
+            path: `${env.PROJECTS_ROOT}/${project.name}`,
+          });
 
-        synchronized = true;
+          synchronized = true;
+        }
       }
-    });
+    }
 
     return synchronized;
   }
