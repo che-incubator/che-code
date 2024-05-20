@@ -2,5 +2,13 @@
   {
     "from": "return URI.parse(mainWindow.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });",
     "by": "const windowURI = URI.parse(mainWindow.location.href);\\\n\\\t\\\tconst fullPath = windowURI.path.replace(/\\\\/$/, '') + this._callbackRoute;\\\n\\\t\\\treturn windowURI.with({ path: fullPath, query: queryParams.join('\\&') });"
+  },
+  {
+    "from": "private _serverKey: Uint8Array \\| undefined;",
+    "by": "private _serverKey: Uint8Array \\| undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');"
+  },
+  {
+    "from": "const secretStorageKeyPath = readCookie('vscode-secret-key-path');",
+    "by": "const secretStorageKeyPath = readCookie('vscode-secret-key-path') \\|\\| '/';"
   }
 ]
