@@ -48,7 +48,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     && yum install -y $LIBSECRET $LIBKEYBOARD make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17 \
-    && npm install -g node-gyp@9.4.1
+    && npm install -g node-gyp@10.0.0
 
 #########################################################
 #
