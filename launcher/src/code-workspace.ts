@@ -126,17 +126,8 @@ export class CodeWorkspace {
 
   // finds and removes each comma, after which there is no any attribute, object or array
   sanitize(content: string): string {
-    console.log('Content Before:');
-    console.log(content);
-
     const regex = /\,(?!\s*?[\{\[\"\'\w])/g;
-
-    const result = content.replace(regex, '');
-    console.log('Content After:');
-    console.log(result);
-
-    return result;
-    // return content.replace(regex, '');
+    return content.replace(regex, '');
   }
 
   async fileExists(file: string | undefined): Promise<boolean> {
