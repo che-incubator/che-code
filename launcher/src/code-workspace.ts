@@ -65,17 +65,21 @@ export class CodeWorkspace {
       const devfile = await new FlattenedDevfile().getDevfile();
       let saveRequired = false;
 
-      if (!path) {
-        // if there is only one project, try to find the workspace file
-        if (devfile.projects && devfile.projects.length === 1) {
-          const project = devfile.projects[0];
-          const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+      // if there is only one project, try to find the workspace file
+      if (!path && devfile.projects && devfile.projects.length === 1) {
+        const project = devfile.projects[0];
+        const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+
+        try {
           if (await this.fileExists(toFind)) {
             console.log(`  > Using workspace file ${toFind}`);
 
             path = toFind;
-            workspace = JSON.parse(await fs.readFile(path));
+            workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
           }
+        } catch (err) {
+          console.error(`Failure to read workspace file. ${err.message}`);
+          return;
         }
       }
 
@@ -83,7 +87,12 @@ export class CodeWorkspace {
         path = `${env.PROJECTS_ROOT}/.code-workspace`;
         if (await this.fileExists(path)) {
           console.log(`  > Using workspace file ${path}`);
-          workspace = JSON.parse(await fs.readFile(path));
+          try {
+            workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
+          } catch (readErr) {
+            console.error(`Failure to read workspace file. ${readErr.message}`);
+            return;
+          }
         } else {
           console.log(`  > Creating new workspace file ${path}`);
           workspace = {} as Workspace;
