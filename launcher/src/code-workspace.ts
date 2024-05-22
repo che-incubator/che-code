@@ -50,7 +50,7 @@ export class CodeWorkspace {
           console.log(`  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
 
           path = env.VSCODE_DEFAULT_WORKSPACE;
-          workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
+          workspace = await this.readWorkspaceFile(path);
         } else {
           console.log(`  > ERROR: failure to read workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
           return;
@@ -75,7 +75,7 @@ export class CodeWorkspace {
             console.log(`  > Using workspace file ${toFind}`);
 
             path = toFind;
-            workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
+            workspace = await this.readWorkspaceFile(path);
           }
         } catch (err) {
           console.error(`Failure to read workspace file. ${err.message}`);
@@ -88,7 +88,7 @@ export class CodeWorkspace {
         if (await this.fileExists(path)) {
           console.log(`  > Using workspace file ${path}`);
           try {
-            workspace = JSON.parse(this.sanitize(await fs.readFile(path)));
+            workspace = await this.readWorkspaceFile(path);
           } catch (readErr) {
             console.error(`Failure to read workspace file. ${readErr.message}`);
             return;
@@ -124,10 +124,13 @@ export class CodeWorkspace {
     }
   }
 
-  // finds and removes each comma, after which there is no any attribute, object or array
-  sanitize(content: string): string {
+  // reads workspace file from the file system
+  // in the read content finds and removes each comma, after which there is no any attribute, object or array
+  async readWorkspaceFile(path: string): Promise<Workspace> {
+    const content = await fs.readFile(path);
     const regex = /\,(?!\s*?[\{\[\"\'\w])/g;
-    return content.replace(regex, '');
+    const sanitized = content.replace(regex, '');
+    return JSON.parse(sanitized);
   }
 
   async fileExists(file: string | undefined): Promise<boolean> {
