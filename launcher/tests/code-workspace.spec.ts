@@ -508,7 +508,7 @@ describe('Test generating VS Code Workspace file:', () => {
     expect(readFileMock).toBeCalledWith(env.VSCODE_DEFAULT_WORKSPACE);
     expect(readFileMock).toBeCalledWith(env.DEVWORKSPACE_FLATTENED_DEVFILE);
 
-    // shpuld update existing workspace file
+    // should update existing workspace file
     expect(writeFileMock).toBeCalledWith(env.VSCODE_DEFAULT_WORKSPACE, WORKSPACE_JSON);
   });
 
@@ -561,7 +561,7 @@ describe('Test generating VS Code Workspace file:', () => {
     expect(readFileMock).toBeCalledWith(env.VSCODE_DEFAULT_WORKSPACE);
     expect(readFileMock).toBeCalledWith(env.DEVWORKSPACE_FLATTENED_DEVFILE);
 
-    // shpuld update existing workspace file
+    // should update existing workspace file
     expect(writeFileMock).toBeCalledWith(env.VSCODE_DEFAULT_WORKSPACE, WORKSPACE_WITH_TWO_PROJECTS);
   });
 });
