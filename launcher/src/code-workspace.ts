@@ -50,27 +50,36 @@ export class CodeWorkspace {
           console.log(`  > Using workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
 
           path = env.VSCODE_DEFAULT_WORKSPACE;
-          workspace = JSON.parse(await fs.readFile(path));
+          workspace = await this.readWorkspaceFile(path);
         } else {
-          console.log(`  > ERROR: failure to find workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
+          console.log(`  > ERROR: failure to read workspace file ${env.VSCODE_DEFAULT_WORKSPACE}`);
           return;
         }
       }
+    } catch (err) {
+      console.error(`Failure to read workspace file. ${err.message}`);
+      return;
+    }
 
+    try {
       const devfile = await new FlattenedDevfile().getDevfile();
       let saveRequired = false;
 
-      if (!path) {
-        // if there is only one project, try to find the workspace file
-        if (devfile.projects && devfile.projects.length === 1) {
-          const project = devfile.projects[0];
-          const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+      // if there is only one project, try to find the workspace file
+      if (!path && devfile.projects && devfile.projects.length === 1) {
+        const project = devfile.projects[0];
+        const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+
+        try {
           if (await this.fileExists(toFind)) {
             console.log(`  > Using workspace file ${toFind}`);
 
             path = toFind;
-            workspace = JSON.parse(await fs.readFile(path));
+            workspace = await this.readWorkspaceFile(path);
           }
+        } catch (err) {
+          console.error(`Failure to read workspace file. ${err.message}`);
+          return;
         }
       }
 
@@ -78,7 +87,12 @@ export class CodeWorkspace {
         path = `${env.PROJECTS_ROOT}/.code-workspace`;
         if (await this.fileExists(path)) {
           console.log(`  > Using workspace file ${path}`);
-          workspace = JSON.parse(await fs.readFile(path));
+          try {
+            workspace = await this.readWorkspaceFile(path);
+          } catch (readErr) {
+            console.error(`Failure to read workspace file. ${readErr.message}`);
+            return;
+          }
         } else {
           console.log(`  > Creating new workspace file ${path}`);
           workspace = {} as Workspace;
@@ -106,8 +120,17 @@ export class CodeWorkspace {
 
       return path;
     } catch (err) {
-      console.error(`${err.message} Unable to generate che.code-workspace file`);
+      console.error(`Unable to generate che.code-workspace file. ${err.message}`);
     }
+  }
+
+  // reads workspace file from the file system
+  // in the read content finds and removes each comma, after which there is no any attribute, object or array
+  async readWorkspaceFile(path: string): Promise<Workspace> {
+    const content = await fs.readFile(path);
+    const regex = /\,(?!\s*?[\{\[\"\'\w])/g;
+    const sanitized = content.replace(regex, '');
+    return JSON.parse(sanitized);
   }
 
   async fileExists(file: string | undefined): Promise<boolean> {
@@ -129,16 +152,18 @@ export class CodeWorkspace {
 
     let synchronized = false;
 
-    projects.forEach(async (project) => {
-      if (!workspace.folders.some((folder) => folder.name === project.name)) {
-        workspace.folders.push({
-          name: project.name,
-          path: `${env.PROJECTS_ROOT}/${project.name}`,
-        });
+    for (const project of projects) {
+      if (await fs.pathExists(`${env.PROJECTS_ROOT}/${project.name}`)) {
+        if (!workspace.folders.some((folder) => folder.name === project.name)) {
+          workspace.folders.push({
+            name: project.name,
+            path: `${env.PROJECTS_ROOT}/${project.name}`,
+          });
 
-        synchronized = true;
+          synchronized = true;
+        }
       }
-    });
+    }
 
     return synchronized;
   }
