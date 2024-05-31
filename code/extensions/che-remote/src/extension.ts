@@ -16,6 +16,7 @@ import * as fs from 'fs-extra';
 import * as vscode from 'vscode';
 import { axiosInstance } from './axios-certificate-authority';
 import * as path from 'path';
+import { DevfileContext } from '@eclipse-che/che-devworkspace-generator/lib/api/devfile-context';
 
 const DEVFILE_NAMES = ['.devfile.yaml', 'devfile.yaml'];
 const EDITOR_CONTENT_STUB: string = `
@@ -181,13 +182,26 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   }
 
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
-  const newContent = await devWorkspaceGenerator.generateDevfileContext({ devfilePath, editorContent: EDITOR_CONTENT_STUB, pluginRegistryUrl, projects: [] }, axiosInstance);
-  if (newContent) {
-    await devfileService.updateDevfile(newContent.devWorkspace.spec?.template);
-    return true;
-  } else {
-    throw new Error('An error occurred while generating new devfile context');
+  
+  let devfileContext: DevfileContext | undefined = undefined;
+  try {
+    devfileContext = await devWorkspaceGenerator.generateDevfileContext(
+      {
+        devfilePath,
+        editorContent: EDITOR_CONTENT_STUB,
+        pluginRegistryUrl,
+        projects: []
+      }, axiosInstance);
+  } catch (error) {
+    const action = await vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`, 'Open Devfile');
+    if ('Open Devfile' === action) {
+      const document = await vscode.workspace.openTextDocument(devfilePath);
+      await vscode.window.showTextDocument(document);
+    }
+    return false;
   }
+
+  await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
+  return true;
 }
