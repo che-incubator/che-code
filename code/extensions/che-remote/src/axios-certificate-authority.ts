@@ -10,7 +10,7 @@
 
 /* eslint-disable header/header */
 
-import * as axios from 'axios';
+import axios from 'axios';
 import * as fs from 'fs-extra';
 import * as https from 'https';
 import * as path from 'path';
@@ -23,12 +23,12 @@ const certificateAuthority = getCertificateAuthority(
 );
 
 export const axiosInstance = certificateAuthority
-	? axios.default.create({
+	? axios.create({
 		httpsAgent: new https.Agent({
 			ca: certificateAuthority,
 		}),
 	})
-	: axios.default;
+	: axios.create();
 
 function getCertificateAuthority(certPath: string): Buffer[] | undefined {
 	if (!fs.existsSync(certPath)) {

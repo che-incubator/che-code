@@ -4,6 +4,7 @@
 		"outDir": "./out",
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
+		"esModuleInterop": true,
 		"types": [
 			"node",
 			"jest",
