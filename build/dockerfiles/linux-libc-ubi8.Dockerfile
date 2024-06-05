@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-18
-FROM registry.access.redhat.com/ubi8/nodejs-18:1-110 as linux-libc-ubi8-builder
+FROM registry.access.redhat.com/ubi8/nodejs-18:1-110.1716503936 as linux-libc-ubi8-builder
 
 USER root
 
@@ -26,22 +26,22 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
       libsecret \
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm"; \
+      https://vault.centos.org/centos/8-stream/BaseOS/ppc64le/os/Packages/libsecret-devel-0.18.6-1.el8.ppc64le.rpm"; \
     elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/x86_64/os/Packages/libsecret-devel-0.18.6-1.el8.x86_64.rpm \
+      https://vault.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/libsecret-devel-0.18.6-1.el8.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos/8-stream/BaseOS/aarch64/os/Packages/libsecret-devel-0.18.6-1.el8.aarch64.rpm \
+      https://vault.centos.org/centos/8-stream/BaseOS/aarch64/os/Packages/libsecret-devel-0.18.6-1.el8.aarch64.rpm \
       libsecret"; \
     else \
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
     && { if [[ $(uname -m) == "x86_64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos/8-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-1.el8.x86_64.rpm \
-      https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm"; \
+      https://vault.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-1.el8.x86_64.rpm \
+      https://vault.centos.org/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos/8-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-1.el8.aarch64.rpm \
-      https://rpmfind.net/linux/centos/8-stream/PowerTools/aarch64/os/Packages/libxkbfile-devel-1.1.0-1.el8.aarch64.rpm"; \
+      https://vault.centos.org/centos/8-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-1.el8.aarch64.rpm \
+      https://vault.centos.org/centos/8-stream/PowerTools/aarch64/os/Packages/libxkbfile-devel-1.1.0-1.el8.aarch64.rpm"; \
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
@@ -106,14 +106,16 @@ RUN [[ $(uname -m) == "x86_64" ]] &&  yarn playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
     ARCH=$(uname -m) && \
     yum install --nobest -y procps \
-        http://mirror.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
-        http://mirror.centos.org/centos/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
+        https://vault.centos.org/centos/8/extras/${ARCH}/os/Packages/epel-release-8-11.el8.noarch.rpm \
+        https://vault.centos.org/8-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-8-3.el8.noarch.rpm \
+        https://vault.centos.org/8-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-8-3.el8.noarch.rpm
 
-RUN [[ $(uname -m) == "x86_64" ]] && yum install -y chromium && \
-    PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
-    rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
+RUN [[ $(uname -m) == "x86_64" ]] \
+    && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
+    && yum install -y chromium \
+    && PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) \
+    && rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" \
+    && ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"
 
 # use of retry and timeout
 COPY /build/scripts/helper/retry.sh /opt/app-root/src/retry.sh

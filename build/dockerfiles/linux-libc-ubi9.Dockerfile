@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-18
-FROM registry.access.redhat.com/ubi9/nodejs-18:1-108.1715236127 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-18:1-108.1716477799 as linux-libc-ubi9-builder
 
 USER root
 
@@ -22,7 +22,7 @@ RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
       https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
       libsecret \
@@ -37,11 +37,11 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
     && { if [[ $(uname -m) == "x86_64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos/8-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-1.el8.x86_64.rpm \
-      https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/libxkbfile-devel-1.1.0-1.el8.x86_64.rpm"; \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos/8-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-1.el8.aarch64.rpm \
-      https://rpmfind.net/linux/centos/8-stream/PowerTools/aarch64/os/Packages/libxkbfile-devel-1.1.0-1.el8.aarch64.rpm"; \
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
