@@ -78,7 +78,8 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			let initialVariables = '';
 			if (env) {
 				for (const e of env) {
-					initialVariables += `export ${e.name}='${e.value}'; `;
+					let value = e.value.replaceAll('"', '\"');
+					initialVariables += `export ${e.name}="${value}"; `;
 				}
 			}
 
