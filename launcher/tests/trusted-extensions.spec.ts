@@ -46,6 +46,13 @@ const PRODUCT_JSON_WITH_EXTENSIONS_ALTERNATIVE = `{
 		]
 	}
 }`;
+const PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE = `{
+	"version": "1.0.0",
+	"trustedExtensionAuthAccess": [
+		"RedHat.Yaml",
+		"RedHat.OpenShift"
+	]
+}`;
 
 describe('Test Configuring of Trusted Extensions Auth Access:', () => {
   const originalReadFile = fs.readFile;
@@ -218,6 +225,25 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
       readFile: async (file: string) => {
         if ('product.json' === file) {
           return PRODUCT_JSON_SIMPLE;
+        }
+      },
+
+      writeFile: async (file: string, data: string) => {
+        if ('product.json' === file) {
+          savedProductJson = data;
+        }
+      },
+    });
+
+  test('should add only two extenions matching the regexp without case-sensitivity', async () => {
+    env.VSCODE_TRUSTED_EXTENSIONS = 'RedHat.Yaml,RedHat.OpenShift,red hat.java';
+
+    let savedProductJson;
+
+    Object.assign(fs, {
+      readFile: async (file: string) => {
+        if ('product.json' === file) {
+          return PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE;
         }
       },
 
