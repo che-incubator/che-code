@@ -12,7 +12,6 @@
 
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands, V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv } from '@devfile/api';
 import * as vscode from 'vscode';
-// import { resolveEnvVariablesForCommand } from './utils';
 
 interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
@@ -76,8 +75,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		};
 
 		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
-			console.log(`> preparing execution [${command}]`);
-
 			let initialVariables = '';
 			if (env) {
 				for (const e of env) {
@@ -85,11 +82,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				}
 			}
 
-			const execution = initialVariables ? initialVariables + command : command;
-			console.log(`> execution [${execution}]`);
-
-			// return this.terminalExtAPI.getMachineExecPTY(component, resolveEnvVariablesForCommand(command, env), expandEnvVariables(workdir));
-			return this.terminalExtAPI.getMachineExecPTY(component, execution, expandEnvVariables(workdir));
+			return this.terminalExtAPI.getMachineExecPTY(component, initialVariables + command, expandEnvVariables(workdir));
 		});
 		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'devfile', execution, []);
 		return task;
