@@ -115,7 +115,8 @@ export class ExtensionsDownloader extends Disposable {
 		}
 
 		const value = this.configurationService.getValue('extensions.verifySignature');
-		return isBoolean(value) ? value : true;
+		// workaround for https://github.com/eclipse/openvsx/issues/922
+		return false ?? (isBoolean(value) ? value : true);
 	}
 
 	private async downloadVSIX(extension: IGalleryExtension, operation: InstallOperation): Promise<URI> {
