@@ -83,8 +83,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				}
 			}
 
-			console.log(`>> initial variables [${initialVariables}]`);
-
 			return this.terminalExtAPI.getMachineExecPTY(component, initialVariables + command, expandEnvVariables(workdir));
 		});
 		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'devfile', execution, []);
