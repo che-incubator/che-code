@@ -67,22 +67,29 @@ jobs:
         run: |
           docker system prune -af
 
-      - name: Download Download linux-libc-ubi8-amd64 image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-libc-ubi8-amd64
-          path: .
+      # - name: Download linux-libc-ubi8-amd64 image artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: linux-libc-ubi8-amd64
+      #     path: .
 
-      - name: Download Download linux-libc-ubi9-amd64 image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-libc-ubi9-amd64
-          path: .
+      # - name: Download linux-libc-ubi9-amd64 image artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: linux-libc-ubi9-amd64
+      #     path: .
 
-      - name: Download Download linux-musl-amd64 image artifact
+      # - name: Download linux-musl-amd64 image artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: linux-musl-amd64
+      #     path: .
+
+      - name: Download editor artifacts
         uses: actions/download-artifact@v4
         with:
-          name: linux-musl-amd64
+          pattern: linux-*
+          merge-multiple: true
           path: .
 
       - name: Load docker images
