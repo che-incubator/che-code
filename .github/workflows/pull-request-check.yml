@@ -33,8 +33,8 @@ jobs:
 
       - name: Compile che-code FAKE
         run: |
-          docker pull mysql
-          docker tag mysql linux-${{matrix.dist}}-${{matrix.arch}}
+          docker pull httpd
+          docker tag httpd linux-${{matrix.dist}}-${{matrix.arch}}
 
       # - name: Compile che-code
       #   run: |
@@ -97,8 +97,8 @@ jobs:
 
       - name: Assemble che-code FAKE
         run: |
-          docker pull docker pull registry.access.redhat.com/ubi8/nodejs-18
-          docker tag nodejs-18 che-code
+          docker pull httpd
+          docker tag httpd che-code
 
       # - name: Assemble che-code
       #   run: |
@@ -152,8 +152,8 @@ jobs:
 
       - name: Build Che-Code Docker image FAKE
         run: |
-          docker pull docker pull registry.access.redhat.com/ubi8/nodejs-18
-          docker tag nodejs-18 che-dev
+          docker pull httpd
+          docker tag httpd che-dev
 
       # - name: Build Che-Code Docker image
       #   run: |
