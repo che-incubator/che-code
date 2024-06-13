@@ -92,6 +92,10 @@ jobs:
           merge-multiple: true
           path: .
 
+      - name: List downloaded files
+        run: |
+          ls -lah
+
       - name: Load docker images
         run: |
           docker load -i linux-libc-ubi8-amd64.tgz
