@@ -123,11 +123,11 @@ jobs:
           name: pull-request-number
           path: PR_NUMBER
 
-      - name: Upload PR SHA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pull-request-sha
-          path: PR_SHA
+      # - name: Upload PR SHA artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: pull-request-sha
+      #     path: PR_SHA
 
   dev:
     name: build-che-dev-image
