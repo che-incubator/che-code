@@ -18,19 +18,37 @@ jobs:
     name: dev1
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Checkout che-code source code
         uses: actions/checkout@v3
-      - name: Docker Build
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Build Che-Code Docker image
         run: |
           docker buildx build \
             --platform linux/amd64 \
             --progress=plain \
             -f build/dockerfiles/dev.Dockerfile \
             -t che-dev-am64 .
+
+      - name: Display docker images
+        run: |
           echo "================================================================="
           docker images
           echo "================================================================="
-          docker save dev-pr | gzip > dev-pr.tgz
+
+      - name: Compress che-dev image to a file
+        run: |
+          echo "================================================================="
+          df -ah /
+          echo "================================================================="
+          docker save dev-pr | gzip > che-dev-am64.tgz
+          echo "================================================================="
+          ls -la
+          echo "================================================================="
+
       # - uses: actions/upload-artifact@v3
       #   with:
       #     name: dev-image
