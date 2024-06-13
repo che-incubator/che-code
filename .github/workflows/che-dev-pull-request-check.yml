@@ -12,6 +12,8 @@ name: che-dev Pull Request Check
 # Trigger the workflow on pull request
 on: [pull_request]
 
+jobs:
+
   dev1:
     name: dev1
     runs-on: ubuntu-22.04
