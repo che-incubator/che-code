@@ -60,31 +60,27 @@ jobs:
           name: che-dev-image
           path: che-dev-am64.tgz
 
-  # dev2:
-  #   name: dev2
-  #   runs-on: ubuntu-22.04
-  #   needs: dev1
-  #   steps:
+  dev2:
+    name: dev2
+    runs-on: ubuntu-22.04
+    needs: dev1
+    steps:
 
-  #     - name: Cleanup docker images
-  #       run: |
-  #         docker system prune -af
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
 
-  #     - name: Download che-dev docker image artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: che-dev-image
-  #         path: .
+      - name: Download che-dev docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: che-dev-image
+          path: .
 
-  #     - name: List files
-  #       run: |
-  #         echo "================================================================="
-  #         df -ah /
-  #         echo "================================================================="
-  #         docker save che-dev-am64 | gzip > che-dev-am64.tgz
-  #         echo "================================================================="
-  #         ls -lah
-  #         echo "================================================================="
+      - name: List files
+        run: |
+          echo "================================================================="
+          ls -lah
+          echo "================================================================="
 
       # - name: Login to Quay.io
       #   uses: docker/login-action@v2
