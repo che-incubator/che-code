@@ -31,11 +31,6 @@ jobs:
         run: |
           docker system prune -af
 
-      # - name: Compile che-code FAKE
-      #   run: |
-      #     docker pull httpd:alpine
-      #     docker tag httpd:alpine linux-${{matrix.dist}}-${{matrix.arch}}
-
       - name: Compile che-code
         run: |
           docker buildx build \
@@ -71,24 +66,6 @@ jobs:
         run: |
           docker system prune -af
 
-      # - name: Download linux-libc-ubi8-amd64 image artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: linux-libc-ubi8-amd64
-      #     path: .
-
-      # - name: Download linux-libc-ubi9-amd64 image artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: linux-libc-ubi9-amd64
-      #     path: .
-
-      # - name: Download linux-musl-amd64 image artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: linux-musl-amd64
-      #     path: .
-
       - name: Download editor artifacts
         uses: actions/download-artifact@v4
         with:
@@ -109,11 +86,6 @@ jobs:
       - name: Display docker images
         run: |
           docker images
-
-      # - name: Assemble che-code FAKE
-      #   run: |
-      #     docker pull httpd:alpine
-      #     docker tag httpd:alpine che-code
 
       - name: Assemble che-code
         run: |
@@ -157,11 +129,6 @@ jobs:
       - name: Cleanup docker images
         run: |
           docker system prune -af
-
-      # - name: Build Che-Code Docker image FAKE
-      #   run: |
-      #     docker pull httpd:alpine
-      #     docker tag httpd:alpine che-dev
 
       - name: Build Che-Code Docker image
         run: |
