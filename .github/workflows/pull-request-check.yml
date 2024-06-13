@@ -33,8 +33,8 @@ jobs:
 
       - name: Compile che-code FAKE
         run: |
-          docker pull httpd
-          docker tag httpd linux-${{matrix.dist}}-${{matrix.arch}}
+          docker pull httpd:alpine
+          docker tag httpd:alpine linux-${{matrix.dist}}-${{matrix.arch}}
 
       # - name: Compile che-code
       #   run: |
@@ -108,8 +108,8 @@ jobs:
 
       - name: Assemble che-code FAKE
         run: |
-          docker pull httpd
-          docker tag httpd che-code
+          docker pull httpd:alpine
+          docker tag httpd:alpine che-code
 
       # - name: Assemble che-code
       #   run: |
@@ -163,8 +163,8 @@ jobs:
 
       - name: Build Che-Code Docker image FAKE
         run: |
-          docker pull httpd
-          docker tag httpd che-dev
+          docker pull httpd:alpine
+          docker tag httpd:alpine che-dev
 
       # - name: Build Che-Code Docker image
       #   run: |
