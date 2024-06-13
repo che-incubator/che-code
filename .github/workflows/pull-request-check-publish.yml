@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2021 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: Publish Image PR check
+
+on:
+  workflow_run:
+    workflows: ["Pull Request Check"]
+    types:
+      - completed
+
+jobs:
+
+  publish-images:
+    name: publish image from the pull request
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Download Pull Request Number artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: pull-request-number
+
+      - name: Grab Pull Request number
+        run: |
+          pr_number=$(cat "PR_NUMBER")
+          if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+            echo "pr number invalid"
+            exit 1
+          fi
+          echo "_PR_NUMBER=$pr_number" >> $GITHUB_ENV
+
+      - name: Download Pull Request SHA
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          name: pull-request-sha
+
+      - name: Grab Pull Request SHA
+        run: |
+          pr_sha=$(cat "PR_SHA")
+          echo "_PR_SHA=$pr_sha" >> $GITHUB_ENV
+
+      - name: Summary
+        run: |
+          echo "-----------------------------------------------------"
+          echo "env._PR_NUMBER: ${{env._PR_NUMBER}}"
+          echo "env._PR_SHA: ${{env._PR_SHA}}"
+          echo "-----------------------------------------------------"
