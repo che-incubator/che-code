@@ -31,13 +31,18 @@ jobs:
         run: |
           docker system prune -af
 
-      - name: Compile che-code
+      - name: Compile che-code FAKE
         run: |
-          docker buildx build \
-            --platform linux/${{matrix.arch}} \
-            --progress=plain \
-            -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
-            -t linux-${{matrix.dist}}-${{matrix.arch}} .
+          docker pull registry.access.redhat.com/ubi8/nodejs-18
+          docker tag nodejs-18 linux-${{matrix.dist}}-${{matrix.arch}}
+
+      # - name: Compile che-code
+      #   run: |
+      #     docker buildx build \
+      #       --platform linux/${{matrix.arch}} \
+      #       --progress=plain \
+      #       -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
+      #       -t linux-${{matrix.dist}}-${{matrix.arch}} .
       
       - name: Compress image to a file
         run: |
@@ -90,13 +95,18 @@ jobs:
         run: |
           docker images
 
-      - name: Assemble che-code
+      - name: Assemble che-code FAKE
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --progress=plain \
-            -f build/dockerfiles/assembly.Dockerfile \
-            -t che-code .
+          docker pull docker pull registry.access.redhat.com/ubi8/nodejs-18
+          docker tag nodejs-18 che-code
+
+      # - name: Assemble che-code
+      #   run: |
+      #     docker buildx build \
+      #       --platform linux/amd64 \
+      #       --progress=plain \
+      #       -f build/dockerfiles/assembly.Dockerfile \
+      #       -t che-code .
 
       - name: Display docker images (final)
         run: |
@@ -140,13 +150,18 @@ jobs:
         run: |
           docker system prune -af
 
-      - name: Build Che-Code Docker image
+      - name: Build Che-Code Docker image FAKE
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --progress=plain \
-            -f build/dockerfiles/dev.Dockerfile \
-            -t che-dev .
+          docker pull docker pull registry.access.redhat.com/ubi8/nodejs-18
+          docker tag nodejs-18 che-dev
+
+      # - name: Build Che-Code Docker image
+      #   run: |
+      #     docker buildx build \
+      #       --platform linux/amd64 \
+      #       --progress=plain \
+      #       -f build/dockerfiles/dev.Dockerfile \
+      #       -t che-dev .
 
       - name: Display docker images
         run: |
