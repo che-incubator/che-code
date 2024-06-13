@@ -66,7 +66,7 @@ jobs:
           echo "---------------------------------------------------------"
           TEST=${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
           echo "secrets.QUAY_PULL_REQUESTS_USERNAME: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
-          echo "${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}" > PR_NUMBER
+          PR_NUMBER="${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
           echo "PR_NUMBER: ${PR_NUMBER}"
 
       # - name: Login to Quay.io
