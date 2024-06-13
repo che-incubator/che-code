@@ -64,7 +64,7 @@ jobs:
       - name: Test secrets
         run: |
           echo "---------------------------------------------------------"
-          TEST=${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
+          TEST="${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
           echo "secrets.QUAY_PULL_REQUESTS_USERNAME: ${TEST}"
           # PR_NUMBER="${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}"
           # echo "PR_NUMBER: ${PR_NUMBER}"
