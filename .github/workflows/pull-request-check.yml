@@ -44,6 +44,10 @@ jobs:
       #       -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
       #       -t linux-${{matrix.dist}}-${{matrix.arch}} .
       
+      - name: Display docker images
+        run: |
+          docker images
+
       - name: Compress image to a file
         run: |
           docker save linux-${{matrix.dist}}-${{matrix.arch}} | gzip > linux-${{matrix.dist}}-${{matrix.arch}}.tgz
@@ -119,6 +123,10 @@ jobs:
       #       -f build/dockerfiles/assembly.Dockerfile \
       #       -t che-code .
 
+      - name: Display docker images
+        run: |
+          docker images
+
       - name: Display docker images (final)
         run: |
           docker images
@@ -136,19 +144,12 @@ jobs:
       - name: Store PR info
         run: |
           echo "${{ github.event.number }}" > PR_NUMBER
-          echo "${{ github.event.pull_request.head.sha }}" > PR_SHA
 
       - name: Upload PR Number artifact
         uses: actions/upload-artifact@v4
         with:
           name: pull-request-number
           path: PR_NUMBER
-
-      # - name: Upload PR SHA artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: pull-request-sha
-      #     path: PR_SHA
 
   dev:
     name: build-che-dev-image
@@ -176,9 +177,7 @@ jobs:
 
       - name: Display docker images
         run: |
-          echo "================================================================="
           docker images
-          echo "================================================================="
 
       - name: Compress che-dev image to a file
         run: |
@@ -189,74 +188,3 @@ jobs:
         with:
           name: che-dev
           path: che-dev.tgz
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  # dev2:
-  #   name: dev2
-  #   runs-on: ubuntu-22.04
-  #   needs: dev1
-  #   steps:
-
-  #     - name: Cleanup docker images
-  #       run: |
-  #         docker system prune -af
-
-  #     - name: Download che-dev docker image artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: che-dev-image
-  #         path: .
-
-  #     - name: Load dev Docker image
-  #       run: |
-  #         docker load -i che-dev-am64.tgz
-
-  #     - name: Display docker images
-  #       run: |
-  #         echo "================================================================="
-  #         docker images
-  #         echo "================================================================="
-
-  #     - name: Login to Quay.io
-  #       uses: docker/login-action@v2
-  #       with:
-  #         registry: quay.io
-  #         username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
-  #         password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
-
-  #     - name: Publish che-dev image
-  #       run: |
-  #         PR_NUMBER="${{ github.event.number }}"
-  #         echo "Pull request ${PR_NUMBER}"
-
-  #         DEV_IMAGE_NAME="quay.io/vgulyy/che-code-dev:pr-${PR_NUMBER}-dev-amd64"
-  #         # DEV_IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code-dev:pr-${PR_NUMBER}-dev-amd64"
-  #         echo "Dev image ${DEV_IMAGE_NAME}"
-  #         echo "_DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
-
-  #         docker tag che-dev-am64 ${DEV_IMAGE_NAME}
-  #         docker push ${DEV_IMAGE_NAME}
-
-  #     - name: 'Comment PR'
-  #       uses: actions/github-script@v6
-  #       with:
-  #        script: |
-  #          const { repo: { owner, repo } } = context;
-  #          await github.rest.issues.createComment({
-  #             issue_number: context.issue.number,
-  #             owner: context.repo.owner,
-  #             repo: context.repo.repo,
-  #             body: `Pull Request Dev image published:\n👉 [${process.env._DEV_IMAGE_NAME}](https://${process.env._DEV_IMAGE_NAME})`
-  #           })
