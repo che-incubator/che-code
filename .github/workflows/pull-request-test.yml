@@ -16,11 +16,6 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        dist: ['libc-ubi8', 'libc-ubi9', 'musl']
-        arch: ['amd64']
     steps:
 
       - name: Checkout che-code source code
