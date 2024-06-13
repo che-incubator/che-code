@@ -33,8 +33,8 @@ jobs:
 
       - name: Compile che-code FAKE
         run: |
-          docker pull registry.access.redhat.com/ubi8/nodejs-18
-          docker tag nodejs-18 linux-${{matrix.dist}}-${{matrix.arch}}
+          docker pull mysql
+          docker tag mysql linux-${{matrix.dist}}-${{matrix.arch}}
 
       # - name: Compile che-code
       #   run: |
