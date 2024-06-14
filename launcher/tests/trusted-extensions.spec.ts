@@ -260,7 +260,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     Object.assign(fs, {
       readFile: async (file: string) => {
         if ('product.json' === file) {
-          return PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE;
+          return PRODUCT_JSON_SIMPLE;
         }
       },
 
