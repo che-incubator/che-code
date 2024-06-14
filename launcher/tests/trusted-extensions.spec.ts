@@ -277,11 +277,11 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     const trust = new TrustedExtensions();
     await trust.configure();
 
-    expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS);
+    expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE);
 
     expect(spy).toHaveBeenCalledWith('# Configuring Trusted Extensions...');
     expect(spy).toHaveBeenCalledWith(
-      '  > env.VSCODE_TRUSTED_EXTENSIONS is set to [redhat.yaml,redhat.openshift,red hat.java]'
+      '  > env.VSCODE_TRUSTED_EXTENSIONS is set to [RedHat.Yaml,RedHat.OpenShift,red hat.java]'
     );
     expect(spy).toHaveBeenCalledWith('  > add RedHat.Yaml');
     expect(spy).toHaveBeenCalledWith('  > add RedHat.OpenShift');
