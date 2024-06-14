@@ -273,7 +273,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
 
     const spy = jest.spyOn(console, 'log');
 
-    // test
+    //test
     const trust = new TrustedExtensions();
     await trust.configure();
 
