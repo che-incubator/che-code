@@ -1,0 +1,153 @@
+#
+# Copyright (c) 2021 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: Pull Request Check
+
+# Trigger the workflow on pull request
+on: [pull_request]
+
+jobs:
+
+  build:
+    name: build
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        dist: ['libc-ubi8', 'libc-ubi9', 'musl']
+        arch: ['amd64']
+    steps:
+
+      - name: Checkout che-code source code
+        uses: actions/checkout@v4
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Compile che-code
+        run: |
+          docker buildx build \
+            --platform linux/${{matrix.arch}} \
+            --progress=plain \
+            -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
+            -t linux-${{matrix.dist}}-${{matrix.arch}} .
+      
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: Compress image to a file
+        run: |
+          docker save linux-${{matrix.dist}}-${{matrix.arch}} | gzip > linux-${{matrix.dist}}-${{matrix.arch}}.tgz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{matrix.dist}}-${{matrix.arch}}
+          path: linux-${{matrix.dist}}-${{matrix.arch}}.tgz
+
+  assemble:
+    name: assemble
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+
+      - name: Checkout che-code source code
+        uses: actions/checkout@v4
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Download editor artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: linux-*
+          merge-multiple: true
+          path: .
+
+      - name: List downloaded files
+        run: |
+          ls -lah
+
+      - name: Load docker images
+        run: |
+          docker load -i linux-libc-ubi8-amd64.tgz
+          docker load -i linux-libc-ubi9-amd64.tgz
+          docker load -i linux-musl-amd64.tgz
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: Assemble che-code
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --progress=plain \
+            -f build/dockerfiles/assembly.Dockerfile \
+            -t che-code .
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: Compress image to a file
+        run: |
+          docker save che-code | gzip > che-code.tgz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: che-code
+          path: che-code.tgz
+
+      - name: Store PR info
+        run: |
+          echo "${{ github.event.number }}" > PR_NUMBER
+
+      - name: Upload PR Number artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pull-request-number
+          path: PR_NUMBER
+
+  dev:
+    name: build-che-dev-image
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout che-code source code
+        uses: actions/checkout@v4
+
+      - name: Cleanup docker images
+        run: |
+          docker system prune -af
+
+      - name: Build Che-Code Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --progress=plain \
+            -f build/dockerfiles/dev.Dockerfile \
+            -t che-dev .
+
+      - name: Display docker images
+        run: |
+          docker images
+
+      - name: Compress che-dev image to a file
+        run: |
+          docker save che-dev | gzip > che-dev.tgz
+
+      - name: Upload che-dev docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: che-dev
+          path: che-dev.tgz
