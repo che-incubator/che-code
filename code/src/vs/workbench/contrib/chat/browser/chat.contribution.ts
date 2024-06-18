@@ -40,9 +40,10 @@ import { ChatResponseAccessibleView } from 'vs/workbench/contrib/chat/browser/ch
 import { ChatVariablesService } from 'vs/workbench/contrib/chat/browser/chatVariables';
 import { ChatWidgetService } from 'vs/workbench/contrib/chat/browser/chatWidget';
 import { ChatCodeBlockContextProviderService } from 'vs/workbench/contrib/chat/browser/codeBlockContextProviderService';
-import 'vs/workbench/contrib/chat/browser/contrib/chatHistoryVariables';
 import 'vs/workbench/contrib/chat/browser/contrib/chatInputEditorContrib';
+import 'vs/workbench/contrib/chat/browser/contrib/chatContextAttachments';
 import 'vs/workbench/contrib/chat/browser/contrib/chatInputCompletions';
+import 'vs/workbench/contrib/chat/browser/contrib/chatInputEditorHover';
 import { ChatAgentLocation, ChatAgentNameService, ChatAgentService, IChatAgentNameService, IChatAgentService } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { chatVariableLeader } from 'vs/workbench/contrib/chat/common/chatParserTypes';
 import { IChatService } from 'vs/workbench/contrib/chat/common/chatService';
@@ -52,10 +53,11 @@ import { IChatVariablesService } from 'vs/workbench/contrib/chat/common/chatVari
 import { ChatWidgetHistoryService, IChatWidgetHistoryService } from 'vs/workbench/contrib/chat/common/chatWidgetHistoryService';
 import { ILanguageModelsService, LanguageModelsService } from 'vs/workbench/contrib/chat/common/languageModels';
 import { ILanguageModelStatsService, LanguageModelStatsService } from 'vs/workbench/contrib/chat/common/languageModelStats';
-import { IVoiceChatService, VoiceChatService } from 'vs/workbench/contrib/chat/common/voiceChat';
+import { IVoiceChatService, VoiceChatService } from 'vs/workbench/contrib/chat/common/voiceChatService';
 import { IEditorResolverService, RegisteredEditorPriority } from 'vs/workbench/services/editor/common/editorResolverService';
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import '../common/chatColors';
+import { registerChatContextActions } from 'vs/workbench/contrib/chat/browser/actions/chatContextActions';
 
 // Register configuration
 const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
@@ -93,6 +95,7 @@ configurationRegistry.registerConfiguration({
 		'chat.experimental.implicitContext': {
 			type: 'boolean',
 			description: nls.localize('chat.experimental.implicitContext', "Controls whether a checkbox is shown to allow the user to determine which implicit context is included with a chat participant's prompt."),
+			deprecated: true,
 			default: false
 		},
 	}
@@ -150,6 +153,7 @@ class ChatSlashStaticSlashCommandsContribution extends Disposable {
 		@ICommandService commandService: ICommandService,
 		@IChatAgentService chatAgentService: IChatAgentService,
 		@IChatVariablesService chatVariablesService: IChatVariablesService,
+		@IInstantiationService instantiationService: IInstantiationService,
 	) {
 		super();
 		this._store.add(slashCommandService.registerSlashCommand({
@@ -185,7 +189,8 @@ class ChatSlashStaticSlashCommandsContribution extends Disposable {
 				.filter(a => a.locations.includes(ChatAgentLocation.Panel))
 				.map(async a => {
 					const description = a.description ? `- ${a.description}` : '';
-					const agentLine = `- ${agentToMarkdown(a, true)} ${description}`;
+					const agentMarkdown = instantiationService.invokeFunction(accessor => agentToMarkdown(a, true, accessor));
+					const agentLine = `- ${agentMarkdown} ${description}`;
 					const commandText = a.slashCommands.map(c => {
 						const description = c.description ? `- ${c.description}` : '';
 						return `\t* ${agentSlashCommandToMarkdown(a, c)} ${description}`;
@@ -244,6 +249,7 @@ registerQuickChatActions();
 registerChatExportActions();
 registerMoveActions();
 registerNewChatActions();
+registerChatContextActions();
 
 registerSingleton(IChatService, ChatService, InstantiationType.Delayed);
 registerSingleton(IChatWidgetService, ChatWidgetService, InstantiationType.Delayed);

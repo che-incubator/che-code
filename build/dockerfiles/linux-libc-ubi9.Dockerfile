@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi9/nodejs-18
-FROM registry.access.redhat.com/ubi9/nodejs-18:1-112 as linux-libc-ubi9-builder
+# https://registry.access.redhat.com/ubi9/nodejs-20
+FROM registry.access.redhat.com/ubi9/nodejs-20:1-44.1714669803 as linux-libc-ubi9-builder
 
 USER root
 
@@ -19,6 +19,9 @@ ENV GITHUB_TOKEN=$GITHUB_TOKEN
 # This is needed for some tools which use this variable and will fail with 401 Unauthorized error if it is invalid.
 # For example, vscode ripgrep downloading is an example of such case.
 RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
+
+# workaround for https://github.com/nodejs/node/issues/51555
+ENV DISABLE_V8_COMPILE_CACHE=1
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
