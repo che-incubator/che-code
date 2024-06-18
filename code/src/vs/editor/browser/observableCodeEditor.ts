@@ -8,7 +8,7 @@ import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecyc
 import { IObservable, ITransaction, autorunOpts, autorunWithStoreHandleChanges, derived, derivedOpts, observableFromEvent, observableSignal, observableValue, observableValueOpts } from 'vs/base/common/observable';
 import { TransactionImpl } from 'vs/base/common/observableInternal/base';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { EditorOption } from 'vs/editor/common/config/editorOptions';
+import { EditorOption, FindComputedEditorOptionValueById } from 'vs/editor/common/config/editorOptions';
 import { Position } from 'vs/editor/common/core/position';
 import { Selection } from 'vs/editor/common/core/selection';
 import { ICursorSelectionChangedEvent } from 'vs/editor/common/cursorEvents';
@@ -18,12 +18,12 @@ import { IModelContentChangedEvent } from 'vs/editor/common/textModelEvents';
 /**
  * Returns a facade for the code editor that provides observables for various states/events.
 */
-export function obsCodeEditor(editor: ICodeEditor): ObservableCodeEditor {
+export function observableCodeEditor(editor: ICodeEditor): ObservableCodeEditor {
 	return ObservableCodeEditor.get(editor);
 }
 
-class ObservableCodeEditor extends Disposable {
-	private static _map = new Map<ICodeEditor, ObservableCodeEditor>();
+export class ObservableCodeEditor extends Disposable {
+	private static readonly _map = new Map<ICodeEditor, ObservableCodeEditor>();
 
 	/**
 	 * Make sure that editor is not disposed yet!
@@ -140,7 +140,7 @@ class ObservableCodeEditor extends Disposable {
 	private readonly _model = observableValue(this, this.editor.getModel());
 	public readonly model: IObservable<ITextModel | null> = this._model;
 
-	public readonly isReadonly = observableFromEvent(this.editor.onDidChangeConfiguration, () => this.editor.getOption(EditorOption.readOnly));
+	public readonly isReadonly = observableFromEvent(this, this.editor.onDidChangeConfiguration, () => this.editor.getOption(EditorOption.readOnly));
 
 	private readonly _versionId = observableValueOpts<number | null, IModelContentChangedEvent | undefined>({ owner: this, lazy: true }, this.editor.getModel()?.getVersionId() ?? null);
 	public readonly versionId: IObservable<number | null, IModelContentChangedEvent | undefined> = this._versionId;
@@ -157,7 +157,7 @@ class ObservableCodeEditor extends Disposable {
 		reader => this.selections.read(reader)?.map(s => s.getStartPosition()) ?? null
 	);
 
-	public readonly isFocused = observableFromEvent(e => {
+	public readonly isFocused = observableFromEvent(this, e => {
 		const d1 = this.editor.onDidFocusEditorWidget(e);
 		const d2 = this.editor.onDidBlurEditorWidget(e);
 		return {
@@ -173,6 +173,12 @@ class ObservableCodeEditor extends Disposable {
 	public readonly cursorPosition = derivedOpts({ owner: this, equalsFn: Position.equals }, reader => this.selections.read(reader)?.[0]?.getPosition() ?? null);
 
 	public readonly onDidType = observableSignal<string>(this);
+
+	public getOption<T extends EditorOption>(id: T): IObservable<FindComputedEditorOptionValueById<T>> {
+		return observableFromEvent(this, cb => this.editor.onDidChangeConfiguration(e => {
+			if (e.hasChanged(id)) { cb(undefined); }
+		}), () => this.editor.getOption(id));
+	}
 
 	public setDecorations(decorations: IObservable<IModelDeltaDecoration[]>): IDisposable {
 		const d = new DisposableStore();
