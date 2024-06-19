@@ -1515,7 +1515,8 @@ export type SCMRawResourceSplices = [
 export interface SCMHistoryItemGroupDto {
 	readonly id: string;
 	readonly name: string;
-	readonly base?: Omit<SCMHistoryItemGroupDto, 'base'>;
+	readonly base?: Omit<Omit<SCMHistoryItemGroupDto, 'base'>, 'remote'>;
+	readonly remote?: Omit<Omit<SCMHistoryItemGroupDto, 'base'>, 'remote'>;
 }
 
 export interface SCMHistoryItemDto {
@@ -1525,6 +1526,15 @@ export interface SCMHistoryItemDto {
 	readonly author?: string;
 	readonly icon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
 	readonly timestamp?: number;
+	readonly statistics?: {
+		readonly files: number;
+		readonly insertions: number;
+		readonly deletions: number;
+	};
+	readonly labels?: {
+		readonly title: string;
+		readonly icon?: UriComponents | { light: UriComponents; dark: UriComponents } | ThemeIcon;
+	}[];
 }
 
 export interface SCMHistoryItemChangeDto {
@@ -2317,6 +2327,7 @@ export interface ExtHostSCMShape {
 	$validateInput(sourceControlHandle: number, value: string, cursorPosition: number): Promise<[string | IMarkdownString, number] | undefined>;
 	$setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void>;
 	$provideHistoryItems(sourceControlHandle: number, historyItemGroupId: string, options: any, token: CancellationToken): Promise<SCMHistoryItemDto[] | undefined>;
+	$provideHistoryItems2(sourceControlHandle: number, options: any, token: CancellationToken): Promise<SCMHistoryItemDto[] | undefined>;
 	$provideHistoryItemSummary(sourceControlHandle: number, historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): Promise<SCMHistoryItemDto | undefined>;
 	$provideHistoryItemChanges(sourceControlHandle: number, historyItemId: string, historyItemParentId: string | undefined, token: CancellationToken): Promise<SCMHistoryItemChangeDto[] | undefined>;
 	$resolveHistoryItemGroupCommonAncestor(sourceControlHandle: number, historyItemGroupId1: string, historyItemGroupId2: string | undefined, token: CancellationToken): Promise<{ id: string; ahead: number; behind: number } | undefined>;
