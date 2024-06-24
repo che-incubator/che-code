@@ -287,5 +287,4 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     expect(spy).toHaveBeenCalledWith('  > add RedHat.OpenShift');
     expect(spy).toHaveBeenCalledWith('  > failure to add [red hat.java] because of wrong identifier');
   });
-
 });
