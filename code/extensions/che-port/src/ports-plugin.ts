@@ -98,7 +98,7 @@ export class PortsPlugin {
         const msg = `Redirect is now enabled on port ${port.portNumber}. External URL is ${endpoint.url}`;
         const resultShow = await vscode.window.showInformationMessage(msg, ...redirectInteractions);
         if (resultShow && resultShow.title === 'Open Link') {
-          vscode.commands.executeCommand('mini-browser.openUrl', endpoint.url);
+          vscode.commands.executeCommand('simpleBrowser.show', endpoint.url);
         } else if (resultShow && resultShow.title === 'Open In New Tab') {
           vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(endpoint.url));
         }

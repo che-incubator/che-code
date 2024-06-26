@@ -98,7 +98,7 @@ export class EndpointsTreeDataProvider implements vscode.TreeDataProvider<Endpoi
     context.subscriptions.push(
       vscode.commands.registerCommand('portPlugin.preview', (node: EndpointTreeNodeItem) => {
         if (node.endpoint && node.endpoint.url) {
-          vscode.commands.executeCommand('mini-browser.openUrl', node.endpoint.url);
+          vscode.commands.executeCommand('simpleBrowser.show', node.endpoint.url);
         }
       })
     );
