@@ -27,7 +27,7 @@ export class TrustedExtensions {
 
       for (const extension of env.VSCODE_TRUSTED_EXTENSIONS.split(',')) {
         if (extension) {
-          if (extension.match(/^[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-.]*$/)) {
+          if (extension.match(/^[A-Za-z0-9][A-Za-z0-9-]*\.[A-Za-z0-9][A-Za-z0-9-.]*$/)) {
             extensions.push(extension);
             console.log(`  > add ${extension}`);
           } else {
