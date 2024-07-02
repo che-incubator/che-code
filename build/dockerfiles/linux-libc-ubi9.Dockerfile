@@ -42,6 +42,9 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     && { if [[ $(uname -m) == "x86_64" ]]; then LIBKEYBOARD="\
       https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
       https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
+    elif [[ $(uname -m) == "ppc64le" ]]; then LIBKEYBOARD="\
+      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libxkbfile-1.1.0-8.el9.ppc64le.rpm \
+      https://rpmfind.net/linux/centos-stream/9-stream/CRB/ppc64le/os/Packages/libxkbfile-devel-1.1.0-8.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBKEYBOARD="\
       https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
       https://rpmfind.net/linux/centos-stream/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
