@@ -1,5 +1,6 @@
 # che-code
 
+Test changes
 Deploy `Code-OSS` (https://github.com/microsoft/vscode) on a Kubernetes cluster and connect with your Browser.
 
 This repository is hosting the changes to have the `Code-OSS` running inside a browser and connecting to a remote HTTP(s) server (instead of using desktop mode).
