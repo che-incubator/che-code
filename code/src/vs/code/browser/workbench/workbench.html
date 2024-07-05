@@ -36,25 +36,13 @@
 	<script src="./oss-dev/static/out/vs/loader.js"></script>
 	<script src="./oss-dev/static/out/vs/webPackagePaths.js"></script>
 	<script>
+		// Packages
 		const baseUrl =  `${window.location.protocol}//${window.location.host}${window.location.pathname}oss-dev/static`;
 		Object.keys(self.webPackagePaths).map(function (key, index) {
 			self.webPackagePaths[key] = `${baseUrl}/node_modules/${key}/${self.webPackagePaths[key]}`;
 		});
 
-		// Set up nls if the user is not using the default language (English)
-		const nlsConfig = {};
-		// Normalize locale to lowercase because translationServiceUrl is case-sensitive.
-		// ref: https://github.com/microsoft/vscode/issues/187795
-		const locale = localStorage.getItem('vscode.nls.locale') || navigator.language.toLowerCase();
-		if (!locale.startsWith('en')) {
-			nlsConfig['vs/nls'] = {
-				availableLanguages: {
-					'*': locale
-				},
-				translationServiceUrl: '{{WORKBENCH_NLS_BASE_URL}}'
-			};
-		}
-
+		// AMD Loader
 		require.config({
 			baseUrl: `${baseUrl}/out`,
 			recordStats: true,
@@ -66,13 +54,15 @@
 					throw new Error(`Invalid script url: ${value}`)
 				}
 			}),
-			paths: self.webPackagePaths,
-			...nlsConfig
+			paths: self.webPackagePaths
 		});
 	</script>
 	<script>
 		performance.mark('code/willLoadWorkbenchMain');
 	</script>
+	<!-- always ensure built in english NLS messages -->
+	<script src="{{WORKBENCH_NLS_FALLBACK_URL}}"></script>
+	<!-- attempt to load NLS messages in case non-english -->
 	<script src="./oss-dev/static/out/vs/workbench/workbench.web.main.nls.js"></script>
 	<script src="./oss-dev/static/out/vs/workbench/workbench.web.main.js"></script>
 	<script src="./oss-dev/static/out/vs/code/browser/workbench/workbench.js"></script>

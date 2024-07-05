@@ -255,7 +255,6 @@ const skippedExportMangledFiles = [
     'workspace-service',
     // Build
     'css.build',
-    'nls.build',
     // Monaco
     'editorCommon',
     'editorOptions',

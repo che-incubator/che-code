@@ -4,6 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 // @ts-check
+'use strict';
+
+/**
+ * @import { INLSConfiguration } from './vs/nls'
+ */
 
 /**
  * @import { IServerAPI } from './vs/server/node/remoteExtensionHostAgentServer'
@@ -11,10 +16,11 @@
 
 const perf = require('./vs/base/common/performance');
 const performance = require('perf_hooks').performance;
-const product = require('../product.json');
+const product = require('./bootstrap-meta').product;
 const url = require('url');
 const readline = require('readline');
 const http = require('http');
+const { resolveNLSConfiguration } = require('./vs/base/node/nls');
 
 perf.mark('code/server/start');
 // @ts-ignore
@@ -43,8 +49,10 @@ async function start() {
 
 	const shouldSpawnCli = parsedArgs.help || parsedArgs.version || extensionLookupArgs.some(a => !!parsedArgs[a]) || (extensionInstallArgs.some(a => !!parsedArgs[a]) && !parsedArgs['start-server']);
 
+	const nlsConfiguration = await resolveNLSConfiguration({ userLocale: 'en', osLocale: 'en', commit: product.commit, userDataPath: '', nlsMetadataPath: __dirname });
+
 	if (shouldSpawnCli) {
-		loadCode().then((mod) => {
+		loadCode(nlsConfiguration).then((mod) => {
 			mod.spawnCli();
 		});
 		return;
@@ -57,7 +65,7 @@ async function start() {
 	/** @returns {Promise<IServerAPI>} */
 	const getRemoteExtensionHostAgentServer = () => {
 		if (!_remoteExtensionHostAgentServerPromise) {
-			_remoteExtensionHostAgentServerPromise = loadCode().then(async (mod) => {
+			_remoteExtensionHostAgentServerPromise = loadCode(nlsConfiguration).then(async (mod) => {
 				const server = await mod.createServer(address);
 				_remoteExtensionHostAgentServer = server;
 				return server;
@@ -103,7 +111,6 @@ async function start() {
 			res.end('Service Unavailable');
 			return;
 		}
-		
 		const remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();
 		return remoteExtensionHostAgentServer.handleRequest(req, res);
 	});
@@ -257,12 +264,18 @@ async function findFreePort(host, start, end) {
 	return undefined;
 }
 
-/** @returns { Promise<typeof import('./vs/server/node/server.main')> } */
-function loadCode() {
+/**
+ * @param {INLSConfiguration} nlsConfiguration
+ * @returns { Promise<typeof import('./vs/server/node/server.main')> }
+ */
+function loadCode(nlsConfiguration) {
 	return new Promise((resolve, reject) => {
 		const path = require('path');
 
 		delete process.env['ELECTRON_RUN_AS_NODE']; // Keep bootstrap-amd.js from redefining 'fs'.
+
+		/** @type {INLSConfiguration} */
+		process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfiguration); // required for `bootstrap-amd` to pick up NLS messages
 
 		// See https://github.com/microsoft/vscode-remote-release/issues/6543
 		// We would normally install a SIGPIPE listener in bootstrap.js
@@ -315,6 +328,5 @@ function prompt(question) {
 		});
 	});
 }
-
 
 start();
