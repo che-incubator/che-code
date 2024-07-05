@@ -31,7 +31,7 @@ import { Logger } from './logger';
 
 
 export async function activate(_extensionContext: vscode.ExtensionContext): Promise<Api> {
-
+    // dummy changes for testing 
     const container = new Container();
     container.bind(K8sDevfileServiceImpl).toSelf().inSingletonScope();
     container.bind(DevfileService).to(K8sDevfileServiceImpl).inSingletonScope();
