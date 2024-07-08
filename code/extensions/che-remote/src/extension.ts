@@ -187,20 +187,11 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
 
-  // let devfileContent: string;
-  // try {
-  //   devfileContent = await fs.readFile(devfilePath, "utf-8");
-  // } catch (error) {
-  //   await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
-  //   return false;
-  // }
-  
   let devfileContext: DevfileContext | undefined = undefined;
   try {
     devfileContext = await devWorkspaceGenerator.generateDevfileContext(
       {
         devfilePath,
-        // devfileContent,
         editorContent: EDITOR_CONTENT_STUB,
         pluginRegistryUrl,
         projects: []
@@ -214,58 +205,25 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  // if new devfile context does not contain project, add the existing one
+  // if new Devfile does not contain project, copy them from the flattened Devfile
   try {
     let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
     if (!projects || projects.length === 0) {
       projects = [];
   
       const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
-      console.log(flattenedDevfileContent);
       const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
-      console.log('>>>>> devfile has been parsed successfully');
 
       if (flattenedDevfile.projects) {
-        console.log('>>>>> here1');
-
         for (const project of flattenedDevfile.projects) {
-          console.log(`  > adding project [${project.name}]`);
           projects.push(project);
-
-          const ps = JSON.stringify(project, null, '\t');
-          console.log('>> Project: ', '\n', ps);
         }
       }
-
-      // - git:
-      //     remotes:
-      //       origin: https://github.com/che-incubator/che-code.git
-      //   name: che-code
-
-      // projects.push({
-      //   name: 'che-code',
-      //   git: {
-      //     remotes: {
-      //       "origin": "https://github.com/che-incubator/che-code.git"
-      //     }
-      //   }
-      // });
   
       devfileContext.devWorkspace.spec!.template!.projects = projects;
     }
-  
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
-    return false;
-  }
-
-  const serialized = JSON.stringify(devfileContext, null, '\t');
-  await vscode.workspace.openTextDocument({
-    content: serialized
-  });
-
-  const permit = await vscode.window.showInformationMessage('Review the devfile and permit the reboot', 'Continue');
-  if (permit !== 'Continue') {
     return false;
   }
 
