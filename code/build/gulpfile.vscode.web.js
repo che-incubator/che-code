@@ -12,7 +12,7 @@ const util = require('./lib/util');
 const { getVersion } = require('./lib/getVersion');
 const task = require('./lib/task');
 const optimize = require('./lib/optimize');
-const { date } = require('./lib/date');
+const { readISODate } = require('./lib/date');
 const product = require('../product.json');
 const workbenchConfig = require('../src/vs/code/browser/workbench/che/workbench-config.json');
 const rename = require('gulp-rename');
@@ -95,7 +95,7 @@ const createVSCodeWebProductConfigurationPatcher = (product) => {
 				...product,
 				version,
 				commit,
-				date
+				date: readISODate('out-build')
 			});
 			return content.replace('/*BUILD->INSERT_PRODUCT_CONFIGURATION*/', () => productConfiguration.substr(1, productConfiguration.length - 2) /* without { and }*/);
 		}
