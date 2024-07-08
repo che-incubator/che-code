@@ -205,7 +205,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  // if new Devfile does not contain project, copy them from the flattened Devfile
+  // if a new Devfile does not contain projects, copy them from flattened Devfile
   try {
     let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
     if (!projects || projects.length === 0) {
