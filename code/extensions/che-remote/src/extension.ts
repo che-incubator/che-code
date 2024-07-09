@@ -209,18 +209,11 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   try {
     let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
     if (!projects || projects.length === 0) {
-      projects = [];
-  
       const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
       const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
-
       if (flattenedDevfile.projects) {
-        for (const project of flattenedDevfile.projects) {
-          projects.push(project);
-        }
+        devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
       }
-  
-      devfileContext.devWorkspace.spec!.template!.projects = projects;
     }
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
