@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2024 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -44,7 +44,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 
 		// containerName is undefined in case the user closed the QuickPick
 		if (containerName) {
-			const pty = new MachineExecPTY(machineExecClient, containerName);
+			const cwd = await getCurrentWorkingDirectory();
+			const pty = new MachineExecPTY(machineExecClient, containerName, undefined, cwd);
 			const terminal = vscode.window.createTerminal({ name: `${containerName} container`, pty });
 			terminal.show();
 		}
@@ -126,4 +127,30 @@ export class MachineExecPTY implements vscode.Pseudoterminal {
 }
 
 export function deactivate(): void {
+}
+
+/**
+ * Provides current working directory for a terminal creation:
+ *
+ * @returns:
+ * - value of the PROJECTS_ROOT env variable if there is no any workspace folder
+ * - path to a folder if there is only one workspace folder
+ * - IDE proposes an user to select a folder if there is more then 1 workspace folder,
+ * current function returns path to the selected folder    
+ */
+async function getCurrentWorkingDirectory(): Promise<string | undefined> {
+	const folders = vscode.workspace.workspaceFolders;
+	if (folders === undefined || folders.length < 1) {
+		return process.env.PROJECTS_ROOT as string;
+	}
+
+	if (folders.length === 1) {
+		return folders[0].uri.path
+	}
+
+	const options = {
+		placeHolder: "Select current working directory for new terminal"
+	};
+	const workspace: vscode.WorkspaceFolder = await vscode.commands.executeCommand('_workbench.pickWorkspaceFolder', [options]);
+	return workspace.uri.path;
 }
