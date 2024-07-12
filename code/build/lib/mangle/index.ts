@@ -289,7 +289,6 @@ const skippedExportMangledFiles = [
 
 	// Build
 	'css.build',
-	'nls.build',
 
 	// Monaco
 	'editorCommon',

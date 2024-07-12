@@ -54,7 +54,7 @@ else if (globalThis._VSCODE_PRODUCT_JSON && globalThis._VSCODE_PACKAGE_JSON) {
 else {
 
 	// Built time configuration (do NOT modify)
-	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as IProductConfiguration;
+	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as any;
 	product = loadFromFileSystem();
 
 	// Running out of sources

@@ -1,7 +1,7 @@
 [
     {
-        "from": "const product = require('../product.json');",
-        "by": "const product = require('../product.json');\\\nconst url = require('url');"
+        "from": "const product = require('./bootstrap-meta').product;",
+        "by": "const product = require('./bootstrap-meta').product;\\\nconst url = require('url');"
     },
     {
         "from": "perf.mark('code/server/firstRequest');",
