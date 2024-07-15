@@ -17,6 +17,9 @@ import * as vscode from 'vscode';
 import { axiosInstance } from './axios-certificate-authority';
 import * as path from 'path';
 import { DevfileContext } from '@eclipse-che/che-devworkspace-generator/lib/api/devfile-context';
+import * as jsYaml from 'js-yaml';
+
+import { V1alpha2DevWorkspaceSpecTemplateProjects } from '@devfile/api';
 
 const DEVFILE_NAMES = ['.devfile.yaml', 'devfile.yaml'];
 const EDITOR_CONTENT_STUB: string = `
@@ -183,7 +186,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
 
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
   console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
-  
+
   let devfileContext: DevfileContext | undefined = undefined;
   try {
     devfileContext = await devWorkspaceGenerator.generateDevfileContext(
@@ -199,6 +202,21 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
       const document = await vscode.workspace.openTextDocument(devfilePath);
       await vscode.window.showTextDocument(document);
     }
+    return false;
+  }
+
+  // if a new Devfile does not contain projects, copy them from flattened Devfile
+  try {
+    let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
+    if (!projects || projects.length === 0) {
+      const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
+      const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
+      if (flattenedDevfile.projects) {
+        devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
+      }
+    }
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
     return false;
   }
 
