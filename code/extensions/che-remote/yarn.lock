@@ -286,10 +286,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@devfile/api@2.2.2-1700686170":
-  version "2.2.2-1700686170"
-  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.2.2-1700686170.tgz#faf3627f1f9d5df60705813add60b349eb3166bb"
-  integrity sha512-mCIzvSce4Bu50HNybY0gWtSD1kujnXGvMVkzk0AAKMt1eSIAKtJeuTRPqQcLfrcfMRjF5t+AVOIIJ5LtlEfknA==
+"@devfile/api@2.2.2-1715367693":
+  version "2.2.2-1715367693"
+  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.2.2-1715367693.tgz#0e0bbd8a54b5d4f05c2aa9b6cc725a2404629a5c"
+  integrity sha512-dWGyC7I6cV3L+K2TMOY/hUzmMqp+X1wMp3M3OusoXZrKWExvQVcZZwVd9BB6vPot+0THEHK56U8qYTEy/Ojy0w==
   dependencies:
     "@types/node" "*"
     "@types/node-fetch" "^2.5.7"
@@ -298,13 +298,13 @@
     node-fetch "^2.6.0"
     url-parse "^1.4.3"
 
-"@eclipse-che/che-devworkspace-generator@7.86.0":
-  version "7.86.0"
-  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.86.0.tgz#6ee14f31e79a9c9b52979cda6e303b1b0429d54e"
-  integrity sha512-7FxGzvEkB/GbCQRgzdNpCWd2pIHhkzjpckRMKOIjpAroLFlnkRZSeoosPhSiRYKLNt2YAf2F1BXhqzUrswTuFQ==
+"@eclipse-che/che-devworkspace-generator@7.88.0-next-a2e5c63":
+  version "7.88.0-next-a2e5c63"
+  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.88.0-next-a2e5c63.tgz#2516aad6674fefeb9376974cf27855d573e2de36"
+  integrity sha512-70VbsUzONiyJr9pe/rslzta/SM4RvDsSR/kLIxMS4EbS9YgxEvT3rSM9B8eFLMbeZksnCuEQYxiyjSN6P4UV7A==
   dependencies:
-    "@devfile/api" "2.2.2-1700686170"
-    axios "1.6.0"
+    "@devfile/api" "2.2.2-1715367693"
+    axios "^1.7.0"
     fs-extra "^10.0.0"
     inversify "^5.0.1"
     js-yaml "^4.0.0"
@@ -831,6 +831,15 @@ axios@1.6.0:
   integrity sha512-EZ1DYihju9pwVB+jg67ogm+Tmqc6JmhamRN6I4Zt8DfZu5lbcQGw3ozH9lFejSJgs/ibaef3A9PMXPLeefFGJg==
   dependencies:
     follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
+axios@^1.7.0:
+  version "1.7.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.2.tgz#b625db8a7051fbea61c35a3cbb3a1daa7b9c7621"
+  integrity sha512-2A8QhOMrbomlDuiLeK9XibIBzuHeRcqqNOHp0Cyp5EoJ1IFDh+XZH3A6BkXtv0K4gFGCI0Y4BM7B1wOEi0Rmgw==
+  dependencies:
+    follow-redirects "^1.15.6"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
@@ -1412,7 +1421,7 @@ flatted@^3.2.9:
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.3.1.tgz#21db470729a6734d4997002f439cb308987f567a"
   integrity sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==
 
-follow-redirects@^1.15.0:
+follow-redirects@^1.15.0, follow-redirects@^1.15.6:
   version "1.15.6"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
   integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
