@@ -69,6 +69,8 @@ async function createModel(context: ExtensionContext, logger: LogOutputChannel, 
 		logger.error(`Failed to create git IPC: ${err}`);
 	}
 
+	console.log('>>>>> git extension :: new Askpass');
+
 	const askpass = new Askpass(ipcServer);
 	disposables.push(askpass);
 
