@@ -69,6 +69,9 @@ export class VSCodeLauncher {
       );
     }
 
+    // save all environment variables
+    this.saveAllVariables();
+
     console.log(`  > Running: ${node}`);
     console.log(`  > Params: ${params}`);
 
@@ -97,6 +100,18 @@ export class VSCodeLauncher {
     } catch (error) {
       // bash not installed, fallback blindly to sh since it's at least better than /sbin/nologin
       return '/bin/sh';
+    }
+  }
+
+  saveAllVariables(): void {
+    console.log('>> saving all the environment variables');
+
+    try {
+      const result = child_process.execSync('export');
+      console.log('>> result: ' + result.toString());
+      fs.writeFileSync('/projects/environment-variables.launcher', result.toString());
+    } catch (error) {
+      console.log(`  > Failure to save environment variables. ${error}`);
     }
   }
 }

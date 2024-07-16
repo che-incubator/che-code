@@ -12,6 +12,8 @@
 
 import * as vscode from 'vscode';
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
+import * as child_process from 'child_process';
+import * as fs from 'fs';
 
 let _channel: vscode.OutputChannel;
 export function getOutputChannel(): vscode.OutputChannel {
@@ -21,9 +23,23 @@ export function getOutputChannel(): vscode.OutputChannel {
 	return _channel;
 }
 
+function saveAllVariables(): void {
+    console.log('>> saving all the environment variables');
+
+    try {
+      const result = child_process.execSync('export');
+      console.log('>> result: ' + result.toString());
+      fs.writeFileSync('/projects/environment-variables.che-terminal', result.toString(), 'utf8');
+    } catch (error) {
+      console.log(`  > Failure to save environment variables. ${error}`);
+    }
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const machineExecClient = new MachineExecClient();
 	await machineExecClient.init();
+
+	saveAllVariables();
 
 	const containers: string[] = await machineExecClient.getContributedContainers();
 

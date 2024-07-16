@@ -26,6 +26,10 @@ export async function writeFile(file: string, content: string): Promise<void> {
   fs.writeFileSync(file, content, 'utf8');
 }
 
+export function writeFileSync(file: string, content: string): void {
+  fs.writeFileSync(file, content, 'utf8');
+}
+
 export async function pathExists(path: string): Promise<boolean> {
   return fs.existsSync(path);
 }
