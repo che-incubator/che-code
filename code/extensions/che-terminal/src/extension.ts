@@ -40,11 +40,32 @@ function saveAllVariables(): void {
     }
 }
 
+function saveAllVariables1(): void {
+    console.log('>> saving all the environment variables');
+
+    try {
+      const result = child_process.execSync('export');
+      console.log('>> result: ' + result.toString());
+      fs.writeFileSync('/projects/environment-variables.che-terminal.1', result.toString(), 'utf8');
+
+      const result2 = child_process.execSync('source ~/.bashrc; export');
+      console.log('>> result2: ' + result2.toString());
+      fs.writeFileSync('/projects/environment-variables.che-terminal-bashrc.1', result2.toString(), 'utf8');
+
+	} catch (error) {
+      console.log(`  > Failure to save environment variables. ${error}`);
+    }
+}
+
 function saveAllVariables2(): void {
     console.log('>> saving all the environment variables');
 
     try {
-      const result3 = child_process.execSync('source ~/.bashrc; export');
+      const result = child_process.execSync('export');
+      console.log('>> result: ' + result.toString());
+      fs.writeFileSync('/projects/environment-variables.che-terminal.2', result.toString(), 'utf8');
+  
+  	  const result3 = child_process.execSync('source ~/.bashrc; export');
       console.log('>> result3: ' + result3.toString());
       fs.writeFileSync('/projects/environment-variables.che-terminal-bashrc.2', result3.toString(), 'utf8');
 
@@ -57,8 +78,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const machineExecClient = new MachineExecClient();
 	await machineExecClient.init();
 
+	saveAllVariables();
+
 	setTimeout(() => {
-		saveAllVariables();
+		saveAllVariables1();
 	}, 5000);
 
 	setTimeout(() => {
