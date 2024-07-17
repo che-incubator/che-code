@@ -140,7 +140,7 @@ export class MachineExecClient implements vscode.Disposable {
 			identifier: {
 				machineName: component
 			},
-			cmd: commandLine ? ['sh', '-c', commandLine] : [],
+			cmd: commandLine ? ['bash', '-c', commandLine] : [],
 			tty: true,
 			cwd: workdir || '',
 			cols: columns,
