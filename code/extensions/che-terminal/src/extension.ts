@@ -14,6 +14,8 @@ import * as vscode from 'vscode';
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
+import { env } from 'process';
+import * as path from 'path';
 
 let _channel: vscode.OutputChannel;
 export function getOutputChannel(): vscode.OutputChannel {
@@ -29,7 +31,7 @@ function saveEnvironmaneVariables(): void {
     try {
       const result = child_process.execSync('source ~/.bashrc; export');
       console.log('>> result: ' + result.toString());
-      fs.writeFileSync('~/.bashrc_variables', result.toString(), 'utf8');
+      fs.writeFileSync(path.join(env.HOME!, '.bashrc_variables'), result.toString(), 'utf8');
 
 	} catch (error) {
       console.log(`  > Failure to save environment variables to ~/.bashrc_variables. ${error}`);

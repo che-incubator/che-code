@@ -11,6 +11,8 @@
 /* eslint-disable header/header */
 
 import * as fs from 'fs-extra';
+import { env } from 'process';
+import * as path from 'path';
 import * as jsYaml from 'js-yaml';
 import * as vscode from 'vscode';
 import * as WS from 'ws';
@@ -137,7 +139,10 @@ export class MachineExecClient implements vscode.Disposable {
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
 		console.log(`>> createTerminalSession. component: [${component}] commandLine: [${commandLine}]`);
-		commandLine = `[ -f ~/.bashrc_variables ] && source ~/.bashrc_variables; ${commandLine}`;
+		// commandLine = `[ -f ~/.bashrc_variables ] && source ~/.bashrc_variables; ${commandLine}`;
+		const source = path.join(env.HOME!, '.bashrc_variables');
+		commandLine = `[ -f ${source} ] && source ${source}; ${commandLine}`;
+
 		console.log(`> command line after [${commandLine}]`);
 
 		const createTerminalSessionCall = {
