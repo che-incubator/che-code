@@ -114,6 +114,7 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 	// TODO: Remove these in favor of prompt input state
 	private _leadingLineContent?: string;
 	private _cursorIndexDelta: number = 0;
+	private _lastKeySequence?: string;
 
 	static requestCompletionsSequence = '\x1b[24~e'; // F12,e
 
@@ -155,6 +156,7 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.VSCode, data => {
 			return this._handleVSCodeSequence(data);
 		}));
+		this._register(xterm.onKey(e => this._lastKeySequence = e.key));
 	}
 
 	setPanel(panel: HTMLElement): void {
@@ -182,8 +184,12 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 				if (config.quickSuggestions) {
 					const completionPrefix = promptInputState.value.substring(0, promptInputState.cursorIndex);
 					if (promptInputState.cursorIndex === 1 || completionPrefix.match(/([\s\[])[^\s]$/)) {
-						this._requestCompletions();
-						sent = true;
+						// Never request completions if the last key sequence was up or down as the user was likely
+						// navigating history
+						if (this._lastKeySequence !== /*up*/'\x1b[A' && this._lastKeySequence !== /*down*/'\x1b[B') {
+							this._requestCompletions();
+							sent = true;
+						}
 					}
 				}
 
@@ -470,7 +476,7 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		this._suggestWidget?.selectNextPage();
 	}
 
-	acceptSelectedSuggestion(suggestion?: Pick<ISimpleSelectedSuggestion, 'item' | 'model'>): void {
+	acceptSelectedSuggestion(suggestion?: Pick<ISimpleSelectedSuggestion, 'item' | 'model'>, respectRunOnEnter?: boolean): void {
 		if (!suggestion) {
 			suggestion = this._suggestWidget?.getFocusedItem();
 		}
@@ -501,6 +507,31 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 			rightSideReplacementText = currentPromptInputState.value.substring(currentPromptInputState.cursorIndex, spaceIndex === -1 ? undefined : currentPromptInputState.cursorIndex + spaceIndex);
 		}
 
+		const completion = suggestion.item.completion;
+		const completionText = completion.label;
+
+		let runOnEnter = false;
+		if (respectRunOnEnter) {
+			const runOnEnterConfig = this._configurationService.getValue<ITerminalSuggestConfiguration>(terminalSuggestConfigSection).runOnEnter;
+			switch (runOnEnterConfig) {
+				case 'always': {
+					runOnEnter = true;
+					break;
+				}
+				case 'exactMatch': {
+					runOnEnter = replacementText.toLowerCase() === completionText.toLowerCase();
+					break;
+				}
+				case 'exactMatchIgnoreExtension': {
+					runOnEnter = replacementText.toLowerCase() === completionText.toLowerCase();
+					if (completion.icon === Codicon.symbolFile || completion.icon === Codicon.symbolMethod) {
+						runOnEnter ||= replacementText.toLowerCase() === completionText.toLowerCase().replace(/\.[^\.]+$/, '');
+					}
+					break;
+				}
+			}
+		}
+
 		// Send the completion
 		this._onAcceptedCompletion.fire([
 			// Backspace (left) to remove all additional input
@@ -508,7 +539,9 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 			// Delete (right) to remove any additional text in the same word
 			'\x1b[3~'.repeat(rightSideReplacementText.length),
 			// Write the completion
-			suggestion.item.completion.label,
+			completion.label,
+			// Run on enter if needed
+			runOnEnter ? '\r' : ''
 		].join(''));
 
 		this.hideSuggestWidget();
