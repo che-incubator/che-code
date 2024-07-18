@@ -17,6 +17,8 @@ import * as fs from 'fs';
 import { env } from 'process';
 import * as path from 'path';
 
+export const ENVIRONMENT_VARIABLES = path.join(env.HOME!, '.bashrc_variables');
+
 let _channel: vscode.OutputChannel;
 export function getOutputChannel(): vscode.OutputChannel {
 	if (!_channel) {
@@ -26,15 +28,11 @@ export function getOutputChannel(): vscode.OutputChannel {
 }
 
 function saveEnvironmaneVariables(): void {
-    console.log('>> saving all the environment variables');
-
     try {
       const result = child_process.execSync('source ~/.bashrc; export');
-      console.log('>> result: ' + result.toString());
-      fs.writeFileSync(path.join(env.HOME!, '.bashrc_variables'), result.toString(), 'utf8');
-
+      fs.writeFileSync(ENVIRONMENT_VARIABLES, result.toString(), 'utf8');
 	} catch (error) {
-      console.log(`  > Failure to save environment variables to ~/.bashrc_variables. ${error}`);
+      console.log(`Failure to save environment variables to ${ENVIRONMENT_VARIABLES}. ${error}`);
     }
 }
 

@@ -11,13 +11,11 @@
 /* eslint-disable header/header */
 
 import * as fs from 'fs-extra';
-import { env } from 'process';
-import * as path from 'path';
 import * as jsYaml from 'js-yaml';
 import * as vscode from 'vscode';
 import * as WS from 'ws';
 import { WebSocket } from 'ws';
-import { getOutputChannel } from './extension';
+import { ENVIRONMENT_VARIABLES, getOutputChannel } from './extension';
 
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
@@ -138,12 +136,7 @@ export class MachineExecClient implements vscode.Disposable {
 	 * @returns a TerminalSession object to manage the created terminal session
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
-		console.log(`>> createTerminalSession. component: [${component}] commandLine: [${commandLine}]`);
-		// commandLine = `[ -f ~/.bashrc_variables ] && source ~/.bashrc_variables; ${commandLine}`;
-		const source = path.join(env.HOME!, '.bashrc_variables');
-		commandLine = `[ -f ${source} ] && source ${source}; ${commandLine}`;
-
-		console.log(`> command line after [${commandLine}]`);
+		commandLine = `[ -f ${ENVIRONMENT_VARIABLES} ] && source ${ENVIRONMENT_VARIABLES}; ${commandLine}`;
 
 		const createTerminalSessionCall = {
 			identifier: {
