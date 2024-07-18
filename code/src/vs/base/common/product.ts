@@ -210,6 +210,7 @@ export interface IExtensionRecommendations {
 
 export interface ISettingsEditorOpenCondition {
 	readonly prerelease?: boolean | string;
+	readonly descriptionOverride?: string;
 }
 
 export interface IExtensionRecommendationCondition {
