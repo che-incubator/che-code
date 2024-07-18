@@ -21,7 +21,7 @@ import { IContextKeyService, IContextKey, ContextKeyExpr, RawContextKey } from '
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { MenuItemAction, IMenuService, registerAction2, MenuId, IAction2Options, MenuRegistry, Action2, IMenu } from 'vs/platform/actions/common/actions';
-import { IAction, ActionRunner, Action, Separator, IActionRunner } from 'vs/base/common/actions';
+import { IAction, ActionRunner, Action, Separator, IActionRunner, toAction } from 'vs/base/common/actions';
 import { ActionBar, IActionViewItemProvider } from 'vs/base/browser/ui/actionbar/actionbar';
 import { IThemeService, IFileIconTheme, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { isSCMResource, isSCMResourceGroup, connectPrimaryMenuToInlineActionBar, isSCMRepository, isSCMInput, collectContextMenuActions, getActionViewItemProvider, isSCMActionButton, isSCMViewService, isSCMHistoryItemGroupTreeElement, isSCMHistoryItemTreeElement, isSCMHistoryItemChangeTreeElement, toDiffEditorArguments, isSCMResourceNode, isSCMHistoryItemChangeNode, isSCMViewSeparator, connectPrimaryMenu, isSCMHistoryItemViewModelTreeElement } from './util';
@@ -113,6 +113,7 @@ import { PlaceholderTextContribution } from 'vs/editor/contrib/placeholderText/b
 import { HoverPosition } from 'vs/base/browser/ui/hover/hoverWidget';
 import { IHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 import { IWorkbenchLayoutService, Position } from 'vs/workbench/services/layout/browser/layoutService';
+import { fromNow } from 'vs/base/common/date';
 
 // type SCMResourceTreeNode = IResourceNode<ISCMResource, ISCMResourceGroup>;
 // type SCMHistoryItemChangeResourceTreeNode = IResourceNode<SCMHistoryItemChangeTreeElement, SCMHistoryItemTreeElement>;
@@ -863,7 +864,7 @@ class HistoryItemHoverDelegate extends WorkbenchHoverDelegate {
 			hoverPosition = HoverPosition.RIGHT;
 		}
 
-		return { position: { hoverPosition, forcePosition: true } };
+		return { additionalClasses: ['history-item-hover'], position: { hoverPosition, forcePosition: true } };
 	}
 }
 
@@ -1085,27 +1086,40 @@ class HistoryItem2Renderer implements ICompressibleTreeRenderer<SCMHistoryItemVi
 		const markdown = new MarkdownString('', { isTrusted: true, supportThemeIcons: true });
 
 		if (historyItem.author) {
-			markdown.appendMarkdown(`$(account) **${historyItem.author}**\n\n`);
+			markdown.appendMarkdown(`$(account) **${historyItem.author}**`);
+
+			if (historyItem.timestamp) {
+				const dateFormatter = new Intl.DateTimeFormat(platform.language, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+				markdown.appendMarkdown(`, $(history) ${fromNow(historyItem.timestamp, true, true)} (${dateFormatter.format(historyItem.timestamp)})`);
+			}
+
+			markdown.appendMarkdown('\n\n');
 		}
 
 		markdown.appendMarkdown(`${historyItem.message}\n\n`);
-
-		if (historyItem.timestamp) {
-			markdown.appendMarkdown(`---\n\n`);
-
-			const dateFormatter = new Intl.DateTimeFormat(platform.language, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-			markdown.appendMarkdown(`$(history) ${dateFormatter.format(historyItem.timestamp)}`);
-		}
 
 		if (historyItem.statistics?.files) {
 			const colorTheme = this.themeService.getColorTheme();
 			const historyItemAdditionsForegroundColor = colorTheme.getColor(historyItemAdditionsForeground);
 			const historyItemDeletionsForegroundColor = colorTheme.getColor(historyItemDeletionsForeground);
 
-			markdown.appendMarkdown(`  |  `);
-			markdown.appendMarkdown(`<span>${historyItem.statistics.files}</span>`);
-			markdown.appendMarkdown(historyItem.statistics.insertions ? `,&nbsp;<span style="color:${historyItemAdditionsForegroundColor};">+${historyItem.statistics.insertions}</span>` : '');
-			markdown.appendMarkdown(historyItem.statistics.deletions ? `,&nbsp;<span style="color:${historyItemDeletionsForegroundColor};">-${historyItem.statistics.deletions}</span>` : '');
+			markdown.appendMarkdown(`---\n\n`);
+
+			markdown.appendMarkdown(`<span>${historyItem.statistics.files === 1 ?
+				localize('fileChanged', "{0} file changed", historyItem.statistics.files) :
+				localize('filesChanged', "{0} files changed", historyItem.statistics.files)}</span>`);
+
+			if (historyItem.statistics.insertions) {
+				markdown.appendMarkdown(`,&nbsp;<span style="color:${historyItemAdditionsForegroundColor};">${historyItem.statistics.insertions === 1 ?
+					localize('insertion', "{0} insertion{1}", historyItem.statistics.insertions, '(+)') :
+					localize('insertions', "{0} insertions{1}", historyItem.statistics.insertions, '(+)')}</span>`);
+			}
+
+			if (historyItem.statistics.deletions) {
+				markdown.appendMarkdown(`,&nbsp;<span style="color:${historyItemDeletionsForegroundColor};">${historyItem.statistics.deletions === 1 ?
+					localize('deletion', "{0} deletion{1}", historyItem.statistics.deletions, '(-)') :
+					localize('deletions', "{0} deletions{1}", historyItem.statistics.deletions, '(-)')}</span>`);
+			}
 		}
 
 		return { markdown, markdownNotSupportedFallback: historyItem.message };
@@ -1211,6 +1225,7 @@ class SeparatorRenderer implements ICompressibleTreeRenderer<SCMViewSeparatorEle
 	get templateId(): string { return SeparatorRenderer.TEMPLATE_ID; }
 
 	constructor(
+		private readonly getFilterActions: (repository: ISCMRepository) => IAction[],
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
@@ -1253,6 +1268,7 @@ class SeparatorRenderer implements ICompressibleTreeRenderer<SCMViewSeparatorEle
 		]);
 		const menu = this.menuService.createMenu(MenuId.SCMChangesSeparator, contextKeyService);
 		templateData.elementDisposables.add(connectPrimaryMenu(menu, (primary, secondary) => {
+			secondary.push(...this.getFilterActions(element.element.repository));
 			templateData.toolBar.setActions(primary, secondary, [MenuId.SCMChangesSeparator]);
 		}));
 		templateData.toolBar.context = provider;
@@ -3154,7 +3170,7 @@ export class SCMViewPane extends ViewPane {
 				this.instantiationService.createInstance(HistoryItemRenderer, historyItemActionRunner, getActionViewItemProvider(this.instantiationService)),
 				this.instantiationService.createInstance(HistoryItem2Renderer, historyItemHoverDelegate),
 				this.instantiationService.createInstance(HistoryItemChangeRenderer, () => this.viewMode, this.listLabels),
-				this.instantiationService.createInstance(SeparatorRenderer)
+				this.instantiationService.createInstance(SeparatorRenderer, (repository) => this.getHistoryItemGroupFilterActions(repository)),
 			],
 			treeDataSource,
 			{
@@ -3368,6 +3384,8 @@ export class SCMViewPane extends ViewPane {
 				repository.provider.historyProvider.read(reader)?.currentHistoryItemGroup.read(reader);
 
 				this.historyProviderDataSource.deleteCacheEntry(repository);
+				this.historyProviderDataSource.deleteHistoryItemGroupFilter(repository);
+
 				this.updateChildren(repository);
 			}));
 
@@ -3707,6 +3725,40 @@ export class SCMViewPane extends ViewPane {
 		}
 	}
 
+	private getHistoryItemGroupFilterActions(repository: ISCMRepository): IAction[] {
+		const currentHistoryItemGroup = repository.provider.historyProvider.get()?.currentHistoryItemGroup?.get();
+		if (!currentHistoryItemGroup) {
+			return [];
+		}
+
+		const toHistoryItemGroupFilterAction = (
+			historyItemGroupId: string,
+			historyItemGroupName: string): IAction => {
+			return toAction({
+				id: `workbench.scm.action.toggleHistoryItemGroupVisibility.${repository.id}.${historyItemGroupId}`,
+				label: historyItemGroupName,
+				checked: !this.historyProviderDataSource.getHistoryItemGroupFilter(repository).has(historyItemGroupId),
+				run: () => {
+					this.historyProviderDataSource.toggleHistoryItemGroupFilter(repository, historyItemGroupId);
+					this.historyProviderDataSource.deleteCacheEntry(repository);
+
+					this.updateChildren(repository);
+				}
+			});
+		};
+
+		const actions: IAction[] = [];
+		if (currentHistoryItemGroup.remote) {
+			actions.push(toHistoryItemGroupFilterAction(currentHistoryItemGroup.remote.id, currentHistoryItemGroup.remote.name));
+		}
+
+		if (currentHistoryItemGroup.base && currentHistoryItemGroup.base.id !== currentHistoryItemGroup.remote?.id) {
+			actions.push(toHistoryItemGroupFilterAction(currentHistoryItemGroup.base.id, currentHistoryItemGroup.base.name));
+		}
+
+		return actions;
+	}
+
 	override shouldShowWelcome(): boolean {
 		return this.scmService.repositoryCount === 0;
 	}
@@ -3750,6 +3802,7 @@ export class SCMViewPane extends ViewPane {
 
 class SCMTreeHistoryProviderDataSource extends Disposable {
 	private readonly _cache = new Map<ISCMRepository, ISCMHistoryProviderCacheEntry>();
+	private readonly _historyItemGroupFilter = new Map<ISCMRepository, Set<string>>();
 
 	constructor(
 		private readonly viewMode: () => ViewMode,
@@ -3839,6 +3892,23 @@ class SCMTreeHistoryProviderDataSource extends Disposable {
 		return children;
 	}
 
+	getHistoryItemGroupFilter(element: ISCMRepository): Set<string> {
+		return this._historyItemGroupFilter.get(element) ?? new Set<string>();
+	}
+
+	deleteHistoryItemGroupFilter(repository: ISCMRepository): void {
+		this._historyItemGroupFilter.delete(repository);
+	}
+
+	toggleHistoryItemGroupFilter(element: ISCMRepository, historyItemGroupId: string): void {
+		const filters = this.getHistoryItemGroupFilter(element);
+		if (!filters.delete(historyItemGroupId)) {
+			filters.add(historyItemGroupId);
+		}
+
+		this._historyItemGroupFilter.set(element, filters);
+	}
+
 	async getHistoryItems(element: SCMHistoryItemGroupTreeElement): Promise<SCMHistoryItemTreeElement[]> {
 		const repository = element.repository;
 		const historyProvider = repository.provider.historyProvider.get();
@@ -3914,7 +3984,11 @@ class SCMTreeHistoryProviderDataSource extends Disposable {
 			}
 
 			// History items of selected history item groups
-			historyItemsElement = await historyProvider.provideHistoryItems2({ historyItemGroupIds, limit: { id: ancestor } }) ?? [];
+			const filters = this.getHistoryItemGroupFilter(element);
+			historyItemsElement = await historyProvider.provideHistoryItems2({
+				historyItemGroupIds: historyItemGroupIds.filter(id => !filters.has(id)),
+				limit: { id: ancestor }
+			}) ?? [];
 
 			this._updateCacheEntry(element, {
 				historyItems2: historyItemsMap.set(element.id, historyItemsElement)
