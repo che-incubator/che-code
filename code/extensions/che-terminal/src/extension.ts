@@ -27,7 +27,7 @@ export function getOutputChannel(): vscode.OutputChannel {
 	return _channel;
 }
 
-function saveEnvironmaneVariables(): void {
+function saveEnvironmentVariables(): void {
     try {
       const result = child_process.execSync('source ~/.bashrc; export');
       fs.writeFileSync(ENVIRONMENT_VARIABLES, result.toString(), 'utf8');
@@ -40,7 +40,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 	const machineExecClient = new MachineExecClient();
 	await machineExecClient.init();
 
-	saveEnvironmaneVariables();
+	saveEnvironmentVariables();
 
 	const containers: string[] = await machineExecClient.getContributedContainers();
 
