@@ -130,7 +130,7 @@ export function deactivate(): void {
 }
 
 /**
- * Provides current working directory for a terminal creation:
+ * Provides current working directory for a terminal creation.
  *
  * @returns:
  * - value of the PROJECTS_ROOT env variable if there is no any workspace folder
