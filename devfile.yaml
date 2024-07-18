@@ -31,12 +31,6 @@ components:
       size: 10Gi
 
 commands:
-  - id: run-script
-    exec:
-      label: Run test script
-      component: dev
-      commandLine: /projects/test-project/test.sh
-
   - id: yarn-prepare
     exec:
       label: Install node dependencies
