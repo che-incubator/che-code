@@ -822,21 +822,27 @@ class HistoryItemGroupRenderer implements ICompressibleTreeRenderer<SCMHistoryIt
 
 class HistoryItemActionRunner extends ActionRunner {
 
-	protected override async runAction(action: IAction, context: SCMHistoryItemTreeElement): Promise<any> {
+	protected override async runAction(action: IAction, context: SCMHistoryItemTreeElement | SCMHistoryItemViewModelTreeElement): Promise<any> {
 		if (!(action instanceof MenuItemAction)) {
 			return super.runAction(action, context);
 		}
 
 		const args: (ISCMProvider | ISCMHistoryItem)[] = [];
-		args.push(context.historyItemGroup.repository.provider);
+		if (isSCMHistoryItemTreeElement(context)) {
+			args.push(context.historyItemGroup.repository.provider);
+		} else {
+			args.push(context.repository.provider);
+		}
+
+		const historyItem = isSCMHistoryItemTreeElement(context) ? context : context.historyItemViewModel.historyItem;
 		args.push({
-			id: context.id,
-			parentIds: context.parentIds,
-			message: context.message,
-			author: context.author,
-			icon: context.icon,
-			timestamp: context.timestamp,
-			statistics: context.statistics,
+			id: historyItem.id,
+			parentIds: historyItem.parentIds,
+			message: historyItem.message,
+			author: historyItem.author,
+			icon: historyItem.icon,
+			timestamp: historyItem.timestamp,
+			statistics: historyItem.statistics,
 		} satisfies ISCMHistoryItem);
 
 		await action.run(...args);
@@ -1141,7 +1147,7 @@ class HistoryItem2Renderer implements ICompressibleTreeRenderer<SCMHistoryItemVi
 
 				const historyItemGroupHoverLabelIconId = ThemeIcon.isThemeIcon(label.icon) ? label.icon.id : '';
 
-				return `<span style="color:${historyItemGroupHoverLabelForegroundColor};background-color:${historyItemGroupHoverLabelBackgroundColor};">&nbsp;$(${historyItemGroupHoverLabelIconId})&nbsp;${label.title}&nbsp;</span>`;
+				return `<span style="color:${historyItemGroupHoverLabelForegroundColor};background-color:${historyItemGroupHoverLabelBackgroundColor};border-radius:2px;">&nbsp;$(${historyItemGroupHoverLabelIconId})&nbsp;${label.title}&nbsp;</span>`;
 			}).join('&nbsp;&nbsp;'));
 		}
 
@@ -3507,6 +3513,13 @@ export class SCMViewPane extends ViewPane {
 				actionRunner = new HistoryItemActionRunner();
 				actions = collectContextMenuActions(menu);
 			}
+		} else if (isSCMHistoryItemViewModelTreeElement(element)) {
+			const menus = this.scmViewService.menus.getRepositoryMenus(element.repository.provider);
+			const menu = menus.historyProviderMenu?.getHistoryItemMenu2(element);
+			if (menu) {
+				actionRunner = new HistoryItemActionRunner();
+				actions = collectContextMenuActions(menu);
+			}
 		}
 
 		actionRunner.onWillRun(() => this.tree.domFocus());
@@ -3775,7 +3788,7 @@ export class SCMViewPane extends ViewPane {
 			actions.push(toHistoryItemGroupFilterAction(currentHistoryItemGroup.remote.id, currentHistoryItemGroup.remote.name));
 		}
 
-		if (currentHistoryItemGroup.base && currentHistoryItemGroup.base.id !== currentHistoryItemGroup.remote?.id) {
+		if (currentHistoryItemGroup.base) {
 			actions.push(toHistoryItemGroupFilterAction(currentHistoryItemGroup.base.id, currentHistoryItemGroup.base.name));
 		}
 
