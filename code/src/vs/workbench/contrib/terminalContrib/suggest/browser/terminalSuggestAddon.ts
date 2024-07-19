@@ -160,8 +160,10 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 			return this._handleVSCodeSequence(data);
 		}));
 		this._register(xterm.onData(e => {
-			this._lastUserData = e;
-			this._lastUserDataTimestamp = Date.now();
+			if (!e.startsWith('\x1b[')) {
+				this._lastUserData = e;
+				this._lastUserDataTimestamp = Date.now();
+			}
 		}));
 	}
 
@@ -184,12 +186,12 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 	private _sync(promptInputState: IPromptInputModelState): void {
 		const config = this._configurationService.getValue<ITerminalSuggestConfiguration>(terminalSuggestConfigSection);
 
-		if (!this._terminalSuggestWidgetVisibleContextKey.get()) {
+		if (!this._mostRecentPromptInputState || promptInputState.cursorIndex > this._mostRecentPromptInputState.cursorIndex) {
 			// If input has been added
-			if (!this._mostRecentPromptInputState || promptInputState.cursorIndex > this._mostRecentPromptInputState.cursorIndex) {
-				let sent = false;
+			let sent = false;
 
-				// Quick suggestions
+			// Quick suggestions
+			if (!this._terminalSuggestWidgetVisibleContextKey.get()) {
 				if (config.quickSuggestions) {
 					const completionPrefix = promptInputState.value.substring(0, promptInputState.cursorIndex);
 					if (promptInputState.cursorIndex === 1 || completionPrefix.match(/([\s\[])[^\s]$/)) {
@@ -201,14 +203,14 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 						}
 					}
 				}
+			}
 
-				// Trigger characters
-				if (config.suggestOnTriggerCharacters && !sent) {
-					const lastChar = promptInputState.value.at(promptInputState.cursorIndex - 1);
-					if (lastChar?.match(/[\\\/\-]/)) {
-						this._requestCompletions();
-						sent = true;
-					}
+			// Trigger characters - this happens even if the widget is showing
+			if (config.suggestOnTriggerCharacters && !sent) {
+				const lastChar = promptInputState.value.at(promptInputState.cursorIndex - 1);
+				if (lastChar?.match(/[\\\/\-]/)) {
+					this._requestCompletions();
+					sent = true;
 				}
 			}
 		}
