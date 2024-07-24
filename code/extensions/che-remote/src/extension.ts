@@ -185,7 +185,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   }
 
   const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-  console.info(`Using ${pluginRegistryUrl} to generate a new Devfile Context`);
+  console.info(`Using ${pluginRegistryUrl} to generate new Devfile Context`);
 
   let devfileContext: DevfileContext | undefined = undefined;
   try {
@@ -197,7 +197,11 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
         projects: []
       }, axiosInstance);
   } catch (error) {
-    const action = await vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`, 'Open Devfile');
+    const action = await vscode.window.showErrorMessage('Failed to generate new Devfile Context.', {
+      modal: true,
+      detail: error.message
+    }, 'Open Devfile');
+
     if ('Open Devfile' === action) {
       const document = await vscode.workspace.openTextDocument(devfilePath);
       await vscode.window.showTextDocument(document);
@@ -220,6 +224,25 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
+  try {
+    await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
+  } catch (error) {
+    if (error.body && error.body.message) {
+      const action = await vscode.window.showErrorMessage('Failed to update Devfile.', {
+        modal: true,
+        detail: error.body.message
+      }, 'Open Devfile');
+
+      if ('Open Devfile' === action) {
+        const document = await vscode.workspace.openTextDocument(devfilePath);
+        await vscode.window.showTextDocument(document);
+      }
+    } else {
+      vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
+    }
+
+    return false;
+  }
+
   return true;
 }
