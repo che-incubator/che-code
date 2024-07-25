@@ -136,7 +136,9 @@ export class MachineExecClient implements vscode.Disposable {
 	 * @returns a TerminalSession object to manage the created terminal session
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
-		commandLine = `[ -f ${ENVIRONMENT_VARIABLES} ] && source ${ENVIRONMENT_VARIABLES}; ${commandLine}`;
+		if (commandLine) {
+			commandLine = `test -f ${ENVIRONMENT_VARIABLES} >> /dev/null 2>&1 && source ${ENVIRONMENT_VARIABLES};${commandLine}`;
+		}
 
 		const createTerminalSessionCall = {
 			identifier: {
