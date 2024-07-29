@@ -28,12 +28,12 @@ export function getOutputChannel(): vscode.OutputChannel {
 }
 
 function saveEnvironmentVariables(): void {
-    try {
-      const result = child_process.execSync('source ~/.bashrc; export');
-      fs.writeFileSync(ENVIRONMENT_VARIABLES, result.toString(), 'utf8');
+	try {
+		const result = child_process.execSync('source ~/.bashrc; export');
+		fs.writeFileSync(ENVIRONMENT_VARIABLES, result.toString(), 'utf8');
 	} catch (error) {
-      console.log(`Failure to save environment variables to ${ENVIRONMENT_VARIABLES}. ${error}`);
-    }
+		console.log(`Failure to save environment variables to ${ENVIRONMENT_VARIABLES}. ${error}`);
+	}
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<Api> {
