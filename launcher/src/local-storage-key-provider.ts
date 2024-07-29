@@ -28,6 +28,7 @@ export class LocalStorageKeyProvider {
       console.log(`  > found key file ${publicKeyFile}`);
 
       const secret = await this.getPartOfPublicKey(publicKeyFile);
+      console.log(`  > secret: ${secret}`);
       await this.update(FILE_WORKBENCH, SERVER_KEY_MASK, secret);
     } catch (err) {
       console.error(err.message);
@@ -57,7 +58,7 @@ export class LocalStorageKeyProvider {
 
   async getPartOfPublicKey(file: string): Promise<string> {
     let content = await fs.readFile(file);
-    content = content.substring(content.indexOf(' ') + 1);
+    content = content.split(' ')[1];
 
     let secret = '';
     for (let i = 0; i < 32; i++) {
