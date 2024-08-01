@@ -46,7 +46,7 @@ const PRODUCT_JSON_WITH_EXTENSIONS_ALTERNATIVE = `{
 		]
 	}
 }`;
-const PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE = `{
+const PRODUCT_JSON_TWO_EXTENSIONS = `{
 	"version": "1.0.0",
 	"trustedExtensionAuthAccess": [
 		"RedHat.Yaml",
@@ -277,7 +277,7 @@ describe('Test Configuring of Trusted Extensions Auth Access:', () => {
     const trust = new TrustedExtensions();
     await trust.configure();
 
-    expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS_UPPERCASE);
+    expect(savedProductJson).toBe(PRODUCT_JSON_TWO_EXTENSIONS);
 
     expect(spy).toHaveBeenCalledWith('# Configuring Trusted Extensions...');
     expect(spy).toHaveBeenCalledWith(
