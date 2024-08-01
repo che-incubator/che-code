@@ -19,6 +19,10 @@ const NEW_WORKBENCH_FILE = `
 some code, some code, a mask to be replaced 1234567890ABCDEFGHIJKLMNOPQRSTUV, some code
 `;
 
+const NEW_WORKBENCH_FILE_NEW_LINE = `
+some code, some code, a mask to be replaced ACaZNAIlQqHJOA2XM, some code
+`;
+
 describe('Test setting of Local Storage public key to VS Code', () => {
   beforeEach(() => {
     Object.assign(fs, {
@@ -69,5 +73,48 @@ describe('Test setting of Local Storage public key to VS Code', () => {
     await localStorageKeyProvider.configure();
 
     expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH_FILE);
+  });
+
+  test('should work with a public key including new lines', async () => {
+    const pathExistsMock = jest.fn();
+    const readdirMock = jest.fn();
+    const isFileMock = jest.fn();
+    const readFileMock = jest.fn();
+    const writeFileMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      readdir: readdirMock,
+      isFile: isFileMock,
+      readFile: readFileMock,
+      writeFile: writeFileMock,
+    });
+
+    pathExistsMock.mockImplementation(async (path: string) => {
+      return '/etc/ssh' === path || '/etc/ssh/first-key.pub' === path;
+    });
+
+    readdirMock.mockImplementation(async (path: string) => {
+      return ['some-file', 'first-key', 'second-key', 'first-key.pub', 'second-key.pub'];
+    });
+
+    isFileMock.mockImplementation(async (path: string) => {
+      return '/etc/ssh/first-key' === path || '/etc/ssh/first-key.pub' === path;
+    });
+
+    readFileMock.mockImplementation(async (file: string) => {
+      switch (file) {
+        case '/etc/ssh/first-key.pub':
+          // This key has new lines, and was randomly generated for this test
+          return `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIObHl2pRQsoCqvF7HrrUJwPcOByIAOtS2ggoX51xMWAQ eclipse@che.com
+          `;
+        case 'out/vs/code/browser/workbench/workbench.js':
+          return ORIGIN_WORKBENCH_FILE;
+      }
+    });
+
+    const localStorageKeyProvider = new LocalStorageKeyProvider();
+    await localStorageKeyProvider.configure();
+
+    expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH_FILE_NEW_LINE);
   });
 });
