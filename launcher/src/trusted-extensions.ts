@@ -28,7 +28,7 @@ export class TrustedExtensions {
       for (const extension of env.VSCODE_TRUSTED_EXTENSIONS.split(',')) {
         if (extension) {
           if (extension.match(/^[A-Za-z0-9][A-Za-z0-9-]*\.[A-Za-z0-9][A-Za-z0-9-.]*$/)) {
-            extensions.push(extension);
+            extensions.push(extension.toLowerCase());
             console.log(`  > add ${extension}`);
           } else {
             console.log(`  > failure to add [${extension}] because of wrong identifier`);
