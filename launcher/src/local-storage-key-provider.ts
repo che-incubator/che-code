@@ -61,7 +61,7 @@ export class LocalStorageKeyProvider {
 
     let secret = '';
     for (let i = 0; i < 32; i++) {
-      secret += content.charAt(i * 4);
+      secret += content.charAt(i * 2);
     }
 
     return secret;

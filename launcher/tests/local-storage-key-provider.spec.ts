@@ -16,11 +16,11 @@ some code, some code, a mask to be replaced {{LOCAL-STORAGE}}/{{SECURE-KEY}}, so
 `;
 
 const NEW_WORKBENCH_FILE = `
-some code, some code, a mask to be replaced 1234567890ABCDEFGHIJKLMNOPQRSTUV, some code
+some code, some code, a mask to be replaced 11223344556677889900AABBCCDDEEFF, some code
 `;
 
 const NEW_WORKBENCH_FILE_NEW_LINE = `
-some code, some code, a mask to be replaced ACaZNAIlQqHJOA2XM, some code
+some code, some code, a mask to be replaced AACNa1ZINEAAIblpQoqFHrJPOyAt2gX1, some code
 `;
 
 describe('Test setting of Local Storage public key to VS Code', () => {
