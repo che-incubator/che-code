@@ -16,6 +16,8 @@ import * as vscode from 'vscode';
 import * as WS from 'ws';
 import { WebSocket } from 'ws';
 import { getOutputChannel } from './extension';
+import { env } from 'process';
+import { join } from 'path';
 
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
@@ -136,6 +138,11 @@ export class MachineExecClient implements vscode.Disposable {
 	 * @returns a TerminalSession object to manage the created terminal session
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
+		if (commandLine) {
+			const bashrc = join(env.HOME!, '.bashrc');
+			commandLine = `test -f ${bashrc} >> /dev/null 2>&1 && source ${bashrc};${commandLine}`;
+		}
+
 		const createTerminalSessionCall = {
 			identifier: {
 				machineName: component
