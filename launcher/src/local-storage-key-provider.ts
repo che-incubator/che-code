@@ -57,11 +57,11 @@ export class LocalStorageKeyProvider {
 
   async getPartOfPublicKey(file: string): Promise<string> {
     let content = await fs.readFile(file);
-    content = content.substring(content.indexOf(' ') + 1);
+    content = content.split(' ')[1];
 
     let secret = '';
     for (let i = 0; i < 32; i++) {
-      secret += content.charAt(i * 4);
+      secret += content.charAt(i * 2);
     }
 
     return secret;
