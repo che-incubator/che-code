@@ -139,8 +139,7 @@ export class MachineExecClient implements vscode.Disposable {
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
 		if (commandLine) {
-			const bashrc = join(env.HOME!, '.bashrc');
-			commandLine = `test -f ${bashrc} >> /dev/null 2>&1 && source ${bashrc};${commandLine}`;
+			commandLine = "test -f ${HOME}/.bashrc >> /dev/null 2>&1 && source ${HOME}/.bashrc >> /dev/null 2>&1;" + commandLine;
 		}
 
 		const createTerminalSessionCall = {
