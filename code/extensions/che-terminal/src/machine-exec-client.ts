@@ -16,8 +16,6 @@ import * as vscode from 'vscode';
 import * as WS from 'ws';
 import { WebSocket } from 'ws';
 import { getOutputChannel } from './extension';
-import { env } from 'process';
-import { join } from 'path';
 
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
