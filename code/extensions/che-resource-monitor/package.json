@@ -31,10 +31,10 @@
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1723034342",
-    "@kubernetes/client-node": "^0.19.0",
+    "@kubernetes/client-node": "^0.21.0",
     "got": "11.8.0",
-    "inversify": "^5.0.1",
-    "reflect-metadata": "^0.1.13",
+    "inversify": "^6.0.2",
+    "reflect-metadata": "^0.2.2",
     "request": "2.88.2"
   },
   "devDependencies": {
