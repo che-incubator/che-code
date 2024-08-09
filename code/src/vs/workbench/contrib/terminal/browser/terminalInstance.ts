@@ -1172,6 +1172,9 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	}
 
 	override dispose(reason?: TerminalExitReason): void {
+		if (this.shellLaunchConfig.type === 'Task' && reason === TerminalExitReason.Process && this._exitCode !== 0 && !this.shellLaunchConfig.waitOnExit) {
+			return;
+		}
 		if (this.isDisposed) {
 			return;
 		}
@@ -1615,7 +1618,6 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 				}
 			});
 		} else {
-			this.dispose(TerminalExitReason.Process);
 			if (exitMessage) {
 				const failedDuringLaunch = this._processManager.processState === ProcessState.KilledDuringLaunch;
 				if (failedDuringLaunch || this._terminalConfigurationService.config.showExitAlert) {
@@ -1631,6 +1633,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 					this._logService.warn(exitMessage);
 				}
 			}
+			this.dispose(TerminalExitReason.Process);
 		}
 
 		// First onExit to consumers, this can happen after the terminal has already been disposed.
@@ -1649,7 +1652,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 			id: TerminalStatus.ShellIntegrationAttentionNeeded,
 			severity: Severity.Warning,
 			icon: Codicon.warning,
-			tooltip: (`${exitMessage} ` ?? '') + nls.localize('launchFailed.exitCodeOnlyShellIntegration', 'Disabling shell integration in user settings might help.'),
+			tooltip: `${exitMessage} ` + nls.localize('launchFailed.exitCodeOnlyShellIntegration', 'Disabling shell integration in user settings might help.'),
 			hoverActions: [{
 				commandId: TerminalCommandId.ShellIntegrationLearnMore,
 				label: nls.localize('shellIntegration.learnMore', "Learn more about shell integration"),
@@ -2273,7 +2276,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		const showAllColorsItem = { label: 'Reset to default' };
 		items.push(showAllColorsItem);
 
-		const quickPick = this._quickInputService.createQuickPick();
+		const quickPick = this._quickInputService.createQuickPick({ useSeparators: true });
 		quickPick.items = items;
 		quickPick.matchOnDescription = true;
 		quickPick.placeholder = nls.localize('changeColor', 'Select a color for the terminal');

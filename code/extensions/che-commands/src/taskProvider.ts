@@ -37,7 +37,10 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 		const cheTasks: vscode.Task[] = devfileCommands!
 			.filter(command => command.exec?.commandLine)
-			.filter(command => !command.attributes || (command.attributes as any)['controller.devfile.io/imported-by'] === (undefined || 'parent'))
+			.filter(command => {
+				const importedByAttribute = (command.attributes as any)?.['controller.devfile.io/imported-by'];
+				return !command.attributes || importedByAttribute === undefined || importedByAttribute === 'parent';
+			})
 			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env));
 		return cheTasks;
 	}
