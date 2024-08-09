@@ -16,20 +16,34 @@
 
 const withDefaults = require('../shared.webpack.config');
 const webpack = require('webpack');
+const { merge } = require('webpack-merge');
 
-module.exports = withDefaults({
-	context: __dirname,
-	resolve: {
-		mainFields: ['module', 'main']
-	},
-	entry: {
-		extension: './src/extension.ts',
-	},
-	externals: {
-		'bufferutil': 'commonjs bufferutil', // ignored
-		'utf-8-validate': 'commonjs utf-8-validate', // ignored
-	},
-	plugins: [
-		new webpack.ContextReplacementPlugin(/keyv/), // needs to exclude the package to ignore warnings https://github.com/jaredwray/keyv/issues/45
-	],
+const config = withDefaults({
+    context: __dirname,
+    resolve: {
+        mainFields: ['module', 'main'],
+    },
+    entry: {
+        extension: './src/extension.ts',
+    },
+    externals: {
+        'bufferutil': 'commonjs bufferutil', // ignored
+        'utf-8-validate': 'commonjs utf-8-validate', // ignored
+    },
+    plugins: [
+        new webpack.ContextReplacementPlugin(/keyv/), // needs to exclude the package to ignore warnings https://github.com/jaredwray/keyv/issues/45
+    ],
 });
+
+module.exports = merge(config, {
+    module: {
+        rules: [
+            {
+                test: /\.m?js$/,
+                resolve: {
+                    fullySpecified: false, // This avoids the issue with the devfile/api extension requirement
+                },
+            }
+        ]
+    }
+})

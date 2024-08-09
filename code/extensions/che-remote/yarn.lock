@@ -286,10 +286,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@devfile/api@2.2.2-1715367693":
-  version "2.2.2-1715367693"
-  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.2.2-1715367693.tgz#0e0bbd8a54b5d4f05c2aa9b6cc725a2404629a5c"
-  integrity sha512-dWGyC7I6cV3L+K2TMOY/hUzmMqp+X1wMp3M3OusoXZrKWExvQVcZZwVd9BB6vPot+0THEHK56U8qYTEy/Ojy0w==
+"@devfile/api@2.3.0-1721400636":
+  version "2.3.0-1721400636"
+  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.3.0-1721400636.tgz#94f7ba0f45b294beb8cd023ffeaa8aa5ff228b44"
+  integrity sha512-W6g9uYSo22VcAeLj49YyVzOWTWZh5sRWP8fzgRcao6DRLd7FwkG3w4ZWCMTY5tMgyfcpaNBBoV1mqlRJuCvhTA==
   dependencies:
     "@types/node" "*"
     "@types/node-fetch" "^2.5.7"
@@ -298,19 +298,19 @@
     node-fetch "^2.6.0"
     url-parse "^1.4.3"
 
-"@eclipse-che/che-devworkspace-generator@7.88.0-next-a2e5c63":
-  version "7.88.0-next-a2e5c63"
-  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.88.0-next-a2e5c63.tgz#2516aad6674fefeb9376974cf27855d573e2de36"
-  integrity sha512-70VbsUzONiyJr9pe/rslzta/SM4RvDsSR/kLIxMS4EbS9YgxEvT3rSM9B8eFLMbeZksnCuEQYxiyjSN6P4UV7A==
+"@eclipse-che/che-devworkspace-generator@7.89.0-next-784dff2":
+  version "7.89.0-next-784dff2"
+  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.89.0-next-784dff2.tgz#3ed9aa348712e78e100d1c4445ca146430ed5576"
+  integrity sha512-Mqkxw2VJB+p4B5QH5fXAU+Q68gXfaY2TphodqHxLHwAW0zBpLqyPTYbAwVk4ESUzy6BLXrSktYXJ3AA5ZIjrMg==
   dependencies:
-    "@devfile/api" "2.2.2-1715367693"
+    "@devfile/api" "2.3.0-1721400636"
     axios "^1.7.0"
-    fs-extra "^10.0.0"
-    inversify "^5.0.1"
+    fs-extra "^11.2.0"
+    inversify "^6.0.2"
     js-yaml "^4.0.0"
     jsonc-parser "^3.0.0"
     jsonschema "^1.4.1"
-    reflect-metadata "^0.1.13"
+    reflect-metadata "^0.2.2"
 
 "@eslint-community/eslint-utils@^4.2.0":
   version "4.4.0"
@@ -1453,10 +1453,10 @@ form-data@^4.0.0:
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
-fs-extra@^10.0.0:
-  version "10.1.0"
-  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-10.1.0.tgz#02873cfbc4084dde127eaa5f9905eef2325d1abf"
-  integrity sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==
+fs-extra@^11.2.0:
+  version "11.2.0"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.2.0.tgz#e70e17dfad64232287d01929399e0ea7c86b0e5b"
+  integrity sha512-PmDi3uwK5nFuXh7XDTlVnS17xJS7vW36is2+w3xcv8SVxiB4NyATf4ctkVY5bkSjX0Y4nbvZCq1/EjtEyr9ktw==
   dependencies:
     graceful-fs "^4.2.0"
     jsonfile "^6.0.1"
@@ -1645,10 +1645,10 @@ inherits@2:
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
 
-inversify@^5.0.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/inversify/-/inversify-5.1.1.tgz#6fbd668c591337404e005a1946bfe0d802c08730"
-  integrity sha512-j8grHGDzv1v+8T1sAQ+3boTCntFPfvxLCkNcxB1J8qA0lUN+fAlSyYd+RXKvaPRL4AGyPxViutBEJHNXOyUdFQ==
+inversify@^6.0.2:
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/inversify/-/inversify-6.0.2.tgz#dc7fa0348213d789d35ffb719dea9685570989c7"
+  integrity sha512-i9m8j/7YIv4mDuYXUAcrpKPSaju/CIly9AHK5jvCBeoiM/2KEsuCQTTP+rzSWWpLYWRukdXFSl6ZTk2/uumbiA==
 
 is-core-module@^2.8.0:
   version "2.8.1"
@@ -2622,10 +2622,10 @@ react-is@^17.0.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
-reflect-metadata@^0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.1.13.tgz#67ae3ca57c972a2aa1642b10fe363fe32d49dc08"
-  integrity sha512-Ts1Y/anZELhSsjMcU605fU9RE4Oi3p5ORujwbIKXfWa+0Zxs510Qrmrce5/Jowq3cHSZSJqBjypxmHarc+vEWg==
+reflect-metadata@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.2.2.tgz#400c845b6cba87a21f2c65c4aeb158f4fa4d9c5b"
+  integrity sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==
 
 require-directory@^2.1.1:
   version "2.1.1"
