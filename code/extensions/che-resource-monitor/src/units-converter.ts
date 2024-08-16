@@ -66,7 +66,7 @@ export function convertToMilliCPU(unit: string | undefined): number {
     return parseInt(unit.substring(0, unit.length - 1));
   } else if (unit.substring(unit.length - 1).toUpperCase() === 'N') {
     const value = parseInt(unit.substring(0, unit.length - 1));
-    return Math.round(value / 1000);
+    return Math.round(value / 1000 / 1000);
   } else {
     return parseInt(unit) * 1000;
   }
