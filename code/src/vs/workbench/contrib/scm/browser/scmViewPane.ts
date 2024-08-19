@@ -23,7 +23,7 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { MenuItemAction, IMenuService, registerAction2, MenuId, IAction2Options, MenuRegistry, Action2, IMenu } from 'vs/platform/actions/common/actions';
 import { IAction, ActionRunner, Action, Separator, IActionRunner, toAction } from 'vs/base/common/actions';
 import { ActionBar, IActionViewItemProvider } from 'vs/base/browser/ui/actionbar/actionbar';
-import { IThemeService, IFileIconTheme, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
+import { IThemeService, IFileIconTheme } from 'vs/platform/theme/common/themeService';
 import { isSCMResource, isSCMResourceGroup, connectPrimaryMenuToInlineActionBar, isSCMRepository, isSCMInput, collectContextMenuActions, getActionViewItemProvider, isSCMActionButton, isSCMViewService, isSCMHistoryItemGroupTreeElement, isSCMHistoryItemTreeElement, isSCMHistoryItemChangeTreeElement, toDiffEditorArguments, isSCMResourceNode, isSCMHistoryItemChangeNode, isSCMViewSeparator, connectPrimaryMenu, isSCMHistoryItemViewModelTreeElement } from './util';
 import { WorkbenchCompressibleAsyncDataTree, IOpenEvent } from 'vs/platform/list/browser/listService';
 import { IConfigurationService, ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
@@ -43,7 +43,7 @@ import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storag
 import { EditorResourceAccessor, SideBySideEditor } from 'vs/workbench/common/editor';
 import { CodeEditorWidget, ICodeEditorWidgetOptions } from 'vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { IEditorConstructionOptions } from 'vs/editor/browser/config/editorConfiguration';
-import { getSimpleEditorOptions } from 'vs/workbench/contrib/codeEditor/browser/simpleEditorOptions';
+import { getSimpleEditorOptions, setupSimpleEditorSelectionStyling } from 'vs/workbench/contrib/codeEditor/browser/simpleEditorOptions';
 import { IModelService } from 'vs/editor/common/services/model';
 import { EditorExtensionsRegistry } from 'vs/editor/browser/editorExtensions';
 import { MenuPreventer } from 'vs/workbench/contrib/codeEditor/browser/menuPreventer';
@@ -95,7 +95,7 @@ import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity'
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { stripIcons } from 'vs/base/common/iconLabels';
 import { IconLabel } from 'vs/base/browser/ui/iconLabel/iconLabel';
-import { ColorIdentifier, editorSelectionBackground, foreground, inputBackground, inputForeground, listActiveSelectionForeground, registerColor, selectionBackground, transparent } from 'vs/platform/theme/common/colorRegistry';
+import { ColorIdentifier, foreground, listActiveSelectionForeground, registerColor, transparent } from 'vs/platform/theme/common/colorRegistry';
 import { IMenuWorkbenchToolBarOptions, WorkbenchToolBar } from 'vs/platform/actions/browser/toolbar';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { DropdownWithPrimaryActionViewItem } from 'vs/platform/actions/browser/dropdownWithPrimaryActionViewItem';
@@ -115,6 +115,7 @@ import { IHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 import { IWorkbenchLayoutService, Position } from 'vs/workbench/services/layout/browser/layoutService';
 import { fromNow } from 'vs/base/common/date';
 import { equals } from 'vs/base/common/arrays';
+import { observableConfigValue } from 'vs/platform/observable/common/platformObservableUtils';
 
 // type SCMResourceTreeNode = IResourceNode<ISCMResource, ISCMResourceGroup>;
 // type SCMHistoryItemChangeResourceTreeNode = IResourceNode<SCMHistoryItemChangeTreeElement, SCMHistoryItemTreeElement>;
@@ -1332,7 +1333,7 @@ class SeparatorRenderer implements ICompressibleTreeRenderer<SCMViewSeparatorEle
 		]);
 		const menu = this.menuService.createMenu(MenuId.SCMChangesSeparator, contextKeyService);
 		templateData.elementDisposables.add(connectPrimaryMenu(menu, (primary, secondary) => {
-			secondary.push(...this.getFilterActions(element.element.repository));
+			secondary.splice(0, 0, ...this.getFilterActions(element.element.repository), new Separator());
 			templateData.toolBar.setActions(primary, secondary, [MenuId.SCMChangesSeparator]);
 		}));
 		templateData.toolBar.context = provider;
@@ -2271,6 +2272,28 @@ class ExpandAllRepositoriesAction extends ViewAction<SCMViewPane> {
 
 registerAction2(CollapseAllRepositoriesAction);
 registerAction2(ExpandAllRepositoriesAction);
+
+class ShowHistoryGraphAction extends Action2 {
+	constructor() {
+		super({
+			id: 'workbench.scm.action.showHistoryGraph',
+			title: localize('showHistoryGraph', "Show Incoming/Outgoing Changes"),
+			f1: false,
+			toggled: ContextKeyExpr.equals('config.scm.showHistoryGraph', true),
+			menu: [
+				{ id: MenuId.SCMChangesSeparator },
+				{ id: Menus.ViewSort, group: '3_other' }]
+		});
+	}
+
+	async run(accessor: ServicesAccessor) {
+		const configurationService = accessor.get(IConfigurationService);
+		const configValue = configurationService.getValue('scm.showHistoryGraph') === true;
+		configurationService.updateValue('scm.showHistoryGraph', !configValue);
+	}
+}
+
+registerAction2(ShowHistoryGraphAction);
 
 const enum SCMInputWidgetCommandId {
 	CancelAction = 'scm.input.cancelAction'
@@ -3271,6 +3294,8 @@ export class SCMViewPane extends ViewPane {
 		const treeDataSource = this.instantiationService.createInstance(SCMTreeDataSource, () => this.viewMode, this.historyProviderDataSource);
 		this.disposables.add(treeDataSource);
 
+		const compressionEnabled = observableConfigValue('scm.compactFolders', true, this.configurationService);
+
 		this.tree = this.instantiationService.createInstance(
 			WorkbenchCompressibleAsyncDataTree,
 			'SCM Tree Repo',
@@ -3300,6 +3325,7 @@ export class SCMViewPane extends ViewPane {
 				sorter: new SCMTreeSorter(() => this.viewMode, () => this.viewSortKey),
 				keyboardNavigationLabelProvider: this.instantiationService.createInstance(SCMTreeKeyboardNavigationLabelProvider, () => this.viewMode),
 				overrideStyles: this.getLocationBasedColors().listOverrideStyles,
+				compressionEnabled: compressionEnabled.get(),
 				collapseByDefault: (e: unknown) => {
 					// Repository, Resource Group, Resource Folder (Tree), History Item Change Folder (Tree)
 					if (isSCMRepository(e) || isSCMResourceGroup(e) || isSCMResourceNode(e) || isSCMHistoryItemChangeNode(e)) {
@@ -3318,6 +3344,12 @@ export class SCMViewPane extends ViewPane {
 		this.tree.onContextMenu(this.onListContextMenu, this, this.disposables);
 		this.tree.onDidScroll(this.inputRenderer.clearValidation, this.inputRenderer, this.disposables);
 		Event.filter(this.tree.onDidChangeCollapseState, e => isSCMRepository(e.node.element?.element), this.disposables)(this.updateRepositoryCollapseAllContextKeys, this, this.disposables);
+
+		this.disposables.add(autorun(reader => {
+			this.tree.updateOptions({
+				compressionEnabled: compressionEnabled.read(reader)
+			});
+		}));
 
 		append(container, overflowWidgetsDomNode);
 	}
@@ -4123,9 +4155,11 @@ class SCMTreeHistoryProviderDataSource extends Disposable {
 			});
 		}
 
-		// If we only have one history item that contains all the
-		// labels (current, remote, base), we don't need to show it
-		if (historyItemsElement.length === 1) {
+		// If we only have one history item that contains all the labels (current, remote, base),
+		// we don't need to show it, unless it is the root commit (does not have any parents) and
+		// the repository has not been published yet.
+		if (historyItemsElement.length === 1 &&
+			(historyItemsElement[0].parentIds.length > 0 || currentHistoryItemGroup.remote)) {
 			const currentHistoryItemGroupLabels = [
 				currentHistoryItemGroup.name,
 				...currentHistoryItemGroup.remote ? [currentHistoryItemGroup.remote.name] : [],
@@ -4512,27 +4546,4 @@ export class SCMActionButton implements IDisposable {
 	}
 }
 
-// Override styles in selections.ts
-registerThemingParticipant((theme, collector) => {
-	const selectionBackgroundColor = theme.getColor(selectionBackground);
-
-	if (selectionBackgroundColor) {
-		// Override inactive selection bg
-		const inputBackgroundColor = theme.getColor(inputBackground);
-		if (inputBackgroundColor) {
-			collector.addRule(`.scm-view .scm-editor-container .monaco-editor-background { background-color: ${inputBackgroundColor}; } `);
-			collector.addRule(`.scm-view .scm-editor-container .monaco-editor .selected-text { background-color: ${inputBackgroundColor.transparent(0.4)}; }`);
-		}
-
-		// Override selected fg
-		const inputForegroundColor = theme.getColor(inputForeground);
-		if (inputForegroundColor) {
-			collector.addRule(`.scm-view .scm-editor-container .monaco-editor .view-line span.inline-selected-text { color: ${inputForegroundColor}; }`);
-		}
-
-		collector.addRule(`.scm-view .scm-editor-container .monaco-editor .focused .selected-text { background-color: ${selectionBackgroundColor}; }`);
-	} else {
-		// Use editor selection color if theme has not set a selection background color
-		collector.addRule(`.scm-view .scm-editor-container .monaco-editor .focused .selected-text { background-color: ${theme.getColor(editorSelectionBackground)}; }`);
-	}
-});
+setupSimpleEditorSelectionStyling('.scm-view .scm-editor-container');
