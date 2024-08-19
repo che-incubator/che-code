@@ -16,7 +16,8 @@ import { Endpoint } from './endpoint';
 import { EndpointCategory } from './endpoint-category';
 import { EndpointExposure } from './endpoint-exposure';
 import {
-  V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpoints
+  V1alpha2DevWorkspaceSpecTemplate,
+  V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpointsExposureEnum
 } from '@devfile/api';
 import * as vscode from 'vscode';
 
@@ -55,11 +56,13 @@ export class DevWorkspaceDevfileHandlerImpl implements DevfileHandler {
       )
       .reduce((acc, val) => acc.concat(val), []);
 
+    const publicExposureEndpoint: V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpointsExposureEnum = 'public';
+    const internalExposureEndpoint: V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpointsExposureEnum = 'internal';
     const endpoints = devfileEndpoints.map(exposedEndpoint => {
       let exposure: EndpointExposure;
-      if (exposedEndpoint.exposure === V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpoints.ExposureEnum.Public) {
+      if (exposedEndpoint.exposure === publicExposureEndpoint) {
         exposure = EndpointExposure.FROM_DEVFILE_PUBLIC;
-      } else if (exposedEndpoint.exposure === V1alpha2DevWorkspaceSpecTemplateComponentsItemsContainerEndpoints.ExposureEnum.Internal) {
+      } else if (exposedEndpoint.exposure === internalExposureEndpoint) {
         exposure = EndpointExposure.FROM_DEVFILE_PRIVATE;
       } else {
         exposure = EndpointExposure.FROM_DEVFILE_NONE;
