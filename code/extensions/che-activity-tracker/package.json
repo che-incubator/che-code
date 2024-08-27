@@ -39,7 +39,6 @@
     "yarn": "^1.22.18"
   },
   "dependencies": {
-    "axios": "0.21.2",
     "inversify": "^6.0.1"
   },
   "repository": {
