@@ -639,12 +639,16 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 	}
 
 	isEnabled(): boolean {
+
+		console.log(`>> is enabled? URL: ${this.extensionsGalleryUrl}`);
+
 		return !!this.extensionsGalleryUrl;
 	}
 
 	getExtensions(extensionInfos: ReadonlyArray<IExtensionInfo>, token: CancellationToken): Promise<IGalleryExtension[]>;
 	getExtensions(extensionInfos: ReadonlyArray<IExtensionInfo>, options: IExtensionQueryOptions, token: CancellationToken): Promise<IGalleryExtension[]>;
 	async getExtensions(extensionInfos: ReadonlyArray<IExtensionInfo>, arg1: any, arg2?: any): Promise<IGalleryExtension[]> {
+		console.log('> get extensions....');
 		const options = CancellationToken.isCancellationToken(arg1) ? {} : arg1 as IExtensionQueryOptions;
 		const token = CancellationToken.isCancellationToken(arg1) ? arg1 : arg2 as CancellationToken;
 		const names: string[] = []; const ids: string[] = [], includePreReleases: (IExtensionIdentifier & { includePreRelease: boolean })[] = [], versions: (IExtensionIdentifier & { version: string })[] = [];
@@ -690,6 +694,7 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 	}
 
 	async getCompatibleExtension(extension: IGalleryExtension, includePreRelease: boolean, targetPlatform: TargetPlatform, productVersion: IProductVersion = { version: this.productService.version, date: this.productService.date }): Promise<IGalleryExtension | null> {
+		console.log(`> getCompatibleExtension :: ${extension.identifier}`);
 		if (isNotWebExtensionInWebTargetPlatform(extension.allTargetPlatforms, targetPlatform)) {
 			return null;
 		}
@@ -983,6 +988,8 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 	}
 
 	private async queryRawGalleryExtensions(query: Query, token: CancellationToken): Promise<IRawGalleryExtensionsResult> {
+		console.log(`>> queryRawGalleryExtensions :: to ${this.extensionsGallerySearchUrl} :: with ${query.searchText}`);
+
 		if (!this.isEnabled()) {
 			throw new Error('No extension gallery service configured.');
 		}
@@ -1008,12 +1015,17 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		let context: IRequestContext | undefined, errorCode: ExtensionGalleryErrorCode | undefined, total: number = 0;
 
 		try {
-			context = await this.requestService.request({
+			const opt = {
 				type: 'POST',
 				url: this.extensionsGallerySearchUrl && query.criteria.some(c => c.filterType === FilterType.SearchText) ? this.extensionsGallerySearchUrl : this.api('/extensionquery'),
 				data,
 				headers
-			}, token);
+			};
+			console.log(`> REAL URL ${opt.url}`);
+			console.log('> HEADERS', headers);
+			console.log('> DATA', data);
+
+			context = await this.requestService.request(opt, token);
 
 			if (context.res.statusCode && context.res.statusCode >= 400 && context.res.statusCode < 500) {
 				return { galleryExtensions: [], total };
@@ -1190,6 +1202,12 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 	}
 
 	async getAllCompatibleVersions(extensionIdentifier: IExtensionIdentifier, includePreRelease: boolean, targetPlatform: TargetPlatform): Promise<IGalleryExtensionVersion[]> {
+		console.log('###############################################################################');
+		console.log('#');
+		console.log(`#  getAllCompatibleVersions :: ${extensionIdentifier.id} :: ${extensionIdentifier.uuid}`);
+		console.log('#');
+		console.log('###############################################################################');
+
 		let query = new Query()
 			.withFlags(Flags.IncludeVersions, Flags.IncludeCategoryAndTags, Flags.IncludeFiles, Flags.IncludeVersionProperties)
 			.withPage(1, 1);
@@ -1203,6 +1221,11 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		const { galleryExtensions } = await this.queryRawGalleryExtensions(query, CancellationToken.None);
 		if (!galleryExtensions.length) {
 			return [];
+		}
+
+		console.log(`> gallery extensions: ${galleryExtensions.length}`);
+		for (const ge of galleryExtensions) {
+			console.log(`  > ${ge.extensionId}`);
 		}
 
 		const allTargetPlatforms = getAllTargetPlatforms(galleryExtensions[0]);
