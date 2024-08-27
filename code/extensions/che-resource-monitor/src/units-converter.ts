@@ -16,18 +16,18 @@ export function convertToBytes(unit: string | undefined): number {
   if (!unit) {
     return 0;
   }
-  if (unit.substr(unit.length - 2).toUpperCase() === 'MI') {
-    return fromMebibytes(parseInt(unit.substr(0, unit.length - 2)));
-  } else if (unit.substr(unit.length - 2).toUpperCase() === 'KI') {
-    return fromKibibytes(parseInt(unit.substr(0, unit.length - 2)));
-  } else if (unit.substr(unit.length - 2).toUpperCase() === 'GI') {
-    return fromGibibytes(parseInt(unit.substr(0, unit.length - 2)));
-  } else if (unit.substr(unit.length - 1).toUpperCase() === 'M') {
-    return fromMegabytes(parseInt(unit.substr(0, unit.length - 1)));
-  } else if (unit.substr(unit.length - 1).toUpperCase() === 'K') {
-    return fromKilobytes(parseInt(unit.substr(0, unit.length - 1)));
-  } else if (unit.substr(unit.length - 1).toUpperCase() === 'G') {
-    return fromGigabytes(parseInt(unit.substr(0, unit.length - 1)));
+  if (unit.substring(unit.length - 2).toUpperCase() === 'MI') {
+    return fromMebibytes(parseInt(unit.substring(0, unit.length - 2)));
+  } else if (unit.substring(unit.length - 2).toUpperCase() === 'KI') {
+    return fromKibibytes(parseInt(unit.substring(0, unit.length - 2)));
+  } else if (unit.substring(unit.length - 2).toUpperCase() === 'GI') {
+    return fromGibibytes(parseInt(unit.substring(0, unit.length - 2)));
+  } else if (unit.substring(unit.length - 1).toUpperCase() === 'M') {
+    return fromMegabytes(parseInt(unit.substring(0, unit.length - 1)));
+  } else if (unit.substring(unit.length - 1).toUpperCase() === 'K') {
+    return fromKilobytes(parseInt(unit.substring(0, unit.length - 1)));
+  } else if (unit.substring(unit.length - 1).toUpperCase() === 'G') {
+    return fromGigabytes(parseInt(unit.substring(0, unit.length - 1)));
   } else {
     return parseInt(unit);
   }
@@ -61,8 +61,13 @@ export function convertToMilliCPU(unit: string | undefined): number {
   if (!unit) {
     return 0;
   }
-  if (unit.substr(unit.length - 1).toUpperCase() === 'M') {
-    return parseInt(unit.substr(0, unit.length - 1));
+
+  if (unit.substring(unit.length - 1).toUpperCase() === 'M') {
+    return parseInt(unit.substring(0, unit.length - 1));
+  } else if (unit.substring(unit.length - 1).toUpperCase() === 'N') {
+    const value = parseInt(unit.substring(0, unit.length - 1));
+    // convert nanoCPU to miliCPU
+    return Math.round(value / 1000 / 1000);
   } else {
     return parseInt(unit) * 1000;
   }

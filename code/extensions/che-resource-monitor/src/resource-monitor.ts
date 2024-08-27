@@ -24,8 +24,8 @@ export class ResourceMonitor {
   @inject(K8sHelper)
   private k8sHelper!: K8sHelper;
 
-  private METRICS_SERVER_ENDPOINT = '/apis/metrics.k8s.io/v1beta1/';
-  private METRICS_REQUEST_URL = `${this.METRICS_SERVER_ENDPOINT}namespaces/`;
+  private METRICS_SERVER_ENDPOINT = '/apis/metrics.k8s.io/v1beta1';
+
   private WARNING_COLOR = '#FFCC00';
   private DEFAULT_COLOR = '#FFFFFF';
   private DEFAULT_TOOLTIP = 'Workspace resources';
@@ -121,9 +121,8 @@ export class ResourceMonitor {
   }
 
   async getMetrics(): Promise<Container[]> {
-    const requestURL = `${this.METRICS_REQUEST_URL}${this.namespace}/pods/${this.podName}`;
-    const opts = { url: this.METRICS_SERVER_ENDPOINT };
-    const response = await this.k8sHelper.sendRawQuery(requestURL, opts);
+    const requestURL = `${this.METRICS_SERVER_ENDPOINT}/namespaces/${this.namespace}/pods/${this.podName}`;
+    const response = await this.k8sHelper.sendRawQuery(requestURL, { url: this.METRICS_SERVER_ENDPOINT });
 
     if (response.statusCode !== 200) {
       // wait when workspace pod's metrics will be available
