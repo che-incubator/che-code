@@ -298,13 +298,13 @@
     node-fetch "^2.6.0"
     url-parse "^1.4.3"
 
-"@eclipse-che/che-devworkspace-generator@7.89.0-next-784dff2":
-  version "7.89.0-next-784dff2"
-  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.89.0-next-784dff2.tgz#3ed9aa348712e78e100d1c4445ca146430ed5576"
-  integrity sha512-Mqkxw2VJB+p4B5QH5fXAU+Q68gXfaY2TphodqHxLHwAW0zBpLqyPTYbAwVk4ESUzy6BLXrSktYXJ3AA5ZIjrMg==
+"@eclipse-che/che-devworkspace-generator@7.90.0-1a2253f":
+  version "7.90.0-1a2253f"
+  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.90.0-1a2253f.tgz#feb8657a8524c3194a35bda9626acc724c0842f7"
+  integrity sha512-jp3NVkF2JH0hjwfPMiLF7S9Rd2LW4WYzuz7Gr5N9/FPSUqhjksd9ihDpAIvxw5FiheSR8ptbsP6T31/qmhGhdg==
   dependencies:
     "@devfile/api" "2.3.0-1721400636"
-    axios "^1.7.0"
+    axios "^1.7.4"
     fs-extra "^11.2.0"
     inversify "^6.0.2"
     js-yaml "^4.0.0"
@@ -824,15 +824,6 @@ asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha1-x57Zf380y48robyXkLzDZkdLS3k=
-
-axios@^1.7.0:
-  version "1.7.2"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.2.tgz#b625db8a7051fbea61c35a3cbb3a1daa7b9c7621"
-  integrity sha512-2A8QhOMrbomlDuiLeK9XibIBzuHeRcqqNOHp0Cyp5EoJ1IFDh+XZH3A6BkXtv0K4gFGCI0Y4BM7B1wOEi0Rmgw==
-  dependencies:
-    follow-redirects "^1.15.6"
-    form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
 
 axios@^1.7.4:
   version "1.7.5"
