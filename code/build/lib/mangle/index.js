@@ -261,6 +261,11 @@ const skippedExportMangledFiles = function () {
         'standaloneLanguages',
         // Generated
         'extensionsApiProposals',
+        // che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic
+        'devfile-service',
+        'github-service',
+        'telemetry-service',
+        'workspace-service',
         // Module passed around as type
         'pfs',
         // entry points
