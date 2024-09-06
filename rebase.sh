@@ -146,8 +146,6 @@ apply_code_remote_yarn_lock_changes() {
   # reset the file from what is upstream
   git checkout --theirs code/remote/yarn.lock > /dev/null 2>&1
 
-  yarn add node-gyp@9
-
   # update yarn lock
   yarn --ignore-scripts --cwd code/remote
 
