@@ -13,23 +13,25 @@ import * as path from 'path';
 import * as fs from '../src/fs-extra';
 import { WebviewResources } from '../src/webview-resources';
 
+const getCheCodeEndpointMock = jest.fn();
+jest.mock('../src/flattened-devfile', () => ({
+  FlattenedDevfile: function () {
+    return { getCheCodeEndpoint: getCheCodeEndpointMock };
+  },
+}));
+
 describe('Test Configuring of WebView static resources:', () => {
-  test('should skip if WEBVIEW_LOCAL_RESOURCES is not set', async () => {
+  test('should get Webview resources URL from product.json', async () => {
+    // had to combine two tests in one due to some issues with mocking the '../src/flattened-devfile' module
+
+    // the first part checks that the relocating of webview resoures is skipped because of WEBVIEW_LOCAL_RESOURCES environment variable
+    env.WEBVIEW_LOCAL_RESOURCES = 'false';
+    new WebviewResources().configure();
+    expect(getCheCodeEndpointMock).toHaveBeenCalledTimes(0);
     delete env.WEBVIEW_LOCAL_RESOURCES;
 
-    const getCheCodeEndpointMock = jest.fn();
-    jest.mock('../src/flattened-devfile', () => ({
-      FlattenedDevfile: function () {
-        return { getCheCodeEndpoint: getCheCodeEndpointMock };
-      },
-    }));
+    // the second path tests the functionality of the WebviewResources module
 
-    const resources = new WebviewResources();
-    await resources.configure();
-    expect(getCheCodeEndpointMock).toHaveBeenCalledTimes(0);
-  });
-
-  test('should get Webview resources URL from product.json', async () => {
     // load "out/vs/workbench/workbench.web.main.js"
     const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
 
@@ -47,14 +49,9 @@ describe('Test Configuring of WebView static resources:', () => {
     // load "product.json"
     const fileProductJSON = await fs.readFile(path.resolve(__dirname, '_data', 'product.json'));
 
-    // load "flattened.devworkspace.yaml"
-    const fileDevworkspaceFlattenedDevfile = await fs.readFile(
-      path.resolve(__dirname, '_data', 'flattened.devworkspace.yaml')
-    );
-
-    // configure the environment variable
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = 'flattened.devworkspace.yaml';
-    env.WEBVIEW_LOCAL_RESOURCES = 'true';
+    getCheCodeEndpointMock.mockImplementation(() => {
+      return 'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/';
+    });
 
     const webviewResources = new WebviewResources();
 
@@ -65,9 +62,6 @@ describe('Test Configuring of WebView static resources:', () => {
       switch (fileName) {
         case 'product.json':
           return fileProductJSON;
-
-        case 'flattened.devworkspace.yaml':
-          return fileDevworkspaceFlattenedDevfile;
 
         case 'out/vs/workbench/workbench.web.main.js':
           return fileWorkbenchWebMain;

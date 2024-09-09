@@ -28,8 +28,8 @@ export class WebviewResources {
   async configure(): Promise<void> {
     console.log('# Configuring Webview Resources location...');
 
-    if ('true' !== env.WEBVIEW_LOCAL_RESOURCES) {
-      console.log(`  > env.WEBVIEW_LOCAL_RESOURCES is not set to 'true', skip this step`);
+    if (env.WEBVIEW_LOCAL_RESOURCES !== undefined && 'false' === env.WEBVIEW_LOCAL_RESOURCES) {
+      console.log(`  > env.WEBVIEW_LOCAL_RESOURCES is set to 'false', skip this step`);
       return;
     }
 
