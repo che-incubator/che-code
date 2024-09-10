@@ -113,7 +113,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then yarn playwright-install; fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
       yum install --nobest -y procps \
-        https://rpmfind.net/linux/epel/9/Everything/${ARCH}/Packages/e/epel-release-9-7.el9.noarch.rpm \
+        https://rpmfind.net/linux/epel/9/Everything/${ARCH}/Packages/e/epel-release-9-8.el9.noarch.rpm \
         https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-9.0-23.el9.noarch.rpm \
         https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-9.0-23.el9.noarch.rpm; \
     fi
