@@ -71,7 +71,7 @@ export class ResourceMonitor {
     this.statusBarItem.tooltip = 'Loading...';
     this.statusBarItem.show();
 
-    setInterval(() => this.getMetrics(), 2000);
+    setInterval(() => this.getMetrics(), 5000);
   }
 
   async displayWithError(tooltip: string, warning: string) {
