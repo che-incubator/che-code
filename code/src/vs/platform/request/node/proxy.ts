@@ -74,7 +74,7 @@ export async function getProxyAgent(rawRequestURL: string, env: typeof process.e
 		const mod = await import('http-proxy-agent');
 		// ESM-comment-end
 		// ESM-uncomment-begin
-		// const mod = (await import('http-proxy-agent')).default;
+		// const { default: mod } = await import('http-proxy-agent');
 		// ESM-uncomment-end
 		return new mod.HttpProxyAgent(proxyURL, opts);
 	} else {
@@ -82,7 +82,7 @@ export async function getProxyAgent(rawRequestURL: string, env: typeof process.e
 		const mod = await import('https-proxy-agent');
 		// ESM-comment-end
 		// ESM-uncomment-begin
-		// const mod = (await import('https-proxy-agent')).default;
+		// const { default: mod } = await import('https-proxy-agent');
 		// ESM-uncomment-end
 		return new mod.HttpsProxyAgent(proxyURL, opts);
 	}

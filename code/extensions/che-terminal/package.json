@@ -38,7 +38,7 @@
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
     },
   "dependencies": {
-    "fs-extra": "^10.0.0",
+    "fs-extra": "^11.2.0",
     "js-yaml": "^4.1.0",
     "vscode-nls": "^5.2.0",
     "ws": "8.2.3"
