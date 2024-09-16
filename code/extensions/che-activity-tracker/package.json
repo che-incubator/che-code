@@ -5,6 +5,7 @@
   "publisher": "eclipse-che",
   "license": "EPL-2.0",
   "version": "0.0.1",
+  "icon": "images/eclipse-che-logo.png",
   "engines": {
     "vscode": "^1.63.0"
   },
