@@ -43,9 +43,6 @@ ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
 # Initialize a git repository for code build tools
 RUN git init .
 
-# install node-gyp (yarn already installed)
-RUN npm install --global node-gyp@9
-
 # change network timeout (slow using multi-arch build)
 RUN yarn config set network-timeout 600000 -g
 
