@@ -3,45 +3,46 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from 'vs/nls';
-import { Emitter, Event } from 'vs/base/common/event';
-import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
-import { ResourceMap } from 'vs/base/common/map';
-import { URI } from 'vs/base/common/uri';
-import { EditorConfiguration } from 'vs/editor/browser/config/editorConfiguration';
-import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditor/codeEditorWidget';
-import { IEditorConfiguration } from 'vs/editor/common/config/editorConfiguration';
-import { Position } from 'vs/editor/common/core/position';
-import { Range } from 'vs/editor/common/core/range';
-import { Selection, SelectionDirection } from 'vs/editor/common/core/selection';
-import { IWordAtPosition, USUAL_WORD_SEPARATORS } from 'vs/editor/common/core/wordHelper';
-import { CommandExecutor, CursorsController } from 'vs/editor/common/cursor/cursor';
-import { DeleteOperations } from 'vs/editor/common/cursor/cursorDeleteOperations';
-import { CursorConfiguration, ICursorSimpleModel } from 'vs/editor/common/cursorCommon';
-import { CursorChangeReason } from 'vs/editor/common/cursorEvents';
-import { ILanguageConfigurationService } from 'vs/editor/common/languages/languageConfigurationRegistry';
-import { IModelDeltaDecoration, ITextModel, PositionAffinity } from 'vs/editor/common/model';
-import { indentOfLine } from 'vs/editor/common/model/textModel';
-import { ITextModelService } from 'vs/editor/common/services/resolverService';
-import { ICoordinatesConverter } from 'vs/editor/common/viewModel';
-import { ViewModelEventsCollector } from 'vs/editor/common/viewModelEventDispatcher';
-import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
-import { MenuId, registerAction2 } from 'vs/platform/actions/common/actions';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ContextKeyExpr, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
-import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { IPastFutureElements, IUndoRedoElement, IUndoRedoService, UndoRedoElementType } from 'vs/platform/undoRedo/common/undoRedo';
-import { INotebookActionContext, NotebookAction } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
-import { getNotebookEditorFromEditorPane, ICellViewModel, INotebookEditor, INotebookEditorContribution } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
-import { registerNotebookContribution } from 'vs/workbench/contrib/notebook/browser/notebookEditorExtensions';
-import { CellEditorOptions } from 'vs/workbench/contrib/notebook/browser/view/cellParts/cellEditorOptions';
-import { NOTEBOOK_CELL_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
-import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { RedoCommand, UndoCommand } from 'vs/editor/browser/editorExtensions';
-import { registerWorkbenchContribution2, WorkbenchPhase } from 'vs/workbench/common/contributions';
+import { localize } from '../../../../../../nls.js';
+import { Emitter, Event } from '../../../../../../base/common/event.js';
+import { KeyCode, KeyMod } from '../../../../../../base/common/keyCodes.js';
+import { Disposable, DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { ResourceMap } from '../../../../../../base/common/map.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { EditorConfiguration } from '../../../../../../editor/browser/config/editorConfiguration.js';
+import { PastePayload, ICodeEditor } from '../../../../../../editor/browser/editorBrowser.js';
+import { RedoCommand, UndoCommand } from '../../../../../../editor/browser/editorExtensions.js';
+import { CodeEditorWidget } from '../../../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
+import { IEditorConfiguration } from '../../../../../../editor/common/config/editorConfiguration.js';
+import { Position } from '../../../../../../editor/common/core/position.js';
+import { Range } from '../../../../../../editor/common/core/range.js';
+import { Selection, SelectionDirection } from '../../../../../../editor/common/core/selection.js';
+import { IWordAtPosition, USUAL_WORD_SEPARATORS } from '../../../../../../editor/common/core/wordHelper.js';
+import { CommandExecutor, CursorsController } from '../../../../../../editor/common/cursor/cursor.js';
+import { DeleteOperations } from '../../../../../../editor/common/cursor/cursorDeleteOperations.js';
+import { CursorConfiguration, ICursorSimpleModel } from '../../../../../../editor/common/cursorCommon.js';
+import { CursorChangeReason } from '../../../../../../editor/common/cursorEvents.js';
+import { Handler, ReplacePreviousCharPayload, CompositionTypePayload } from '../../../../../../editor/common/editorCommon.js';
+import { ILanguageConfigurationService } from '../../../../../../editor/common/languages/languageConfigurationRegistry.js';
+import { IModelDeltaDecoration, ITextModel, PositionAffinity } from '../../../../../../editor/common/model.js';
+import { indentOfLine } from '../../../../../../editor/common/model/textModel.js';
+import { ITextModelService } from '../../../../../../editor/common/services/resolverService.js';
+import { ICoordinatesConverter } from '../../../../../../editor/common/viewModel.js';
+import { ViewModelEventsCollector } from '../../../../../../editor/common/viewModelEventDispatcher.js';
+import { IAccessibilityService } from '../../../../../../platform/accessibility/common/accessibility.js';
+import { MenuId, registerAction2 } from '../../../../../../platform/actions/common/actions.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { ContextKeyExpr, IContextKeyService, RawContextKey } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { ServicesAccessor } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { KeybindingWeight } from '../../../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { IPastFutureElements, IUndoRedoElement, IUndoRedoService, UndoRedoElementType } from '../../../../../../platform/undoRedo/common/undoRedo.js';
+import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../../../common/contributions.js';
+import { IEditorService } from '../../../../../services/editor/common/editorService.js';
+import { NOTEBOOK_CELL_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR } from '../../../common/notebookContextKeys.js';
+import { INotebookActionContext, NotebookAction } from '../../controller/coreActions.js';
+import { getNotebookEditorFromEditorPane, ICellViewModel, INotebookEditor, INotebookEditorContribution } from '../../notebookBrowser.js';
+import { registerNotebookContribution } from '../../notebookEditorExtensions.js';
+import { CellEditorOptions } from '../../view/cellParts/cellEditorOptions.js';
 
 const NOTEBOOK_ADD_FIND_MATCH_TO_SELECTION_ID = 'notebook.addFindMatchToSelection';
 
@@ -248,6 +249,74 @@ export class NotebookMultiCursorController extends Disposable implements INotebo
 			});
 
 			this.updateLazyDecorations();
+		}));
+
+		// arrow key navigation
+		this.anchorDisposables.add(this.anchorCell[1].onDidChangeCursorSelection((e) => {
+			if (e.source !== 'keyboard') {
+				return;
+			}
+
+			this.trackedMatches.forEach(match => {
+				const controller = this.cursorsControllers.get(match.cellViewModel.uri);
+				if (!controller) {
+					return;
+				}
+				controller.setSelections(new ViewModelEventsCollector(), e.source, [e.selection], CursorChangeReason.Explicit);
+				this.updateLazyDecorations();
+			});
+		}));
+
+		// core actions
+		this.anchorDisposables.add(this.anchorCell[1].onWillTriggerEditorOperationEvent((e) => {
+			this.trackedMatches.forEach(match => {
+				if (match.cellViewModel.handle === this.anchorCell?.[0].handle) {
+					return;
+				}
+
+				const eventsCollector = new ViewModelEventsCollector();
+				const controller = this.cursorsControllers.get(match.cellViewModel.uri);
+				if (!controller) {
+					return;
+				}
+				switch (e.handlerId) {
+					case Handler.CompositionStart:
+						controller.startComposition(eventsCollector);
+						return;
+					case Handler.CompositionEnd:
+						controller.endComposition(eventsCollector, e.source);
+						return;
+					case Handler.ReplacePreviousChar: {
+						const args = <Partial<ReplacePreviousCharPayload>>e.payload;
+						controller.compositionType(eventsCollector, args.text || '', args.replaceCharCnt || 0, 0, 0, e.source);
+						return;
+					}
+					case Handler.CompositionType: {
+						const args = <Partial<CompositionTypePayload>>e.payload;
+						controller.compositionType(eventsCollector, args.text || '', args.replacePrevCharCnt || 0, args.replaceNextCharCnt || 0, args.positionDelta || 0, e.source);
+						return;
+					}
+					case Handler.Paste: {
+						const args = <Partial<PastePayload>>e.payload;
+						controller.paste(eventsCollector, args.text || '', args.pasteOnNewLine || false, args.multicursorText || null, e.source);
+						return;
+
+						// ! this code is for firing the paste event, not sure what that would enable, trace the event listener
+						// const startPos = XYZ
+						// const endPos = XYZ
+						// if (source === 'keyboard') {
+						// 	this._onDidPaste.fire({
+						// 		clipboardEvent,
+						// 		range: new Range(startPosition.lineNumber, startPosition.column, endPosition.lineNumber, endPosition.column),
+						// 		languageId: mode
+						// 	});
+						// }
+					}
+					case Handler.Cut:
+						controller.cut(eventsCollector, e.source);
+						return;
+				}
+			});
 		}));
 
 		// exit mode
@@ -531,6 +600,7 @@ export class NotebookMultiCursorController extends Disposable implements INotebo
 		);
 	}
 
+	//TODO: make sure nothing happens for the anchor cell ONCE THE DECORATIONS ARE PRETTY-IFIED
 	private updateLazyDecorations() {
 		// for every tracked match that is not in the visible range, dispose of their decorations and update them based off the cursorcontroller
 		this.trackedMatches.forEach(match => {
