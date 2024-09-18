@@ -88,7 +88,7 @@ import { AccessibilityCommandId } from '../../accessibility/common/accessibility
 import { terminalStrings } from '../common/terminalStrings.js';
 import { shouldPasteTerminalText } from '../common/terminalClipboard.js';
 import { TerminalIconPicker } from './terminalIconPicker.js';
-import { EnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariableService';
+import { EnvironmentVariableService } from '../common/environmentVariableService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { TerminalResizeDebouncer } from './terminalResizeDebouncer.js';
 

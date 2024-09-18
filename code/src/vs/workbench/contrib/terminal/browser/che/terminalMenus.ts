@@ -9,9 +9,9 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { localize } from 'vs/nls';
-import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
-import { TerminalMenuBarGroup } from 'vs/workbench/contrib/terminal/browser/terminalMenus';
+import { localize } from '../../../../../nls.js';
+import { MenuId, MenuRegistry } from '../../../../../platform/actions/common/actions.js';
+import { TerminalMenuBarGroup } from '../terminalMenus.js';
 
 // see enum ContextMenuGroup in the terminalMenus
 const CONTEXT_MENU_GROUP_CREATE = '1_create';

@@ -5,7 +5,7 @@
 
 import { createReadStream, promises } from 'fs';
 import * as path from 'path';
-import { getCheRedirectLocation } from 'vs/server/node/che/webClientServer';
+import { getCheRedirectLocation } from './che/webClientServer.js';
 import * as http from 'http';
 import * as url from 'url';
 import * as cookie from 'cookie';

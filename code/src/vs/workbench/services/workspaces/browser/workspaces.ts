@@ -6,7 +6,7 @@
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from '../../../../platform/workspace/common/workspace.js';
 import { URI } from '../../../../base/common/uri.js';
 import { hash } from '../../../../base/common/hash.js';
-import { getDevWorkspaceId } from 'vs/workbench/services/workspaces/browser/che/devWorkspaceId'
+import { getDevWorkspaceId } from './che/devWorkspaceId.js';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // NOTE: DO NOT CHANGE. IDENTIFIERS HAVE TO REMAIN STABLE

@@ -9,7 +9,7 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { delimiter } from 'vs/base/common/path';
+import { delimiter } from '../../../base/common/path.js';
 
 /**
  * Merges the provided values. The first parameter is taken as the basis.

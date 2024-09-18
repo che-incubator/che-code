@@ -21,7 +21,7 @@ import type { IWorkbenchConstructionOptions, IWorkspace, IWorkspaceProvider } fr
 import { AuthenticationSessionInfo } from '../../../workbench/services/authentication/browser/authenticationService.js';
 import type { IURLCallbackProvider } from '../../../workbench/services/url/browser/urlService.js';
 import { create } from '../../../workbench/workbench.web.main.internal.js';
-import { getCheConfig } from 'vs/code/browser/workbench/che/workbench-che-config';
+import { getCheConfig } from './che/workbench-che-config.js';
 
 interface ISecretStorageCrypto {
 	seal(data: string): Promise<string>;

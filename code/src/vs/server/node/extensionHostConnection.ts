@@ -19,7 +19,7 @@ import { IRemoteExtensionHostStartParams } from '../../platform/remote/common/re
 import { getResolvedShellEnv } from '../../platform/shell/node/shellEnv.js';
 import { IExtensionHostStatusService } from './extensionHostStatusService.js';
 import { getNLSConfiguration } from './remoteLanguagePacks.js';
-import { getResolvedPathEnvVar } from 'vs/server/node/che/utils';
+import { getResolvedPathEnvVar } from './che/utils.js';
 import { IServerEnvironmentService } from './serverEnvironmentService.js';
 import { IPCExtHostConnection, SocketExtHostConnection, writeExtHostConnection } from '../../workbench/services/extensions/common/extensionHostEnv.js';
 import { IExtHostReadyMessage, IExtHostReduceGraceTimeMessage, IExtHostSocketMessage } from '../../workbench/services/extensions/common/extensionHostProtocol.js';

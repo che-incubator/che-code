@@ -54,7 +54,7 @@ import { registerColors } from '../common/terminalColorRegistry.js';
 import { registerTerminalConfiguration } from '../common/terminalConfiguration.js';
 import { TerminalContextKeyStrings, TerminalContextKeys } from '../common/terminalContextKey.js';
 import { terminalStrings } from '../common/terminalStrings.js';
-import { setupCheTerminalMenus } from 'vs/workbench/contrib/terminal/browser/che/terminalMenus';
+import { setupCheTerminalMenus } from './che/terminalMenus.js';
 
 // HACK: This file should not depend on terminalContrib
 // eslint-disable-next-line local/code-import-patterns

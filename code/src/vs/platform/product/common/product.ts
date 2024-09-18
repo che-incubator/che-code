@@ -6,7 +6,7 @@
 import { env } from '../../../base/common/process.js';
 import { IProductConfiguration } from '../../../base/common/product.js';
 import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';
-import { loadFromFileSystem } from 'vs/platform/product/common/che/product';
+import { loadFromFileSystem } from './che/product.js';
 /**
  * @deprecated You MUST use `IProductService` if possible.
  */
