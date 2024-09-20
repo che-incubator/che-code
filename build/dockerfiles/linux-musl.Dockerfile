@@ -49,9 +49,6 @@ RUN npm config set fetch-retry-mintimeout 1000000 && npm config set fetch-retry-
 # Grab dependencies
 RUN npm install --force
 
-# Rebuild platform specific dependencies
-RUN npm rebuild
-
 RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
     # cache node from this image to avoid to grab it from within the build
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node" \
