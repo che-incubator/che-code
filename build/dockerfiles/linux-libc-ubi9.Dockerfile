@@ -139,7 +139,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       NODE_ARCH=$(echo "console.log(process.arch)" | node) \
       VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-      /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m npm run smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
     fi
 
 # Do not change line below! It is used to cut this section to skip tests
