@@ -155,6 +155,9 @@ WORKDIR /checode-launcher
 RUN yarn \
     && mkdir /checode/launcher \
     && cp -r out/src/*.js /checode/launcher \
+    && mkdir /checode/launcher/vsix-to-install \
+    && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && gunzip /checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # Store the content of the result
