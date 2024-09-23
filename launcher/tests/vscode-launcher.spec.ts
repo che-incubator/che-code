@@ -112,7 +112,8 @@ describe('Test VS Code launcher:', () => {
     const launcher = new VSCodeLauncher();
     await launcher.launch('/tmp/projects/.code-workspace');
 
-    expect(pathExistsMock).toBeCalledTimes(1);
+    expect(pathExistsMock).toBeCalledTimes(2);
+    expect(pathExistsMock).toBeCalledWith('/checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix');
     expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
 
     expect(spawnMock).toBeCalledWith('/tmp/vscode-nodejs-runtime/node', [
@@ -159,7 +160,8 @@ describe('Test VS Code launcher:', () => {
     const launcher = new VSCodeLauncher();
     await launcher.launch();
 
-    expect(pathExistsMock).toBeCalledTimes(1);
+    expect(pathExistsMock).toBeCalledTimes(2);
+    expect(pathExistsMock).toBeCalledWith('/checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix');
     expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
 
     expect(spawnMock).toBeCalledWith('/tmp/vscode-nodejs-runtime/node', [
@@ -241,7 +243,8 @@ describe('Test VS Code launcher:', () => {
     const launcher = new VSCodeLauncher();
     await launcher.launch('/tmp/.code-workspace');
 
-    expect(pathExistsMock).toBeCalledTimes(1);
+    expect(pathExistsMock).toBeCalledTimes(2);
+    expect(pathExistsMock).toBeCalledWith('/checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix');
     expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
 
     expect(spawnMock).toBeCalledWith('/tmp/vscode-nodejs-runtime/node', [

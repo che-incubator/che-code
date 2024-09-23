@@ -46,7 +46,7 @@ export class VSCodeLauncher {
 
     const MSSQL_EXTENSION = '/checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix';
     if (await fs.pathExists(MSSQL_EXTENSION)) {
-      params.push('--install-extension', MSSQL_EXTENSION)
+      params.push('--install-extension', MSSQL_EXTENSION);
     }
 
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
