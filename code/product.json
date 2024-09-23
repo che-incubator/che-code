@@ -96,6 +96,9 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
+		],
+		"ms-python.python": [
+			"terminalShellIntegration"
 		]
 	},
 	"sendASmile": {
