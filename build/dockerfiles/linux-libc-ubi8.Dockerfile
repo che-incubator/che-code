@@ -57,8 +57,11 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 
 RUN mkdir -p /checode/vsix-to-install \
     && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && echo "TO:" \
     && ls -la /checode/vsix-to-install \
-    && gunzip /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz
+    && gunzip /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && echo "AFTER:" \
+    && ls -la /checode/vsix-to-install
 
 RUN exit 1
 
