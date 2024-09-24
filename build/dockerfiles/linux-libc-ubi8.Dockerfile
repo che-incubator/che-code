@@ -55,15 +55,13 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     && yum -y clean all && rm -rf /var/cache/yum \
     && npm install -g yarn@1.22.17
 
-RUN mkdir -p /checode/vsix-to-install \
-    && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+RUN mkdir -p /checode-extensions/vsix-to-install \
+    && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode-extensions/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
     && echo "TO:" \
-    && ls -la /checode/vsix-to-install \
-    && gunzip /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && ls -la /checode-extensions/vsix-to-install \
+    && gunzip /checode-extensions/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
     && echo "AFTER:" \
-    && ls -la /checode/vsix-to-install
-
-RUN exit 1
+    && ls -la /checode-extensions/vsix-to-install
 
 #########################################################
 #
@@ -93,6 +91,8 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
+
+RUN cp -r /checode-extensions/vsix-to-install /checode
 
 # RUN mkdir -p /checode/vsix-to-install \
 #     && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
