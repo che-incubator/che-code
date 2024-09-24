@@ -47,13 +47,18 @@ RUN git init .
 RUN npm config set fetch-retry-mintimeout 1000000 && npm config set fetch-retry-maxtimeout 6000000
 
 # Grab dependencies
-RUN npm install --force
+RUN npm install
+
+# Rebuild platform specific dependencies
+RUN npm rebuild
 
 RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
     # cache node from this image to avoid to grab it from within the build
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node" \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine \
-    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node
+    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node \
+    # workaround to fix build
+    && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
 RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
