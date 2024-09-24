@@ -50,6 +50,11 @@ export class VSCodeLauncher {
       }
     }
 
+    if (env.VSCODE_ADDITIONAL_PARAMS) {
+      console.log(`  > Adding additional parameters: ${env.VSCODE_ADDITIONAL_PARAMS}`);
+      params.push(...env.VSCODE_ADDITIONAL_PARAMS.split(','));
+    }
+
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
