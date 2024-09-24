@@ -84,6 +84,10 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && NODE_OPTIONS="--max_old_space_size=8500" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
 
+RUN mkdir -p /checode/vsix-to-install \
+    && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && gunzip /checode/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
@@ -155,9 +159,6 @@ WORKDIR /checode-launcher
 RUN yarn \
     && mkdir /checode/launcher \
     && cp -r out/src/*.js /checode/launcher \
-    && mkdir /checode/launcher/vsix-to-install \
-    && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
-    && gunzip /checode/launcher/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # Store the content of the result
