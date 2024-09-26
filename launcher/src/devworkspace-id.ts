@@ -9,8 +9,8 @@
  ***********************************************************************/
 
 import { env } from 'process';
-import { FILE_WORKBENCH_WEB_MAIN } from './files';
-import * as fs from './fs-extra';
+import { FILE_WORKBENCH_WEB_MAIN } from './files.js';
+import * as fs from './fs-extra.js';
 
 const DEVWORKSPACE_ID_MASK = 'https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/';
 

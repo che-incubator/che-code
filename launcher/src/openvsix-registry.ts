@@ -9,9 +9,9 @@
  ***********************************************************************/
 
 import { env } from 'process';
-import { FILE_WORKBENCH_WEB_MAIN } from './files';
-import * as fs from './fs-extra';
-import { ProductJSON } from './product-json';
+import { FILE_WORKBENCH_WEB_MAIN } from './files.js';
+import * as fs from './fs-extra.js';
+import { ProductJSON } from './product-json.js';
 
 export class OpenVSIXRegistry {
   /*****************************************************************************************************************

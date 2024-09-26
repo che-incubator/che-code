@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from './fs-extra';
+import * as fs from './fs-extra.js';
 import { env } from 'process';
 import * as jsYaml from 'js-yaml';
 

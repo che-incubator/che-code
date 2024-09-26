@@ -9,11 +9,11 @@
  ***********************************************************************/
 
 import { env } from 'process';
-import * as fs from './fs-extra';
-import { FlattenedDevfile } from './flattened-devfile';
-import { ProductJSON } from './product-json';
+import * as fs from './fs-extra.js';
+import { FlattenedDevfile } from './flattened-devfile.js';
+import { ProductJSON } from './product-json.js';
 
-import { FILE_EXTENSION_HOST_PROCESS, FILE_WORKBENCH_WEB_MAIN } from './files';
+import { FILE_EXTENSION_HOST_PROCESS, FILE_WORKBENCH_WEB_MAIN } from './files.js';
 
 export class WebviewResources {
   /*****************************************************************************************************************

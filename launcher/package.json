@@ -9,6 +9,7 @@
   "publishConfig": {
     "access": "public"
   },
+  "type": "module",
   "files": [
     "out",
     "src"
@@ -39,6 +40,7 @@
     "@types/node": "20.x",
     "eslint": "^7.14.0",
     "jest": "29.7.0",
+    "jest-esm-transformer": "^1.0.0",
     "prettier": "^2.2.0",
     "ts-jest": "29.2.5",
     "ts-node": "^10.9.1",
@@ -51,11 +53,18 @@
     ],
     "coverageDirectory": "./coverage",
     "transform": {
-      "^.+\\.tsx?$": "ts-jest"
+      "^.+\\.tsx?$": "ts-jest",
+      "^.+\\.jsx?$": "jest-esm-transformer"
     },
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "modulePathIgnorePatterns": [
       "<rootDir>/out"
     ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "moduleFileExtensions": [
       "ts",

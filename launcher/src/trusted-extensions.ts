@@ -9,7 +9,7 @@
  ***********************************************************************/
 
 import { env } from 'process';
-import { ProductJSON } from './product-json';
+import { ProductJSON } from './product-json.js';
 
 export class TrustedExtensions {
   async configure(): Promise<void> {

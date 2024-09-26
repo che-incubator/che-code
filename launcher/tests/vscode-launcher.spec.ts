@@ -12,9 +12,20 @@ import { env } from 'process';
 import * as os from 'os';
 
 import * as fs from '../src/fs-extra';
-import * as child_process from 'child_process';
+import { spawn, execSync } from 'child_process';
 
 import { VSCodeLauncher } from '../src/vscode-launcher';
+
+jest.mock('child_process', () => ({
+  ...jest.requireActual('child_process'),
+  execSync: jest.fn(),
+  spawn: jest.fn(),
+}));
+
+jest.mock('os', () => ({
+  ...jest.requireActual('os'),
+  userInfo: jest.fn(() => ({ shell: '/sbin/nologin' })),
+}));
 
 describe('Test VS Code launcher:', () => {
   beforeEach(() => {
@@ -39,9 +50,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     const launcher = new VSCodeLauncher();
 
@@ -65,9 +74,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     const launcher = new VSCodeLauncher();
 
@@ -95,9 +102,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     spawnMock.mockImplementation(() => ({
       on: jest.fn(),
@@ -142,9 +147,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     spawnMock.mockImplementation(() => ({
       on: jest.fn(),
@@ -185,9 +188,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     spawnMock.mockImplementation(() => ({
       on: jest.fn(),
@@ -220,9 +221,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     const mainTreadEventEmitter = jest.fn();
     const stdoutEventEmitter = jest.fn();
@@ -266,20 +265,16 @@ describe('Test VS Code launcher:', () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
     env.PROJECTS_ROOT = '/tmp/projects';
 
-    jest.spyOn(os, 'userInfo').mockImplementation(() => ({ shell: '/sbin/nologin' } as any));
-
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
     });
 
     const execSyncMock = jest.fn(() => '');
-
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-      execSync: execSyncMock,
-    });
+
+    (spawn as jest.Mock).mockImplementation(spawnMock);
+    (execSync as jest.Mock).mockImplementation(execSyncMock);
 
     const mainTreadEventEmitter = jest.fn();
     const stdoutEventEmitter = jest.fn();
@@ -316,8 +311,6 @@ describe('Test VS Code launcher:', () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
     env.PROJECTS_ROOT = '/tmp/projects';
 
-    jest.spyOn(os, 'userInfo').mockImplementation(() => ({ shell: '/sbin/nologin' } as any));
-
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
       pathExists: pathExistsMock,
@@ -328,10 +321,8 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-      execSync: execSyncMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
+    (execSync as jest.Mock).mockImplementation(execSyncMock);
 
     const mainTreadEventEmitter = jest.fn();
     const stdoutEventEmitter = jest.fn();
@@ -368,7 +359,9 @@ describe('Test VS Code launcher:', () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
     env.PROJECTS_ROOT = '/tmp/projects';
 
-    jest.spyOn(os, 'userInfo').mockImplementation(() => ({ shell: '/bin/zsh' } as any));
+    (os.userInfo as jest.Mock).mockImplementationOnce(() => ({
+      shell: '/bin/zsh',
+    }));
 
     const pathExistsMock = jest.fn();
     Object.assign(fs, {
@@ -380,10 +373,8 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-      execSync: execSyncMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
+    (execSync as jest.Mock).mockImplementation(execSyncMock);
 
     const mainTreadEventEmitter = jest.fn();
     const stdoutEventEmitter = jest.fn();
@@ -430,9 +421,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     spawnMock.mockImplementation(() => ({
       on: jest.fn(),
@@ -462,9 +451,7 @@ describe('Test VS Code launcher:', () => {
     });
 
     const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
+    (spawn as jest.Mock).mockImplementation(spawnMock);
 
     spawnMock.mockImplementation(() => ({
       on: jest.fn(),

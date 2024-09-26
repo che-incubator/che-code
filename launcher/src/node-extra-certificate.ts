@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import * as fs from './fs-extra';
+import * as fs from './fs-extra.js';
 
 export const NODE_EXTRA_CERTIFICATE_DIR = '/tmp/node-extra-certificates';
 export const NODE_EXTRA_CERTIFICATE = `${NODE_EXTRA_CERTIFICATE_DIR}/ca.crt`;
