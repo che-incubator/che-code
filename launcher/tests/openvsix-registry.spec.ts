@@ -66,7 +66,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     // it must be cut when forming a registry URL
     env.OPENVSX_REGISTRY_URL = 'https://test-openvsx.org/';
 
-    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
+    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.internal.js'));
 
     const fileWorkbenchWebMainExpected = await fs.readFile(
       path.resolve(__dirname, '_data', 'workbench.web.main.test-openvsix-registry.js')
@@ -79,7 +79,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
       readFile: async (file: string) => {
         if ('product.json' === file) {
           return ORIGINAL_PRODUCT_JSON;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
           return fileWorkbenchWebMain;
         }
       },
@@ -87,7 +87,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
       writeFile: async (file: string, data: string) => {
         if ('product.json' === file) {
           savedProductJson = data;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
           savedWorkbenchWebMain = data;
         }
       },
@@ -107,7 +107,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     // it must be cut when forming a registry URL
     env.CHE_PLUGIN_REGISTRY_URL = 'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3/';
 
-    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
+    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.internal.js'));
 
     const fileWorkbenchWebMainExpected = await fs.readFile(
       path.resolve(__dirname, '_data', 'workbench.web.main.test-che-plugin-registry.js')
@@ -120,7 +120,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
       readFile: async (file: string) => {
         if ('product.json' === file) {
           return ORIGINAL_PRODUCT_JSON;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
           return fileWorkbenchWebMain;
         }
       },
@@ -128,7 +128,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
       writeFile: async (file: string, data: string) => {
         if ('product.json' === file) {
           savedProductJson = data;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
           savedWorkbenchWebMain = data;
         }
       },

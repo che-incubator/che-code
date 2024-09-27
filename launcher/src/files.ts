@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-export const FILE_WORKBENCH_WEB_MAIN = 'out/vs/workbench/workbench.web.main.js';
+export const FILE_WORKBENCH_WEB_MAIN = 'out/vs/workbench/workbench.web.main.internal.js';
 
 export const FILE_WORKBENCH = 'out/vs/code/browser/workbench/workbench.js';
 
