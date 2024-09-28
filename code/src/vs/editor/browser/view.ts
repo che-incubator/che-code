@@ -437,6 +437,7 @@ export class View extends ViewEventHandler {
 		}
 
 		this._contentWidgets.overflowingContentWidgetsDomNode.domNode.remove();
+		this._overlayWidgets.overflowingOverlayWidgetsDomNode.domNode.remove();
 
 		this._context.removeEventHandler(this);
 		this._viewGpuContext?.dispose();
@@ -561,7 +562,7 @@ export class View extends ViewEventHandler {
 					this._viewLinesGpu.onDidRender();
 				}
 
-				return [viewPartsToRender, new RenderingContext(this._context.viewLayout, viewportData, this._viewLines)];
+				return [viewPartsToRender, new RenderingContext(this._context.viewLayout, viewportData, this._viewLines, this._viewLinesGpu)];
 			},
 			prepareRender: (viewPartsToRender: ViewPart[], ctx: RenderingContext) => {
 				for (const viewPart of viewPartsToRender) {

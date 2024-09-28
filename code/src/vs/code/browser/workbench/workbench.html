@@ -25,7 +25,7 @@
 		<!-- Workbench Icon/Manifest/CSS -->
 		<link rel="icon" href="./oss-dev/static/resources/server/favicon.ico" type="image/x-icon" />
 		<link rel="manifest" href="./oss-dev/static/resources/server/manifest.json" crossorigin="use-credentials" />
-		<link data-name="vs/workbench/workbench.web.main" rel="stylesheet" href="./oss-dev/static/out/vs/workbench/workbench.web.main.css">
+		<link data-name="vs/workbench/workbench.web.main" rel="stylesheet" href="./oss-dev/static/out/vs/code/browser/workbench/workbench.css">
 
 	</head>
 
@@ -33,37 +33,14 @@
 	</body>
 
 	<!-- Startup (do not modify order of script tags!) -->
-	<script src="./oss-dev/static/out/vs/loader.js"></script>
-	<script src="./oss-dev/static/out/vs/webPackagePaths.js"></script>
 	<script>
-		// Packages
-		const baseUrl =  `${window.location.protocol}//${window.location.host}${window.location.pathname}oss-dev/static`;
-		Object.keys(self.webPackagePaths).map(function (key, index) {
-			self.webPackagePaths[key] = `${baseUrl}/node_modules/${key}/${self.webPackagePaths[key]}`;
-		});
-
-		// AMD Loader
-		require.config({
-			baseUrl: `${baseUrl}/out`,
-			recordStats: true,
-			trustedTypesPolicy: window.trustedTypes?.createPolicy('amdLoader', {
-				createScriptURL(value) {
-					if(value.startsWith(window.location.origin)) {
-						return value;
-					}
-					throw new Error(`Invalid script url: ${value}`)
-				}
-			}),
-			paths: self.webPackagePaths
-		});
+		const baseUrl = new URL('./oss-dev/static', window.location.origin).toString();
+		globalThis._VSCODE_FILE_ROOT = baseUrl + '/out/';
 	</script>
 	<script>
 		performance.mark('code/willLoadWorkbenchMain');
 	</script>
 	<!-- always ensure built in english NLS messages -->
-
-	<script src="./oss-dev/static/out/nls.messages.js"></script>
-
-	<script src="./oss-dev/static/out/vs/workbench/workbench.web.main.internal.js"></script>
-	<script src="./oss-dev/static/out/vs/code/browser/workbench/workbench.js"></script>
+	<script type="module" src="./oss-dev/static/out/nls.messages.js"></script>
+	<script type="module" src="./oss-dev/static/out/vs/code/browser/workbench/workbench.js"></script>
 </html>
