@@ -13,7 +13,7 @@ import { performance } from 'perf_hooks';
 import { fileURLToPath } from 'url';
 import minimist from 'minimist';
 import { devInjectNodeModuleLookupPath } from './bootstrap-node.js';
-import { load } from './bootstrap-esm.js';
+import { bootstrapESM } from './bootstrap-esm.js';
 import { resolveNLSConfiguration } from './vs/base/node/nls.js';
 import { product } from './bootstrap-meta.js';
 import * as url from 'url';
@@ -234,7 +234,7 @@ async function findFreePort(host: string | undefined, start: number, end: number
 	return undefined;
 }
 
-function loadCode(nlsConfiguration: INLSConfiguration): Promise<typeof import('./vs/server/node/server.main.js')> {
+async function loadCode(nlsConfiguration: INLSConfiguration) {
 
 	// required for `bootstrap-esm` to pick up NLS messages
 	process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfiguration);
@@ -254,8 +254,11 @@ function loadCode(nlsConfiguration: INLSConfiguration): Promise<typeof import('.
 		delete process.env['VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH'];
 	}
 
+	// Bootstrap ESM
+	await bootstrapESM();
+
 	// Load Server
-	return load<typeof import('./vs/server/node/server.main.js')>('vs/server/node/server.main');
+	return import('./vs/server/node/server.main.js');
 }
 
 function hasStdinWithoutTty(): boolean {

@@ -17,9 +17,10 @@ import { clearChatEditor } from './chatClear.js';
 import { CHAT_VIEW_ID, EDITS_VIEW_ID, IChatWidgetService } from '../chat.js';
 import { ChatEditorInput } from '../chatEditorInput.js';
 import { ChatViewPane } from '../chatViewPane.js';
-import { CONTEXT_IN_CHAT_SESSION, CONTEXT_CHAT_ENABLED, CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED } from '../../common/chatContextKeys.js';
+import { CONTEXT_IN_CHAT_SESSION, CONTEXT_CHAT_ENABLED, CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED, CONTEXT_CHAT_EDITING_ENABLED } from '../../common/chatContextKeys.js';
 import { IViewsService } from '../../../../services/views/common/viewsService.js';
 import { ChatAgentLocation } from '../../common/chatAgents.js';
+import { ChatContextAttachments } from '../contrib/chatContextAttachments.js';
 
 export const ACTION_ID_NEW_CHAT = `workbench.action.chat.newChat`;
 
@@ -122,7 +123,8 @@ export function registerNewChatActions() {
 					when: ContextKeyExpr.equals('view', EDITS_VIEW_ID),
 					group: 'navigation',
 					order: -1
-				}]
+				},
+				]
 			});
 		}
 
@@ -133,6 +135,7 @@ export function registerNewChatActions() {
 				// Is running in the Chat view title
 				announceChatCleared(accessibilitySignalService);
 				context.chatView.widget.clear();
+				context.chatView.widget.getContrib<ChatContextAttachments>(ChatContextAttachments.ID)?.setContext(true, ...[]);
 				context.chatView.widget.focusInput();
 			} else {
 				// Is running from f1 or keybinding
@@ -147,8 +150,34 @@ export function registerNewChatActions() {
 
 				announceChatCleared(accessibilitySignalService);
 				widget.clear();
+				widget.getContrib<ChatContextAttachments>(ChatContextAttachments.ID)?.setContext(true, ...[]);
 				widget.focusInput();
 			}
+		}
+	});
+
+	registerAction2(class GlobalClearEditsAction extends Action2 {
+		constructor() {
+			super({
+				id: 'workbench.action.chat.openEditSession',
+				title: localize2('chat.openEdits.label', "Open Edit Session"),
+				category: CHAT_CATEGORY,
+				icon: Codicon.edit,
+				precondition: ContextKeyExpr.and(CONTEXT_CHAT_ENABLED, CONTEXT_CHAT_EDITING_PARTICIPANT_REGISTERED),
+				f1: true,
+				menu: [{
+					id: MenuId.ViewTitle,
+					when: ContextKeyExpr.and(ContextKeyExpr.equals('view', CHAT_VIEW_ID), CONTEXT_CHAT_EDITING_ENABLED),
+					group: 'navigation',
+					order: 1
+				}]
+			});
+		}
+
+		async run(accessor: ServicesAccessor, ...args: any[]) {
+			const viewsService = accessor.get(IViewsService);
+			const chatView = await viewsService.openView(EDITS_VIEW_ID) as ChatViewPane;
+			chatView.widget.focusInput();
 		}
 	});
 }
