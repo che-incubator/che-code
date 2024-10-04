@@ -1,10 +1,6 @@
 {
     "name": "che-code",
     "bin": "out/vs/server/main.js",
-    "scripts": {
-      "watch-client": "node --max-old-space-size=5120 ./node_modules/gulp/bin/gulp.js watch-client",
-      "watch-extensions": "node --max-old-space-size=5120 ./node_modules/gulp/bin/gulp.js watch-extensions watch-extension-media"
-    },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
       "typescript": "5.6.0-dev.20240715"
