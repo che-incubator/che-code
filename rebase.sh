@@ -138,19 +138,19 @@ apply_package_changes_by_path() {
   git add $filePath > /dev/null 2>&1
 }
 
-# Apply changes on code/remote/yarn.lock file
-apply_code_remote_yarn_lock_changes() {
+# Apply changes on code/remote/package-lock.json file
+apply_code_remote_package_lock_changes() {
 
-  echo "  ⚙️ reworking code/remote/yarn.lock..."
+  echo "  ⚙️ reworking code/remote/package-lock.json..."
   
   # reset the file from what is upstream
-  git checkout --theirs code/remote/yarn.lock > /dev/null 2>&1
+  git checkout --theirs code/remote/package-lock.json > /dev/null 2>&1
 
-  # update yarn lock
-  yarn --ignore-scripts --cwd code/remote
+  # update package-lock.json
+  npm install --ignore-scripts --prefix code/remote
 
   # resolve the change
-  git add code/remote/yarn.lock > /dev/null 2>&1
+  git add code/remote/package-lock.json > /dev/null 2>&1
 
 }
 
@@ -176,7 +176,7 @@ apply_mangle_index_js_changes() {
   git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
 
   # the actual changes are in the code/build/lib/mangle/index.ts file  
-  (cd code/build && yarn compile)
+  npm run compile --prefix code/build
 
   # resolve the change
   git add code/build/lib/mangle/index.js > /dev/null 2>&1
@@ -193,7 +193,7 @@ apply_mangle_index_ts_changes() {
   apply_replace code/build/lib/mangle/index.ts
 
   # apply changes for the code/build/lib/mangle/index.js file
-  (cd code/build && yarn compile)
+  npm run compile --prefix code/build
   
   # resolve the change
   git add code/build/lib/mangle/index.ts > /dev/null 2>&1
@@ -351,8 +351,8 @@ resolve_conflicts() {
       apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
-    elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then
-      apply_code_remote_yarn_lock_changes      
+    elif [[ "$conflictingFile" == "code/remote/package-lock.json" ]]; then
+      apply_code_remote_package_lock_changes      
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
