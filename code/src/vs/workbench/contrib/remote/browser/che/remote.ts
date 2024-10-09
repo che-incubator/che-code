@@ -9,17 +9,17 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import Severity from 'vs/base/common/severity';
-import * as nls from 'vs/nls';
-import { ICommandService } from 'vs/platform/commands/common/commands';
-import { IDialogService, IPromptButton } from 'vs/platform/dialogs/common/dialogs';
-import { INotificationService, IPromptChoice } from 'vs/platform/notification/common/notification';
-import { PersistentConnectionEventType } from 'vs/platform/remote/common/remoteAgentConnection';
-import { IRequestService } from 'vs/platform/request/common/request';
-import { ReloadWindowAction } from 'vs/workbench/browser/actions/windowActions';
-import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from 'vs/workbench/contrib/remote/browser/che/devWorkspaceAssistant';
-import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
-import { IProgressService } from 'vs/platform/progress/common/progress';
+import Severity from '../../../../../base/common/severity.js';
+import * as nls from '../../../../../nls.js';
+import { ICommandService } from '../../../../../platform/commands/common/commands.js';
+import { IDialogService, IPromptButton } from '../../../../../platform/dialogs/common/dialogs.js';
+import { INotificationService, IPromptChoice } from '../../../../../platform/notification/common/notification.js';
+import { PersistentConnectionEventType } from '../../../../../platform/remote/common/remoteAgentConnection.js';
+import { IRequestService } from '../../../../../platform/request/common/request.js';
+import { ReloadWindowAction } from '../../../../browser/actions/windowActions.js';
+import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from './devWorkspaceAssistant.js';
+import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
+import { IProgressService } from '../../../../../platform/progress/common/progress.js';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RELOAD_WINDOW_LABEL = nls.localize('reloadWindow', "Reload Window");

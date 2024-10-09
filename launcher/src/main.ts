@@ -8,14 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { CodeWorkspace } from './code-workspace';
-import { DevWorkspaceId } from './devworkspace-id';
-import { NodeExtraCertificate } from './node-extra-certificate';
-import { OpenVSIXRegistry } from './openvsix-registry';
-import { LocalStorageKeyProvider } from './local-storage-key-provider';
-import { TrustedExtensions } from './trusted-extensions';
-import { VSCodeLauncher } from './vscode-launcher';
-import { WebviewResources } from './webview-resources';
+import { CodeWorkspace } from './code-workspace.js';
+import { DevWorkspaceId } from './devworkspace-id.js';
+import { NodeExtraCertificate } from './node-extra-certificate.js';
+import { OpenVSIXRegistry } from './openvsix-registry.js';
+import { LocalStorageKeyProvider } from './local-storage-key-provider.js';
+import { TrustedExtensions } from './trusted-extensions.js';
+import { VSCodeLauncher } from './vscode-launcher.js';
+import { WebviewResources } from './webview-resources.js';
 
 /**
  * Mandatory environment variables:
