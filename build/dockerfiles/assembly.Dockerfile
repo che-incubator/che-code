@@ -38,6 +38,8 @@ COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /mnt/rootfs/bin/ma
 COPY --chmod=755 /build/scripts/*.sh /mnt/rootfs/
 COPY --chmod=755 /build/remote-config /mnt/rootfs/remote/data/Machine/
 
+RUN curl https://az764295.vo.msecnd.net/stable/97dec172d3256f8ca4bfb2143f3f76b503ca0534/vscode_cli_alpine_x64_cli.tar.gz | tar -xz -C /mnt/rootfs
+
 # Create all-in-one image
 FROM scratch
 COPY --from=ubi-builder /mnt/rootfs/ /
