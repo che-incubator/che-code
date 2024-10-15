@@ -46,7 +46,7 @@
     "jest": "27.3.1",
     "ts-jest": "^27.1.4"
   },
-  "resolutions": {
+  "overrides": {
     "jsonpath-plus": "10.0.0"
   },
   "repository": {
