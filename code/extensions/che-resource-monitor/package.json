@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1723034342",
-    "@kubernetes/client-node": "^0.21.0",
+    "@kubernetes/client-node": "^0.22.0",
     "got": "11.8.0",
     "inversify": "^6.0.2",
     "reflect-metadata": "^0.2.2",
@@ -45,6 +45,9 @@
     "add": "^2.0.6",
     "jest": "27.3.1",
     "ts-jest": "^27.1.4"
+  },
+  "resolutions": {
+    "jsonpath-plus": "10.0.0"
   },
   "repository": {
     "type": "git",
