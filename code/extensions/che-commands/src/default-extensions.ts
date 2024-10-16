@@ -26,7 +26,7 @@ export class DefaultExtensions {
         const extensionList = defaultExtensions.split(';');
         for (const extension of extensionList) {
             if (extension.trim()) {
-                console.log(`> extension [${extension.trim()}]`);
+                console.log(`> default extension [${extension.trim()}]`);
                 extensions.push(vscode.Uri.file(extension.trim()));
             }
         }

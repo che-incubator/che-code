@@ -25,10 +25,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(disposable);
 
-	process.env.DEFAULT_EXTENSIONS = '/projects/ext/ms-mssql.mssql-1.24.0.vsix;/projects/ext/bierner.markdown-mermaid-1.23.1.vsix';
-	vscode.commands.registerCommand("che-commands.command.autoinstallExtensions", async () => {
-		await new DefaultExtensions().install();
-	});
+	await new DefaultExtensions().install();
 }
 
 async function getExtensionAPI(extID: string): Promise<any> {
