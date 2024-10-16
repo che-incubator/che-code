@@ -26,7 +26,6 @@ describe('Test VS Code launcher:', () => {
     delete env.SHELL;
     delete env.HOSTNAME;
     delete env.DEVWORKSPACE_POD_NAME;
-    delete env.VSCODE_INSTALL_EXTENSION;
   });
 
   afterEach(() => {
@@ -208,60 +207,6 @@ describe('Test VS Code launcher:', () => {
       expect(error.message).toBe('Failed to launch VS Code. PROJECT_SOURCE environment variable is not set.');
       expect(spawnMock).not.toBeCalled();
     }
-  });
-
-  test('should launch VS Code and install extension', async () => {
-    env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
-
-    env.PROJECTS_ROOT = '/tmp/projects';
-    env.PROJECT_SOURCE = '/tmp/projects/sample-project';
-    env.SHELL = '/bin/testshell';
-
-    env.VSCODE_INSTALL_EXTENSION = '/tmp/extension.vsix';
-
-    const pathExistsMock = jest.fn();
-    Object.assign(fs, {
-      pathExists: pathExistsMock,
-    });
-
-    const spawnMock = jest.fn();
-    Object.assign(child_process, {
-      spawn: spawnMock,
-    });
-
-    pathExistsMock.mockImplementation((path: string) => {
-      return path === '/tmp/extension.vsix';
-    });
-
-    spawnMock.mockImplementation(() => ({
-      on: jest.fn(),
-      stdout: {
-        on: jest.fn(),
-      },
-      stderr: {
-        on: jest.fn(),
-      },
-    }));
-
-    const launcher = new VSCodeLauncher();
-    await launcher.launch();
-
-    expect(pathExistsMock).toBeCalledTimes(2);
-    expect(pathExistsMock).toBeCalledWith('/tmp/extension.vsix');
-    expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
-
-    expect(spawnMock).toBeCalledWith('/tmp/vscode-nodejs-runtime/node', [
-      'out/server-main.js',
-      '--host',
-      '127.0.0.1',
-      '--port',
-      '3100',
-      '--without-connection-token',
-      '--default-folder',
-      '/tmp/projects/sample-project',
-      '--install-extension',
-      '/tmp/extension.vsix',
-    ]);
   });
 
   test('should use SHELL env var when launching Code if set', async () => {

@@ -44,17 +44,6 @@ export class VSCodeLauncher {
       params.push('--default-folder', env.PROJECT_SOURCE);
     }
 
-    if (env.VSCODE_INSTALL_EXTENSION) {
-      if (await fs.pathExists(env.VSCODE_INSTALL_EXTENSION)) {
-        params.push('--install-extension', env.VSCODE_INSTALL_EXTENSION);
-      }
-    }
-
-    if (env.VSCODE_ADDITIONAL_PARAMS) {
-      console.log(`  > Adding additional parameters: ${env.VSCODE_ADDITIONAL_PARAMS}`);
-      params.push(...env.VSCODE_ADDITIONAL_PARAMS.split(','));
-    }
-
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }

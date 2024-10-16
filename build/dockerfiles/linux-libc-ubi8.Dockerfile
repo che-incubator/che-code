@@ -57,6 +57,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 
 RUN mkdir -p /checode-extensions/vsix-to-install \
     && curl https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-mssql/vsextensions/mssql/1.24.0/vspackage -o /checode-extensions/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
+    && curl https://openvsxorg.blob.core.windows.net/resources/bierner/markdown-mermaid/1.23.1/bierner.markdown-mermaid-1.23.1.vsix -o /checode-extensions/vsix-to-install/bierner.markdown-mermaid-1.23.1.vsix \
     && echo "TO:" \
     && ls -la /checode-extensions/vsix-to-install \
     && gunzip /checode-extensions/vsix-to-install/ms-mssql.mssql-1.24.0.vsix.gz \
