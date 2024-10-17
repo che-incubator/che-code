@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { FILE_WORKBENCH } from './files';
-import * as fs from './fs-extra';
+import { FILE_WORKBENCH } from './files.js';
+import * as fs from './fs-extra.js';
 
 const SERVER_KEY_MASK = '{{LOCAL-STORAGE}}/{{SECURE-KEY}}';
 

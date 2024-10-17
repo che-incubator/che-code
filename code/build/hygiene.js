@@ -21,7 +21,7 @@ const copyrightHeaderLines = [
 ];
 
 function hygiene(some, linting = true) {
-	const gulpeslint = require('gulp-eslint');
+	const eslint = require('./gulp-eslint');
 	const gulpstylelint = require('./stylelint');
 	const formatter = require('./lib/formatter');
 
@@ -153,11 +153,13 @@ function hygiene(some, linting = true) {
 
 	const productJsonFilter = filter('product.json', { restore: true });
 	const snapshotFilter = filter(['**', '!**/*.snap', '!**/*.snap.actual']);
+	const yarnLockFilter = filter(['**', '!**/yarn.lock']);
 	const unicodeFilterStream = filter(unicodeFilter, { restore: true });
 
 	const result = input
 		.pipe(filter((f) => !f.stat.isDirectory()))
 		.pipe(snapshotFilter)
+		.pipe(yarnLockFilter)
 		.pipe(productJsonFilter)
 		.pipe(process.env['BUILD_SOURCEVERSION'] ? es.through() : productJson)
 		.pipe(productJsonFilter.restore)
@@ -178,13 +180,7 @@ function hygiene(some, linting = true) {
 			result
 				.pipe(filter(eslintFilter))
 				.pipe(
-					gulpeslint({
-						configFile: '.eslintrc.json'
-					})
-				)
-				.pipe(gulpeslint.formatEach('compact'))
-				.pipe(
-					gulpeslint.results((results) => {
+					eslint((results) => {
 						errorCount += results.warningCount;
 						errorCount += results.errorCount;
 					})

@@ -9,11 +9,11 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { CancellationToken } from 'vs/base/common/cancellation';
-import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/commands';
-import { asJson, IRequestService } from 'vs/platform/request/common/request';
-import { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';
-import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { CancellationToken } from '../../../../../base/common/cancellation.js';
+import { CommandsRegistry, ICommandService } from '../../../../../platform/commands/common/commands.js';
+import { asJson, IRequestService } from '../../../../../platform/request/common/request.js';
+import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
+import { IProgressService, ProgressLocation } from '../../../../../platform/progress/common/progress.js';
 
 export enum DevWorkspaceStatus {
 	FAILED = 'Failed',
