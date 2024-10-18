@@ -68,7 +68,7 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
 RUN git init .
 
 # change network timeout (slow using multi-arch build)
-RUN npm config set fetch-retry-mintimeout 1000000 && npm config set fetch-retry-maxtimeout 6000000
+RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
 # Grab dependencies (and force to rebuild them)
 RUN npm install --force

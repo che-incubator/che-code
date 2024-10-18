@@ -44,7 +44,7 @@ ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
 RUN git init .
 
 # change network timeout (slow using multi-arch build)
-RUN npm config set fetch-retry-mintimeout 1000000 && npm config set fetch-retry-maxtimeout 6000000
+RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
 # Grab dependencies
 RUN npm install
