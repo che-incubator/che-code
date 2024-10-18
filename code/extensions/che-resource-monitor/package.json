@@ -48,7 +48,7 @@
     "yarn": "^1.22.18"
   },
   "resolutions": {
-    "jsonpath-plus": "10.0.3"
+    "jsonpath-plus": "10.0.5"
   },
   "repository": {
     "type": "git",

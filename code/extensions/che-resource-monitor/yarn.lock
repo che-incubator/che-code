@@ -2371,10 +2371,10 @@ json5@2.x, json5@^2.2.3:
   resolved "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz#78cd6f1a19bdc12b73db5ad0c61efd66c1e29283"
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
 
-jsonpath-plus@10.0.3, jsonpath-plus@^9.0.0:
-  version "10.0.3"
-  resolved "https://registry.yarnpkg.com/jsonpath-plus/-/jsonpath-plus-10.0.3.tgz#c147259e1a0410d32b57d0d002263446abda0de9"
-  integrity sha512-d35qqWROJnJqZrwptBJZfNPfKZwJtD0eZdXKYHhJu7gDBMsGUo6mUXevK7Zzu/Lz1jpjCF7l6btyHHt5DSoreg==
+jsonpath-plus@10.0.5, jsonpath-plus@^9.0.0:
+  version "10.0.5"
+  resolved "https://registry.yarnpkg.com/jsonpath-plus/-/jsonpath-plus-10.0.5.tgz#0451b818c96f7654db99af9548f7084cbda37a78"
+  integrity sha512-it8kRSK9fdAhauC5ik86kBWpIIdDrnMvre1b3IDKqApPwC48iYI2IRvhy88TB/MrtZfXIQOMTF5p0UHucZVveA==
   dependencies:
     "@jsep-plugin/assignment" "^1.2.1"
     "@jsep-plugin/regex" "^1.0.3"
