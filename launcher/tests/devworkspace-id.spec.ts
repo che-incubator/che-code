@@ -13,11 +13,11 @@ import { env } from 'process';
 
 import { DevWorkspaceId } from '../src/devworkspace-id';
 
-const ORIGIN_WORKBENCH_WEB_MAIN = `
+const ORIGIN_WORKBENCH = `
 some code, some code, a mask to be replaced https://{{che-cluster}}.{{host}}/{{namespace}}/{{workspace-name}}/{{port}}/, some code
 `;
 
-const NEW_WORKBENCH_WEB_MAIN = `
+const NEW_WORKBENCH = `
 some code, some code, a mask to be replaced test-workspace-1234567890, some code
 `;
 
@@ -49,12 +49,12 @@ describe('Test setting DevWorkspace ID to VS Code', () => {
       writeFile: writeFileMock,
     });
 
-    readFileMock.mockImplementation(() => ORIGIN_WORKBENCH_WEB_MAIN);
+    readFileMock.mockImplementation(() => ORIGIN_WORKBENCH);
 
     const devWorkspaceId = new DevWorkspaceId();
     await devWorkspaceId.configure();
 
     expect(readFileMock).toBeCalledTimes(1);
-    expect(writeFileMock).toBeCalledWith('out/vs/workbench/workbench.web.main.js', NEW_WORKBENCH_WEB_MAIN);
+    expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH);
   });
 });

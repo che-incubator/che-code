@@ -66,29 +66,29 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     // it must be cut when forming a registry URL
     env.OPENVSX_REGISTRY_URL = 'https://test-openvsx.org/';
 
-    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
+    const fileWorkbench = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.js'));
 
-    const fileWorkbenchWebMainExpected = await fs.readFile(
-      path.resolve(__dirname, '_data', 'workbench.web.main.test-openvsix-registry.js')
+    const fileWorkbenchExpected = await fs.readFile(
+      path.resolve(__dirname, '_data', 'workbench.test-openvsix-registry.js')
     );
 
     let savedProductJson;
-    let savedWorkbenchWebMain;
+    let savedWorkbench;
 
     Object.assign(fs, {
       readFile: async (file: string) => {
         if ('product.json' === file) {
           return ORIGINAL_PRODUCT_JSON;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
-          return fileWorkbenchWebMain;
+        } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
+          return fileWorkbench;
         }
       },
 
       writeFile: async (file: string, data: string) => {
         if ('product.json' === file) {
           savedProductJson = data;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
-          savedWorkbenchWebMain = data;
+        } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
+          savedWorkbench = data;
         }
       },
     });
@@ -98,7 +98,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     await openVSIXRegistry.configure();
 
     expect(savedProductJson).toBe(TEST_APPLY_OPENVSIX_REISTRY);
-    expect(savedWorkbenchWebMain).toBe(fileWorkbenchWebMainExpected);
+    expect(savedWorkbench).toBe(fileWorkbenchExpected);
   });
 
   test('should proceed with CHE_PLUGIN_REGISTRY_URL if OPENVSX_REGISTRY_URL is empty', async () => {
@@ -107,29 +107,29 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     // it must be cut when forming a registry URL
     env.CHE_PLUGIN_REGISTRY_URL = 'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/plugin-registry/v3/';
 
-    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
+    const fileWorkbench = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.js'));
 
-    const fileWorkbenchWebMainExpected = await fs.readFile(
-      path.resolve(__dirname, '_data', 'workbench.web.main.test-che-plugin-registry.js')
+    const fileWorkbenchExpected = await fs.readFile(
+      path.resolve(__dirname, '_data', 'workbench.test-che-plugin-registry.js')
     );
 
     let savedProductJson;
-    let savedWorkbenchWebMain;
+    let savedWorkbench;
 
     Object.assign(fs, {
       readFile: async (file: string) => {
         if ('product.json' === file) {
           return ORIGINAL_PRODUCT_JSON;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
-          return fileWorkbenchWebMain;
+        } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
+          return fileWorkbench;
         }
       },
 
       writeFile: async (file: string, data: string) => {
         if ('product.json' === file) {
           savedProductJson = data;
-        } else if ('out/vs/workbench/workbench.web.main.js' === file) {
-          savedWorkbenchWebMain = data;
+        } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
+          savedWorkbench = data;
         }
       },
     });
@@ -139,7 +139,7 @@ describe('Test Configuring of OpenVSIX registry:', () => {
     await openVSIXRegistry.configure();
 
     expect(savedProductJson).toBe(TEST_APPLY_CHE_PLUGIN_REISTRY);
-    expect(savedWorkbenchWebMain).toBe(fileWorkbenchWebMainExpected);
+    expect(savedWorkbench).toBe(fileWorkbenchExpected);
   });
 
   test('should skip if OPENVSX_REGISTRY_URL is empty but CHE_PLUGIN_REGISTRY_URL is not set', async () => {
