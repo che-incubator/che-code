@@ -2258,10 +2258,10 @@ jsonfile@^6.0.1:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
-jsonpath-plus@10.0.1, jsonpath-plus@^9.0.0:
-  version "10.0.1"
-  resolved "https://registry.yarnpkg.com/jsonpath-plus/-/jsonpath-plus-10.0.1.tgz#a61f4dc6c7489955af0872b0956cc42fbbacb5ab"
-  integrity sha512-30DeH2QD4nL1IpDLPIFz09G5XyLvh+oNMUI2Zxf4tbrlsVHs0e3VPnwpOnSTFb4yM0dfQK2WGKLsSaAS8V62rw==
+jsonpath-plus@10.1.0, jsonpath-plus@^9.0.0:
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/jsonpath-plus/-/jsonpath-plus-10.1.0.tgz#e8724c721ac60ff2db667066131b1a2c992ffcf0"
+  integrity sha512-gHfV1IYqH8uJHYVTs8BJX1XKy2/rR93+f8QQi0xhx95aCiXn1ettYAd5T+7FU6wfqyDoX/wy0pm/fL3jOKJ9Lg==
   dependencies:
     "@jsep-plugin/assignment" "^1.2.1"
     "@jsep-plugin/regex" "^1.0.3"
