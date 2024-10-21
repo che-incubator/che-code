@@ -67,7 +67,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "resolutions": {
-    "jsonpath-plus": "10.0.5"
+    "jsonpath-plus": "10.1.0"
   },
   "repository": {
     "type": "git",
