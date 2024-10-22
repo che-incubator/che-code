@@ -14,23 +14,25 @@ import * as vscode from 'vscode';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
+const DEFAULT_EXTENSIONS_FILE = path.join(process.env.PROJECTS_ROOT!, '.default-extensions');
+
 export class DefaultExtensions {
 
     async install(): Promise<void> {
         if (!process.env.DEFAULT_EXTENSIONS) {
-            console.log('> Default extensions is not defined (DEFAULT_EXTENSIONS environment variable is unset).');
             return;
         }
 
         try {
-            // get extesions from DEFAULT_EXTENSIONS environment cariable
-            let extensions = this.getDefaultExtensions();
+            // get list of extesions from DEFAULT_EXTENSIONS environment variable
+            let extensions: string[] = process.env.DEFAULT_EXTENSIONS!.split(';').filter(value => (value.trim()));
 
             // filter the list, remove the extensions installed before
             const installed = await this.readDotDefaultExtensionsFile();
             extensions = extensions.filter(value => !installed.includes(value));
 
             if (extensions.length) {
+                console.log(`Installing default extensions: ${extensions.join('; ')}`);
                 const result = await this.installExtensions(extensions);
                 if (result) {
                     this.writeDotDefaultExtensionsFile(extensions);
@@ -41,64 +43,24 @@ export class DefaultExtensions {
         }
     }
 
-    getDefaultExtensions(): string[] {
-        const extensions: string[] = [];
-
-        console.log('--------------------------------------------');
-        console.log(`> Default etensions:`);
-
-        const extensionList = process.env.DEFAULT_EXTENSIONS!.split(';');
-        for (const extension of extensionList) {
-            if (extension.trim()) {
-                console.log(`    > [${extension.trim()}]`);
-                extensions.push(extension.trim());
-            }
-        }
-        console.log('--------------------------------------------');
-
-        return extensions;
-    }
-
     async readDotDefaultExtensionsFile(): Promise<string[]> {
         try {
-            const filePath = path.join(process.env.PROJECTS_ROOT!, '.default-extensions');
-            console.log(`> default extensions file path: ${filePath}`);
-
-            if (await fs.pathExists(filePath)) {
-                console.log(`> reading default extensions file...`);
-
-                const fileContent = await fs.readFile(filePath, 'utf8');
-                // console.log(fileContent);
-
-                const defaultExtensions: string[] = fileContent.split('\n');
-                for (const de of defaultExtensions) {
-                    console.log(`  > ${de}`);
-                }
-
-                return defaultExtensions;
-
-            } else {
-                console.log(`> default extensions file NOT found`);
+            if (await fs.pathExists(DEFAULT_EXTENSIONS_FILE)) {
+                return (await fs.readFile(DEFAULT_EXTENSIONS_FILE, 'utf8')).split('\n');
             }
 
         } catch (error) {
-            console.log(`> error: ${error}`);
+            console.log(`> Failed to read .default-extensions file. ${error}`);
         }
 
         return [];
     }
 
     async writeDotDefaultExtensionsFile(defaultExtensions: string[]): Promise<void> {
-        console.log(`> write default extensions: ${defaultExtensions}`);
-
-        
         try {
-            const filePath = path.join(process.env.PROJECTS_ROOT!, '.default-extensions');
-            console.log(`> default extensions file path: ${filePath}`);
-            
             let fileContent: string = '';
-            if (await fs.pathExists(filePath)) {
-                fileContent = await fs.readFile(filePath, 'utf8');
+            if (await fs.pathExists(DEFAULT_EXTENSIONS_FILE)) {
+                fileContent = await fs.readFile(DEFAULT_EXTENSIONS_FILE, 'utf8');
             }
 
             let extensions: string[] = fileContent.split('\n').filter(value => (value));
@@ -109,17 +71,11 @@ export class DefaultExtensions {
             }
 
             fileContent = extensions.join('\n');
-            console.log('------------------------------');
-            console.log(fileContent);
-            console.log('------------------------------');
-
-            await fs.writeFile(filePath, fileContent);
+            await fs.writeFile(DEFAULT_EXTENSIONS_FILE, fileContent);
 
         } catch (error) {
-            console.log(`Failure to write to .default-extensions file`);
+            console.log(`Failed to write to .default-extensions file`);
         }
-
-
     }
 
     async installExtensions(extensions: string[]): Promise<boolean> {
