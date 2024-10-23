@@ -286,10 +286,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@devfile/api@2.3.0-1721400636":
-  version "2.3.0-1721400636"
-  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.3.0-1721400636.tgz#94f7ba0f45b294beb8cd023ffeaa8aa5ff228b44"
-  integrity sha512-W6g9uYSo22VcAeLj49YyVzOWTWZh5sRWP8fzgRcao6DRLd7FwkG3w4ZWCMTY5tMgyfcpaNBBoV1mqlRJuCvhTA==
+"@devfile/api@2.3.0-1725380172":
+  version "2.3.0-1725380172"
+  resolved "https://registry.yarnpkg.com/@devfile/api/-/api-2.3.0-1725380172.tgz#516b91e95c84d46468afd1fff4dc68e124a5fb41"
+  integrity sha512-J0O2h81M3kcbkwLnod64aHH9PAUzHRJyOvfDyOE8LSv62Yj+3tf0MYHPXOFWMwQWFUFTymMK2fHPnINWaV6MxQ==
   dependencies:
     "@types/node" "*"
     "@types/node-fetch" "^2.5.7"
@@ -298,12 +298,12 @@
     node-fetch "^2.6.0"
     url-parse "^1.4.3"
 
-"@eclipse-che/che-devworkspace-generator@7.90.0-1a2253f":
-  version "7.90.0-1a2253f"
-  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.90.0-1a2253f.tgz#feb8657a8524c3194a35bda9626acc724c0842f7"
-  integrity sha512-jp3NVkF2JH0hjwfPMiLF7S9Rd2LW4WYzuz7Gr5N9/FPSUqhjksd9ihDpAIvxw5FiheSR8ptbsP6T31/qmhGhdg==
+"@eclipse-che/che-devworkspace-generator@7.92.0-next-bcc6798":
+  version "7.92.0-next-bcc6798"
+  resolved "https://registry.yarnpkg.com/@eclipse-che/che-devworkspace-generator/-/che-devworkspace-generator-7.92.0-next-bcc6798.tgz#e48ce92f154828d5ae8210a6579ccc963bb4ef6c"
+  integrity sha512-/Q7d8xVV8h9vQ5e7ufgTK6Wt3nLgGdrsIS5g7vqVMoVeP5bysvOqnVWpEGLJjHx2ahGiTqF0f27tdCd7x9VqvA==
   dependencies:
-    "@devfile/api" "2.3.0-1721400636"
+    "@devfile/api" "2.3.0-1725380172"
     axios "^1.7.4"
     fs-extra "^11.2.0"
     inversify "^6.0.2"
