@@ -44,10 +44,9 @@
     "@types/node": "20.x",
     "add": "^2.0.6",
     "jest": "27.3.1",
-    "ts-jest": "^27.1.4",
-    "yarn": "^1.22.18"
+    "ts-jest": "^27.1.4"
   },
-  "resolutions": {
+  "overrides": {
     "jsonpath-plus": "10.1.0"
   },
   "repository": {

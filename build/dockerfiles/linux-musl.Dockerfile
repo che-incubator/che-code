@@ -44,19 +44,21 @@ ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
 RUN git init .
 
 # change network timeout (slow using multi-arch build)
-RUN yarn config set network-timeout 600000 -g
+RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
 # Grab dependencies
-RUN yarn install
+RUN npm install
 
 # Rebuild platform specific dependencies
 RUN npm rebuild
 
-RUN NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
     # cache node from this image to avoid to grab it from within the build
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node" \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine \
-    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node
+    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node \
+    # workaround to fix build
+    && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
 RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
@@ -76,8 +78,7 @@ RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
           
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
-RUN [[ $(uname -m) == "x86_64" ]] && yarn --cwd test/smoke compile && yarn --cwd test/integration/browser compile
-
+RUN [[ $(uname -m) == "x86_64" ]] && npm --prefix test/smoke run compile && npm --prefix test/integration/browser run compile
 # use of retry and timeout
 COPY /build/scripts/helper/retry.sh /usr/bin/retry
 RUN chmod u+x /usr/bin/retry
@@ -86,7 +87,7 @@ RUN chmod u+x /usr/bin/retry
 # chromium for tests and procps as tests are using kill commands and it does not work with busybox implementation
 RUN [[ $(uname -m) == "x86_64" ]] && apk add --update --no-cache chromium procps
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
-RUN [[ $(uname -m) == "x86_64" ]] && yarn playwright-install
+RUN [[ $(uname -m) == "x86_64" ]] && npm run playwright-install
 RUN [[ $(uname -m) == "x86_64" ]] && \
      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
     rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
@@ -100,7 +101,7 @@ RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-
 
 # Run smoke tests (Browser)
 RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-    retry -v -t 3 -s 2 -- timeout 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+    retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
 
 #########################################################
 #
@@ -109,7 +110,7 @@ RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-
 #########################################################
 COPY launcher /checode-launcher
 WORKDIR /checode-launcher
-RUN yarn \
+RUN npm install \
     && mkdir /checode/launcher \
     && cp -r out/src/*.js /checode/launcher \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

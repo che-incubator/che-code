@@ -10,11 +10,11 @@
 
 import { userInfo } from 'os';
 import { env } from 'process';
-import * as fs from './fs-extra';
+import * as fs from './fs-extra.js';
 
 import * as child_process from 'child_process';
 
-import { NODE_EXTRA_CERTIFICATE } from './node-extra-certificate';
+import { NODE_EXTRA_CERTIFICATE } from './node-extra-certificate.js';
 
 export class VSCodeLauncher {
   async launch(workspaceFile?: string): Promise<void> {
