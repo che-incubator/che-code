@@ -1,7 +1,7 @@
 {
   "name": "che-activity-tracker",
-  "displayName": "che-activity-tracker",
-  "description": "",
+  "displayName": "Eclipse Che Activity Tracker",
+  "description": "Determines if current workspace should be idled",
   "publisher": "eclipse-che",
   "license": "EPL-2.0",
   "version": "0.0.1",
