@@ -108,8 +108,8 @@ jobs:
           chectl server:deploy \
             --batch \
             --platform minikube \
-            --k8spodwaittimeout=120000 \
-            --k8spodreadytimeout=120000 \
+            --k8spodwaittimeout=240000 \
+            --k8spodreadytimeout=240000 \
             --che-operator-cr-patch-yaml "${GITHUB_WORKSPACE}/build/test/github-minikube-checluster-patch.yaml"
 
           #
