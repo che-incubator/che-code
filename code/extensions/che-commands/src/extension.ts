@@ -12,6 +12,7 @@
 
 import * as vscode from 'vscode';
 import { DevfileTaskProvider } from './taskProvider';
+import { DefaultExtensions } from './default-extensions';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Devfile Commands');
@@ -23,6 +24,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	const disposable = vscode.tasks.registerTaskProvider('devfile', taskProvider);
 
 	context.subscriptions.push(disposable);
+
+	await new DefaultExtensions().install();
 }
 
 async function getExtensionAPI(extID: string): Promise<any> {
