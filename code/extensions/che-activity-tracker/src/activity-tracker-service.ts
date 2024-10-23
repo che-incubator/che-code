@@ -30,14 +30,14 @@ export class ActivityTrackerService {
 	// Flag which is used to check if new requests were received during timer awaiting.
 	private isNewRequest: boolean;
 	// Flag used to keep track whether the ping error warning was already displayed or not.
-	private warningDisplayed: boolean;
+	private errorDisplayed: boolean;
 	private workspaceService: WorkspaceService;
 	private channel: vscode.OutputChannel;
 
 	constructor(workspaceService: WorkspaceService, channel: vscode.OutputChannel) {
 		this.isTimerRunning = false;
 		this.isNewRequest = false;
-		this.warningDisplayed = false;
+		this.errorDisplayed = false;
 		this.workspaceService = workspaceService;
 		this.channel = channel;
 	}
@@ -83,18 +83,18 @@ export class ActivityTrackerService {
 				await this.sendRequest(--attemptsLeft);
 			} else {
 				this.channel.appendLine('Activity tracker: Failed to ping che-machine-exec: ' + error.message);
-				if (!this.warningDisplayed) {
-					this.warningDisplayed = true;
-					this.showWarningMessage();
+				if (!this.errorDisplayed) {
+					this.errorDisplayed = true;
+					this.showErrorMessage();
 				}
 			}
 		}
 	}
 
-	private async showWarningMessage(): Promise<void> {
+	private async showErrorMessage(): Promise<void> {
 		const viewText = 'View Logs';
-		const response = await vscode.window.showWarningMessage(
-			this.getWarningMessage(),
+		const response = await vscode.window.showErrorMessage(
+			this.getErrorMessage(),
 			viewText
 		);
 
@@ -103,7 +103,7 @@ export class ActivityTrackerService {
 		}
 	}
 
-	private getWarningMessage(): string {
+	private getErrorMessage(): string {
 
 		let message = 'Failed to communicate with idling service.';
 
