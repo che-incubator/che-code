@@ -39,7 +39,7 @@ export class DefaultExtensions {
                 }
             }
         } catch (error) {
-            console.log(`Failed to install default extensions. ${error}`);
+            console.error(`Failed to install default extensions. ${error}`);
         }
     }
 
@@ -50,7 +50,7 @@ export class DefaultExtensions {
             }
 
         } catch (error) {
-            console.log(`> Failed to read .default-extensions file. ${error}`);
+            console.error(`Failed to read .default-extensions file. ${error}`);
         }
 
         return [];
@@ -74,7 +74,7 @@ export class DefaultExtensions {
             await fs.writeFile(DEFAULT_EXTENSIONS_FILE, fileContent);
 
         } catch (error) {
-            console.log(`Failed to write to .default-extensions file`);
+            console.error(`Failed to write to .default-extensions file. ${error}`);
         }
     }
 
