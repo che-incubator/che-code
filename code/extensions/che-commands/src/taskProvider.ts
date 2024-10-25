@@ -41,6 +41,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				const importedByAttribute = (command.attributes as any)?.['controller.devfile.io/imported-by'];
 				return !command.attributes || importedByAttribute === undefined || importedByAttribute === 'parent';
 			})
+			.filter(command => !/^init-ssh-agent-command-\d+$/.test(command.id))
 			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env));
 		return cheTasks;
 	}
