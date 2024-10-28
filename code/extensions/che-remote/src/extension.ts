@@ -224,6 +224,25 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
+  // DEBUG :: save the devfile context into a file
+  try {
+    const content = JSON.stringify(devfileContext, null, '  ');
+    const filePath = path.join(process.env.PROJECTS_ROOT!, '.devfile-context');
+    await fs.writeFile(filePath, content);
+
+    const permit = await vscode.window.showInformationMessage(`Devfile context has been saved to ${filePath}`, {
+      modal: true,
+      detail: 'Do you want to proceed restart?'
+    }, 'Restart');
+
+    if ('Restart' !== permit) {
+      return false;
+    }
+
+  } catch (err) {
+    console.error(`> Unable to save devfile context to a file. ${err}`);
+  }
+
   try {
     await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
   } catch (error) {
