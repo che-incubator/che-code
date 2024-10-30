@@ -9,9 +9,9 @@
  ***********************************************************************/
 
 import { env } from 'process';
-import { FILE_WORKBENCH_WEB_MAIN } from './files';
-import * as fs from './fs-extra';
-import { ProductJSON } from './product-json';
+import { FILE_WORKBENCH } from './files.js';
+import * as fs from './fs-extra.js';
+import { ProductJSON } from './product-json.js';
 
 export class OpenVSIXRegistry {
   /*****************************************************************************************************************
@@ -66,7 +66,7 @@ export class OpenVSIXRegistry {
       productJSON.setExtensionsGalleryItemURL(newItemURL);
       await productJSON.save();
 
-      await this.update(FILE_WORKBENCH_WEB_MAIN, serviceURL, newServiceURL, itemURL, newItemURL);
+      await this.update(FILE_WORKBENCH, serviceURL, newServiceURL, itemURL, newItemURL);
     } catch (err) {
       console.error(`${err.message} Failure to configure OpenVSIX registry.`);
     }

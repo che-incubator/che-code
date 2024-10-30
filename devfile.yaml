@@ -31,34 +31,34 @@ components:
       size: 10Gi
 
 commands:
-  - id: yarn-prepare
+  - id: npm-install
     exec:
       label: Install node dependencies
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn prepare
+        npm install
       group:
         kind: build
 
-  - id: yarn-build
+  - id: npm-build
     exec:
-      label: Compile with Yarn
+      label: Compile with npm
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn watch
+        npm run watch
       group:
         kind: build
         isDefault: true
 
-  - id: yarn-run
+  - id: npm-run
     exec:
       label: Run VS Code server on port 8000
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn server
+        npm run server
       group:
         kind: run
         isDefault: true
