@@ -32,7 +32,6 @@ const { compileExtensionsBuildTask, compileExtensionMediaBuildTask } = require('
 const { vscodeWebResourceIncludes, createVSCodeWebFileContentMapper } = require('./gulpfile.vscode.web');
 const cp = require('child_process');
 const log = require('fancy-log');
-const { isESM } = require('./lib/esm');
 const buildfile = require('./buildfile');
 
 const REPO_ROOT = path.dirname(__dirname);
@@ -68,19 +67,20 @@ const serverResourceIncludes = [
 	'out-build/vs/base/node/ps.sh',
 
 	// Terminal shell integration
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration.ps1',
-	'out-build/vs/workbench/contrib/terminal/browser/media/CodeTabExpansion.psm1',
-	'out-build/vs/workbench/contrib/terminal/browser/media/GitTabExpansion.psm1',
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration-bash.sh',
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration-env.zsh',
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration-profile.zsh',
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration-rc.zsh',
-	'out-build/vs/workbench/contrib/terminal/browser/media/shellIntegration-login.zsh',
-	'out-build/vs/workbench/contrib/terminal/browser/media/fish_xdg_data/fish/vendor_conf.d/shellIntegration.fish',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/CodeTabExpansion.psm1',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/GitTabExpansion.psm1',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration-env.zsh',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration-profile.zsh',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/shellIntegration-login.zsh',
+	'out-build/vs/workbench/contrib/terminal/common/scripts/fish_xdg_data/fish/vendor_conf.d/shellIntegration.fish',
+
 ];
 
 const serverResourceExcludes = [
-	'!out-build/vs/**/{electron-sandbox,electron-main}/**',
+	'!out-build/vs/**/{electron-sandbox,electron-main,electron-utility}/**',
 	'!out-build/vs/editor/standalone/**',
 	'!out-build/vs/workbench/**/*-tb.png',
 	'!**/test/**'
@@ -91,19 +91,15 @@ const serverResources = [
 	...serverResourceExcludes
 ];
 
-const serverWithWebResourceIncludes = isESM() ? [
+const serverWithWebResourceIncludes = [
 	...serverResourceIncludes,
 	'out-build/vs/code/browser/workbench/*.html',
-	...vscodeWebResourceIncludes
-] : [
-	...serverResourceIncludes,
 	...vscodeWebResourceIncludes
 ];
 
 const serverWithWebResourceExcludes = [
 	...serverResourceExcludes,
-	'!out-build/vs/code/**/*-dev.html',
-	'!out-build/vs/code/**/*-dev.esm.html',
+	'!out-build/vs/code/**/*-dev.html'
 ];
 
 const serverWithWebResources = [
@@ -112,14 +108,8 @@ const serverWithWebResources = [
 ];
 
 const serverEntryPoints = [
-	{
-		name: 'vs/server/node/server.main',
-		exclude: ['vs/css']
-	},
-	{
-		name: 'vs/server/node/server.cli',
-		exclude: ['vs/css']
-	},
+	// 'vs/server/node/server.main' is not included here because it gets inlined via ./src/server-main.js
+	// 'vs/server/node/server.cli' is not included here because it gets inlined via ./src/server-cli.js
 	{
 		name: 'vs/workbench/api/node/extensionHostProcess',
 		exclude: ['vs/css']
@@ -134,8 +124,8 @@ const serverEntryPoints = [
 	}
 ];
 
-const webEntryPoints = isESM() ? [
-	buildfile.base,
+const webEntryPoints = [
+	buildfile.workerEditor,
 	buildfile.workerExtensionHost,
 	buildfile.workerNotebook,
 	buildfile.workerLanguageDetection,
@@ -144,15 +134,6 @@ const webEntryPoints = isESM() ? [
 	buildfile.workerBackgroundTokenization,
 	buildfile.keyboardMaps,
 	buildfile.codeWeb
-].flat() : [
-	buildfile.entrypoint('vs/workbench/workbench.web.main'),
-	buildfile.base,
-	buildfile.workerExtensionHost,
-	buildfile.workerNotebook,
-	buildfile.workerLanguageDetection,
-	buildfile.workerLocalFileSearch,
-	buildfile.keyboardMaps,
-	buildfile.workbenchWeb()
 ].flat();
 
 const serverWithWebEntryPoints = [
@@ -164,16 +145,16 @@ const serverWithWebEntryPoints = [
 	...webEntryPoints,
 ].flat();
 
-const commonJSEntryPoints = [
+const bootstrapEntryPoints = [
 	'out-build/server-main.js',
 	'out-build/server-cli.js',
-	'out-build/bootstrap-fork.js',
+	'out-build/bootstrap-fork.js'
 ];
 
 function getNodeVersion() {
-	const yarnrc = fs.readFileSync(path.join(REPO_ROOT, 'remote', '.yarnrc'), 'utf8');
-	const nodeVersion = /^target "(.*)"$/m.exec(yarnrc)[1];
-	const internalNodeVersion = /^ms_build_id "(.*)"$/m.exec(yarnrc)[1];
+	const npmrc = fs.readFileSync(path.join(REPO_ROOT, 'remote', '.npmrc'), 'utf8');
+	const nodeVersion = /^target="(.*)"$/m.exec(npmrc)[1];
+	const internalNodeVersion = /^ms_build_id="(.*)"$/m.exec(npmrc)[1];
 	return { nodeVersion, internalNodeVersion };
 }
 
@@ -346,7 +327,7 @@ function packageTask(type, platform, arch, sourceFolderName, destinationFolderNa
 
 		let packageJsonContents;
 		const packageJsonStream = gulp.src(['remote/package.json'], { base: 'remote' })
-			.pipe(json({ name, version, dependencies: undefined, optionalDependencies: undefined, ...(isESM(`Setting 'type: module' in top level package.json`) ? { type: 'module' } : {}) })) // TODO@esm this should be configured in the top level package.json
+			.pipe(json({ name, version, dependencies: undefined, optionalDependencies: undefined, ...{ type: 'module' } })) // TODO@esm this should be configured in the top level package.json
 			.pipe(es.through(function (file) {
 				packageJsonContents = file.contents.toString();
 				this.emit('data', file);
@@ -365,10 +346,10 @@ function packageTask(type, platform, arch, sourceFolderName, destinationFolderNa
 		const jsFilter = util.filter(data => !data.isDirectory() && /\.js$/.test(data.path));
 
 		const productionDependencies = getProductionDependencies(REMOTE_FOLDER);
-		const dependenciesSrc = productionDependencies.map(d => path.relative(REPO_ROOT, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]).flat();
+		const dependenciesSrc = productionDependencies.map(d => path.relative(REPO_ROOT, d)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]).flat();
 		const deps = gulp.src(dependenciesSrc, { base: 'remote', dot: true })
 			// filter out unnecessary files, no source maps in server build
-			.pipe(filter(['**', '!**/package-lock.json', '!**/yarn.lock', '!**/*.js.map']))
+			.pipe(filter(['**', '!**/package-lock.json', '!**/*.js.map']))
 			.pipe(util.cleanNodeModules(path.join(__dirname, '.moduleignore')))
 			.pipe(util.cleanNodeModules(path.join(__dirname, `.moduleignore.${process.platform}`)))
 			.pipe(jsFilter)
@@ -452,7 +433,7 @@ function packageTask(type, platform, arch, sourceFolderName, destinationFolderNa
 		}
 
 		result = inlineMeta(result, {
-			targetPaths: commonJSEntryPoints,
+			targetPaths: bootstrapEntryPoints,
 			packageJsonFn: () => packageJsonContents,
 			productJsonFn: () => productJsonContents
 		});
@@ -476,29 +457,14 @@ function tweakProductForServerWeb(product) {
 		optimize.optimizeTask(
 			{
 				out: `out-vscode-${type}`,
-				amd: {
+				esm: {
 					src: 'out-build',
-					entryPoints: (type === 'reh' ? serverEntryPoints : serverWithWebEntryPoints).flat(),
-					otherSources: [],
+					entryPoints: [
+						...(type === 'reh' ? serverEntryPoints : serverWithWebEntryPoints),
+						...bootstrapEntryPoints
+					],
 					resources: type === 'reh' ? serverResources : serverWithWebResources,
-					loaderConfig: optimize.loaderConfig(),
-					inlineAmdImages: true,
-					bundleInfo: undefined,
 					fileContentMapper: createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product, workbenchConfig)
-				},
-				commonJS: {
-					src: 'out-build',
-					entryPoints: commonJSEntryPoints,
-					platform: 'node',
-					external: [
-						'minimist',
-						// We cannot inline `product.json` from here because
-						// it is being changed during build time at a later
-						// point in time (such as `checksums`)
-						// We have a manual step to inline these later.
-						'../product.json',
-						'../package.json'
-					]
 				}
 			}
 		)

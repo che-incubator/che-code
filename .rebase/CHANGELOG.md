@@ -10,7 +10,6 @@ https://github.com/che-incubator/che-code/commit/d3cf7dc86d284bc4cdff7cc163c5642
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/376
 https://github.com/che-incubator/che-code/pull/397
 
 - code/package.json

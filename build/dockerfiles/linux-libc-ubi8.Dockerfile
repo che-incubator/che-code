@@ -52,8 +52,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
     && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ python3.9 git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
-    && yum -y clean all && rm -rf /var/cache/yum \
-    && npm install -g yarn@1.22.17
+    && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
 #
@@ -69,14 +68,14 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
 RUN git init .
 
 # change network timeout (slow using multi-arch build)
-RUN yarn config set network-timeout 600000 -g
+RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
 # Grab dependencies (and force to rebuild them)
-RUN yarn install --force
+RUN npm install --force
 
 # Compile
 RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
-    && NODE_VERSION=$(cat /checode-compilation/remote/.yarnrc | grep target | cut -d ' ' -f 2 | tr -d '"') \
+    && NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
     # cache node from this image to avoid to grab it from within the build
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
@@ -102,11 +101,11 @@ RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
 
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
-RUN if [ "$(uname -m)" = "x86_64" ]; then yarn --cwd test/smoke compile && yarn --cwd test/integration/browser compile; fi
+RUN if [ "$(uname -m)" = "x86_64" ]; then npm --prefix test/smoke run compile && npm --prefix test/integration/browser run compile; fi
 
 # install test dependencies
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
-RUN if [ "$(uname -m)" = "x86_64" ]; then yarn playwright-install; fi
+RUN if [ "$(uname -m)" = "x86_64" ]; then npm run playwright-install; fi
 # Install procps to manage to kill processes and centos stream repository
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
@@ -139,7 +138,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       NODE_ARCH=$(echo "console.log(process.arch)" | node) \
       VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
-      /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m yarn smoketest-no-compile --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
     fi
 
 # Do not change line below! It is used to cut this section to skip tests
@@ -152,7 +151,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 #########################################################
 COPY launcher /checode-launcher
 WORKDIR /checode-launcher
-RUN yarn \
+RUN npm install \
     && mkdir /checode/launcher \
     && cp -r out/src/*.js /checode/launcher \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

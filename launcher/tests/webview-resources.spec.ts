@@ -32,11 +32,11 @@ describe('Test Configuring of WebView static resources:', () => {
 
     // the second path tests the functionality of the WebviewResources module
 
-    // load "out/vs/workbench/workbench.web.main.js"
-    const fileWorkbenchWebMain = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.web.main.js'));
+    // load "out/vs/code/browser/workbench/workbench.js"
+    const fileWorkbench = await fs.readFile(path.resolve(__dirname, '_data', 'workbench.js'));
 
-    const fileWorkbenchWebMainExpected = await fs.readFile(
-      path.resolve(__dirname, '_data', 'workbench.web.main.test-webview-resources.js')
+    const fileWorkbenchExpected = await fs.readFile(
+      path.resolve(__dirname, '_data', 'workbench.test-webview-resources.js')
     );
 
     // load "out/vs/workbench/api/node/extensionHostProcess.js"
@@ -63,8 +63,8 @@ describe('Test Configuring of WebView static resources:', () => {
         case 'product.json':
           return fileProductJSON;
 
-        case 'out/vs/workbench/workbench.web.main.js':
-          return fileWorkbenchWebMain;
+        case 'out/vs/code/browser/workbench/workbench.js':
+          return fileWorkbench;
 
         case 'out/vs/workbench/api/node/extensionHostProcess.js':
           return fileExtensionHostProcess;
@@ -73,14 +73,14 @@ describe('Test Configuring of WebView static resources:', () => {
       return undefined;
     });
 
-    let gotFileWorkbenchWebMain;
+    let gotFileWorkbench;
     let gotFileExtensionHostProcess;
 
     const writeFileMock = jest.fn();
     writeFileMock.mockImplementation(async (fileName: string, data: string) => {
       switch (fileName) {
-        case 'out/vs/workbench/workbench.web.main.js':
-          gotFileWorkbenchWebMain = data;
+        case 'out/vs/code/browser/workbench/workbench.js':
+          gotFileWorkbench = data;
 
         case 'out/vs/workbench/api/node/extensionHostProcess.js':
           gotFileExtensionHostProcess = data;
@@ -97,7 +97,7 @@ describe('Test Configuring of WebView static resources:', () => {
     expect(updateMock).toHaveBeenCalledTimes(2);
 
     expect(updateMock).toHaveBeenCalledWith(
-      'out/vs/workbench/workbench.web.main.js',
+      'out/vs/code/browser/workbench/workbench.js',
       'https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/',
       'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/'
     );
@@ -108,7 +108,7 @@ describe('Test Configuring of WebView static resources:', () => {
       'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/'
     );
 
-    expect(fileWorkbenchWebMainExpected).toBe(gotFileWorkbenchWebMain);
+    expect(fileWorkbenchExpected).toBe(gotFileWorkbench);
     expect(fileExtensionHostProcessExpected).toBe(gotFileExtensionHostProcess);
   });
 });
