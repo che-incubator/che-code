@@ -71,6 +71,8 @@ export class K8sDevfileServiceImpl implements DevfileService {
 
 
   async updateDevfile(devfile: V1alpha2DevWorkspaceSpecTemplate): Promise<void> {
+    console.log('K8sDevfileServiceImpl :: updateDevfile');
+
     // Grab custom resource object
     const customObjectsApi = this.k8SService.makeApiClient(k8s.CustomObjectsApi);
     const group = 'workspace.devfile.io';

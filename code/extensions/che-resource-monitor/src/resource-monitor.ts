@@ -87,12 +87,19 @@ export class ResourceMonitor {
 
   async updateContainers(): Promise<void> {
     try {
-      const { body } = await this.k8sHelper
-        .getCoreApi()
-        .listNamespacedPod(this.namespace, undefined, undefined, undefined, undefined, undefined);
+      console.log(`>> getting k8s API`);
+      const api = this.k8sHelper.getCoreApi();
+
+      console.log(`>> getting namespaced Pod for [${this.namespace}]`);
+      const { body } = await api.listNamespacedPod(this.namespace, undefined, undefined, undefined, undefined, undefined);
+
+      // const { body } = await this.k8sHelper
+      //   .getCoreApi()
+      //   .listNamespacedPod(this.namespace, undefined, undefined, undefined, undefined, undefined);
       for (const item of body.items) {
         if (item.metadata?.name === this.podName) {
           item.spec?.containers.forEach(element => {
+            console.log(`  > found pod ${element.name}`);
             this.containers.push({
               name: element.name,
               cpuLimit: convertToMilliCPU(element.resources?.limits?.cpu),
@@ -106,6 +113,17 @@ export class ResourceMonitor {
 
       throw new Error(`Pod ${this.podName} is not found.`);
     } catch (e) {
+      console.error(`> Failed to get workspace pod. ${e.message}`);
+      if (e.body) {
+        console.error(`  > error.body.message ${e.body.message}`);
+      }
+
+      if (e.statusCode) {
+        console.error(`  > error.statusCode ${e.statusCode}`);
+      }
+
+      console.error(e);
+
       const msg = 'Failure to get workspace pod. ' + e.message;
       this.displayWithError('Failure to get workspace pod', msg);
       throw new Error(msg);

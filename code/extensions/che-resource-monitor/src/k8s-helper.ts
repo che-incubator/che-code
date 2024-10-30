@@ -32,7 +32,16 @@ export class K8sHelper {
   getCoreApi(): k8s.CoreV1Api {
     if (!this.k8sAPI) {
       this.kc = this.initConfig();
-      this.kc.loadFromDefault();
+
+      try {
+        this.kc.loadFromDefault();
+      } catch (err) {
+        console.error(`> Failed to load default KubeConfig. ${err.message}`);
+
+        console.error(`    > statusCode: ${err.statusCode}`);
+        console.error(`    > error.body.message: ${err.body ? err.body.message : ''}`);
+      }
+      
       this.k8sAPI = this.kc.makeApiClient(k8s.CoreV1Api);
     }
     return this.k8sAPI;
