@@ -9,11 +9,6 @@ https://github.com/che-incubator/che-code/commit/d3cf7dc86d284bc4cdff7cc163c5642
 - code/src/vs/code/browser/workbench/workbench.html
 ---
 
-#### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/397
-
-- code/package.json
----
 #### @RomanNikitenko @azatsarynnyy
 https://github.com/che-incubator/che-code/pull/210 \
 https://github.com/che-incubator/che-code/pull/379/commits/926b6fe20ccff7cc7e91aa8d83b3fa56f9fe7632 \
