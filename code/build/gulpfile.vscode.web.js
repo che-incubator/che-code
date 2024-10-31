@@ -14,6 +14,7 @@ const task = require('./lib/task');
 const optimize = require('./lib/optimize');
 const { readISODate } = require('./lib/date');
 const product = require('../product.json');
+const workbenchConfig = require('../src/vs/code/browser/workbench/che/workbench-config.json');
 const rename = require('gulp-rename');
 const filter = require('gulp-filter');
 const { getProductionDependencies } = require('./lib/dependencies');
@@ -89,7 +90,7 @@ const vscodeWebEntryPoints = [
  * @param extensionsRoot {string} The location where extension will be read from
  * @param {object} product The parsed product.json file contents
  */
-const createVSCodeWebFileContentMapper = (extensionsRoot, product) => {
+const createVSCodeWebFileContentMapper = (extensionsRoot, product, workbenchConfig) => {
 	return path => {
 		if (path.endsWith('vs/platform/product/common/product.js')) {
 			return content => {
@@ -105,6 +106,11 @@ const createVSCodeWebFileContentMapper = (extensionsRoot, product) => {
 			return content => {
 				const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
 				return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
+			};
+		} else if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
+			return content => {
+				const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
+			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
 			};
 		}
 
@@ -122,7 +128,7 @@ const bundleVSCodeWebTask = task.define('bundle-vscode-web', task.series(
 				src: 'out-build',
 				entryPoints: vscodeWebEntryPoints,
 				resources: vscodeWebResources,
-				fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product)
+				fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product, workbenchConfig)
 			}
 		}
 	)
