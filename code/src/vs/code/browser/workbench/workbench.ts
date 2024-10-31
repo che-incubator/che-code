@@ -44,6 +44,14 @@ const enum AESConstants {
 	IV_LENGTH = 12,
 }
 
+class NetworkError extends Error {
+	constructor(inner: Error) {
+		super(inner.message);
+		this.name = inner.name;
+		this.stack = inner.stack;
+	}
+}
+
 class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 	private _serverKey: Uint8Array | undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');
 
@@ -139,7 +147,7 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 		}
 
 		let attempt = 0;
-		let lastError: unknown | undefined;
+		let lastError: Error | undefined;
 
 		while (attempt <= 3) {
 			try {
@@ -147,14 +155,14 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
-				const serverKey = new Uint8Array(await await res.arrayBuffer());
+				const serverKey = new Uint8Array(await res.arrayBuffer());
 				if (serverKey.byteLength !== AESConstants.KEY_LENGTH / 8) {
 					throw Error(`The key retrieved by the server is not ${AESConstants.KEY_LENGTH} bit long.`);
 				}
 				this._serverKey = serverKey;
 				return this._serverKey;
 			} catch (e) {
-				lastError = e;
+				lastError = e instanceof Error ? e : new Error(String(e));
 				attempt++;
 
 				// exponential backoff
@@ -162,7 +170,10 @@ class ServerKeyedAESCrypto implements ISecretStorageCrypto {
 			}
 		}
 
-		throw lastError;
+		if (lastError) {
+			throw new NetworkError(lastError);
+		}
+		throw new Error('Unknown error');
 	}
 }
 
@@ -188,7 +199,9 @@ export class LocalStorageSecretStorageProvider implements ISecretStorageProvider
 			} catch (err) {
 				// TODO: send telemetry
 				console.error('Failed to decrypt secrets from localStorage', err);
-				localStorage.removeItem(this._storageKey);
+				if (!(err instanceof NetworkError)) {
+					localStorage.removeItem(this._storageKey);
+				}
 			}
 		}
 
