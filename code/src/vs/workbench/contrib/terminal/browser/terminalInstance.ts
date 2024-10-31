@@ -69,7 +69,6 @@ import { TerminalWidgetManager } from './widgets/widgetManager.js';
 import { LineDataEventAddon } from './xterm/lineDataEventAddon.js';
 import { XtermTerminal, getXtermScaledDimensions } from './xterm/xtermTerminal.js';
 import { IEnvironmentVariableInfo, IEnvironmentVariableService } from '../common/environmentVariable.js';
-import { getCommandHistory, getDirectoryHistory } from '../common/history.js';
 import { DEFAULT_COMMANDS_TO_SKIP_SHELL, ITerminalProcessManager, ITerminalProfileResolverService, ProcessState, TERMINAL_CREATION_COMMANDS, TERMINAL_VIEW_ID, TerminalCommandId } from '../common/terminal.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../common/terminalColorRegistry.js';
 import { TerminalContextKeys } from '../common/terminalContextKey.js';
@@ -86,7 +85,6 @@ import { AccessibilityCommandId } from '../../accessibility/common/accessibility
 import { terminalStrings } from '../common/terminalStrings.js';
 import { TerminalIconPicker } from './terminalIconPicker.js';
 import { EnvironmentVariableService } from '../common/environmentVariableService.js';
-import { IHostService } from '../../../services/host/browser/host.js';
 import { TerminalResizeDebouncer } from './terminalResizeDebouncer.js';
 import { openContextMenu } from './terminalContextMenu.js';
 import type { IMenu } from '../../../../platform/actions/common/actions.js';
