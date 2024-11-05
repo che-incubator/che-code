@@ -21,11 +21,17 @@ jobs:
       fail-fast: false
       matrix:
         dist: ['libc-ubi8', 'libc-ubi9', 'musl']
-        arch: ['amd64']
+        arch: ['amd64', 'arm64']
     steps:
 
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Cleanup docker images
         run: |
@@ -38,7 +44,7 @@ jobs:
             --progress=plain \
             -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
             -t linux-${{matrix.dist}}-${{matrix.arch}} .
-      
+
       - name: Display docker images
         run: |
           docker images
@@ -61,6 +67,12 @@ jobs:
 
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Cleanup docker images
         run: |
@@ -125,6 +137,12 @@ jobs:
     steps:
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Cleanup docker images
         run: |
