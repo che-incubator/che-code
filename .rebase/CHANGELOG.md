@@ -84,3 +84,9 @@ https://github.com/che-incubator/che-code/pull/353
 
 - code/src/vs/server/node/extensionHostConnection.ts
 ---
+
+#### @vinokurig
+https://github.com/che-incubator/che-code/pull/400
+
+- code/extensions/git/src/ssh-askpass.sh
+---
