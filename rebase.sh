@@ -316,8 +316,11 @@ apply_code_src_vs_code_browser_workbench_workbench_changes() {
 apply_code_extensions_git_src_ssh-askpass_changes() {
 
   echo "  ⚙️ reworking code/extensions/git/src/ssh-askpass.sh..."
-  # reset the file from local
-  git checkout --ours code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+  # reset the file from upstream
+  git checkout --theirs code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+
+  # apply the changes
+  apply_replace code/extensions/git/src/ssh-askpass.sh
 
   # resolve the change
   git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
