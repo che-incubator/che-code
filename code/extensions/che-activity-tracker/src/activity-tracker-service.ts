@@ -85,7 +85,8 @@ export class ActivityTrackerService {
 				this.channel.appendLine('Activity tracker: Failed to ping che-machine-exec: ' + error.message);
 				if (!this.errorDisplayed) {
 					this.errorDisplayed = true;
-					this.showErrorMessage();
+					await this.showErrorMessage();
+					this.errorDisplayed = false;
 				}
 			}
 		}
