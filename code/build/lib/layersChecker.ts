@@ -24,7 +24,6 @@ import { match } from 'minimatch';
 // Types we assume are present in all implementations of JS VMs (node.js, browsers)
 // Feel free to add more core types as you see needed if present in node.js and browsers
 const CORE_TYPES = [
-	'require', // from our AMD loader
 	'setTimeout',
 	'clearTimeout',
 	'setInterval',
@@ -70,6 +69,8 @@ const CORE_TYPES = [
 	'RequestInit',
 	'Headers',
 	'Response',
+	'Body',
+	'__type',
 	'__global',
 	'PerformanceMark',
 	'PerformanceObserver',

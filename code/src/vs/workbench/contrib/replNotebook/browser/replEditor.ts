@@ -8,7 +8,6 @@ import * as DOM from '../../../../base/browser/dom.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { DisposableStore, MutableDisposable } from '../../../../base/common/lifecycle.js';
-import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
 import { CodeEditorWidget } from '../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
 import { ICodeEditorViewState, ICompositeCodeEditor } from '../../../../editor/common/editorCommon.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
@@ -34,8 +33,7 @@ import { IConfigurationService } from '../../../../platform/configuration/common
 import { NotebookOptions } from '../../notebook/browser/notebookOptions.js';
 import { ToolBar } from '../../../../base/browser/ui/toolbar/toolbar.js';
 import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
-import { createActionViewItem, createAndFillInActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
-import { IAction } from '../../../../base/common/actions.js';
+import { createActionViewItem, getActionBarActions } from '../../../../platform/actions/browser/menuEntryActionViewItem.js';
 import { EditorExtensionsRegistry } from '../../../../editor/browser/editorExtensions.js';
 import { SelectionClipboardContributionID } from '../../codeEditor/browser/selectionClipboard.js';
 import { ContextMenuController } from '../../../../editor/contrib/contextmenu/browser/contextmenu.js';
@@ -60,6 +58,7 @@ import { ReplEditorInput } from './replEditorInput.js';
 import { ReplInputHintContentWidget } from '../../interactive/browser/replInputHintContentWidget.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { ICodeEditor } from '../../../../editor/browser/editorBrowser.js';
+import { localize } from '../../../../nls.js';
 
 const INTERACTIVE_EDITOR_VIEW_STATE_PREFERENCE_KEY = 'InteractiveEditorViewState';
 
@@ -121,7 +120,6 @@ export class ReplEditor extends EditorPane implements IEditorPaneWithScrolling {
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotebookEditorService notebookWidgetService: INotebookEditorService,
 		@IContextKeyService contextKeyService: IContextKeyService,
-		@ICodeEditorService codeEditorService: ICodeEditorService,
 		@INotebookKernelService notebookKernelService: INotebookKernelService,
 		@ILanguageService languageService: ILanguageService,
 		@IKeybindingService keybindingService: IKeybindingService,
@@ -207,11 +205,7 @@ export class ReplEditor extends EditorPane implements IEditorPaneWithScrolling {
 			renderDropdownAsChildElement: true
 		}));
 
-		const primary: IAction[] = [];
-		const secondary: IAction[] = [];
-		const result = { primary, secondary };
-
-		createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, result);
+		const { primary, secondary } = getActionBarActions(menu.getActions({ shouldForwardArgs: true }));
 		this._runbuttonToolbar.setActions([...primary, ...secondary]);
 	}
 
@@ -283,6 +277,7 @@ export class ReplEditor extends EditorPane implements IEditorPaneWithScrolling {
 			...editorOptions,
 			...editorOptionsOverride,
 			...{
+				ariaLabel: localize('replEditorInput', "REPL Input"),
 				glyphMargin: true,
 				padding: {
 					top: INPUT_EDITOR_PADDING,
@@ -710,14 +705,17 @@ export class ReplEditor extends EditorPane implements IEditorPaneWithScrolling {
 		};
 	}
 
-	private getActiveCodeEditor(): ICodeEditor {
+	private getActiveCodeEditor() {
+		if (!this._codeEditorWidget) {
+			return undefined;
+		}
 		return this._codeEditorWidget.hasWidgetFocus() || !this._notebookWidget.value?.activeCodeEditor ?
 			this._codeEditorWidget :
-			this._notebookWidget.value?.activeCodeEditor;
+			this._notebookWidget.value.activeCodeEditor;
 	}
 }
 
-export type ReplEditorControl = { activeCodeEditor: ICodeEditor; notebookEditor: NotebookEditorWidget | undefined };
+export type ReplEditorControl = { activeCodeEditor: ICodeEditor | undefined; notebookEditor: NotebookEditorWidget | undefined };
 
 export function isReplEditorControl(control: unknown): control is ReplEditorControl {
 	const candidate = control as ReplEditorControl;

@@ -87,101 +87,41 @@ const vscodeWebEntryPoints = [
 ].flat();
 
 /**
- * @param {object} product The parsed product.json file contents
- */
-const createVSCodeWebProductConfigurationPatcher = (product) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (1) Patch product configuration
-		if (path.endsWith('vs/platform/product/common/product.js')) {
-			const productConfiguration = JSON.stringify({
-				...product,
-				version,
-				commit,
-				date: readISODate('out-build')
-			});
-			return content.replace('/*BUILD->INSERT_PRODUCT_CONFIGURATION*/', () => productConfiguration.substr(1, productConfiguration.length - 2) /* without { and }*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-/**
- * @param extensionsRoot {string} The location where extension will be read from
- */
-const createVSCodeWebBuiltinExtensionsPatcher = (extensionsRoot) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (2) Patch builtin extensions
-		if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {
-			const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
-			return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-const createWorkbenchConfigurationPatcher = (workbenchConfig) => {
-	/**
-	 * @param content {string} The contens of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (3) Patch workbench configuration
-		if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
-			const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
-			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-/**
- * @param patchers {((content:string, path: string)=>string)[]}
- */
-const combineContentPatchers = (...patchers) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		for (const patcher of patchers) {
-			content = patcher(content, path);
-		}
-		return content;
-	};
-	return result;
-};
-
-/**
  * @param extensionsRoot {string} The location where extension will be read from
  * @param {object} product The parsed product.json file contents
- * @param {object} workbenchConfig The parsed workbench-config.json file contents
  */
 const createVSCodeWebFileContentMapper = (extensionsRoot, product, workbenchConfig) => {
-	return combineContentPatchers(
-		createWorkbenchConfigurationPatcher(workbenchConfig),
-		createVSCodeWebProductConfigurationPatcher(product),
-		createVSCodeWebBuiltinExtensionsPatcher(extensionsRoot)
-	);
+	return path => {
+		if (path.endsWith('vs/platform/product/common/product.js')) {
+			return content => {
+				const productConfiguration = JSON.stringify({
+					...product,
+					version,
+					commit,
+					date: readISODate('out-build')
+				});
+				return content.replace('/*BUILD->INSERT_PRODUCT_CONFIGURATION*/', () => productConfiguration.substr(1, productConfiguration.length - 2) /* without { and }*/);
+			};
+		} else if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {
+			return content => {
+				const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
+				return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
+			};
+		} else if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
+			return content => {
+				const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
+			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
+			};
+		}
+
+		return undefined;
+	};
 };
 exports.createVSCodeWebFileContentMapper = createVSCodeWebFileContentMapper;
 
-const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
+const bundleVSCodeWebTask = task.define('bundle-vscode-web', task.series(
 	util.rimraf('out-vscode-web'),
-	optimize.optimizeTask(
+	optimize.bundleTask(
 		{
 			out: 'out-vscode-web',
 			esm: {
@@ -195,7 +135,7 @@ const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
 ));
 
 const minifyVSCodeWebTask = task.define('minify-vscode-web', task.series(
-	optimizeVSCodeWebTask,
+	bundleVSCodeWebTask,
 	util.rimraf('out-vscode-web-min'),
 	optimize.minifyTask('out-vscode-web', `https://main.vscode-cdn.net/sourcemaps/${commit}/core`)
 ));
@@ -282,7 +222,7 @@ const dashed = (/** @type {string} */ str) => (str ? `-${str}` : ``);
 
 	const vscodeWebTaskCI = task.define(`vscode-web${dashed(minified)}-ci`, task.series(
 		compileWebExtensionsBuildTask,
-		minified ? minifyVSCodeWebTask : optimizeVSCodeWebTask,
+		minified ? minifyVSCodeWebTask : bundleVSCodeWebTask,
 		util.rimraf(path.join(BUILD_ROOT, destinationFolderName)),
 		packageTask(sourceFolderName, destinationFolderName)
 	));
