@@ -666,7 +666,6 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 		'properties': {
 			'window.headerText': {
 				'type': 'string',
-				'default': defaultWindowTitle,
 				'markdownDescription': windowHeaderDescription
 			},
 			'window.title': {
