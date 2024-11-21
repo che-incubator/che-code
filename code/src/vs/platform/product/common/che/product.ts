@@ -30,3 +30,27 @@ export function loadFromFileSystem(): IProductConfiguration {
 
 	throw new Error(`Unable to load product.json from ${href}.`);
 }
+
+export function putToFileSystem(): void {
+	const href = `./oss-dev/static/product-new.json`;
+
+	try {
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open("PUT", href, false);
+		xmlhttp.send("test content");
+
+		console.log('PUT status: ' + xmlhttp.status);
+
+		if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
+			// return JSON.parse(xmlhttp.responseText);
+			console.log(`>>>>> THE REQUEST is DONE with message ${xmlhttp.responseText}`);
+			return;
+		}
+
+		console.log(`Request failed with status: ${xmlhttp.status}, readyState: ${xmlhttp.readyState}`);
+	} catch (err) {
+		console.error(err);
+	}
+
+	throw new Error(`Unable to PUT product-new.json to ${href}.`);
+}

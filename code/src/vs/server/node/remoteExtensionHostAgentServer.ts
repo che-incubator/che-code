@@ -40,6 +40,7 @@ import { determineServerConnectionToken, requestHasValidConnectionToken as httpR
 import { IServerEnvironmentService, ServerParsedArgs } from 'vs/server/node/serverEnvironmentService';
 import { setupServerServices, SocketServer } from 'vs/server/node/serverServices';
 import { CacheControl, serveError, serveFile, WebClientServer } from 'vs/server/node/webClientServer';
+import { handlePostRequest } from './che/post-request-handler';
 
 const SHUTDOWN_TIMEOUT = 5 * 60 * 1000;
 
@@ -97,6 +98,10 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 	}
 
 	public async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+		if (await handlePostRequest(req, res)) {
+			return;
+		}
+
 		// Only serve GET requests
 		if (req.method !== 'GET') {
 			return serveError(req, res, 405, `Unsupported method ${req.method}`);

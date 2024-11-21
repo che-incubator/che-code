@@ -334,6 +334,8 @@ export class IndexedDBStorageDatabase extends Disposable implements IIndexedDBSt
 	) {
 		super();
 
+		console.log('>> IndexedDBStorageDatabase. ID: ' + options.id);
+
 		this.name = `${IndexedDBStorageDatabase.STORAGE_DATABASE_PREFIX}${options.id}`;
 		this.broadcastChannel = options.broadcastChanges ? this._register(new BroadcastDataChannel<IStorageItemsChangeEvent>(this.name)) : undefined;
 

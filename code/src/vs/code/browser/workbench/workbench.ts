@@ -23,6 +23,8 @@ import type { IURLCallbackProvider } from 'vs/workbench/services/url/browser/url
 import { create } from 'vs/workbench/workbench.web.main';
 import { getCheConfig } from 'vs/code/browser/workbench/che/workbench-che-config';
 
+import { restoreIndexedDB } from './che/indexed-db';
+
 interface ISecretStorageCrypto {
 	seal(data: string): Promise<string>;
 	unseal(data: string): Promise<string>;
@@ -579,16 +581,19 @@ function readCookie(name: string): string | undefined {
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
 
-	// Create workbench
-	create(mainWindow.document.body, {
-		...config,
-		...cheConfig,
-		windowIndicator: config.windowIndicator ?? { label: '$(remote)', tooltip: `${product.nameShort} Web` },
-		settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
-		workspaceProvider: WorkspaceProvider.create(config),
-		urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
-		secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
-			? undefined /* with a remote without embedder-preferred storage, store on the remote */
-			: new LocalStorageSecretStorageProvider(secretStorageCrypto),
+	restoreIndexedDB().then(() => {
+		// Create workbench
+		create(mainWindow.document.body, {
+			...config,
+			...cheConfig,
+			windowIndicator: config.windowIndicator ?? { label: '$(remote)', tooltip: `${product.nameShort} Web` },
+			settingsSyncOptions: config.settingsSyncOptions ? { enabled: config.settingsSyncOptions.enabled, } : undefined,
+			workspaceProvider: WorkspaceProvider.create(config),
+			urlCallbackProvider: new LocalStorageURLCallbackProvider(config.callbackRoute),
+			secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
+				? undefined /* with a remote without embedder-preferred storage, store on the remote */
+				: new LocalStorageSecretStorageProvider(secretStorageCrypto),
+		});
 	});
+
 })();
