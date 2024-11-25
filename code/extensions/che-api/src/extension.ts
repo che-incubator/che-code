@@ -75,5 +75,7 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
 	_extensionContext.environmentVariableCollection.replace('WORKSPACE_NAMESPACE', workspaceNamespace);
 	_extensionContext.environmentVariableCollection.replace('PROJECTS_ROOT', projectsRoot);
 
+    await container.get(K8SServiceImpl).ensureKubernetesServiceHostWhitelisted();
+
     return api;
 }
