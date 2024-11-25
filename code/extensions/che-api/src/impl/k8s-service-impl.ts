@@ -40,21 +40,31 @@ export class K8SServiceImpl implements K8SService {
 
   async ensureKubernetesServiceHostWhitelisted(): Promise<void> {
     const proxy = env.HTTPS_PROXY || env.HTTP_PROXY || env.https_proxy || env.http_proxy;
-    if (proxy && env.no_proxy && env.KUBERNETES_SERVICE_HOST) {
+    const noProxy = env.NO_PROXY || env.no_proxy;
+    if (proxy && noProxy && env.KUBERNETES_SERVICE_HOST) {
 
       // take k8s service host
       const k8sHost = env.KUBERNETES_SERVICE_HOST;
 
       // check whether it is set to no_proxy environment variable
-      const noProxy = env.no_proxy.split(',');
-      if (!noProxy.includes(k8sHost)) {
+      if (!noProxy.split(',').includes(k8sHost)) {
         const action = await vscode.window.showInformationMessage(
           'The cluster you are using is behind a proxy, but kubernetes service host is not whitelisted in no_proxy environment variable. ' +
           'This may cause the kubernetes service to be unaccessible. ' +
           'Do you want to fix this and add the kubernetes service host to the no_proxy environment variable?', 'Add', 'Cancel');
 
         if ('Add' === action) {
-          env.no_proxy += ',' + k8sHost;
+          if (env.NO_PROXY && env.no_proxy) {
+            env.NO_PROXY += ',' + k8sHost;
+            env.no_proxy += ',' + k8sHost;
+            console.log('Kubernetes Service Host has been added to env.NO_PROXY and env.no_proxy environment variables');
+          } else if (env.NO_PROXY) {
+            env.NO_PROXY += ',' + k8sHost;
+            console.log('Kubernetes Service Host has been added to env.NO_PROXY environment variable');
+          } else if (env.no_proxy) {
+            env.no_proxy += ',' + k8sHost;
+            console.log('Kubernetes Service Host has been added to env.no_proxy environment variable');
+          }
         }
       }
 
