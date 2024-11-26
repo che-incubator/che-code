@@ -9,7 +9,7 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { IProductConfiguration } from 'vs/base/common/product';
+import { IProductConfiguration } from '../../../../base/common/product.js';
 
 export function loadFromFileSystem(): IProductConfiguration {
 	const href = `./oss-dev/static/product.json`;

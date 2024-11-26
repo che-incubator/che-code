@@ -10,7 +10,6 @@ https://github.com/che-incubator/che-code/commit/d3cf7dc86d284bc4cdff7cc163c5642
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/376
 https://github.com/che-incubator/che-code/pull/397
 
 - code/package.json
@@ -84,4 +83,10 @@ https://github.com/che-incubator/che-code/pull/193
 https://github.com/che-incubator/che-code/pull/353
 
 - code/src/vs/server/node/extensionHostConnection.ts
+---
+
+#### @vinokurig
+https://github.com/che-incubator/che-code/pull/400
+
+- code/extensions/git/src/ssh-askpass.sh
 ---

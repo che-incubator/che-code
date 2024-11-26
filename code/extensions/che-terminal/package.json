@@ -8,7 +8,7 @@
   "engines": {
     "vscode": "^1.72.0"
   },
-  "icon": "images/icon.png",
+  "icon": "images/eclipse-che-logo.png",
   "categories": [
     "Other"
   ],

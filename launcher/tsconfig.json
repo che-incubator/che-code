@@ -1,9 +1,11 @@
 {
     "$schema": "https://schemastore.azurewebsites.net/schemas/json/tsconfig.json",
     "compilerOptions": {
-        "target": "ES2017",
-        "module": "commonjs",
+        "target": "es2022",
+        "module": "es2022",
         "moduleResolution": "node",
+        "allowJs": true,
+        "esModuleInterop": true,
         "outDir": "./out",
         "sourceMap": true,
         "skipLibCheck": true,
@@ -20,12 +22,18 @@
         "resolveJsonModule": true,
         "jsx": "react",
         "lib": [
-            "ES2017",
+            "es2022",
             "dom"
         ]
     },
     "include": [
         "src",
         "tests"
+    ],
+    "exclude": [
+        "tests/_data/workbench.js",
+        "tests/_data/workbench.test-che-plugin-registry.js",
+        "tests/_data/workbench.test-openvsix-registry.js",
+        "tests/_data/workbench.test-webview-resources.js"
     ]
 }

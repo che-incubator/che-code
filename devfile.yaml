@@ -31,34 +31,34 @@ components:
       size: 10Gi
 
 commands:
-  - id: yarn-prepare
+  - id: npm-install
     exec:
       label: Install node dependencies
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn prepare
+        npm install
       group:
         kind: build
 
-  - id: yarn-build
+  - id: npm-build
     exec:
-      label: Compile with Yarn
+      label: Compile with npm
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn watch
+        npm run watch
       group:
         kind: build
         isDefault: true
 
-  - id: yarn-run
+  - id: npm-run
     exec:
       label: Run VS Code server on port 8000
       component: dev
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
-        yarn server
+        npm run server
       group:
         kind: run
         isDefault: true
@@ -97,3 +97,32 @@ commands:
         podman build -f build/dockerfiles/assembly.libc.Dockerfile -t che-code .
       group:
         kind: run
+  - id: install-git-subtree
+    exec:
+      label: Install git-subtree
+      component: dev
+      workingDir: ${PROJECTS_ROOT}
+      commandLine: |
+        mkdir temp && cd temp
+        git clone https://github.com/git/git.git
+        cd git/contrib/subtree
+        make && make prefix=${PROJECTS_ROOT}/temp install
+        cp -r ${PROJECTS_ROOT}/temp/libexec/git-core/ ~/bin
+        rm -rf ${PROJECTS_ROOT}/temp
+  - id: add-remote-upstream
+    exec:
+      label: Add remote for upstream
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        git remote add upstream-code https://github.com/microsoft/vscode
+        
+  - id: fetch-upstream-changes
+    exec:
+      label: Fetch upstream changes
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        git stash save --include-untracked
+        git fetch upstream-code main
+        ./rebase.sh

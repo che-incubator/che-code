@@ -22,7 +22,7 @@ const vfs = require('vinyl-fs');
 const packageJson = require('../package.json');
 const { compileBuildTask } = require('./gulpfile.compile');
 const extensions = require('./lib/extensions');
-const { isESM } = require('./lib/esm');
+const VinylFile = require('vinyl');
 
 const REPO_ROOT = path.dirname(__dirname);
 const BUILD_ROOT = path.dirname(REPO_ROOT);
@@ -32,7 +32,7 @@ const commit = getVersion(REPO_ROOT);
 const quality = product.quality;
 const version = (quality && quality !== 'stable') ? `${packageJson.version}-${quality}` : packageJson.version;
 
-const vscodeWebResourceIncludes = isESM() ? [
+const vscodeWebResourceIncludes = [
 
 	// NLS
 	'out-build/nls.messages.js',
@@ -54,30 +54,7 @@ const vscodeWebResourceIncludes = isESM() ? [
 	'out-build/vs/editor/common/languages/highlights/*.scm',
 
 	// Extension Host Worker
-	'out-build/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.esm.html',
-] : [
-
-	// Workbench
-	'out-build/vs/{base,platform,editor,workbench}/**/*.{svg,png,jpg,mp3}',
-	'out-build/vs/code/browser/workbench/*.html',
-	'out-build/vs/base/browser/ui/codicons/codicon/**/*.ttf',
-	'out-build/vs/**/markdown.css',
-
-	// NLS
-	'out-build/nls.messages.js',
-
-	// Webview
-	'out-build/vs/workbench/contrib/webview/browser/pre/*.js',
-	'out-build/vs/workbench/contrib/webview/browser/pre/*.html',
-
-	// Extension Worker
 	'out-build/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.html',
-
-	// Tree Sitter highlights
-	'out-build/vs/editor/common/languages/highlights/*.scm',
-
-	// Web node paths (needed for integration tests)
-	'out-build/vs/webPackagePaths.js',
 ];
 exports.vscodeWebResourceIncludes = vscodeWebResourceIncludes;
 
@@ -87,18 +64,17 @@ const vscodeWebResources = [
 	...vscodeWebResourceIncludes,
 
 	// Excludes
-	'!out-build/vs/**/{node,electron-sandbox,electron-main}/**',
+	'!out-build/vs/**/{node,electron-sandbox,electron-main,electron-utility}/**',
 	'!out-build/vs/editor/standalone/**',
 	'!out-build/vs/workbench/**/*-tb.png',
 	'!out-build/vs/code/**/*-dev.html',
-	'!out-build/vs/code/**/*-dev.esm.html',
 	'!**/test/**'
 ];
 
 const buildfile = require('./buildfile');
 
-const vscodeWebEntryPoints = isESM() ? [
-	buildfile.base,
+const vscodeWebEntryPoints = [
+	buildfile.workerEditor,
 	buildfile.workerExtensionHost,
 	buildfile.workerNotebook,
 	buildfile.workerLanguageDetection,
@@ -106,125 +82,52 @@ const vscodeWebEntryPoints = isESM() ? [
 	buildfile.workerOutputLinks,
 	buildfile.workerBackgroundTokenization,
 	buildfile.keyboardMaps,
-	buildfile.workbenchWeb()
-].flat() : [
-	buildfile.entrypoint('vs/workbench/workbench.web.main'),
-	buildfile.base,
-	buildfile.workerExtensionHost,
-	buildfile.workerNotebook,
-	buildfile.workerLanguageDetection,
-	buildfile.workerLocalFileSearch,
-	buildfile.keyboardMaps,
-	buildfile.workbenchWeb()
+	buildfile.workbenchWeb,
+	buildfile.entrypoint('vs/workbench/workbench.web.main.internal') // TODO@esm remove line when we stop supporting web-amd-esm-bridge
 ].flat();
 
 /**
- * @param {object} product The parsed product.json file contents
- */
-const createVSCodeWebProductConfigurationPatcher = (product) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (1) Patch product configuration
-		if (path.endsWith('vs/platform/product/common/product.js')) {
-			const productConfiguration = JSON.stringify({
-				...product,
-				version,
-				commit,
-				date: readISODate('out-build')
-			});
-			return content.replace('/*BUILD->INSERT_PRODUCT_CONFIGURATION*/', () => productConfiguration.substr(1, productConfiguration.length - 2) /* without { and }*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-/**
- * @param extensionsRoot {string} The location where extension will be read from
- */
-const createVSCodeWebBuiltinExtensionsPatcher = (extensionsRoot) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (2) Patch builtin extensions
-		if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {
-			const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
-			return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-const createWorkbenchConfigurationPatcher = (workbenchConfig) => {
-	/**
-	 * @param content {string} The contens of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		// (3) Patch workbench configuration
-		if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
-			const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
-			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
-		}
-
-		return content;
-	};
-	return result;
-};
-
-/**
- * @param patchers {((content:string, path: string)=>string)[]}
- */
-const combineContentPatchers = (...patchers) => {
-	/**
-	 * @param content {string} The contents of the file
-	 * @param path {string} The absolute file path, always using `/`, even on Windows
-	 */
-	const result = (content, path) => {
-		for (const patcher of patchers) {
-			content = patcher(content, path);
-		}
-		return content;
-	};
-	return result;
-};
-
-/**
  * @param extensionsRoot {string} The location where extension will be read from
  * @param {object} product The parsed product.json file contents
- * @param {object} workbenchConfig The parsed workbench-config.json file contents
  */
 const createVSCodeWebFileContentMapper = (extensionsRoot, product, workbenchConfig) => {
-	return combineContentPatchers(
-		createWorkbenchConfigurationPatcher(workbenchConfig),
-		createVSCodeWebProductConfigurationPatcher(product),
-		createVSCodeWebBuiltinExtensionsPatcher(extensionsRoot)
-	);
+	return path => {
+		if (path.endsWith('vs/platform/product/common/product.js')) {
+			return content => {
+				const productConfiguration = JSON.stringify({
+					...product,
+					version,
+					commit,
+					date: readISODate('out-build')
+				});
+				return content.replace('/*BUILD->INSERT_PRODUCT_CONFIGURATION*/', () => productConfiguration.substr(1, productConfiguration.length - 2) /* without { and }*/);
+			};
+		} else if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {
+			return content => {
+				const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
+				return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
+			};
+		} else if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
+			return content => {
+				const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
+			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
+			};
+		}
+
+		return undefined;
+	};
 };
 exports.createVSCodeWebFileContentMapper = createVSCodeWebFileContentMapper;
 
-const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
+const bundleVSCodeWebTask = task.define('bundle-vscode-web', task.series(
 	util.rimraf('out-vscode-web'),
-	optimize.optimizeTask(
+	optimize.bundleTask(
 		{
 			out: 'out-vscode-web',
-			amd: {
+			esm: {
 				src: 'out-build',
-				entryPoints: vscodeWebEntryPoints.flat(),
-				otherSources: [],
+				entryPoints: vscodeWebEntryPoints,
 				resources: vscodeWebResources,
-				loaderConfig: optimize.loaderConfig(),
-				externalLoaderInfo: util.createExternalLoaderConfig(product.webEndpointUrl, commit, quality),
-				inlineAmdImages: true,
-				bundleInfo: undefined,
 				fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product, workbenchConfig)
 			}
 		}
@@ -232,7 +135,7 @@ const optimizeVSCodeWebTask = task.define('optimize-vscode-web', task.series(
 ));
 
 const minifyVSCodeWebTask = task.define('minify-vscode-web', task.series(
-	optimizeVSCodeWebTask,
+	bundleVSCodeWebTask,
 	util.rimraf('out-vscode-web-min'),
 	optimize.minifyTask('out-vscode-web', `https://main.vscode-cdn.net/sourcemaps/${commit}/core`)
 ));
@@ -249,8 +152,21 @@ function packageTask(sourceFolderName, destinationFolderName) {
 
 		const extensions = gulp.src('.build/web/extensions/**', { base: '.build/web', dot: true });
 
-		const sources = es.merge(src, extensions)
-			.pipe(filter(['**', '!**/*.js.map'], { dot: true }));
+		const loader = gulp.src('build/loader.min', { base: 'build', dot: true }).pipe(rename('out/vs/loader.js')); // TODO@esm remove line when we stop supporting web-amd-esm-bridge
+
+		const sources = es.merge(src, extensions, loader)
+			.pipe(filter(['**', '!**/*.js.map'], { dot: true }))
+			// TODO@esm remove me once we stop supporting our web-esm-bridge
+			.pipe(es.through(function (file) {
+				if (file.relative === 'out/vs/workbench/workbench.web.main.internal.css') {
+					this.emit('data', new VinylFile({
+						contents: file.contents,
+						path: file.path.replace('workbench.web.main.internal.css', 'workbench.web.main.css'),
+						base: file.base
+					}));
+				}
+				this.emit('data', file);
+			}));
 
 		const name = product.nameShort;
 		const packageJsonStream = gulp.src(['remote/web/package.json'], { base: 'remote/web' })
@@ -259,7 +175,7 @@ function packageTask(sourceFolderName, destinationFolderName) {
 		const license = gulp.src(['remote/LICENSE'], { base: 'remote', allowEmpty: true });
 
 		const productionDependencies = getProductionDependencies(WEB_FOLDER);
-		const dependenciesSrc = productionDependencies.map(d => path.relative(REPO_ROOT, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]).flat();
+		const dependenciesSrc = productionDependencies.map(d => path.relative(REPO_ROOT, d)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`, `!${d}/.bin/**`]).flat();
 
 		const deps = gulp.src(dependenciesSrc, { base: 'remote/web', dot: true })
 			.pipe(filter(['**', '!**/package-lock.json']))
@@ -306,7 +222,7 @@ const dashed = (/** @type {string} */ str) => (str ? `-${str}` : ``);
 
 	const vscodeWebTaskCI = task.define(`vscode-web${dashed(minified)}-ci`, task.series(
 		compileWebExtensionsBuildTask,
-		minified ? minifyVSCodeWebTask : optimizeVSCodeWebTask,
+		minified ? minifyVSCodeWebTask : bundleVSCodeWebTask,
 		util.rimraf(path.join(BUILD_ROOT, destinationFolderName)),
 		packageTask(sourceFolderName, destinationFolderName)
 	));

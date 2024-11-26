@@ -138,21 +138,19 @@ apply_package_changes_by_path() {
   git add $filePath > /dev/null 2>&1
 }
 
-# Apply changes on code/remote/yarn.lock file
-apply_code_remote_yarn_lock_changes() {
+# Apply changes on code/remote/package-lock.json file
+apply_code_remote_package_lock_changes() {
 
-  echo "  ⚙️ reworking code/remote/yarn.lock..."
+  echo "  ⚙️ reworking code/remote/package-lock.json..."
   
   # reset the file from what is upstream
-  git checkout --theirs code/remote/yarn.lock > /dev/null 2>&1
+  git checkout --theirs code/remote/package-lock.json > /dev/null 2>&1
 
-  yarn add node-gyp@9
-
-  # update yarn lock
-  yarn --ignore-scripts --cwd code/remote
+  # update package-lock.json
+  npm install --ignore-scripts --prefix code/remote
 
   # resolve the change
-  git add code/remote/yarn.lock > /dev/null 2>&1
+  git add code/remote/package-lock.json > /dev/null 2>&1
 
 }
 
@@ -178,7 +176,7 @@ apply_mangle_index_js_changes() {
   git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
 
   # the actual changes are in the code/build/lib/mangle/index.ts file  
-  (cd code/build && yarn compile)
+  npm run compile --prefix code/build
 
   # resolve the change
   git add code/build/lib/mangle/index.js > /dev/null 2>&1
@@ -195,7 +193,7 @@ apply_mangle_index_ts_changes() {
   apply_replace code/build/lib/mangle/index.ts
 
   # apply changes for the code/build/lib/mangle/index.js file
-  (cd code/build && yarn compile)
+  npm run compile --prefix code/build
   
   # resolve the change
   git add code/build/lib/mangle/index.ts > /dev/null 2>&1
@@ -314,6 +312,20 @@ apply_code_src_vs_code_browser_workbench_workbench_changes() {
   git add code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
 }
 
+# Apply changes on code/extensions/git/src/ssh-askpass.sh file
+apply_code_extensions_git_src_ssh-askpass_changes() {
+
+  echo "  ⚙️ reworking code/extensions/git/src/ssh-askpass.sh..."
+  # reset the file from upstream
+  git checkout --theirs code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+
+  # apply the changes
+  apply_replace code/extensions/git/src/ssh-askpass.sh
+
+  # resolve the change
+  git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+}
+
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -353,8 +365,8 @@ resolve_conflicts() {
       apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
       apply_code_remote_package_changes
-    elif [[ "$conflictingFile" == "code/remote/yarn.lock" ]]; then
-      apply_code_remote_yarn_lock_changes      
+    elif [[ "$conflictingFile" == "code/remote/package-lock.json" ]]; then
+      apply_code_remote_package_lock_changes      
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
@@ -371,6 +383,8 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_code_src_vs_code_browser_workbench_workbench_changes
+    elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
+      apply_code_extensions_git_src_ssh-askpass_changes
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then

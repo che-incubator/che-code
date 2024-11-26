@@ -1,0 +1,6 @@
+[
+  {
+    "from": "#!/bin/sh",
+    "by": "#!/bin/sh\\\nif [ -f /etc/ssh/passphrase ] && command -v ssh-keygen >/dev/null; then\\\n\\\tif ssh-keygen -y -P \"$(cat /etc/ssh/passphrase)\" -f /etc/ssh/dwo_ssh_key >/dev/null; then\\\n\\\t\\\tcat /etc/ssh/passphrase\\\n\\\t\\\texit 0\\\n\\\tfi\\\nfi"
+  }
+]

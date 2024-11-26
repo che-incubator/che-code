@@ -10,8 +10,8 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { ColorScheme } from 'vs/platform/theme/common/theme';
-import { IInitialColorTheme, IWindowIndicator, IWorkbenchConstructionOptions } from 'vs/workbench/browser/web.api';
+import { ColorScheme } from '../../../../platform/theme/common/theme.js';
+import { IInitialColorTheme, IWindowIndicator, IWorkbenchConstructionOptions } from '../../../../workbench/browser/web.api.js';
 
 /**
  * Built time configuration (do NOT modify the value below)

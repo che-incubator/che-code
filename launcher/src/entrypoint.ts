@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-import { Main } from './main';
+import { Main } from './main.js';
 
 (async (): Promise<void> => {
   const main = new Main();

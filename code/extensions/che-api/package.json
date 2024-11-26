@@ -8,7 +8,7 @@
   "engines": {
     "vscode": "^1.63.0"
   },
-  "icon": "images/icon.png",
+  "icon": "images/eclipse-che-logo.png",
   "categories": [
     "Other"
   ],
@@ -31,7 +31,7 @@
   "dependencies": {
     "@devfile/api": "^2.3.0-1723034342",
     "axios": "^1.7.4",
-    "@kubernetes/client-node": "^0.21.0",
+    "@kubernetes/client-node": "^0.22.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
     "js-yaml": "^4.1.0",
@@ -47,6 +47,9 @@
     "jest": "^27.4.7",
     "ts-jest": "^27.1.2",
     "webpack-node-externals": "^3.0.0"
+  },
+  "overrides": {
+    "jsonpath-plus": "10.1.0"
   },
   "repository": {
     "type": "git",
