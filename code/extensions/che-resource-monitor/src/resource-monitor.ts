@@ -43,7 +43,6 @@ export class ResourceMonitor {
 
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    this.statusBarItem.color = new vscode.ThemeColor('statusBar.foreground');
   }
 
   async start(context: vscode.ExtensionContext, namespace: string, podName: string): Promise<void> {
