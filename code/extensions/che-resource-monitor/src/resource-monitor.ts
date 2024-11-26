@@ -159,7 +159,7 @@ export class ResourceMonitor {
     let memUsed = 0;
     let cpuUsed = 0;
 
-    let warned = false;
+    let warning = false;
     let tooltip = this.DEFAULT_TOOLTIP;
 
     this.containers.forEach(element => {
@@ -178,13 +178,13 @@ export class ResourceMonitor {
       // highlight the statusbar item if a container uses more than 90% of memory
       if (element.memoryLimit && element.memoryUsed && element.memoryUsed / element.memoryLimit > 0.9) {
         tooltip = `${element.name} container is using more than 90% of the available memory`;
-        warned = true;
+        warning = true;
       }
     });
 
     this.statusBarItem.text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed);
     
-    if (warned) {
+    if (warning) {
       this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground');
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
     } else {
