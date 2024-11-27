@@ -13,7 +13,7 @@ import * as fs from './fs-extra.js';
 
 const CONFIGMAP_NAME = 'editor-configurations';
 
-const enum EditorConfigs {
+enum EditorConfigs {
   Settings = 'settings',
   Extensions = 'extensions',
 }
@@ -41,18 +41,27 @@ export class EditorConfigurations {
       return;
     }
 
-    this.configureSection(EditorConfigs.Settings, configmap, existingData);
-    this.configureSection(EditorConfigs.Extensions, configmap, existingData);
+    let isDataSavingRequired: boolean = false;
+    for (const config of Object.values(EditorConfigs)) {
+      isDataSavingRequired = this.configureSection(config, configmap, existingData) || isDataSavingRequired;
+    }
 
-    fs.writeFile(this.workspaceFile, JSON.stringify(existingData, null, '\t'));
-    console.log('  > Editor configurations were applied successfully');
+    if (isDataSavingRequired) {
+      fs.writeFile(this.workspaceFile, JSON.stringify(existingData, null, '\t'));
+      console.log('  > Editor configurations were applied successfully');
+    }
   }
 
-  private configureSection(section: EditorConfigs, configmap: k8s.V1ConfigMap, existingData: any): void {
+  /**
+   * Adds configs from the given `configmap` to the `existingData` object.
+   * @returns `true`, if the `existingData` object was updated
+   */
+
+  private configureSection(section: EditorConfigs, configmap: k8s.V1ConfigMap, existingData: any): boolean {
     const configmapContent = configmap.data![section];
     if (!configmapContent) {
       console.log(`  > Configurations for the ${section} are not provided`);
-      return;
+      return false;
     }
 
     const configsFromConfigmap = parseJsonFrom(configmapContent);
@@ -60,7 +69,7 @@ export class EditorConfigurations {
       console.log(
         `  > Can not apply editor configurations: failed to parse ${section} data from the configmap with ${CONFIGMAP_NAME} name`
       );
-      return;
+      return false;
     }
 
     if (!existingData[section]) {
@@ -68,6 +77,7 @@ export class EditorConfigurations {
       existingData[section] = {};
     }
     existingData[section] = { ...existingData[section], ...configsFromConfigmap };
+    return true;
   }
 
   private async getConfigmap(): Promise<k8s.V1ConfigMap | undefined> {
