@@ -54,14 +54,11 @@ export class K8SServiceImpl implements K8SService {
           'Do you want to fix this and add the kubernetes service host to the no_proxy environment variable?', 'Add', 'Cancel');
 
         if ('Add' === action) {
-          if (env.NO_PROXY && env.no_proxy) {
-            env.NO_PROXY += ',' + k8sHost;
-            env.no_proxy += ',' + k8sHost;
-            console.log('Kubernetes Service Host has been added to env.NO_PROXY and env.no_proxy environment variables');
-          } else if (env.NO_PROXY) {
+          if (env.NO_PROXY) {
             env.NO_PROXY += ',' + k8sHost;
             console.log('Kubernetes Service Host has been added to env.NO_PROXY environment variable');
-          } else if (env.no_proxy) {
+          }
+          if (env.no_proxy) {
             env.no_proxy += ',' + k8sHost;
             console.log('Kubernetes Service Host has been added to env.no_proxy environment variable');
           }
