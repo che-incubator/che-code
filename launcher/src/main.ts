@@ -34,9 +34,7 @@ export class Main {
     await new TrustedExtensions().configure();
 
     const workspaceFile = await new CodeWorkspace().generate();
-    if (workspaceFile) {
-      await new EditorConfigurations(workspaceFile).configure();
-    }
+    await new EditorConfigurations(workspaceFile).configure();
 
     await new VSCodeLauncher().launch(workspaceFile);
   }
