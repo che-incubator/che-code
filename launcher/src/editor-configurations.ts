@@ -22,7 +22,7 @@ const enum EditorConfigs {
 export class EditorConfigurations {
   private coreV1API: k8s.CoreV1Api;
 
-  constructor(private readonly workspaceFilePath?: string) { }
+  constructor(private readonly workspaceFilePath?: string) {}
 
   async configure(): Promise<void> {
     console.log('# Checking if editor configurations are provided...');
@@ -43,7 +43,9 @@ export class EditorConfigurations {
       console.log(`  > ${EditorConfigs.Settings} is not provided in the ${CONFIGMAP_NAME} configmap`);
       return;
     } else {
-      console.log(`  > ${EditorConfigs.Settings} is provided in the ${CONFIGMAP_NAME} configmap, trying to apply it...`);
+      console.log(
+        `  > ${EditorConfigs.Settings} is provided in the ${CONFIGMAP_NAME} configmap, trying to apply it...`
+      );
     }
 
     const settingsFromConfigmap = parseJsonFrom(configmapContent);
@@ -78,7 +80,9 @@ export class EditorConfigurations {
       console.log(`  > ${EditorConfigs.Extensions} is not provided in the ${CONFIGMAP_NAME} configmap`);
       return;
     } else {
-      console.log(`  > ${EditorConfigs.Extensions} is provided in the ${CONFIGMAP_NAME} configmap, trying to apply it...`);
+      console.log(
+        `  > ${EditorConfigs.Extensions} is provided in the ${CONFIGMAP_NAME} configmap, trying to apply it...`
+      );
     }
 
     const extensionsFromConfigmap = parseJsonFrom(configmapContent);
@@ -89,13 +93,15 @@ export class EditorConfigurations {
       return;
     }
 
-    if (this.workspaceFilePath && await fs.fileExists(this.workspaceFilePath)) {
+    if (this.workspaceFilePath && (await fs.fileExists(this.workspaceFilePath))) {
       console.log(`    > File with configs is found: ${this.workspaceFilePath}`);
 
       const workspaceFileContent = await fs.readFile(this.workspaceFilePath);
       const workspaceConfigData = parseJsonFrom(workspaceFileContent);
       if (!workspaceConfigData) {
-        console.log(`    > Can not apply configurations for ${EditorConfigs.Extensions}: failed to parse data from the ${this.workspaceFilePath}`);
+        console.log(
+          `    > Can not apply configurations for ${EditorConfigs.Extensions}: failed to parse data from the ${this.workspaceFilePath}`
+        );
         return;
       }
 
@@ -105,7 +111,10 @@ export class EditorConfigurations {
         workspaceConfigData[extensionsSection] = {};
       }
 
-      workspaceConfigData[extensionsSection] = { ...workspaceConfigData[extensionsSection], ...extensionsFromConfigmap };
+      workspaceConfigData[extensionsSection] = {
+        ...workspaceConfigData[extensionsSection],
+        ...extensionsFromConfigmap,
+      };
 
       const json = JSON.stringify(workspaceConfigData, null, '\t');
       await fs.writeFile(this.workspaceFilePath, json);
@@ -115,7 +124,7 @@ export class EditorConfigurations {
       // it's not possible to store extensions for the Remote scope,
       // for sinle root mode extensions should come with a project, like: /project/.vscode/extensions.json - Folder scope
       // so, we don't store extensions configs in another place if there is no workspace config file
-      // 
+      //
       return;
     }
   }
@@ -153,12 +162,12 @@ export class EditorConfigurations {
 
 function parseJsonFrom(content: string): any {
   if (!content) {
-      return undefined;
+    return undefined;
   }
 
   try {
-      return JSON.parse(content);
+    return JSON.parse(content);
   } catch (parseError) {
-      console.error(`  > Error parsing JSON: ${parseError}`);
+    console.error(`  > Error parsing JSON: ${parseError}`);
   }
 }

@@ -46,7 +46,7 @@ export async function mkdir(path: string): Promise<void> {
 
 export async function fileExists(file: string | undefined): Promise<boolean> {
   if (file && (await pathExists(file)) && (await isFile(file))) {
-      return true;
+    return true;
   }
 
   return false;
