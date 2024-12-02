@@ -182,7 +182,7 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
 							const { prefix, suffix } = that._windowTitle.getTitleDecorations();
 							let label = that._windowTitle.workspaceName;
 							if (that._windowTitle.isCustomTitleFormat()) {
-								label = that._windowTitle.getWindowTitle();
+								label = that._windowTitle.getWindowTitle("some text");
 							} else if (that._editorGroupService.partOptions.showTabs === 'none') {
 								label = that._windowTitle.fileName ?? label;
 							}
