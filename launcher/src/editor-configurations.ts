@@ -27,14 +27,20 @@ export class EditorConfigurations {
   async configure(): Promise<void> {
     console.log('# Checking if editor configurations are provided...');
 
-    const configmap = await this.getConfigmap();
-    if (!configmap || !configmap.data) {
-      console.log('  > Editor configurations are not provided');
-      return;
-    }
+    try {
+      const configmap = await this.getConfigmap();
+      if (!configmap || !configmap.data) {
+        console.log('  > Editor configurations are not provided');
+        return;
+      }
 
-    await this.configureSettings(configmap);
-    await this.configureExtensions(configmap);
+      const settingsPromise = this.configureSettings(configmap);
+      const extensionsPromise = this.configureExtensions(configmap);
+
+      await Promise.all([settingsPromise, extensionsPromise]);
+    } catch (error) {
+      console.log(`  > Failed to apply editor configurations ${error}`);
+    }
   }
 
   private async configureSettings(configmap: k8s.V1ConfigMap): Promise<void> {
