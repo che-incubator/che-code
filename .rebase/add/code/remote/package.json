@@ -1,6 +1,7 @@
 {
     "dependencies": {
         "ws": "8.2.3",
-        "js-yaml": "^4.1.0"
+        "js-yaml": "^4.1.0",
+        "@kubernetes/client-node": "^0.22.0"
     }
 }
