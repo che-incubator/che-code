@@ -1,0 +1,6 @@
+[
+	{
+		"from": "if (that._windowTitle.isCustomTitleFormat()) {",
+		"by": "const headerText = that._windowTitle.getHeaderText();\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tif (headerText) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\t\\\tlabel = headerText;\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\t} else if (that._windowTitle.isCustomTitleFormat()) {"
+	}
+]

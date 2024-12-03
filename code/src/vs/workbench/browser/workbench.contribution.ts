@@ -637,7 +637,7 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 	});
 
 	// Window
-	const windowHeaderDescription = "Controls the window header";
+	const windowHeaderDescription = 'Controls the window header';
 	let windowTitleDescription = localize('windowTitle', "Controls the window title based on the current context such as the opened workspace or active editor. Variables are substituted based on the context:");
 	windowTitleDescription += '\n- ' + [
 		localize('activeEditorShort', "`${activeEditorShort}`: the file name (e.g. myFile.txt)."),

@@ -1,0 +1,6 @@
+[
+	{
+		"from": "this.title.innerText = this.windowTitle.value;",
+		"by": "this.title.innerText = this.windowTitle.getHeaderText() \\|\\| this.windowTitle.value;"
+	}
+]
