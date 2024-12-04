@@ -96,6 +96,17 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
+		],
+		"ms-python.python": [
+			"contribEditorContentMenu",
+			"quickPickSortByLabel",
+			"portsAttributes",
+			"testObserver",
+			"quickPickItemTooltip",
+			"terminalDataWriteEvent",
+			"terminalExecuteCommandEvent",
+			"contribIssueReporter",
+			"notebookReplDocument"
 		]
 	},
 	"sendASmile": {
