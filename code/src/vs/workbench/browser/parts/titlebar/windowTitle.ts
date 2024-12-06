@@ -33,7 +33,7 @@ import { CodeWindow } from '../../../../base/browser/window.js';
 const enum WindowSettingNames {
 	titleSeparator = 'window.titleSeparator',
 	title = 'window.title',
-	headerText = 'window.headerText'
+	header = 'window.header'
 }
 
 export const defaultWindowTitle = (() => {
@@ -383,8 +383,8 @@ export class WindowTitle extends Disposable {
 		});
 	}
 
-	getHeaderText(): string | undefined{
-		const header = this.configurationService.inspect<string>(WindowSettingNames.headerText);
+	getHeader(): string | undefined{
+		const header = this.configurationService.inspect<string>(WindowSettingNames.header);
 		return header.value;
 	}
 

@@ -5,6 +5,6 @@
 	},
 	{
 		"from": "'window.title': {",
-		"by": "'window.headerText': {\\\n\\\t\\\t\\\t\\\t'type': 'string',\\\n\\\t\\\t\\\t\\\t'markdownDescription': windowHeaderDescription\\\n\\\t\\\t\\\t},\\\n\\\t\\\t\\\t'window.title': {"
+		"by": "'window.header': {\\\n\\\t\\\t\\\t\\\t'type': 'string',\\\n\\\t\\\t\\\t\\\t'markdownDescription': windowHeaderDescription\\\n\\\t\\\t\\\t},\\\n\\\t\\\t\\\t'window.title': {"
 	}
 ]

@@ -664,7 +664,7 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 	registry.registerConfiguration({
 		...windowConfigurationNodeBase,
 		'properties': {
-			'window.headerText': {
+			'window.header': {
 				'type': 'string',
 				'markdownDescription': windowHeaderDescription
 			},
