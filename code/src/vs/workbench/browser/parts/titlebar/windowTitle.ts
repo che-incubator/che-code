@@ -32,7 +32,8 @@ import { CodeWindow } from '../../../../base/browser/window.js';
 
 const enum WindowSettingNames {
 	titleSeparator = 'window.titleSeparator',
-	title = 'window.title'
+	title = 'window.title',
+	header = 'window.header'
 }
 
 export const defaultWindowTitle = (() => {
@@ -380,6 +381,11 @@ export class WindowTitle extends Disposable {
 			focusedView,
 			separator: { label: separator }
 		});
+	}
+
+	getHeader(): string | undefined{
+		const header = this.configurationService.inspect<string>(WindowSettingNames.header);
+		return header.value;
 	}
 
 	isCustomTitleFormat(): boolean {

@@ -1,0 +1,10 @@
+[
+	{
+		"from": "\\/\\/ Window",
+		"by": "\\/\\/ Window\\\n\\\tconst windowHeaderDescription = 'Controls the window header';"
+	},
+	{
+		"from": "'window.title': {",
+		"by": "'window.header': {\\\n\\\t\\\t\\\t\\\t'type': 'string',\\\n\\\t\\\t\\\t\\\t'markdownDescription': windowHeaderDescription\\\n\\\t\\\t\\\t},\\\n\\\t\\\t\\\t'window.title': {"
+	}
+]

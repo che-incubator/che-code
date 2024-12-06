@@ -549,9 +549,9 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		// Text Title
 		if (!this.isCommandCenterVisible) {
-			this.title.innerText = this.windowTitle.value;
+			this.title.innerText = this.windowTitle.getHeader() || this.windowTitle.value;
 			this.titleDisposables.add(this.windowTitle.onDidChange(() => {
-				this.title.innerText = this.windowTitle.value;
+				this.title.innerText = this.windowTitle.getHeader() || this.windowTitle.value;
 			}));
 		}
 

@@ -1,0 +1,10 @@
+[
+	{
+		"from": "title = 'window.title'",
+		"by": "title = 'window.title',\\\n\\\theader = 'window.header'"
+	},
+	{
+		"from": "isCustomTitleFormat(): boolean {",
+		"by": "getHeader(): string \\| undefined{\\\n\\\t\\\tconst header = this.configurationService.inspect<string>(WindowSettingNames.header);\\\n\\\t\\\treturn header.value;\\\n\\\t}\\\n\\\n\\\tisCustomTitleFormat(): boolean {"
+	}
+]
