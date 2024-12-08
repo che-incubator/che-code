@@ -427,7 +427,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=714dc6d80480542c4ff93f5bff1b1ca21bc9429f
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/main)
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version
