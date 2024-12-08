@@ -166,7 +166,7 @@ export class EditorConfigurations {
   }
 }
 
-function parseJsonFrom(content: string): any {
+export function parseJsonFrom(content: string): any {
   if (!content) {
     return undefined;
   }
