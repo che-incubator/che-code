@@ -229,6 +229,9 @@
     "@gulp-sourcemaps/identity-map": {
       "postcss": "8.4.33"
     },
+    "npm-run-all": {
+      "cross-spawn": "7.0.6"
+    },
     "kerberos@2.1.1": {
       "node-addon-api": "7.1.0"
     },

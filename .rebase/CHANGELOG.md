@@ -3,6 +3,14 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/463
+
+- code/package.json
+- code/test/automation/package.json
+- code/test/smoke/package.json
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/456
 
 - code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
