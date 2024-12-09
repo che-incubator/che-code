@@ -1,5 +1,3 @@
 {
-  // Note: settings in this file will override user-level settings in the workspace.
-  //       Any setting that may be changed by the user should not be set here.
   "git.defaultCloneDirectory": "/projects/"
 }

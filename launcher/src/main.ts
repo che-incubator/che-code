@@ -16,6 +16,7 @@ import { LocalStorageKeyProvider } from './local-storage-key-provider.js';
 import { TrustedExtensions } from './trusted-extensions.js';
 import { VSCodeLauncher } from './vscode-launcher.js';
 import { WebviewResources } from './webview-resources.js';
+import { EditorConfigurations } from './editor-configurations.js';
 
 /**
  * Mandatory environment variables:
@@ -33,6 +34,7 @@ export class Main {
     await new TrustedExtensions().configure();
 
     const workspaceFile = await new CodeWorkspace().generate();
+    await new EditorConfigurations(workspaceFile).configure();
 
     await new VSCodeLauncher().launch(workspaceFile);
   }

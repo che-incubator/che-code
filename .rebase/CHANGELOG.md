@@ -19,6 +19,12 @@ https://github.com/che-incubator/che-code/pull/456
 - code/src/vs/workbench/browser/workbench.contribution.ts
 ---
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/460
+
+- code/remote/package.json
+---
+
 #### @benoitf @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/379 \
 https://github.com/che-incubator/che-code/commit/d3cf7dc86d284bc4cdff7cc163c5642bb6744524#diff-36f85da944a1b6c01cb656687e520f7415d692e1b7d8856e2161db97a134b224
