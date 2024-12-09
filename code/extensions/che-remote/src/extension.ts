@@ -209,18 +209,48 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  // if a new Devfile does not contain projects, copy them from flattened Devfile
   try {
+    const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
+    const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
+    
+    // if a new Devfile does not contain projects, copy them from flattened Devfile
     let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
-    if (!projects || projects.length === 0) {
-      const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
-      const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
-      if (flattenedDevfile.projects) {
-        devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
-      }
+    if ((!projects || projects.length === 0) && flattenedDevfile.projects) {
+      devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
     }
+
+    // keep spec.template.attributes
+    if (!devfileContext.devWorkspace.spec!.template!.attributes) {
+      await vscode.window.showInformationMessage('Copying spec.template.attributes...', {
+        modal: true
+      });
+
+      devfileContext.devWorkspace.spec!.template!.attributes = flattenedDevfile.attributes;
+    } else {
+      await vscode.window.showInformationMessage('Devworkspace attributes spec.template.attributes already defined.', {
+        modal: true
+      });
+    }
+
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
+    return false;
+  }
+
+  const jsonStr = JSON.stringify(devfileContext, null, '  ');
+
+  const file = '/projects/.new-devfile-context.json';
+  if (await fs.pathExists(file)) {
+    await fs.remove(file);
+  }
+
+  await fs.writeFile(file, jsonStr);
+
+  const updateAction = await vscode.window.showInformationMessage('Do update devfile?', {
+    modal: true
+  }, 'Update');
+
+  if (updateAction !== 'Update') {
     return false;
   }
 
