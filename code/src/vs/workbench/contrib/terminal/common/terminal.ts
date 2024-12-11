@@ -157,7 +157,6 @@ export interface ITerminalConfiguration {
 	mouseWheelScrollSensitivity: number;
 	tabStopWidth: number;
 	sendKeybindingsToShell: boolean;
-	// fontLigatures: boolean;
 	fontSize: number;
 	letterSpacing: number;
 	lineHeight: number;
@@ -208,6 +207,7 @@ export interface ITerminalConfiguration {
 	smoothScrolling: boolean;
 	ignoreBracketedPasteMode: boolean;
 	rescaleOverlappingGlyphs: boolean;
+	fontLigatures?: boolean;
 	experimental?: {
 		windowsUseConptyDll?: boolean;
 	};
@@ -396,11 +396,9 @@ export const enum TerminalCommandId {
 	QuickKill = 'workbench.action.terminal.quickKill',
 	ConfigureTerminalSettings = 'workbench.action.terminal.openSettings',
 	ShellIntegrationLearnMore = 'workbench.action.terminal.learnMore',
-	RunRecentCommand = 'workbench.action.terminal.runRecentCommand',
 	CopyLastCommand = 'workbench.action.terminal.copyLastCommand',
 	CopyLastCommandOutput = 'workbench.action.terminal.copyLastCommandOutput',
 	CopyLastCommandAndLastCommandOutput = 'workbench.action.terminal.copyLastCommandAndLastCommandOutput',
-	GoToRecentDirectory = 'workbench.action.terminal.goToRecentDirectory',
 	CopyAndClearSelection = 'workbench.action.terminal.copyAndClearSelection',
 	CopySelection = 'workbench.action.terminal.copySelection',
 	CopySelectionAsHtml = 'workbench.action.terminal.copySelectionAsHtml',
@@ -471,7 +469,6 @@ export const enum TerminalCommandId {
 	MoveToTerminalPanel = 'workbench.action.terminal.moveToTerminalPanel',
 	MoveIntoNewWindow = 'workbench.action.terminal.moveIntoNewWindow',
 	SetDimensions = 'workbench.action.terminal.setDimensions',
-	ClearPreviousSessionHistory = 'workbench.action.terminal.clearPreviousSessionHistory',
 	FocusHover = 'workbench.action.terminal.focusHover',
 	ShowEnvironmentContributions = 'workbench.action.terminal.showEnvironmentContributions',
 	StartVoice = 'workbench.action.terminal.startVoice',
@@ -490,7 +487,6 @@ export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	TerminalCommandId.DeleteToLineStart,
 	TerminalCommandId.DeleteWordLeft,
 	TerminalCommandId.DeleteWordRight,
-	TerminalCommandId.GoToRecentDirectory,
 	TerminalCommandId.FocusNextPane,
 	TerminalCommandId.FocusNext,
 	TerminalCommandId.FocusPreviousPane,
@@ -513,7 +509,6 @@ export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	TerminalCommandId.ResizePaneUp,
 	TerminalCommandId.RunActiveFile,
 	TerminalCommandId.RunSelectedText,
-	TerminalCommandId.RunRecentCommand,
 	TerminalCommandId.ScrollDownLine,
 	TerminalCommandId.ScrollDownPage,
 	TerminalCommandId.ScrollToBottom,

@@ -57,7 +57,7 @@ export class CommandCenterControl {
 		});
 
 		this._disposables.add(Event.filter(quickInputService.onShow, () => isActiveDocument(this.element), this._disposables)(this._setVisibility.bind(this, false)));
-		this._disposables.add(Event.filter(quickInputService.onHide, () => isActiveDocument(this.element), this._disposables)(this._setVisibility.bind(this, true)));
+		this._disposables.add(quickInputService.onHide(this._setVisibility.bind(this, true)));
 		this._disposables.add(titleToolbar);
 	}
 
@@ -181,7 +181,10 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
 						private _getLabel(): string {
 							const { prefix, suffix } = that._windowTitle.getTitleDecorations();
 							let label = that._windowTitle.workspaceName;
-							if (that._windowTitle.isCustomTitleFormat()) {
+							const header = that._windowTitle.getHeader();
+							if (header) {
+								label = header;
+							} else if (that._windowTitle.isCustomTitleFormat()) {
 								label = that._windowTitle.getWindowTitle();
 							} else if (that._editorGroupService.partOptions.showTabs === 'none') {
 								label = that._windowTitle.fileName ?? label;

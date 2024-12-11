@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
+import * as vscode from "vscode";
 
 export type WorkspaceService = { updateWorkspaceActivity: () => any };
 
@@ -28,13 +29,17 @@ export class ActivityTrackerService {
 	private isTimerRunning: boolean;
 	// Flag which is used to check if new requests were received during timer awaiting.
 	private isNewRequest: boolean;
-
+	// Flag used to keep track whether the ping error warning was already displayed or not.
+	private errorDisplayed: boolean;
 	private workspaceService: WorkspaceService;
+	private channel: vscode.OutputChannel;
 
-	constructor(workspaceService: WorkspaceService) {
+	constructor(workspaceService: WorkspaceService, channel: vscode.OutputChannel) {
 		this.isTimerRunning = false;
 		this.isNewRequest = false;
+		this.errorDisplayed = false;
 		this.workspaceService = workspaceService;
+		this.channel = channel;
 	}
 
 	/**
@@ -67,17 +72,83 @@ export class ActivityTrackerService {
 		}
 	}
 
-	private sendRequest(
-		attemptsLeft: number = ActivityTrackerService.RETRY_COUNT,
-	): void {
+	private async sendRequest(
+		attemptsLeft: number = ActivityTrackerService.RETRY_COUNT
+	): Promise<void> {
 		try {
-			this.workspaceService.updateWorkspaceActivity();
+			await this.workspaceService.updateWorkspaceActivity();
 		} catch (error) {
 			if (attemptsLeft > 0) {
-			  setTimeout(this.sendRequest, ActivityTrackerService.RETRY_REQUEST_PERIOD_MS, --attemptsLeft);
+				await new Promise((resolve) => setTimeout(resolve, ActivityTrackerService.RETRY_REQUEST_PERIOD_MS));
+				await this.sendRequest(--attemptsLeft);
 			} else {
-			  console.error('Activity tracker: Failed to ping che-machine-exec: ', error.message);
+				this.channel.appendLine('Activity tracker: Failed to ping che-machine-exec: ' + error.message);
+				if (!this.errorDisplayed) {
+					this.errorDisplayed = true;
+					await this.showErrorMessage();
+					this.errorDisplayed = false;
+				}
 			}
 		}
+	}
+
+	private async showErrorMessage(): Promise<void> {
+		const viewText = 'View Logs';
+		const response = await vscode.window.showErrorMessage(
+			this.getErrorMessage(),
+			viewText
+		);
+
+		if (response === viewText) {
+			this.channel.show();
+		}
+	}
+
+	private getErrorMessage(): string {
+
+		let message = 'Failed to communicate with idling service.';
+
+		const idletimeout = process.env.SECONDS_OF_DW_INACTIVITY_BEFORE_IDLING;
+		if (idletimeout) {
+			const timeoutInSeconds = parseInt(idletimeout);
+			if (!isNaN(timeoutInSeconds)) {
+				message += ` This development environment may automatically terminate in ${this.getTimeString(timeoutInSeconds)}.`;
+			}
+		} else {
+			message += ' This development environment may automatically terminate soon.';
+		}
+
+		message += ' For environments with the ephemeral storage type, you may lose any unsaved work. Please contact an administrator.'
+		return message;
+	}
+
+	private getTimeString(_seconds: number): string {
+		const hours = Math.floor(_seconds / 3600);
+		const minutes = Math.floor((_seconds % 3600) / 60);
+		const seconds = _seconds % 60;
+
+		let output = '';
+
+		if (hours > 0) {
+			output += `${hours} hour`;
+			if (hours > 1) {
+				output += 's';
+			}
+		}
+
+		if (minutes > 0) {
+			output += ` ${minutes} minute`;
+			if (minutes > 1) {
+				output += 's';
+			}
+		}
+
+		if (seconds > 0) {
+			output += ` ${seconds} second`;
+			if (seconds > 1) {
+				output += 's';
+			}
+		}
+		return output
 	}
 }

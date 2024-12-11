@@ -13,6 +13,8 @@ import { ActivityTrackerService, WorkspaceService } from "./activity-tracker-ser
 
 export async function activate(context: vscode.ExtensionContext) {
 
+	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Che Activity Tracker');
+
 	const eventsToTrack = [
 		vscode.workspace.onDidChangeTextDocument,
 		vscode.window.onDidChangeActiveTextEditor,
@@ -22,13 +24,12 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.onDidChangeTerminalState,
 		vscode.window.onDidChangeActiveTerminal,
 	];
-
-	await track(eventsToTrack, context);
+	await track(eventsToTrack, channel, context);
 }
 
-async function track(events: vscode.Event<any>[], context: vscode.ExtensionContext) {
+async function track(events: vscode.Event<any>[], channel: vscode.OutputChannel, context: vscode.ExtensionContext) {
 	const workspaceService = await getWorkspaceService();
-	const activityTracker = new ActivityTrackerService(workspaceService);
+	const activityTracker = new ActivityTrackerService(workspaceService, channel);
 	events.forEach((e: vscode.Event<any>) => {
 		context.subscriptions.push(
 			e(async () => {

@@ -7,7 +7,7 @@ import { Event } from '../../../base/common/event.js';
 import { IProcessEnvironment, OperatingSystem } from '../../../base/common/platform.js';
 import { URI, UriComponents } from '../../../base/common/uri.js';
 import { createDecorator } from '../../instantiation/common/instantiation.js';
-import { IPtyHostProcessReplayEvent, ISerializedCommandDetectionCapability, ITerminalCapabilityStore } from './capabilities/capabilities.js';
+import { IPtyHostProcessReplayEvent, ISerializedCommandDetectionCapability, ITerminalCapabilityStore, type ITerminalCommand } from './capabilities/capabilities.js';
 import { IGetTerminalLayoutInfoArgs, IProcessDetails, ISetTerminalLayoutInfoArgs } from './terminalProcess.js';
 import { ThemeIcon } from '../../../base/common/themables.js';
 import { ISerializableEnvironmentVariableCollections } from './environmentVariable.js';
@@ -16,6 +16,8 @@ import { IWorkspaceFolder } from '../../workspace/common/workspace.js';
 import { Registry } from '../../registry/common/platform.js';
 import type * as performance from '../../../base/common/performance.js';
 import { ILogService } from '../../log/common/log.js';
+import type { IAction } from '../../../base/common/actions.js';
+import type { IDisposable } from '../../../base/common/lifecycle.js';
 
 export const terminalTabFocusModeContextKey = new RawContextKey<boolean>('terminalTabFocusMode', false, true);
 
@@ -110,11 +112,11 @@ export const enum TerminalSettingId {
 	ShellIntegrationEnabled = 'terminal.integrated.shellIntegration.enabled',
 	ShellIntegrationShowWelcome = 'terminal.integrated.shellIntegration.showWelcome',
 	ShellIntegrationDecorationsEnabled = 'terminal.integrated.shellIntegration.decorationsEnabled',
-	ShellIntegrationCommandHistory = 'terminal.integrated.shellIntegration.history',
 	EnableImages = 'terminal.integrated.enableImages',
 	SmoothScrolling = 'terminal.integrated.smoothScrolling',
 	IgnoreBracketedPasteMode = 'terminal.integrated.ignoreBracketedPasteMode',
 	FocusAfterRun = 'terminal.integrated.focusAfterRun',
+	FontLigatures = 'terminal.integrated.fontLigatures',
 
 	// Debug settings that are hidden from user
 
@@ -332,8 +334,6 @@ export interface IPtyService {
 	updateTitle(id: number, title: string, titleSource: TitleEventSource): Promise<void>;
 	updateIcon(id: number, userInitiated: boolean, icon: TerminalIcon, color?: string): Promise<void>;
 
-	installAutoReply(match: string, reply: string): Promise<void>;
-	uninstallAllAutoReplies(): Promise<void>;
 	getDefaultSystemShell(osOverride?: OperatingSystem): Promise<string>;
 	getEnvironment(): Promise<IProcessEnvironment>;
 	getWslPath(original: string, direction: 'unix-to-win' | 'win-to-unix'): Promise<string>;
@@ -359,6 +359,13 @@ export interface IPtyService {
 
 	// TODO: Make mandatory and remove impl from pty host service
 	refreshIgnoreProcessNames?(names: string[]): Promise<void>;
+
+	// #region Pty service contribution RPC calls
+
+	installAutoReply(match: string, reply: string): Promise<void>;
+	uninstallAllAutoReplies(): Promise<void>;
+
+	// #endregion
 }
 export const IPtyService = createDecorator<IPtyService>('ptyService');
 
@@ -923,6 +930,10 @@ export interface IShellIntegration {
 	readonly onDidChangeStatus: Event<ShellIntegrationStatus>;
 
 	deserialize(serialized: ISerializedCommandDetectionCapability): void;
+}
+
+export interface IDecorationAddon {
+	registerMenuItems(command: ITerminalCommand, items: IAction[]): IDisposable;
 }
 
 export interface ITerminalContributions {

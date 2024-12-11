@@ -26,8 +26,6 @@ export class ResourceMonitor {
 
   private METRICS_SERVER_ENDPOINT = '/apis/metrics.k8s.io/v1beta1';
 
-  private WARNING_COLOR = '#FFCC00';
-  private DEFAULT_COLOR = '#FFFFFF';
   private DEFAULT_TOOLTIP = 'Workspace resources';
   private MONITOR_BANNED = '$(error) Resources';
   private MONITOR_WAIT_METRICS = '$(pulse) Waiting metrics...';
@@ -45,7 +43,6 @@ export class ResourceMonitor {
 
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-    this.statusBarItem.color = this.DEFAULT_COLOR;
   }
 
   async start(context: vscode.ExtensionContext, namespace: string, podName: string): Promise<void> {
@@ -160,34 +157,40 @@ export class ResourceMonitor {
     let memTotal = 0;
     let memUsed = 0;
     let cpuUsed = 0;
-    let text = '';
-    let color = this.DEFAULT_COLOR;
+
+    let warning = false;
     let tooltip = this.DEFAULT_TOOLTIP;
+
     this.containers.forEach(element => {
       if (element.memoryLimit) {
         memTotal += element.memoryLimit;
       }
+
       if (element.memoryUsed) {
         memUsed += element.memoryUsed;
       }
+
       if (element.cpuUsed) {
         cpuUsed += element.cpuUsed;
       }
-      // if a container uses more than 90% of limited memory, show it in status bar with warning color
+
+      // highlight the statusbar item if a container uses more than 90% of memory
       if (element.memoryLimit && element.memoryUsed && element.memoryUsed / element.memoryLimit > 0.9) {
-        color = this.WARNING_COLOR;
-        tooltip = `${element.name} container`;
-        text = this.buildStatusBarMessage(element.memoryUsed, element.memoryLimit, element.cpuUsed);
+        tooltip = `${element.name} container is using more than 90% of the available memory`;
+        warning = true;
       }
     });
 
-    // show workspace resources in total
-    if (color === this.DEFAULT_COLOR) {
-      text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed);
+    this.statusBarItem.text = this.buildStatusBarMessage(memUsed, memTotal, cpuUsed);
+    
+    if (warning) {
+      this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground');
+      this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    } else {
+      this.statusBarItem.color = undefined;
+      this.statusBarItem.backgroundColor = undefined;
     }
-
-    this.statusBarItem.text = text;
-    this.statusBarItem.color = color;
+        
     this.statusBarItem.tooltip = tooltip;
   }
 

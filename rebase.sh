@@ -312,6 +312,20 @@ apply_code_src_vs_code_browser_workbench_workbench_changes() {
   git add code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
 }
 
+# Apply changes on code/extensions/git/src/ssh-askpass.sh file
+apply_code_extensions_git_src_ssh-askpass_changes() {
+
+  echo "  ⚙️ reworking code/extensions/git/src/ssh-askpass.sh..."
+  # reset the file from upstream
+  git checkout --theirs code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+
+  # apply the changes
+  apply_replace code/extensions/git/src/ssh-askpass.sh
+
+  # resolve the change
+  git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+}
+
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -369,6 +383,8 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_code_src_vs_code_browser_workbench_workbench_changes
+    elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
+      apply_code_extensions_git_src_ssh-askpass_changes
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
@@ -376,6 +392,14 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/windowTitle.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"

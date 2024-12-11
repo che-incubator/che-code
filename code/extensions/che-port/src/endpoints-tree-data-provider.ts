@@ -151,8 +151,8 @@ export class EndpointsTreeDataProvider implements vscode.TreeDataProvider<Endpoi
       id: this.getNextId(),
       label: 'Public',
       iconPath: {
-        light: path.join(__filename, '..', '..', 'resources', 'light', 'globe.svg'),
-        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'globe.svg'),
+        light: vscode.Uri.parse(path.join(__filename, '..', '..', 'resources', 'light', 'globe.svg')),
+        dark: vscode.Uri.parse(path.join(__filename, '..', '..', 'resources', 'dark', 'globe.svg')),
       },
       tooltip: 'Public endpoints referenced in the devfile',
       collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
@@ -161,8 +161,8 @@ export class EndpointsTreeDataProvider implements vscode.TreeDataProvider<Endpoi
     const privateEndpointsGroup: EndpointTreeNodeItem = {
       id: this.getNextId(),
       iconPath: {
-        light: path.join(__filename, '..', '..', 'resources', 'light', 'home.svg'),
-        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'home.svg'),
+        light: vscode.Uri.parse(path.join(__filename, '..', '..', 'resources', 'light', 'home.svg')),
+        dark: vscode.Uri.parse(path.join(__filename, '..', '..', 'resources', 'dark', 'home.svg')),
       },
       label: 'Internal',
       tooltip: 'Internal endpoints (only available within workspace)',

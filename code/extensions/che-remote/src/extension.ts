@@ -209,18 +209,34 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  // if a new Devfile does not contain projects, copy them from flattened Devfile
+  let flattenedDevfile: any;
+
   try {
-    let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
-    if (!projects || projects.length === 0) {
-      const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
-      const flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
-      if (flattenedDevfile.projects) {
-        devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
-      }
-    }
+    const flattenedDevfileContent = await fs.readFile(process.env.DEVWORKSPACE_FLATTENED_DEVFILE!, 'utf8');
+    flattenedDevfile = jsYaml.load(flattenedDevfileContent) as any;
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to read Devfile. ${error}`);
+    return false;
+  }
+
+  try {
+    // if a new Devfile does not contain projects, copy them from flattened Devfile
+    let projects: V1alpha2DevWorkspaceSpecTemplateProjects[] | undefined = devfileContext.devWorkspace.spec!.template!.projects;
+    if ((!projects || projects.length === 0) && flattenedDevfile.projects) {
+      devfileContext.devWorkspace.spec!.template!.projects = flattenedDevfile.projects;
+    }
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Failed to update DevWorkspace projects. ${error}`);
+    return false;
+  }
+
+  try {
+    // keep spec.template.attributes
+    if (!devfileContext.devWorkspace.spec!.template!.attributes) {
+      devfileContext.devWorkspace.spec!.template!.attributes = flattenedDevfile.attributes;
+    }
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Failed to update DevWorkspace attributes. ${error}`);
     return false;
   }
 
