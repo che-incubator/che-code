@@ -32,7 +32,7 @@
   "dependencies": {
     "vscode-nls": "^5.0.0",
     "axios": "^1.7.9",
-    "@eclipse-che/che-devworkspace-generator": "^7.95.0",
+    "@eclipse-che/che-devworkspace-generator": "^7.93.0",
     "https": "^1.0.0",
     "js-yaml": "^4.0.0"
   },
