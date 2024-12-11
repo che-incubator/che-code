@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1723034342",
-    "axios": "^1.7.4",
+    "axios": "^1.7.9",
     "@kubernetes/client-node": "^0.22.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
