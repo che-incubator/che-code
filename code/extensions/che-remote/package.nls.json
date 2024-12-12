@@ -2,6 +2,7 @@
 	"displayName": "Eclipse Che Remote",
 	"description": "Provides remoteIndicator commands",
 	"openDocumentationCommand": "Eclipse Che: Open Documentation",
+	"startTunnelCommand": "Eclipse Che: Turn on Remote Tunnel Access to Workspace...",
 	"openDashboardCommand": "Eclipse Che: Open Dashboard",
 	"openOpenShiftConsoleCommand": "Eclipse Che: Open OpenShift Console",
 	"stopWorkspaceAndRedirectToDashboard": "Eclipse Che: Stop Workspace",
