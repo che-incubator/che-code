@@ -32,7 +32,6 @@
   "dependencies": {
     "@devfile/api": "^2.3.0-1723034342",
     "@kubernetes/client-node": "^0.22.0",
-    "got": "11.8.0",
     "inversify": "^6.0.2",
     "reflect-metadata": "^0.2.2",
     "request": "2.88.2"
