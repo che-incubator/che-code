@@ -160,7 +160,11 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   } = cheApi.getDevfileService();
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   let devfilePath = await selectDevfile();
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   if (`${process.env.PROJECTS_ROOT!}/*` === devfilePath) {
     const uri = await vscode.window.showOpenDialog({
       canSelectFolders: false
@@ -175,6 +179,8 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   if (!devfilePath) {
     return false;
   }
+
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   const action = await vscode.window.showInformationMessage(
     'Workspace restart', {
