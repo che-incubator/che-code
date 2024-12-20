@@ -38,6 +38,7 @@ commands:
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
         npm install
+        recompile-@devfile-api.sh
       group:
         kind: build
 
