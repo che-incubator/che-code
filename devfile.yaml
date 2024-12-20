@@ -38,7 +38,8 @@ commands:
       workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
         npm install
-        recompile-@devfile-api.sh
+        echo "Current directory: $(pwd)"
+        ./recompile-@devfile-api.sh
       group:
         kind: build
 

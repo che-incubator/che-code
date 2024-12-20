@@ -68,7 +68,7 @@ recompile_devfile_api() {
   cd $cur_dir
 }
 
-extensions=("che-api" "che-commands" "che-github-authentication" "che-port" "che-remote" "che-resource-monitor")
+extensions=("che-api" "che-commands" "che-github-authentication" "che-port" "che-remote")
 for extension in ${extensions[@]}; do
   recompile_devfile_api "${extension}"
 done
