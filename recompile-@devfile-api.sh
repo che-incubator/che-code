@@ -9,7 +9,14 @@
 #
 #!/bin/bash
 
-# This script will recompile `node_modules/@devfile/api` for specified extensions
+# All the extensions in Visual Studio Code have `commonjs` type.
+# Some extensions depend on `@devfile/api` package, which is build as a `module`.
+#
+# There is a restriction, that it is not possible to use 'import'
+# when referencing `module` libraries from `commonjs` code.
+#
+# This script will recompile `node_modules/@devfile/api` dependency for specified extensions
+# to have the dependency with type `commonjs` instead of `module`.
 
 set -e
 set -u
@@ -24,11 +31,11 @@ recompile_devfile_api() {
   # go to dependency directory
   cd $devfile_api_path
 
-  # delete dist directory
+  # delete target dist directory, a new one will be created
   rm -rf dist
 
   #
-  # Patch package.json
+  # patch package.json
   #
 
   # remove `main`, `type`, `module`, `exports`, `typings` properties
@@ -38,18 +45,18 @@ recompile_devfile_api() {
   echo "$(jq 'del(.exports)' package.json)" > package.json
   echo "$(jq 'del(.typings)' package.json)" > package.json
 
-  # add new values for `main` and `types` properties
+  # add new `main` and `types` properties with new values
   echo "$(jq '. += {"main": "dist/index.js"}' package.json)" > package.json
   echo "$(jq '. += {"types": "dist/index.d.ts"}' package.json)" > package.json
 
   #
-  # Patch tsconfig.json
+  # patch tsconfig.json
   #
 
   # remove comments
   cp -f tsconfig.json tsconfig.json.copy
   node -p 'JSON.stringify(eval(`(${require("fs").readFileSync("tsconfig.json.copy", "utf-8").toString()})`))' | jq > tsconfig.json
-  
+
   # remove unwanted properties
   echo "$(jq 'del(.compilerOptions.noUnusedLocals)' tsconfig.json)" > tsconfig.json
   echo "$(jq 'del(.compilerOptions.noUnusedParameters)' tsconfig.json)" > tsconfig.json
@@ -72,5 +79,3 @@ extensions=("che-api" "che-commands" "che-github-authentication" "che-port" "che
 for extension in ${extensions[@]}; do
   recompile_devfile_api "${extension}"
 done
-
-echo "Done"
