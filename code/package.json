@@ -225,6 +225,9 @@
   },
   "overrides": {
     "node-gyp-build": "4.8.1",
+    "@gulp-sourcemaps/identity-map": {
+      "postcss": "8.4.33"
+    },
     "npm-run-all": {
       "cross-spawn": "7.0.6"
     },
