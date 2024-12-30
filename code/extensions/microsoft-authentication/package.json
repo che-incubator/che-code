@@ -143,11 +143,14 @@
     "@azure/msal-node": "^2.16.2",
     "@azure/msal-node-extensions": "^1.5.0",
     "@vscode/extension-telemetry": "^0.9.0",
-    "keytar": "file:./packageMocks/keytar",
+    "keytar": "workspace:*",
     "vscode-tas-client": "^0.1.84"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
-  }
+  },
+  "workspaces": [
+    "packageMocks/keytar"
+  ]
 }
