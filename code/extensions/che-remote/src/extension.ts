@@ -160,11 +160,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   } = cheApi.getDevfileService();
   const devWorkspaceGenerator = new DevWorkspaceGenerator();
 
-  await new Promise(resolve => setTimeout(resolve, 500));
-
   let devfilePath = await selectDevfile();
-  await new Promise(resolve => setTimeout(resolve, 500));
-
   if (`${process.env.PROJECTS_ROOT!}/*` === devfilePath) {
     const uri = await vscode.window.showOpenDialog({
       canSelectFolders: false
@@ -179,8 +175,6 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   if (!devfilePath) {
     return false;
   }
-
-  await new Promise(resolve => setTimeout(resolve, 500));
 
   const action = await vscode.window.showInformationMessage(
     'Workspace restart', {
@@ -237,20 +231,15 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   }
 
   try {
-    const action = await vscode.window.showInformationMessage('Do you want to copy attributes from existing to a new devfile?', {
-      modal: true
-    }, 'Copy', 'Skip');
-    console.log(`> action [${action}]`);
+    // keep spec.template.attributes
+    if (!devfileContext.devWorkspace.spec!.template!.attributes) {
+      devfileContext.devWorkspace.spec!.template!.attributes = {};
+    }
 
-    if ('Copy' === action) {
-      // keep spec.template.attributes
-      if (!devfileContext.devWorkspace.spec!.template!.attributes) {
-        devfileContext.devWorkspace.spec!.template!.attributes = flattenedDevfile.attributes;
+    for (const key of Object.keys(flattenedDevfile.attributes)) {
+      if (flattenedDevfile.attributes[key]) {
+        devfileContext.devWorkspace.spec!.template!.attributes[key] = flattenedDevfile.attributes[key];
       }
-    } else if (action === 'Skip') {
-      // do nothing
-    } else if (action === undefined) {
-      return false;
     }
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to update DevWorkspace attributes. ${error}`);
@@ -269,8 +258,9 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   }
 
   try {
-    const action = await vscode.window.showInformationMessage('Apply changes?', {
-      modal: true
+    const action = await vscode.window.showInformationMessage('The new devfile has been written to \'/projects/new-devfile.yaml\'', {
+      modal: true,
+      detail: 'Apply changes?'
     }, 'Apply');
     if (action !== 'Apply') {
       return false;
