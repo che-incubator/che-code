@@ -138,6 +138,21 @@ apply_package_changes_by_path() {
   git add $filePath > /dev/null 2>&1
 }
 
+# Apply changes on code/extensions/package.json file
+apply_code_extensions_package_lock_changes() {
+
+  echo "  ⚙️ reworking code/extensions/package-lock.json..."
+  
+  # reset the file from what is upstream
+  git checkout --theirs code/extensions/package-lock.json > /dev/null 2>&1
+
+  # update package-lock.json
+  npm install --ignore-scripts --prefix code/extensions
+
+  # resolve the change
+  git add code/extensions/package-lock.json > /dev/null 2>&1
+}
+
 # Apply changes on code/remote/package-lock.json file
 apply_code_remote_package_lock_changes() {
 
@@ -357,6 +372,10 @@ resolve_conflicts() {
     echo " ➡️  Analyzing conflict for $conflictingFile"
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
+    elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/package-lock.json" ]]; then
+      apply_code_extensions_package_lock_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
