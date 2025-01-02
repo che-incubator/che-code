@@ -247,25 +247,6 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   }
 
   try {
-    const serialized = jsYaml.dump(devfileContext);
-    await fs.writeFile('/projects/new-devfile.yaml', serialized);
-    await vscode.window.showInformationMessage('The new devfile has been written to \'/projects/new-devfile.yaml\'', {
-      modal: true
-    });
-  } catch (error) {
-    await vscode.window.showErrorMessage(`Failed to write new devfile context to '/projects/new-devfile.yaml'. ${error}`);
-    return false;
-  }
-
-  try {
-    const action = await vscode.window.showInformationMessage('The new devfile has been written to \'/projects/new-devfile.yaml\'', {
-      modal: true,
-      detail: 'Apply changes?'
-    }, 'Apply');
-    if (action !== 'Apply') {
-      return false;
-    }
-
     await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
   } catch (error) {
     if (error.body && error.body.message) {
