@@ -233,7 +233,13 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
   try {
     // keep spec.template.attributes
     if (!devfileContext.devWorkspace.spec!.template!.attributes) {
-      devfileContext.devWorkspace.spec!.template!.attributes = flattenedDevfile.attributes;
+      devfileContext.devWorkspace.spec!.template!.attributes = {};
+    }
+
+    for (const key of Object.keys(flattenedDevfile.attributes)) {
+      if (flattenedDevfile.attributes[key]) {
+        devfileContext.devWorkspace.spec!.template!.attributes[key] = flattenedDevfile.attributes[key];
+      }
     }
   } catch (error) {
     await vscode.window.showErrorMessage(`Failed to update DevWorkspace attributes. ${error}`);
