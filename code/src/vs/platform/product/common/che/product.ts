@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2024 Red Hat, Inc.
+ * Copyright (c) 2024-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,17 +9,17 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
+import { FileAccess } from '../../../../base/common/network.js';
 import { IProductConfiguration } from '../../../../base/common/product.js';
 
 export function loadFromFileSystem(): IProductConfiguration {
-	const href = `./oss-dev/static/product.json`;
-
+	const href = FileAccess.asBrowserUri('vs/../../product.json').toString(true);
 	try {
-		var xmlhttp = new XMLHttpRequest();
-		xmlhttp.open("GET", href, false);
+		const xmlhttp = new XMLHttpRequest();
+		xmlhttp.open('GET', href, false);
 		xmlhttp.send();
 
-		if (xmlhttp.status == 200 && xmlhttp.readyState == 4) {
+		if (xmlhttp.status === 200 && xmlhttp.readyState === 4) {
 			return JSON.parse(xmlhttp.responseText);
 		}
 
