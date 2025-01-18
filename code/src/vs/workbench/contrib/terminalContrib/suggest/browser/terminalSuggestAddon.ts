@@ -27,7 +27,7 @@ import { SimpleCompletionItem } from '../../../../services/suggest/browser/simpl
 import { LineContext, SimpleCompletionModel } from '../../../../services/suggest/browser/simpleCompletionModel.js';
 import { ISimpleSelectedSuggestion, SimpleSuggestWidget } from '../../../../services/suggest/browser/simpleSuggestWidget.js';
 import type { ISimpleSuggestWidgetFontInfo } from '../../../../services/suggest/browser/simpleSuggestWidgetRenderer.js';
-import { ITerminalCompletion, ITerminalCompletionService, TerminalCompletionItemKind } from './terminalCompletionService.js';
+import { ITerminalCompletionService, TerminalCompletionItemKind } from './terminalCompletionService.js';
 import { TerminalShellType } from '../../../../../platform/terminal/common/terminal.js';
 import { CancellationToken, CancellationTokenSource } from '../../../../../base/common/cancellation.js';
 import { IExtensionService } from '../../../../services/extensions/common/extensions.js';
@@ -58,7 +58,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 	private _enableWidget: boolean = true;
 	private _pathSeparator: string = sep;
 	private _isFilteringDirectories: boolean = false;
-	private _mostRecentCompletion?: ITerminalCompletion;
 
 	// TODO: Remove these in favor of prompt input state
 	private _leadingLineContent?: string;
@@ -163,15 +162,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		if (enableExtensionCompletions && !doNotRequestExtensionCompletions) {
 			await this._extensionService.activateByEvent('onTerminalCompletionsRequested');
 		}
-
-		const providedCompletions = await this._terminalCompletionService.provideCompletions(this._promptInputModel.prefix, this._promptInputModel.cursorIndex, this.shellType, token, doNotRequestExtensionCompletions);
-		if (!providedCompletions?.length || token.isCancellationRequested) {
-			return;
-		}
-		this._onDidReceiveCompletions.fire();
-
-		this._requestedCompletionsIndex = this._promptInputModel.cursorIndex;
-
 		this._currentPromptInputState = {
 			value: this._promptInputModel.value,
 			prefix: this._promptInputModel.prefix,
@@ -179,8 +169,17 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 			cursorIndex: this._promptInputModel.cursorIndex,
 			ghostTextIndex: this._promptInputModel.ghostTextIndex
 		};
+		this._requestedCompletionsIndex = this._currentPromptInputState.cursorIndex;
 
-		this._leadingLineContent = this._currentPromptInputState.prefix.substring(0, this._requestedCompletionsIndex + this._cursorIndexDelta);
+		const providedCompletions = await this._terminalCompletionService.provideCompletions(this._currentPromptInputState.prefix, this._currentPromptInputState.cursorIndex, this.shellType, token, doNotRequestExtensionCompletions);
+
+		if (!providedCompletions?.length || token.isCancellationRequested) {
+			return;
+		}
+		this._onDidReceiveCompletions.fire();
+
+		this._cursorIndexDelta = this._promptInputModel.cursorIndex - this._requestedCompletionsIndex;
+		this._leadingLineContent = this._promptInputModel.prefix.substring(0, this._requestedCompletionsIndex + this._cursorIndexDelta);
 
 		const completions = providedCompletions.flat();
 		if (!completions?.length) {
@@ -192,13 +191,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		if (this._leadingLineContent.includes(' ') || firstChar === '[') {
 			this._leadingLineContent = this._promptInputModel.prefix;
 		}
-
-		if (this._mostRecentCompletion?.isDirectory && completions.every(e => e.isDirectory)) {
-			completions.push(this._mostRecentCompletion);
-		}
-		this._mostRecentCompletion = undefined;
-
-		this._cursorIndexDelta = this._currentPromptInputState.cursorIndex - this._requestedCompletionsIndex;
 
 		let normalizedLeadingLineContent = this._leadingLineContent;
 
@@ -232,6 +224,18 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 
 	setScreen(screen: HTMLElement): void {
 		this._screen = screen;
+	}
+
+	toggleExplainMode(): void {
+		this._suggestWidget?.toggleExplainMode();
+	}
+
+	toggleSuggestionFocus(): void {
+		this._suggestWidget?.toggleDetailsFocus();
+	}
+
+	toggleSuggestionDetails(): void {
+		this._suggestWidget?.toggleDetails();
 	}
 
 	resetWidgetSize(): void {
@@ -373,6 +377,7 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		}
 		const suggestWidget = this._ensureSuggestWidget(this._terminal);
 		suggestWidget.setCompletionModel(model);
+		this._register(suggestWidget.onDidFocus(() => this._terminal?.focus()));
 		if (!this._promptInputModel || !explicitlyInvoked && model.items.length === 0) {
 			return;
 		}
@@ -413,8 +418,29 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 				listInactiveFocusOutline: activeContrastBorder
 			}));
 			this._register(this._suggestWidget.onDidSelect(async e => this.acceptSelectedSuggestion(e)));
-			this._register(this._suggestWidget.onDidHide(() => this._terminalSuggestWidgetVisibleContextKey.set(false)));
+			this._register(this._suggestWidget.onDidHide(() => this._terminalSuggestWidgetVisibleContextKey.reset()));
 			this._register(this._suggestWidget.onDidShow(() => this._terminalSuggestWidgetVisibleContextKey.set(true)));
+
+			const element = this._terminal?.element?.querySelector('.xterm-helper-textarea');
+			if (element) {
+				this._register(dom.addDisposableListener(dom.getActiveDocument(), 'click', (event) => {
+					const target = event.target as HTMLElement;
+					if (this._terminal?.element?.contains(target)) {
+						this._suggestWidget?.hide();
+					}
+				}));
+			}
+
+			this._register(this._suggestWidget.onDidBlurDetails((e) => {
+				const elt = e.relatedTarget as HTMLElement;
+				if (this._terminal?.element?.contains(elt)) {
+					// Do nothing, just the terminal getting focused
+					// If there was a mouse click, the suggest widget will be
+					// hidden above
+					return;
+				}
+				this._suggestWidget?.hide();
+			}));
 			this._terminalSuggestWidgetVisibleContextKey.set(false);
 		}
 		return this._suggestWidget;
@@ -500,8 +526,6 @@ export class SuggestAddon extends Disposable implements ITerminalAddon, ISuggest
 		if (completion.icon === Codicon.folder) {
 			SuggestAddon.lastAcceptedCompletionTimestamp = 0;
 		}
-
-		this._mostRecentCompletion = completion;
 
 		const commonPrefixLen = commonPrefixLength(replacementText, completionText);
 		const commonPrefix = replacementText.substring(replacementText.length - 1 - commonPrefixLen, replacementText.length - 1);

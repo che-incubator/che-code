@@ -38,6 +38,9 @@ const _allApiProposals = {
 	chatProvider: {
 		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.chatProvider.d.ts',
 	},
+	chatReadonlyPromptReference: {
+		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.chatReadonlyPromptReference.d.ts',
+	},
 	chatReferenceBinaryData: {
 		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.chatReferenceBinaryData.d.ts',
 	},
@@ -348,6 +351,12 @@ const _allApiProposals = {
 	},
 	terminalSelection: {
 		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.terminalSelection.d.ts',
+	},
+	terminalShellEnv: {
+		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.terminalShellEnv.d.ts',
+	},
+	terminalShellType: {
+		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.terminalShellType.d.ts',
 	},
 	testObserver: {
 		proposal: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.testObserver.d.ts',
