@@ -1,4 +1,4 @@
-#
+ #
 # Copyright (c) 2021 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -16,12 +16,12 @@ jobs:
 
   build:
     name: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
         dist: ['libc-ubi8', 'libc-ubi9', 'musl']
-        arch: ['amd64']
+        arch: ['arm64']
     steps:
 
       - name: Checkout che-code source code
@@ -79,9 +79,9 @@ jobs:
 
       - name: Load docker images
         run: |
-          docker load -i linux-libc-ubi8-amd64.tgz
-          docker load -i linux-libc-ubi9-amd64.tgz
-          docker load -i linux-musl-amd64.tgz
+          docker load -i linux-libc-ubi8-arm64.tgz
+          docker load -i linux-libc-ubi9-arm64.tgz
+          docker load -i linux-musl-arm64.tgz
 
       - name: Display docker images
         run: |
@@ -90,7 +90,7 @@ jobs:
       - name: Assemble che-code
         run: |
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/arm64 \
             --progress=plain \
             -f build/dockerfiles/assembly.Dockerfile \
             -t che-code .
@@ -118,36 +118,3 @@ jobs:
         with:
           name: pull-request-number
           path: PR_NUMBER
-
-  dev:
-    name: build-che-dev-image
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout che-code source code
-        uses: actions/checkout@v4
-
-      - name: Cleanup docker images
-        run: |
-          docker system prune -af
-
-      - name: Build Che-Code Docker image
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --progress=plain \
-            -f build/dockerfiles/dev.Dockerfile \
-            -t che-dev .
-
-      - name: Display docker images
-        run: |
-          docker images
-
-      - name: Compress che-dev image to a file
-        run: |
-          docker save che-dev | gzip > che-dev.tgz
-
-      - name: Upload che-dev docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: che-dev
-          path: che-dev.tgz
