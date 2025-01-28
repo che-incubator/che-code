@@ -71,7 +71,7 @@ export function connectProxyResolver(
 			}
 		},
 		proxyResolveTelemetry: () => { },
-		isUseHostProxyEnabled,
+		useHostProxy: isUseHostProxyEnabled(),
 		loadAdditionalCertificates: async () => {
 			const promises: Promise<string[]>[] = [];
 			if (initData.remote.isRemote) {
