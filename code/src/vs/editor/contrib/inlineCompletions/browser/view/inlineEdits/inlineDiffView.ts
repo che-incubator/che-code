@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
-import { autorunWithStore, derived, IObservable, observableFromEvent } from '../../../../../../base/common/observable.js';
+import { autorunWithStore, constObservable, derived, IObservable, observableFromEvent } from '../../../../../../base/common/observable.js';
 import { ICodeEditor } from '../../../../../browser/editorBrowser.js';
 import { observableCodeEditor } from '../../../../../browser/observableCodeEditor.js';
 import { rangeIsSingleLine } from '../../../../../browser/widget/diffEditor/components/diffEditorViewZones/diffEditorViewZones.js';
@@ -15,23 +15,26 @@ import { EditorOption } from '../../../../../common/config/editorOptions.js';
 import { Range } from '../../../../../common/core/range.js';
 import { AbstractText } from '../../../../../common/core/textEdit.js';
 import { DetailedLineRangeMapping } from '../../../../../common/diff/rangeMapping.js';
-import { IModelDeltaDecoration, ITextModel } from '../../../../../common/model.js';
+import { EndOfLinePreference, IModelDeltaDecoration, ITextModel } from '../../../../../common/model.js';
 import { ModelDecorationOptions } from '../../../../../common/model/textModel.js';
 import { InlineDecoration, InlineDecorationType } from '../../../../../common/viewModel.js';
+import { IInlineEditsView } from './sideBySideDiff.js';
 import { classNames } from './utils.js';
 
 export interface IOriginalEditorInlineDiffViewState {
 	diff: DetailedLineRangeMapping[];
 	modifiedText: AbstractText;
-	mode: 'mixedLines' | 'ghostText' | 'interleavedLines' | 'sideBySide';
+	mode: 'mixedLines' | 'insertionInline' | 'interleavedLines' | 'sideBySide' | 'deletion';
 
 	modifiedCodeEditor: ICodeEditor;
 }
 
-export class OriginalEditorInlineDiffView extends Disposable {
+export class OriginalEditorInlineDiffView extends Disposable implements IInlineEditsView {
 	public static supportsInlineDiffRendering(mapping: DetailedLineRangeMapping): boolean {
 		return allowsTrueInlineDiffRendering(mapping);
 	}
+
+	readonly isHovered = constObservable(false);
 
 	constructor(
 		private readonly _originalEditor: ICodeEditor,
@@ -111,7 +114,7 @@ export class OriginalEditorInlineDiffView extends Disposable {
 		if (!diff) { return undefined; }
 
 		const modified = diff.modifiedText;
-		const showInline = diff.mode === 'mixedLines' || diff.mode === 'ghostText';
+		const showInline = diff.mode === 'mixedLines' || diff.mode === 'insertionInline';
 
 		const showEmptyDecorations = true;
 
@@ -156,7 +159,7 @@ export class OriginalEditorInlineDiffView extends Disposable {
 		});
 
 		for (const m of diff.diff) {
-			const showFullLineDecorations = true;
+			const showFullLineDecorations = diff.mode !== 'sideBySide';
 			if (showFullLineDecorations) {
 				if (!m.original.isEmpty) {
 					originalDecorations.push({
@@ -184,6 +187,7 @@ export class OriginalEditorInlineDiffView extends Disposable {
 				for (const i of m.innerChanges || []) {
 					// Don't show empty markers outside the line range
 					if (m.original.contains(i.originalRange.startLineNumber)) {
+						const replacedText = this._originalEditor.getModel()?.getValueInRange(i.originalRange, EndOfLinePreference.LF);
 						originalDecorations.push({
 							range: i.originalRange,
 							options: {
@@ -191,9 +195,9 @@ export class OriginalEditorInlineDiffView extends Disposable {
 								shouldFillLineOnLineBreak: false,
 								className: classNames(
 									'inlineCompletions-char-delete',
-									i.originalRange.isSingleLine() && diff.mode === 'ghostText' && 'single-line-inline',
+									i.originalRange.isSingleLine() && diff.mode === 'insertionInline' && 'single-line-inline',
 									i.originalRange.isEmpty() && 'empty',
-									(i.originalRange.isEmpty() && showEmptyDecorations && !useInlineDiff) && 'diff-range-empty'
+									((i.originalRange.isEmpty() || diff.mode === 'deletion' && replacedText === '\n') && showEmptyDecorations && !useInlineDiff) && 'diff-range-empty'
 								),
 								inlineClassName: useInlineDiff ? classNames('strike-through', 'inlineCompletions') : null,
 								zIndex: 1
@@ -218,7 +222,7 @@ export class OriginalEditorInlineDiffView extends Disposable {
 									content: insertedText,
 									inlineClassName: classNames(
 										'inlineCompletions-char-insert',
-										i.modifiedRange.isSingleLine() && diff.mode === 'ghostText' && 'single-line-inline'
+										i.modifiedRange.isSingleLine() && diff.mode === 'insertionInline' && 'single-line-inline'
 									),
 								},
 								zIndex: 2,

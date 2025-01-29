@@ -108,6 +108,7 @@ export interface IProductConfiguration {
 	};
 
 	readonly extensionPublisherOrgs?: readonly string[];
+	readonly trustedExtensionPublishers?: readonly string[];
 
 	readonly extensionRecommendations?: IStringDictionary<IExtensionRecommendations>;
 	readonly configBasedExtensionTips?: IStringDictionary<IConfigBasedExtensionTip>;
@@ -308,6 +309,7 @@ export interface IAiGeneratedWorkspaceTrust {
 export interface IDefaultChatAgent {
 	readonly extensionId: string;
 	readonly chatExtensionId: string;
+
 	readonly documentationUrl: string;
 	readonly termsStatementUrl: string;
 	readonly privacyStatementUrl: string;
@@ -316,9 +318,15 @@ export interface IDefaultChatAgent {
 	readonly manageSettingsUrl: string;
 	readonly managePlanUrl: string;
 	readonly upgradePlanUrl: string;
+
 	readonly providerId: string;
 	readonly providerName: string;
+	readonly enterpriseProviderId: string;
+	readonly enterpriseProviderName: string;
+	readonly providerSetting: string;
+	readonly providerUriSetting: string;
 	readonly providerScopes: string[][];
+
 	readonly entitlementUrl: string;
 	readonly entitlementSignupLimitedUrl: string;
 }
