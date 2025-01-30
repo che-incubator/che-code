@@ -11,9 +11,9 @@ jobs:
   richnav:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: caching-stage
         name: Cache VS Code dependencies
         with:
@@ -21,7 +21,7 @@ jobs:
           key: ${{ runner.os }}-dependencies-${{ hashfiles('package-lock.json') }}
           restore-keys: ${{ runner.os }}-dependencies-
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
 
