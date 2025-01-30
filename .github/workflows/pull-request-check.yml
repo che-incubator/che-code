@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Red Hat, Inc.
+# Copyright (c) 2021-2025 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -16,105 +16,103 @@ jobs:
 
   build:
     name: build
-    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         dist: ['libc-ubi8', 'libc-ubi9', 'musl']
-        arch: ['amd64']
+        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
+    runs-on: ${{matrix.runners}}
     steps:
-
+      - name: Set arch environment variable
+        run: |
+          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
+            echo arch="amd64" >> $GITHUB_ENV
+          else
+            echo arch="arm64" >> $GITHUB_ENV
+          fi
       - name: Checkout che-code source code
         uses: actions/checkout@v4
-
       - name: Cleanup docker images
-        run: |
-          docker system prune -af
-
+        run: docker system prune -af
       - name: Compile che-code
         run: |
           docker buildx build \
-            --platform linux/${{matrix.arch}} \
+            --platform linux/${{env.arch}} \
             --progress=plain \
             -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
-            -t linux-${{matrix.dist}}-${{matrix.arch}} .
-      
+            -t linux-${{matrix.dist}}-${{env.arch}} .
       - name: Display docker images
-        run: |
-          docker images
-
+        run: docker images
       - name: Compress image to a file
-        run: |
-          docker save linux-${{matrix.dist}}-${{matrix.arch}} | gzip > linux-${{matrix.dist}}-${{matrix.arch}}.tgz
-
+        run: docker save linux-${{matrix.dist}}-${{env.arch}} | gzip > linux-${{matrix.dist}}-${{env.arch}}.tgz
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-${{matrix.dist}}-${{matrix.arch}}
-          path: linux-${{matrix.dist}}-${{matrix.arch}}.tgz
+          name: linux-${{matrix.dist}}-${{env.arch}}
+          path: linux-${{matrix.dist}}-${{env.arch}}.tgz
 
   assemble:
     name: assemble
-    runs-on: ubuntu-22.04
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
+    runs-on: ${{matrix.runners}}
     steps:
-
+      - name: Set arch environment variable
+        run: |
+          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
+            echo arch="amd64" >> $GITHUB_ENV
+          else
+            echo arch="arm64" >> $GITHUB_ENV
+          fi
       - name: Checkout che-code source code
         uses: actions/checkout@v4
-
       - name: Cleanup docker images
-        run: |
-          docker system prune -af
-
+        run: docker system prune -af
       - name: Download editor artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: linux-*
           merge-multiple: true
           path: .
-
       - name: List downloaded files
-        run: |
-          ls -lah
-
+        run: ls -lah
       - name: Load docker images
         run: |
-          docker load -i linux-libc-ubi8-amd64.tgz
-          docker load -i linux-libc-ubi9-amd64.tgz
-          docker load -i linux-musl-amd64.tgz
-
+          docker load -i linux-libc-ubi8-${{env.arch}}.tgz
+          docker load -i linux-libc-ubi9-${{env.arch}}.tgz
+          docker load -i linux-musl-${{env.arch}}.tgz
       - name: Display docker images
+        run: docker images
+      - name: Update assembly.Dockerfile
         run: |
-          docker images
-
+          sed  "s|FROM linux-libc-ubi8|FROM linux-libc-ubi8-${{env.arch}}|" -i "build/dockerfiles/assembly.Dockerfile"
+          sed  "s|FROM linux-libc-ubi9|FROM linux-libc-ubi9-${{env.arch}}|" -i "build/dockerfiles/assembly.Dockerfile"
+          sed  "s|FROM linux-musl|FROM linux-musl-${{env.arch}}|" -i "build/dockerfiles/assembly.Dockerfile"
       - name: Assemble che-code
         run: |
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/${{env.arch}} \
             --progress=plain \
             -f build/dockerfiles/assembly.Dockerfile \
-            -t che-code .
-
+            -t che-code-${{env.arch}} .
       - name: Display docker images
-        run: |
-          docker images
-
+        run: docker images
       - name: Compress image to a file
-        run: |
-          docker save che-code | gzip > che-code.tgz
-
+        run: docker save che-code-${{env.arch}} | gzip > che-code-${{env.arch}}.tgz
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: che-code
-          path: che-code.tgz
-
+          name: che-code-${{env.arch}}
+          path: che-code-${{env.arch}}.tgz
       - name: Store PR info
-        run: |
-          echo "${{ github.event.number }}" > PR_NUMBER
-
+        run: echo "${{ github.event.number }}" > PR_NUMBER
+      # Upload PR number artifact only once
       - name: Upload PR Number artifact
         uses: actions/upload-artifact@v4
+        if: ${{ env.arch == 'amd64' }}
         with:
           name: pull-request-number
           path: PR_NUMBER
