@@ -3,6 +3,14 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/485
+
+- code/package.json
+- code/remote/package.json
+- code/src/vs/workbench/api/node/proxyResolver.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/482
 
 - code/extensions/microsoft-authentication/package.json
