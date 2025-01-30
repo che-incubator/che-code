@@ -92,6 +92,7 @@ async function launchBrowser(options: LaunchOptions, endpoint: string) {
 
 	const browser = await measureAndLog(() => playwright[options.browser ?? 'chromium'].launch({
 		headless: headless ?? false,
+		args: ['--headless=new'],
 		timeout: 0
 	}), 'playwright#launch', logger);
 

@@ -11,6 +11,13 @@ https://github.com/che-incubator/che-code/pull/485
 ---
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/488
+
+- code/test/integration/browser/src/index.ts
+- code/test/automation/src/playwrightBrowser.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/482
 
 - code/extensions/microsoft-authentication/package.json

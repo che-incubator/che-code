@@ -1,0 +1,6 @@
+[
+	{
+			"from": "headless: headless ?? false,",
+			"by": "headless: headless ?? false,\\\n\\\t\\\targs: ['--headless=new'],"
+	}
+]
