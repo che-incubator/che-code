@@ -38,17 +38,6 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build image
-        run: | 
-          docker build -t test_image:latest -<<EOF
-          FROM busybox
-          RUN touch abc.txt
-          EOF
-      - name: Upload image
-        uses: ishworkh/container-image-artifact-upload@v2.0.0
-        with:
-          image: "test_image:latest"
-          retention_days: "2"
       - name: Docker Build
         env:
           # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
@@ -91,15 +80,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Download linux-libc-ubi8-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-libc-ubi8-${{env.arch}}"
       - name: Download linux-libc-ubi9-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-libc-ubi9-${{env.arch}}"
       - name: Download linux-musl image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-musl-${{env.arch}}"
       - name: Display docker images
