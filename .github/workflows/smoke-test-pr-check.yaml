@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023-2024 Red Hat, Inc.
+# Copyright (c) 2023-2025 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -28,7 +28,7 @@ jobs:
     steps:
 
       - name: Checkout che-code source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
@@ -48,10 +48,10 @@ jobs:
       - name: Compile Che-Code editor
         run: |
           #
-          # build linux-libc-ubi8-amd64:latest docker image
+          # build linux-libc-ubi8:latest docker image
           #
           docker image prune -a -f
-          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile -t linux-libc-ubi8-amd64 .
+          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile -t linux-libc-ubi8 .
 
       - name: Build Che-Code Docker image
         run: |
@@ -59,11 +59,11 @@ jobs:
           # build che-code:latest docker image
           #
           cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="FROM linux-musl-amd64 as linux-musl-content"
+          REPLACE_FROM="FROM linux-musl as linux-musl-content"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="FROM linux-libc-ubi9-amd64 as linux-libc-ubi9-content"
+          REPLACE_FROM="FROM linux-libc-ubi9 as linux-libc-ubi9-content"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
@@ -167,14 +167,14 @@ jobs:
 
       - name: Store e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-artifacts
           path: /tmp/tests
       
       - name: Store k8s logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: k8s-logs
           path: /tmp/devworkspace-happy-path-artifacts/admin-che-info

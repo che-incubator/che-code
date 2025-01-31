@@ -71,7 +71,7 @@ RUN git init .
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
 # Grab dependencies (and force to rebuild them)
-RUN npm install --force
+RUN rm -rf /checode-compilation/node_modules && npm install --force
 
 # Compile
 RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
