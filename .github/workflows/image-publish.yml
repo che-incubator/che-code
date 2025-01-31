@@ -45,7 +45,7 @@ jobs:
           RUN touch abc.txt
           EOF
       - name: Upload image
-        uses: ishworkh/container-image-artifact-upload@v1.0.0
+        uses: ishworkh/container-image-artifact-upload@v2.0.0
         with:
           image: "test_image:latest"
           retention_days: "2"
@@ -56,7 +56,7 @@ jobs:
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/${{env.arch}} -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile --load -t linux-${{matrix.dist}}-${{env.arch}} .
       - name: Upload image
-        uses: ishworkh/container-image-artifact-upload@v1.0.0
+        uses: ishworkh/container-image-artifact-upload@v2.0.0
         with:
           image: "linux-${{matrix.dist}}-${{env.arch}}"
 
