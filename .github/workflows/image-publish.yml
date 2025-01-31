@@ -39,9 +39,9 @@ jobs:
       - name: Build image
         run: | 
           docker build -t test_image:latest -<<EOF
-FROM busybox
-RUN touch abc.txt
-EOF
+          FROM busybox
+          RUN touch abc.txt
+          EOF
       - name: Upload image
         uses: ishworkh/docker-image-artifact-upload@v2.0.1
         with:
