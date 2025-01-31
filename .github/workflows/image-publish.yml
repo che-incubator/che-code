@@ -58,6 +58,8 @@ jobs:
         runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
     runs-on: ${{matrix.runners}}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set branch environment variable
         run: |
           BRANCH_NAME=${{ github.ref }}
@@ -77,8 +79,6 @@ jobs:
           elif [[ ${{env.BRANCH_NAME}} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then
             echo "tag_suffix=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
           fi
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Download linux-libc-ubi8-amd64 image
         uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
@@ -118,6 +118,8 @@ jobs:
     needs: assemble
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set branch environment variable
         run: |
           BRANCH_NAME=${{ github.ref }}
