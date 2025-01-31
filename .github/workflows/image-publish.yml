@@ -36,6 +36,17 @@ jobs:
           fi
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Build image
+        run: |
+docker build -t test_image:latest -<<EOF
+FROM busybox
+RUN touch abc.txt
+EOF
+      - name: Upload image
+        uses: ishworkh/docker-image-artifact-upload@v2.0.1
+        with:
+          image: "test_image:latest-${{env.arch}}"
+          retention_days: "2"
       - name: Docker Build
         env:
           # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
