@@ -34,8 +34,6 @@ jobs:
           else
             echo arch="arm64" >> $GITHUB_ENV
           fi
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
       - name: Checkout
         uses: actions/checkout@v4
       - name: Docker Build
@@ -170,7 +168,7 @@ jobs:
 
   release-finish:
     name: release-finish
-    needs: [build, assemble]
+    needs: [build, assemble, publish]
     runs-on: ubuntu-22.04
     # don't notify for cancelled builds
     if: (success() || failure()) && github.ref != 'refs/heads/main'
