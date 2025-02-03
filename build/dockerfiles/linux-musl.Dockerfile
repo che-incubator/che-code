@@ -46,8 +46,8 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
-# Grab dependencies
-RUN npm install
+# Grab dependencies (and force to rebuild them)
+RUN rm -rf /checode-compilation/node_modules && npm install --force
 
 # Rebuild platform specific dependencies
 RUN npm rebuild
@@ -75,33 +75,44 @@ RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
 	compile-extension:ipynb \
 	compile-extension-media \
     compile-extension:configuration-editing
-          
+
 # Compile test suites
 # https://github.com/microsoft/vscode/blob/cdde5bedbf3ed88f93b5090bb3ed9ef2deb7a1b4/test/integration/browser/README.md#compile
-RUN [[ $(uname -m) == "x86_64" ]] && npm --prefix test/smoke run compile && npm --prefix test/integration/browser run compile
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      npm --prefix test/smoke run compile && npm --prefix test/integration/browser run compile; \
+    fi
 # use of retry and timeout
 COPY /build/scripts/helper/retry.sh /usr/bin/retry
 RUN chmod u+x /usr/bin/retry
 
 # install test dependencies
 # chromium for tests and procps as tests are using kill commands and it does not work with busybox implementation
-RUN [[ $(uname -m) == "x86_64" ]] && apk add --update --no-cache chromium procps
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      apk add --update --no-cache chromium procps; \
+    fi
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
-RUN [[ $(uname -m) == "x86_64" ]] && npm run playwright-install
-RUN [[ $(uname -m) == "x86_64" ]] && \
-     PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
-    rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-    ls -la /checode-compilation/extensions/vscode-api-tests/ && \
-    ls -la /checode-compilation/extensions/vscode-api-tests/out/
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      npm run playwright-install; \
+    fi
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
+      rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+      ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
+      ls -la /checode-compilation/extensions/vscode-api-tests/ && \
+      ls -la /checode-compilation/extensions/vscode-api-tests/out/; \
+    fi
 
 # Run integration tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-    retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+      retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
+    fi
 
 # Run smoke tests (Browser)
-RUN [[ $(uname -m) == "x86_64" ]] && VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-    retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+      retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+    fi
 
 #########################################################
 #
