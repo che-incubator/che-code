@@ -3,6 +3,13 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/488
+
+- code/test/integration/browser/src/index.ts
+- code/test/automation/src/playwrightBrowser.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/482
 
 - code/extensions/microsoft-authentication/package.json

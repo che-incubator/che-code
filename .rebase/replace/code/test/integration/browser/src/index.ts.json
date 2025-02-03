@@ -1,0 +1,6 @@
+[
+	{
+			"from": "const browser = await playwright[browserType].launch({ headless: !Boolean(args.debug) });",
+			"by": "const browser = await playwright[browserType].launch({ headless: !Boolean(args.debug), args: ['--headless=new'], });"
+	}
+]

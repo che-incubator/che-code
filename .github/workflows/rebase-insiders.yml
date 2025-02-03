@@ -56,6 +56,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc-ubi9.Dockerfile .
+      - name: Generate artifacts.lock.yaml
+        run: ./build/artifacts/generate.sh
       - name: push changes
         run: |
           set -e
