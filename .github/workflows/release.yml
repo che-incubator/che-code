@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Red Hat, Inc.
+# Copyright (c) 2022-2025 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -27,12 +27,12 @@ jobs:
     steps:
       -
         name: "Checkout Che Code source code"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
       -
         name: "Setup Node"
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
       -
@@ -61,15 +61,4 @@ jobs:
           git config --global pull.rebase true
           export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
           /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --tag-release
-      #- name: Create failure MM message
-        #if: failure()
-        #run: |
-          #echo "{\"text\":\":no_entry_sign: Che Code ${{ env.BRANCH_NAME }} release has failed: https://github.com/che-incubator/che-code/actions/workflows/release.yml\"}" > mattermost.json
-      #- name: Send MM message
-        # only notify for failure, success message will be sent at the end of image-publish job
-        #if: failure()
-        #uses: mattermost/action-mattermost-notify@1.1.0
-        #env:
-          #MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-          #MATTERMOST_CHANNEL: eclipse-che-releases
-          #MATTERMOST_USERNAME: che-bot
+

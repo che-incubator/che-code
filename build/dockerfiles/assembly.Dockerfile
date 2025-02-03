@@ -7,9 +7,9 @@
 #
 
 # Grab content from previously build images
-FROM linux-libc-ubi8-amd64 as linux-libc-ubi8-content
-FROM linux-libc-ubi9-amd64 as linux-libc-ubi9-content
-FROM linux-musl-amd64 as linux-musl-content
+FROM linux-libc-ubi8 as linux-libc-ubi8-content
+FROM linux-libc-ubi9 as linux-libc-ubi9-content
+FROM linux-musl as linux-musl-content
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
 FROM quay.io/eclipse/che-machine-exec:7.56.0 as machine-exec
