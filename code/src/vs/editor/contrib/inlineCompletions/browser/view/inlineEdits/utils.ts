@@ -14,6 +14,7 @@ import { OS } from '../../../../../../base/common/platform.js';
 import { getIndentationLength, splitLines } from '../../../../../../base/common/strings.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { MenuEntryActionViewItem } from '../../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { ICodeEditor } from '../../../../../browser/editorBrowser.js';
 import { ObservableCodeEditor } from '../../../../../browser/observableCodeEditor.js';
 import { Point } from '../../../../../browser/point.js';
 import { Rect } from '../../../../../browser/rect.js';
@@ -24,8 +25,9 @@ import { Position } from '../../../../../common/core/position.js';
 import { Range } from '../../../../../common/core/range.js';
 import { SingleTextEdit, TextEdit } from '../../../../../common/core/textEdit.js';
 import { RangeMapping } from '../../../../../common/diff/rangeMapping.js';
+import { indentOfLine } from '../../../../../common/model/textModel.js';
 
-export function maxContentWidthInRange(editor: ObservableCodeEditor, range: LineRange, reader: IReader): number {
+export function maxContentWidthInRange(editor: ObservableCodeEditor, range: LineRange, reader: IReader | undefined): number {
 	editor.layoutInfo.read(reader);
 	editor.value.read(reader);
 
@@ -64,6 +66,22 @@ export function getOffsetForPos(editor: ObservableCodeEditor, pos: Position, rea
 	const lineContentWidth = editor.editor.getOffsetForColumn(pos.lineNumber, pos.column);
 
 	return lineContentWidth;
+}
+
+export function getPrefixTrim(diffRanges: Range[], originalLinesRange: LineRange, modifiedLines: string[], editor: ICodeEditor): { prefixTrim: number; prefixLeftOffset: number } {
+	const textModel = editor.getModel();
+	if (!textModel) {
+		return { prefixTrim: 0, prefixLeftOffset: 0 };
+	}
+
+	const replacementStart = diffRanges.map(r => r.isSingleLine() ? r.startColumn - 1 : 0);
+	const originalIndents = originalLinesRange.mapToLineArray(line => indentOfLine(textModel.getLineContent(line)));
+	const modifiedIndents = modifiedLines.map(line => indentOfLine(line));
+	const prefixTrim = Math.min(...replacementStart, ...originalIndents, ...modifiedIndents);
+
+	const prefixLeftOffset = editor.getOffsetForColumn(originalLinesRange.startLineNumber, prefixTrim + 1);
+
+	return { prefixTrim, prefixLeftOffset };
 }
 
 export class StatusBarViewItem extends MenuEntryActionViewItem {
@@ -161,6 +179,94 @@ export class PathBuilder {
 	public build(): string {
 		return this._data;
 	}
+}
+
+// Arguments are a bit messy currently, could be improved
+export function createRectangle(
+	layout: { topLeft: Point; width: number; height: number },
+	padding: number | { top: number; right: number; bottom: number; left: number },
+	borderRadius: number | { topLeft: number; topRight: number; bottomLeft: number; bottomRight: number },
+	options: { hideLeft?: boolean; hideRight?: boolean; hideTop?: boolean; hideBottom?: boolean } = {}
+): string {
+
+	const topLeftInner = layout.topLeft;
+	const topRightInner = topLeftInner.deltaX(layout.width);
+	const bottomLeftInner = topLeftInner.deltaY(layout.height);
+	const bottomRightInner = bottomLeftInner.deltaX(layout.width);
+
+	// padding
+	const { top: paddingTop, bottom: paddingBottom, left: paddingLeft, right: paddingRight } = typeof padding === 'number' ?
+		{ top: padding, bottom: padding, left: padding, right: padding }
+		: padding;
+
+	// corner radius
+	const { topLeft: radiusTL, topRight: radiusTR, bottomLeft: radiusBL, bottomRight: radiusBR } = typeof borderRadius === 'number' ?
+		{ topLeft: borderRadius, topRight: borderRadius, bottomLeft: borderRadius, bottomRight: borderRadius } :
+		borderRadius;
+
+	const totalHeight = layout.height + paddingTop + paddingBottom;
+	const totalWidth = layout.width + paddingLeft + paddingRight;
+
+	// The path is drawn from bottom left at the end of the rounded corner in a clockwise direction
+	// Before: before the rounded corner
+	// After: after the rounded corner
+	const topLeft = topLeftInner.deltaX(-paddingLeft).deltaY(-paddingTop);
+	const topRight = topRightInner.deltaX(paddingRight).deltaY(-paddingTop);
+	const topLeftBefore = topLeft.deltaY(Math.min(radiusTL, totalHeight / 2));
+	const topLeftAfter = topLeft.deltaX(Math.min(radiusTL, totalWidth / 2));
+	const topRightBefore = topRight.deltaX(-Math.min(radiusTR, totalWidth / 2));
+	const topRightAfter = topRight.deltaY(Math.min(radiusTR, totalHeight / 2));
+
+	const bottomLeft = bottomLeftInner.deltaX(-paddingLeft).deltaY(paddingBottom);
+	const bottomRight = bottomRightInner.deltaX(paddingRight).deltaY(paddingBottom);
+	const bottomLeftBefore = bottomLeft.deltaX(Math.min(radiusBL, totalWidth / 2));
+	const bottomLeftAfter = bottomLeft.deltaY(-Math.min(radiusBL, totalHeight / 2));
+	const bottomRightBefore = bottomRight.deltaY(-Math.min(radiusBR, totalHeight / 2));
+	const bottomRightAfter = bottomRight.deltaX(-Math.min(radiusBR, totalWidth / 2));
+
+	const path = new PathBuilder();
+
+	if (!options.hideLeft) {
+		path.moveTo(bottomLeftAfter).lineTo(topLeftBefore);
+	}
+
+	if (!options.hideLeft && !options.hideTop) {
+		path.curveTo(topLeft, topLeftAfter);
+	} else {
+		path.moveTo(topLeftAfter);
+	}
+
+	if (!options.hideTop) {
+		path.lineTo(topRightBefore);
+	}
+
+	if (!options.hideTop && !options.hideRight) {
+		path.curveTo(topRight, topRightAfter);
+	} else {
+		path.moveTo(topRightAfter);
+	}
+
+	if (!options.hideRight) {
+		path.lineTo(bottomRightBefore);
+	}
+
+	if (!options.hideRight && !options.hideBottom) {
+		path.curveTo(bottomRight, bottomRightAfter);
+	} else {
+		path.moveTo(bottomRightAfter);
+	}
+
+	if (!options.hideBottom) {
+		path.lineTo(bottomLeftBefore);
+	}
+
+	if (!options.hideBottom && !options.hideLeft) {
+		path.curveTo(bottomLeft, bottomLeftAfter);
+	} else {
+		path.moveTo(bottomLeftAfter);
+	}
+
+	return path.build();
 }
 
 type Value<T> = T | IObservable<T>;
@@ -392,11 +498,13 @@ function setClassName(domNode: Element, className: string) {
 function resolve<T>(value: ValueOrList<T>, reader: IReader | undefined, cb: (val: T) => void): void {
 	if (isObservable(value)) {
 		cb(value.read(reader));
+		return;
 	}
 	if (Array.isArray(value)) {
 		for (const v of value) {
 			resolve(v, reader, cb);
 		}
+		return;
 	}
 	cb(value as any);
 }

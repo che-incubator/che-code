@@ -40,7 +40,7 @@ import { IVoiceChatService, VoiceChatService } from '../common/voiceChatService.
 import { EditsChatAccessibilityHelp, PanelChatAccessibilityHelp, QuickChatAccessibilityHelp } from './actions/chatAccessibilityHelp.js';
 import { ChatCommandCenterRendering, registerChatActions } from './actions/chatActions.js';
 import { ACTION_ID_NEW_CHAT, registerNewChatActions } from './actions/chatClearActions.js';
-import { registerChatCodeBlockActions, registerChatCodeCompareBlockActions } from './actions/chatCodeblockActions.js';
+import { CodeBlockActionRendering, registerChatCodeBlockActions, registerChatCodeCompareBlockActions } from './actions/chatCodeblockActions.js';
 import { registerChatContextActions } from './actions/chatContextActions.js';
 import { registerChatCopyActions } from './actions/chatCopyActions.js';
 import { registerChatDeveloperActions } from './actions/chatDeveloperActions.js';
@@ -60,7 +60,6 @@ import { registerChatEditorActions } from './chatEditorActions.js';
 import { ChatEditorController } from './chatEditorController.js';
 import { ChatEditorInput, ChatEditorInputSerializer } from './chatEditorInput.js';
 import { ChatInputBoxContentProvider } from './chatEdinputInputContentProvider.js';
-import { ChatEditorAutoSaveDisabler, ChatEditorSaving } from './chatEditorSaving.js';
 import { agentSlashCommandToMarkdown, agentToMarkdown } from './chatMarkdownDecorationsRenderer.js';
 import { ChatCompatibilityNotifier, ChatExtensionPointHandler } from './chatParticipant.contribution.js';
 import { ChatPasteProvidersFeature } from './chatPasteProviders.js';
@@ -78,11 +77,13 @@ import { ChatViewsWelcomeHandler } from './viewsWelcome/chatViewsWelcomeHandler.
 import { ILanguageModelIgnoredFilesService, LanguageModelIgnoredFilesService } from '../common/ignoredFiles.js';
 import { ChatGettingStartedContribution } from './actions/chatGettingStarted.js';
 import { Extensions, IConfigurationMigrationRegistry } from '../../../common/configuration.js';
-import { ChatEditorOverlayController } from './chatEditorOverlay.js';
 import { ChatRelatedFilesContribution } from './contrib/chatInputRelatedFilesContrib.js';
 import { ChatQuotasService, ChatQuotasStatusBarEntry, IChatQuotasService } from './chatQuotasService.js';
 import { BuiltinToolsContribution } from './tools/tools.js';
 import { ChatSetupContribution } from './chatSetup.js';
+import { ChatEditorOverlayController } from './chatEditorOverlay.js';
+import '../common/promptSyntax/languageFeatures/promptLinkProvider.js';
+import { PromptFilesConfig } from '../common/promptSyntax/config.js';
 
 // Register configuration
 const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
@@ -123,11 +124,12 @@ configurationRegistry.registerConfiguration({
 			markdownDescription: nls.localize('chat.commandCenter.enabled', "Controls whether the command center shows a menu for actions to control Copilot (requires {0}).", '`#window.commandCenter#`'),
 			default: true
 		},
-		'chat.editing.alwaysSaveWithGeneratedChanges': {
-			type: 'boolean',
-			scope: ConfigurationScope.APPLICATION,
-			markdownDescription: nls.localize('chat.editing.alwaysSaveWithGeneratedChanges', "Whether files that have changes made by chat can be saved without confirmation."),
-			default: false,
+		'chat.editing.autoAcceptDelay': {
+			type: 'number',
+			markdownDescription: nls.localize('chat.editing.autoAcceptDelay', "Delay after which changes made by chat are automatically accepted. Values are in seconds, `0` means disabled and `100` seconds is the maximum."),
+			default: 0,
+			minimum: 0,
+			maximum: 100
 		},
 		'chat.editing.confirmEditRequestRemoval': {
 			type: 'boolean',
@@ -151,6 +153,18 @@ configurationRegistry.registerConfiguration({
 			type: 'boolean',
 			description: nls.localize('chat.detectParticipant.enabled', "Enables chat participant autodetection for panel chat."),
 			default: true
+		},
+		[PromptFilesConfig.CONFIG_KEY]: {
+			type: ['string', 'array', 'boolean', 'null'],
+			title: nls.localize('chat.promptFiles.setting.title', "Prompt Files"),
+			markdownDescription: nls.localize(
+				'chat.promptFiles.setting.markdownDescription',
+				"Enable support for attaching reusable prompt files (`*{0}`) for Chat, Edits, and Inline Chat sessions. [Learn More]({1}).",
+				'.prompt.md',
+				PromptFilesConfig.DOCUMENTATION_URL,
+			),
+			default: null,
+			tags: ['experimental'],
 		},
 	}
 });
@@ -313,10 +327,9 @@ registerWorkbenchContribution2(ChatExtensionPointHandler.ID, ChatExtensionPointH
 registerWorkbenchContribution2(LanguageModelToolsExtensionPointHandler.ID, LanguageModelToolsExtensionPointHandler, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatCompatibilityNotifier.ID, ChatCompatibilityNotifier, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatCommandCenterRendering.ID, ChatCommandCenterRendering, WorkbenchPhase.BlockRestore);
+registerWorkbenchContribution2(CodeBlockActionRendering.ID, CodeBlockActionRendering, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatImplicitContextContribution.ID, ChatImplicitContextContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatRelatedFilesContribution.ID, ChatRelatedFilesContribution, WorkbenchPhase.Eventually);
-registerWorkbenchContribution2(ChatEditorSaving.ID, ChatEditorSaving, WorkbenchPhase.AfterRestored);
-registerWorkbenchContribution2(ChatEditorAutoSaveDisabler.ID, ChatEditorAutoSaveDisabler, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatViewsWelcomeHandler.ID, ChatViewsWelcomeHandler, WorkbenchPhase.BlockStartup);
 registerWorkbenchContribution2(ChatGettingStartedContribution.ID, ChatGettingStartedContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatSetupContribution.ID, ChatSetupContribution, WorkbenchPhase.BlockRestore);
@@ -339,8 +352,8 @@ registerChatDeveloperActions();
 registerChatEditorActions();
 
 registerEditorFeature(ChatPasteProvidersFeature);
+registerEditorContribution(ChatEditorOverlayController.ID, ChatEditorOverlayController, EditorContributionInstantiation.Lazy);
 registerEditorContribution(ChatEditorController.ID, ChatEditorController, EditorContributionInstantiation.Eventually);
-registerEditorContribution(ChatEditorOverlayController.ID, ChatEditorOverlayController, EditorContributionInstantiation.Eventually);
 
 registerSingleton(IChatService, ChatService, InstantiationType.Delayed);
 registerSingleton(IChatWidgetService, ChatWidgetService, InstantiationType.Delayed);
