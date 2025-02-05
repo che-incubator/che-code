@@ -63,7 +63,7 @@ jobs:
           docker load -i che-dev.tgz
 
       - name: Login to Quay.io
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
@@ -71,21 +71,21 @@ jobs:
 
       - name: Push che-code-amd64 docker image
         run: |
-          export IMAGE=quay.io/che-incubator/che-code:pr-${{env._PR_NUMBER}}-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-amd64
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
 
       - name: Push che-code-arm64 docker image
         run: |
-          export IMAGE=quay.io/che-incubator/che-code:pr-${{env._PR_NUMBER}}-arm64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
           docker tag che-code-arm64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
 
       - name: Push che-dev docker image
         run: |
-          export IMAGE=quay.io/che-incubator/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
           docker tag che-dev ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
