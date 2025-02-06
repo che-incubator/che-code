@@ -40,7 +40,7 @@ jobs:
         run: |
           docker buildx build --memory-swap -1 --memory 10g --platform linux/${{matrix.arch}} -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile --load -t linux-${{matrix.dist}}-${{matrix.arch}} .
       - name: Upload image
-        uses: ishworkh/docker-image-artifact-upload@v1
+        uses: ishworkh/container-image-artifact-upload@v2.0.0
         with:
           image: "linux-${{matrix.dist}}-${{matrix.arch}}"
   assemble:
@@ -55,15 +55,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Download linux-libc-ubi8-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-libc-ubi8-amd64"
       - name: Download linux-libc-ubi9-amd64 image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-libc-ubi9-amd64"
       - name: Download linux-musl image
-        uses: ishworkh/docker-image-artifact-download@v1
+        uses: ishworkh/container-image-artifact-download@v2.0.0
         with:
           image: "linux-musl-amd64"
       - name: Display docker images
