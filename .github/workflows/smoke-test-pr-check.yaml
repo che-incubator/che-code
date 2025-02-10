@@ -104,7 +104,10 @@ jobs:
           #
           # load che-code images from /tmp/che-code-latest.tar
           #
-          eval $(minikube docker-env) && docker load -i  /tmp/che-code-latest.tar && rm /tmp/che-code-latest.tar && docker tag che-code:latest quay.io/che-incubator/che-code:latest
+          eval $(minikube docker-env) && \
+            docker load -i  /tmp/che-code-latest.tar && \
+            docker tag che-code:latest quay.io/che-incubator/che-code:latest && \
+            rm /tmp/che-code-latest.tar
 
           #
           # deploy Che
@@ -117,16 +120,19 @@ jobs:
             --che-operator-cr-patch-yaml "${GITHUB_WORKSPACE}/build/test/github-minikube-checluster-patch.yaml"
 
           #
-          # apply patch
+          # apply patch, ensure no new images will be pulled
           #
           kubectl patch devworkspaceoperatorconfigs \
             -n eclipse-che devworkspace-config \
-            --patch '{"config": {"workspace": {"imagePullPolicy": "IfNotPresent"}}}' \
+            --patch '{"config": {"workspace": {"imagePullPolicy": "Never"}}}' \
             --type merge
 
-      - name: Pull Universal Base Image
+      # Pre-pull images needed to start a workspace
+      # See https://github.com/che-incubator/quarkus-api-example/blob/main/smoke-test.devfile.yaml
+      - name: Pull Universal Base Image and PostgreSQL
         run: |
           minikube image pull quay.io/devfile/universal-developer-image:ubi9-latest
+          minikube image pull quay.io/centos7/postgresql-13-centos7@sha256:994f5c622e2913bda1c4a7fa3b0c7e7f75e7caa3ac66ff1ed70ccfe65c40dd75
 
       - name: Run Smoke test
         run: |
