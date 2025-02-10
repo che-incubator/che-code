@@ -104,7 +104,7 @@ jobs:
           #
           # load che-code images from /tmp/che-code-latest.tar
           #
-          eval $(minikube docker-env) && docker load -i  /tmp/che-code-latest.tar && rm /tmp/che-code-latest.tar && docker tag che-code:latest quay.io/che-incubator/che-code:insiders
+          eval $(minikube docker-env) && docker load -i  /tmp/che-code-latest.tar && rm /tmp/che-code-latest.tar && docker tag che-code:latest quay.io/che-incubator/che-code:latest
 
           #
           # deploy Che

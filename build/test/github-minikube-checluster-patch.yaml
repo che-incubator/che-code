@@ -13,7 +13,7 @@
 apiVersion: org.eclipse.che/v2
 spec:
   devEnvironments:
-    defaultEditor: che-incubator/che-code/insiders
+    defaultEditor: che-incubator/che-code/latest
   components:
     pluginRegistry:
       openVSXURL: https://open-vsx.org
