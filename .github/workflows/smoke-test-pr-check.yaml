@@ -34,6 +34,14 @@ jobs:
       - name: Checkout che-code source code
         uses: actions/checkout@v4
 
+      - name: Set arch environment variable
+        run: |
+          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
+            echo arch="amd64" >> $GITHUB_ENV
+          else
+            echo arch="arm64" >> $GITHUB_ENV
+          fi
+
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
           #
