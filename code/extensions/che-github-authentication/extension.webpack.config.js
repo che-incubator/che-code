@@ -34,16 +34,3 @@ const config = withDefaults({
         new webpack.ContextReplacementPlugin(/keyv/), // needs to exclude the package to ignore warnings https://github.com/jaredwray/keyv/issues/45
     ],
 });
-
-module.exports = merge(config, {
-    module: {
-        rules: [
-            {
-                test: /\.m?js$/,
-                resolve: {
-                    fullySpecified: false, // This avoids the issue with the devfile/api extension requirement
-                },
-            }
-        ]
-    }
-})

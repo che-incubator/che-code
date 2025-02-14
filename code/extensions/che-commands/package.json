@@ -34,7 +34,7 @@
     "fs-extra": "^11.2.0",
     "vscode-nls": "^5.0.0",
     "js-yaml": "^4.1.0",
-    "@devfile/api": "^2.3.0-1723034342"
+    "@devfile/api": "^2.3.0-1738854228"
   },
   "devDependencies": {
     "jest": "27.3.1",
