@@ -35,23 +35,23 @@ jobs:
           #
           # truncate Dockerfile, remove section that runs tests
           #
-          cp -f build/dockerfiles/linux-libc-ubi8.Dockerfile build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
+          cp -f build/dockerfiles/linux-libc-ubi9.Dockerfile build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
           REMOVE_FROM="### Beginning of tests"
           REMOVE_TO="### Ending of tests"
-          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
+          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
           #
           # show the Dockerfile
           #
-          cat build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
+          cat build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
       - name: Compile Che-Code editor
         run: |
           #
-          # build linux-libc-ubi8:latest docker image
+          # build linux-libc-ubi9:latest docker image
           #
           docker image prune -a -f
-          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile -t linux-libc-ubi8 .
+          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile -t linux-libc-ubi9 .
 
       - name: Build Che-Code Docker image
         run: |
@@ -63,9 +63,9 @@ jobs:
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="FROM linux-libc-ubi9 as linux-libc-ubi9-content"
+          REPLACE_FROM="FROM linux-libc-ubi8 as linux-libc-ubi8-content"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9"
+          REPLACE_FROM="COPY --from=linux-libc-ubi8-content --chown=0:0 /checode-linux-libc/ubi8 /mnt/rootfs/checode-linux-libc/ubi8"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           
           export DOCKER_BUILDKIT=1
@@ -122,7 +122,7 @@ jobs:
 
       - name: Pull Universal Base Image
         run: |
-          minikube image pull quay.io/devfile/universal-developer-image:ubi8-latest
+          minikube image pull quay.io/devfile/universal-developer-image:ubi9-latest
 
       - name: Run Smoke test
         run: |
