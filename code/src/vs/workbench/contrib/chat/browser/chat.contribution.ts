@@ -8,7 +8,6 @@ import { MarkdownString, isMarkdownString } from '../../../../base/common/htmlCo
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { Schemas } from '../../../../base/common/network.js';
 import { isMacintosh } from '../../../../base/common/platform.js';
-import { EditorContributionInstantiation, registerEditorContribution } from '../../../../editor/browser/editorExtensions.js';
 import { registerEditorFeature } from '../../../../editor/common/editorFeatures.js';
 import * as nls from '../../../../nls.js';
 import { AccessibleViewRegistry } from '../../../../platform/accessibility/browser/accessibleViewRegistry.js';
@@ -44,9 +43,10 @@ import { ILanguageModelToolsService } from '../common/languageModelToolsService.
 import { PromptFilesConfig } from '../common/promptSyntax/config.js';
 import '../common/promptSyntax/languageFeatures/promptLinkProvider.js';
 import '../common/promptSyntax/languageFeatures/promptPathAutocompletion.js';
-import { PromptSyntaxService } from '../common/promptSyntax/service/promptSyntaxService.js';
-import { IPromptSyntaxService } from '../common/promptSyntax/service/types.js';
+import { PromptsService } from '../common/promptSyntax/service/promptsService.js';
+import { IPromptsService } from '../common/promptSyntax/service/types.js';
 import './promptSyntax/contributions/usePromptCommand.js';
+import './promptSyntax/contributions/createPromptCommand/createPromptCommand.js';
 import { LanguageModelToolsExtensionPointHandler } from '../common/tools/languageModelToolsContribution.js';
 import { BuiltinToolsContribution } from '../common/tools/tools.js';
 import { IVoiceChatService, VoiceChatService } from '../common/voiceChatService.js';
@@ -71,8 +71,7 @@ import { ChatMarkdownAnchorService, IChatMarkdownAnchorService } from './chatCon
 import { ChatInputBoxContentProvider } from './chatEdinputInputContentProvider.js';
 import { ChatEditingEditorAccessibility } from './chatEditing/chatEditingEditorAccessibility.js';
 import { registerChatEditorActions } from './chatEditing/chatEditingEditorActions.js';
-import { ChatEditorController } from './chatEditing/chatEditingEditorController.js';
-import { ChatEditorOverlayController } from './chatEditing/chatEditingEditorOverlay.js';
+import { ChatEditingEditorOverlay } from './chatEditing/chatEditingEditorOverlay.js';
 import { ChatEditingService } from './chatEditing/chatEditingServiceImpl.js';
 import { ChatEditor, IChatEditorOptions } from './chatEditor.js';
 import { ChatEditorInput, ChatEditorInputSerializer } from './chatEditorInput.js';
@@ -93,6 +92,7 @@ import './contrib/chatInputEditorHover.js';
 import { ChatRelatedFilesContribution } from './contrib/chatInputRelatedFilesContrib.js';
 import { LanguageModelToolsService } from './languageModelToolsService.js';
 import { ChatViewsWelcomeHandler } from './viewsWelcome/chatViewsWelcomeHandler.js';
+import { ChatEditingEditorContextKeys } from './chatEditing/chatEditingEditorContextKeys.js';
 
 // Register configuration
 const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
@@ -163,11 +163,27 @@ configurationRegistry.registerConfiguration({
 			default: true
 		},
 		[PromptFilesConfig.CONFIG_KEY]: {
-			type: ['boolean', 'object', 'array', 'string', 'null'],
+			type: 'object',
 			title: PromptFilesConfig.CONFIG_TITLE,
 			markdownDescription: PromptFilesConfig.CONFIG_DESCRIPTION,
-			default: null,
+			default: {
+				[PromptFilesConfig.DEFAULT_SOURCE_FOLDER]: false,
+			},
+			required: [PromptFilesConfig.DEFAULT_SOURCE_FOLDER],
+			additionalProperties: { type: 'boolean' },
+			unevaluatedProperties: { type: 'boolean' },
+			restricted: true,
+			disallowConfigurationDefault: true,
 			tags: ['experimental'],
+			examples: [
+				{
+					[PromptFilesConfig.DEFAULT_SOURCE_FOLDER]: true,
+				},
+				{
+					[PromptFilesConfig.DEFAULT_SOURCE_FOLDER]: true,
+					'/Users/vscode/repos/prompts': true,
+				},
+			],
 		},
 	}
 });
@@ -395,6 +411,8 @@ registerWorkbenchContribution2(ChatQuotasStatusBarEntry.ID, ChatQuotasStatusBarE
 registerWorkbenchContribution2(BuiltinToolsContribution.ID, BuiltinToolsContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatAgentSettingContribution.ID, ChatAgentSettingContribution, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatEditingEditorAccessibility.ID, ChatEditingEditorAccessibility, WorkbenchPhase.AfterRestored);
+registerWorkbenchContribution2(ChatEditingEditorOverlay.ID, ChatEditingEditorOverlay, WorkbenchPhase.AfterRestored);
+registerWorkbenchContribution2(ChatEditingEditorContextKeys.ID, ChatEditingEditorContextKeys, WorkbenchPhase.AfterRestored);
 
 registerChatActions();
 registerChatCopyActions();
@@ -412,8 +430,7 @@ registerChatDeveloperActions();
 registerChatEditorActions();
 
 registerEditorFeature(ChatPasteProvidersFeature);
-registerEditorContribution(ChatEditorOverlayController.ID, ChatEditorOverlayController, EditorContributionInstantiation.Lazy);
-registerEditorContribution(ChatEditorController.ID, ChatEditorController, EditorContributionInstantiation.Eventually);
+
 
 registerSingleton(IChatService, ChatService, InstantiationType.Delayed);
 registerSingleton(IChatWidgetService, ChatWidgetService, InstantiationType.Delayed);
@@ -435,4 +452,4 @@ registerSingleton(IChatMarkdownAnchorService, ChatMarkdownAnchorService, Instant
 registerSingleton(ILanguageModelIgnoredFilesService, LanguageModelIgnoredFilesService, InstantiationType.Delayed);
 registerSingleton(IChatQuotasService, ChatQuotasService, InstantiationType.Delayed);
 
-registerSingleton(IPromptSyntaxService, PromptSyntaxService, InstantiationType.Delayed);
+registerSingleton(IPromptsService, PromptsService, InstantiationType.Delayed);
