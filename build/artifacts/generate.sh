@@ -68,10 +68,12 @@ run () {
     DOWNLOAD_URL="https://github.com/microsoft/ripgrep-prebuilt/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH_SUFFIX}.tar.gz"
     check_existance "$DOWNLOAD_URL"
 
+    read -r SHA256 rest <<< "$(curl -s "$DOWNLOAD_URL" | shasum -a 256)"
+
     echo "  # $FILENAME"                      >> "$ARTIFACTS_LOCK_YAML"
     echo "  - download_url: $DOWNLOAD_URL"    >> "$ARTIFACTS_LOCK_YAML"
     echo "    filename: $FILENAME"            >> "$ARTIFACTS_LOCK_YAML"
-    echo "    checksum: sha256:$DOWNLOAD_URL" >> "$ARTIFACTS_LOCK_YAML"
+    echo "    checksum: sha256:$SHA256"       >> "$ARTIFACTS_LOCK_YAML"
   done
 
   echo "[INFO] Done"
