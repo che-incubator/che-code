@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,10 @@
 
 /* eslint-disable header/header */
 
-import 'reflect-metadata';
+if (Reflect.metadata === undefined) {
+  // tslint:disable-next-line:no-require-imports no-var-requires
+  require('reflect-metadata');
+}
 
 import * as vscode from 'vscode';
 
@@ -22,11 +25,11 @@ let resourceMonitorPLugin: ResourceMonitor;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const inversifyBinding = new InversifyBinding();
   const container = await inversifyBinding.initBindings();
-  
+
   const workspaceService = await getWorkspaceService();
   const namespace = await workspaceService.getNamespace();
   const podName = await workspaceService.getPodName();
-  
+
   resourceMonitorPLugin = container.get(ResourceMonitor);
   resourceMonitorPLugin.start(context, namespace, podName);
 }
