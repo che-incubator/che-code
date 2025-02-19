@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,11 @@
 
 
 /* eslint-disable header/header */
-import 'reflect-metadata';
+
+if (Reflect.metadata === undefined) {
+    // tslint:disable-next-line:no-require-imports no-var-requires
+    require('reflect-metadata');
+}
 
 import { Container } from 'inversify';
 import * as vscode from 'vscode';
@@ -64,16 +68,16 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
         },
     };
 
-	const k8sDevWorkspaceEnvVariables = container.get(K8sDevWorkspaceEnvVariables);
-	const dashboardUrl = k8sDevWorkspaceEnvVariables.getDashboardURL();
-	const workspaceNamespace = k8sDevWorkspaceEnvVariables.getWorkspaceNamespace();
-	const workspaceName = k8sDevWorkspaceEnvVariables.getWorkspaceName();
-	const projectsRoot = k8sDevWorkspaceEnvVariables.getProjectsRoot();
-	
-	_extensionContext.environmentVariableCollection.replace('DASHBOARD_URL', dashboardUrl);
-	_extensionContext.environmentVariableCollection.replace('WORKSPACE_NAME', workspaceName);
-	_extensionContext.environmentVariableCollection.replace('WORKSPACE_NAMESPACE', workspaceNamespace);
-	_extensionContext.environmentVariableCollection.replace('PROJECTS_ROOT', projectsRoot);
+    const k8sDevWorkspaceEnvVariables = container.get(K8sDevWorkspaceEnvVariables);
+    const dashboardUrl = k8sDevWorkspaceEnvVariables.getDashboardURL();
+    const workspaceNamespace = k8sDevWorkspaceEnvVariables.getWorkspaceNamespace();
+    const workspaceName = k8sDevWorkspaceEnvVariables.getWorkspaceName();
+    const projectsRoot = k8sDevWorkspaceEnvVariables.getProjectsRoot();
+
+    _extensionContext.environmentVariableCollection.replace('DASHBOARD_URL', dashboardUrl);
+    _extensionContext.environmentVariableCollection.replace('WORKSPACE_NAME', workspaceName);
+    _extensionContext.environmentVariableCollection.replace('WORKSPACE_NAMESPACE', workspaceNamespace);
+    _extensionContext.environmentVariableCollection.replace('PROJECTS_ROOT', projectsRoot);
 
     await container.get(K8SServiceImpl).ensureKubernetesServiceHostWhitelisted();
 
