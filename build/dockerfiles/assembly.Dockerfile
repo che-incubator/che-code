@@ -8,8 +8,8 @@
 
 # Grab content from previously build images
 FROM linux-libc-ubi8 as linux-libc-ubi8-content
-FROM linux-libc-ubi9 as linux-libc-ubi9-content
-FROM linux-musl as linux-musl-content
+# FROM linux-libc-ubi9 as linux-libc-ubi9-content
+# FROM linux-musl as linux-musl-content
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
 FROM quay.io/eclipse/che-machine-exec:7.56.0 as machine-exec
@@ -22,9 +22,9 @@ RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/
 
 WORKDIR /mnt/rootfs
 
-COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl
+# COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl
 COPY --from=linux-libc-ubi8-content --chown=0:0 /checode-linux-libc/ubi8 /mnt/rootfs/checode-linux-libc/ubi8
-COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9
+# COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9
 
 RUN mkdir -p /mnt/rootfs/projects && mkdir -p /mnt/rootfs/home/che && mkdir -p /mnt/rootfs/bin/
 RUN cat /mnt/rootfs/etc/passwd | sed s#root:x.*#root:x:\${USER_ID}:\${GROUP_ID}::\${HOME}:/bin/bash#g > /mnt/rootfs/home/che/.passwd.template \
