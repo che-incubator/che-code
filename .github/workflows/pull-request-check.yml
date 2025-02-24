@@ -162,8 +162,6 @@ jobs:
           pattern: che-*
           merge-multiple: true
           path: .
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
 
       - name: List downloaded files
         run: |
