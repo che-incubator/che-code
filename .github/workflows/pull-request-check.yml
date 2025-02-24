@@ -177,6 +177,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: che-*
+          merge-multiple: true
           path: .
 
       - name: List downloaded files
