@@ -12,6 +12,9 @@ name: Pull Request Check
 # Trigger the workflow on pull request
 on: [pull_request]
 
+env:
+  PR_NUMBER: ${{ github.event.number }}
+
 jobs:
   check-artifacts-lock-yaml:
     runs-on: ubuntu-22.04
@@ -124,15 +127,6 @@ jobs:
         with:
           name: che-code-${{env.arch}}
           path: che-code-${{env.arch}}.tgz
-      - name: Store PR info
-        run: echo "${{ github.event.number }}" > PR_NUMBER
-      # Upload PR number artifact only once
-      - name: Upload PR Number artifact
-        uses: actions/upload-artifact@v4
-        if: ${{ env.arch == 'amd64' }}
-        with:
-          name: pull-request-number
-          path: PR_NUMBER
 
   dev:
     name: build-che-dev-image
@@ -175,23 +169,6 @@ jobs:
       - name: Checkout che-code source code
         uses: actions/checkout@v4
 
-      - name: Download Pull Request Number artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: pull-request-number
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-
-      - name: Grab Pull Request number
-        run: |
-          pr_number=$(cat "PR_NUMBER")
-          echo "Pull Request: ${pr_number}"
-          if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
-            echo "Wrong Pull Request number"
-            exit 1
-          fi
-          echo "_PR_NUMBER=$pr_number" >> $GITHUB_ENV
-
       - name: Cleanup docker images
         run: |
           docker system prune -af
@@ -221,21 +198,21 @@ jobs:
 
       - name: Push che-code-amd64 docker image
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env.PR_NUMBER}}-amd64
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
 
       - name: Push che-code-arm64 docker image
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env.PR_NUMBER}}-arm64
           docker tag che-code-arm64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
 
       - name: Push che-dev docker image
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env.PR_NUMBER}}-dev-amd64
           docker tag che-dev ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
@@ -246,7 +223,7 @@ jobs:
           script: |
             const { repo: { owner, repo } } = context;
             await github.rest.issues.createComment({
-               issue_number: process.env._PR_NUMBER,
+               issue_number: process.env.PR_NUMBER,
                owner: context.repo.owner,
                repo: context.repo.repo,
                body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](https://${process.env._CHE_CODE_ARM64_IMAGE})\nDev image: [${process.env._CHE_DEV_IMAGE}](https://${process.env._CHE_DEV_IMAGE})`
