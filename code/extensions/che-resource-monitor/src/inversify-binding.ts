@@ -10,8 +10,6 @@
 
 /* eslint-disable header/header */
 
-import 'reflect-metadata';
-
 import { Container } from 'inversify';
 import { K8sHelper } from './k8s-helper';
 import { ResourceMonitor } from './resource-monitor';

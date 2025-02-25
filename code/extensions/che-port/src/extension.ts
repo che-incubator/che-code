@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -10,7 +10,6 @@
 
 /* eslint-disable header/header */
 
-import 'reflect-metadata';
 import * as vscode from 'vscode';
 
 import { PortsPlugin } from './ports-plugin';
