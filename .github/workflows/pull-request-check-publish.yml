@@ -66,8 +66,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: quay.io
-          username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
-          password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
       - name: Push che-code-amd64 docker image
         run: |
