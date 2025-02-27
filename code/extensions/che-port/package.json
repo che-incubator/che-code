@@ -30,7 +30,6 @@
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
     },
   "dependencies": {
-    "reflect-metadata": "^0.2.2",
     "fs-extra": "^11.2.0",
     "vscode-nls": "^5.0.0",
     "@devfile/api": "^2.3.0-1738854228"
