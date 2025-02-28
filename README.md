@@ -97,8 +97,8 @@ git fetch upstream-code main
 ```bash
 ./build/artifacts/generate.sh
 git add ./build/artifacts/artifacts.lock.yaml
-git commit -m "Update artifacts.lock.yaml" --signoff
-git push origin main
+git commit -m "chore: Update artifacts.lock.yaml" --signoff
+git push origin fix-rebase
 ```
 6. Open a PR with your changes.
 
