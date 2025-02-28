@@ -59,7 +59,6 @@ jobs:
       - name: Load Docker images
         run: |
           docker load -i che-code-amd64.tgz
-          docker load -i che-code-arm64.tgz
           docker load -i che-dev.tgz
 
       - name: Login to Quay.io
@@ -76,20 +75,6 @@ jobs:
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
 
-      - name: Push che-code-arm64 docker image
-        run: |
-          export IMAGE=quay.io/${{ secrets.QUAY_USERNAME }}/che-code:pr-${{env._PR_NUMBER}}-arm64
-          docker tag che-code-arm64 ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-
-      - name: Push che-dev docker image
-        run: |
-          export IMAGE=quay.io/${{ secrets.QUAY_USERNAME }}/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
-          docker tag che-dev ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
-          
       - name: 'Comment PR'
         uses: actions/github-script@v7
         with:
@@ -99,5 +84,5 @@ jobs:
               issue_number: process.env._PR_NUMBER,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](https://${process.env._CHE_CODE_ARM64_IMAGE})\nDev image: [${process.env._CHE_DEV_IMAGE}](https://${process.env._CHE_DEV_IMAGE})`
+              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})`
             })
