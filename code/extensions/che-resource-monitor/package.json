@@ -30,7 +30,7 @@
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@devfile/api": "^2.3.0-1723034342",
+    "@devfile/api": "^2.3.0-1738854228",
     "@kubernetes/client-node": "^0.22.0",
     "inversify": "^6.0.2",
     "reflect-metadata": "^0.2.2",

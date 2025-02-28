@@ -61,6 +61,8 @@ jobs:
       - name: push changes
         run: |
           set -e
+          git add ./build/artifacts/artifacts.lock.yaml
+          git commit -m "Update artifacts.lock.yaml" --signoff
           git push origin main
 
 

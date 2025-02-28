@@ -13,6 +13,23 @@ name: Pull Request Check
 on: [pull_request]
 
 jobs:
+  check-artifacts-lock-yaml:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout che-code source code
+        uses: actions/checkout@v4
+      - name: Generate artifacts.lock.yaml
+        run: ./build/artifacts/generate.sh
+      - name: Check if artifacts.lock.yaml is up to date
+        run: |
+          if [[ $(git diff --name-only | wc -l) != 0 ]]; then
+            # Print difference
+            git --no-pager diff
+        
+            echo "[ERROR] artifacts.lock.yaml is not up to date."
+            echo "[ERROR] Run './build/artifacts/generate.sh' and include file into the commit."
+            exit 1
+          fi
 
   build:
     name: build

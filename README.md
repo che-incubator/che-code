@@ -93,7 +93,14 @@ git fetch upstream-code main
 ```
 3. `./rebase.sh`
 4. Fix the conflicts or other errors. **Note**, that`./rebase.sh` script also applies the patches from the [`.rebase`](https://github.com/che-incubator/che-code/tree/main/.rebase) directory. Sometimes, it also requires some updates there.
-5. Open a PR with your changes.
+5. Run the following commands to update `artifacts.lock.yaml`:
+```bash
+./build/artifacts/generate.sh
+git add ./build/artifacts/artifacts.lock.yaml
+git commit -m "Update artifacts.lock.yaml" --signoff
+git push origin main
+```
+6. Open a PR with your changes.
 
 ## Branding the UI
 

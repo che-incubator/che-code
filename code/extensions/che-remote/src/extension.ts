@@ -184,16 +184,12 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  const pluginRegistryUrl = process.env.CHE_PLUGIN_REGISTRY_INTERNAL_URL;
-  console.info(`Using ${pluginRegistryUrl} to generate new Devfile Context`);
-
   let devfileContext: DevfileContext | undefined = undefined;
   try {
     devfileContext = await devWorkspaceGenerator.generateDevfileContext(
       {
         devfilePath,
         editorContent: EDITOR_CONTENT_STUB,
-        pluginRegistryUrl,
         projects: []
       }, axiosInstance);
   } catch (error) {

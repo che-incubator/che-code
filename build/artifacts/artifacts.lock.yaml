@@ -17,12 +17,12 @@ artifacts:
   # ripgrep-ppc64le
   - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-4/ripgrep-v13.0.0-4-powerpc64le-unknown-linux-gnu.tar.gz
     filename: ripgrep-ppc64le
-    checksum: sha256:https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-4/ripgrep-v13.0.0-4-powerpc64le-unknown-linux-gnu.tar.gz
+    checksum: sha256:3ddd7c0797c14cefd3ee61f13f15ac219bfecee8e6f6e27fd15c102ef229653a
   # ripgrep-s390x
   - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-4/ripgrep-v13.0.0-4-s390x-unknown-linux-gnu.tar.gz
     filename: ripgrep-s390x
-    checksum: sha256:https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-4/ripgrep-v13.0.0-4-s390x-unknown-linux-gnu.tar.gz
+    checksum: sha256:61fa877688b721897cee33d572b64d8217ef16fe2cecf5f6f899f5ce55870e28
   # ripgrep-x86_64
   - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-10/ripgrep-v13.0.0-10-x86_64-unknown-linux-musl.tar.gz
     filename: ripgrep-x86_64
-    checksum: sha256:https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-10/ripgrep-v13.0.0-10-x86_64-unknown-linux-musl.tar.gz
+    checksum: sha256:ef820a62c1d6fdc396646762ff0f0e47e127947073ed8b5aa4ceea8b61cb1659
