@@ -13,14 +13,14 @@ name: Pull Request Check
 on: [pull_request]
 
 jobs:
-  check-artifacts-lock-yaml:
+  check-artifacts-:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout che-code source code
         uses: actions/checkout@v4
-      - name: Generate artifacts.lock.yaml
+      - name: Generate artifacts
         run: ./build/artifacts/generate.sh
-      - name: Check if artifacts.lock.yaml is up to date
+      - name: Check if artifacts are up to date
         run: |
           if [[ $(git diff --name-only | wc -l) != 0 ]]; then
             # Print difference
