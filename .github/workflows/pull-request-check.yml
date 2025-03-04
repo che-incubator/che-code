@@ -26,7 +26,7 @@ jobs:
             # Print difference
             git --no-pager diff
         
-            echo "[ERROR] artifacts.lock.yaml is not up to date."
+            echo "[ERROR] Artifacts is not up to date."
             echo "[ERROR] Run './build/artifacts/generate.sh' and include file into the commit."
             exit 1
           fi
