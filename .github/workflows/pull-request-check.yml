@@ -13,7 +13,7 @@ name: Pull Request Check
 on: [pull_request]
 
 jobs:
-  check-artifacts-:
+  check-artifacts:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout che-code source code
