@@ -87,7 +87,7 @@ makeAllPackageLockJson () {
   pushd "$ROOT_DIR" > /dev/null
 
   jq '. | del(.packages."")' package-lock.json > "${ALL_PACKAGES_LOCK_JSON}"
-  find . -type f -name "package-lock.json" -print0 | while IFS= read -r -d $'\0' file; do
+  find . -type f -name "package-lock.json" -print0 | sort | while IFS= read -r -d $'\0' file; do
     echo "[INFO] Processing file: $file"
 
     jq '.packages | del(."") | . |= with_entries(.value.origin = .value.resolved)' "$file" > /tmp/package.json
