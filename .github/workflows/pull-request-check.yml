@@ -18,6 +18,11 @@ jobs:
     steps:
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v3
+        with:
+          version: 1.7
+          force: true
       - name: Generate artifacts
         run: ./build/artifacts/generate.sh
       - name: Check if artifacts are up to date
@@ -25,7 +30,7 @@ jobs:
           if [[ $(git diff --name-only | wc -l) != 0 ]]; then
             # Print difference
             git --no-pager diff
-        
+          
             echo "[ERROR] Artifacts is not up to date."
             echo "[ERROR] Run './build/artifacts/generate.sh' and include file into the commit."
             exit 1

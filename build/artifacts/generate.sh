@@ -82,17 +82,30 @@ makeArtifactsLockYaml () {
 }
 
 # Combine all package-lock.json files into a single file
-# based on the package.json in the root directory
 makeAllPackageLockJson () {
   pushd "$ROOT_DIR" > /dev/null
 
-  jq '. | del(.packages."")' package-lock.json > "${ALL_PACKAGES_LOCK_JSON}"
-  find . -name "package-lock.json" | sort | while read file; do
+  # Create a new package-lock.json based on the one from the root directory
+  jq '. | del(.packages)' package-lock.json > "${ALL_PACKAGES_LOCK_JSON}"
+
+  # Iterate over all package-lock.json files in the project
+  find . -name "package-lock.json" ! -path "${ALL_PACKAGES_LOCK_JSON}" | while read -r file; do
     echo "[INFO] Processing file: $file"
 
-    jq '.packages | del(."") | . |= with_entries(.value.origin = .value.resolved)' "$file" > /tmp/package.json
-    OUTPUT=$(jq '.packages += input' "${ALL_PACKAGES_LOCK_JSON}" /tmp/package.json) && echo -n "${OUTPUT}" > "${ALL_PACKAGES_LOCK_JSON}"
+    # 1. Extract packages and remove empty one
+    # 2. Add a new origin structure with package-lock.json file location and resolved fields (duplicates)
+    jq --arg filename "$file" '.packages | del(."") | . |= with_entries(.value.origin = {location: $filename, resolved: .value.resolved})' "$file" > /tmp/package-lock.json
+
+    # 3. Add something uniq to the key (package name) to avoid duplicates while merging packages below
+    OUTPUT=$(jq --arg filehash "$(echo $file | sha256sum | awk '{print $1}')"  'to_entries | map({"\(.key)-\($filehash)": .value}) | add' /tmp/package-lock.json) && echo -n "${OUTPUT}" > /tmp/package-lock.json
+
+    # 4. Merge package-lock.json files
+    OUTPUT=$(jq '.packages += input' "${ALL_PACKAGES_LOCK_JSON}" /tmp/package-lock.json) && echo -n "${OUTPUT}" > "${ALL_PACKAGES_LOCK_JSON}"
+
+    # 5. Sorting
+    OUTPUT=$(jq -S '.' "${ALL_PACKAGES_LOCK_JSON}") && echo -n "${OUTPUT}" > "${ALL_PACKAGES_LOCK_JSON}"
   done
+
   echo "[INFO] Completed ${ALL_PACKAGES_LOCK_JSON}"
 
   jq '. | del(.scripts)' package.json > "${ALL_PACKAGES_JSON}"
