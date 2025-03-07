@@ -14,9 +14,9 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR=$(realpath "$SCRIPT_DIR/../..")
-ARTIFACTS_LOCK_YAML="$SCRIPT_DIR/artifacts.lock.yaml"
-ALL_PACKAGES_LOCK_JSON="$SCRIPT_DIR/package-lock.json"
-ALL_PACKAGES_JSON="$SCRIPT_DIR/package.json"
+ARTIFACTS_LOCK_YAML="./$SCRIPT_DIR/artifacts.lock.yaml"
+ALL_PACKAGES_LOCK_JSON="./$SCRIPT_DIR/package-lock.json"
+ALL_PACKAGES_JSON="./$SCRIPT_DIR/package.json"
 
 makeArtifactsLockYaml () {
   rm -f $ARTIFACTS_LOCK_YAML
@@ -55,8 +55,6 @@ makeArtifactsLockYaml () {
 
   PLATFORMS=("ppc64le" "s390x" "x86_64")
   for PLATFORM in "${PLATFORMS[@]}"; do
-    FILENAME="ripgrep-$PLATFORM"
-
     case $PLATFORM in
       'ppc64le') RG_ARCH_SUFFIX='powerpc64le-unknown-linux-gnu';;
       's390x') RG_ARCH_SUFFIX='s390x-unknown-linux-gnu';;
@@ -67,12 +65,13 @@ makeArtifactsLockYaml () {
       'x86_64') RG_VERSION="${VSIX_RIPGREP_PREBUILT_VERSION}";;
     esac
 
-    DOWNLOAD_URL="https://github.com/microsoft/ripgrep-prebuilt/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH_SUFFIX}.tar.gz"
+    FILENAME="ripgrep-${RG_VERSION}-${RG_ARCH_SUFFIX}.tar.gz"
+    DOWNLOAD_URL="https://github.com/microsoft/ripgrep-prebuilt/releases/download/${RG_VERSION}/${FILENAME}"
     checkUrlExistence "$DOWNLOAD_URL"
 
     read -r SHA256 rest <<< "$(curl -sL "$DOWNLOAD_URL" | shasum -a 256)"
 
-    echo "  # $FILENAME"                      >> "$ARTIFACTS_LOCK_YAML"
+    echo "  # ripgrep-${PLATFORM}"            >> "$ARTIFACTS_LOCK_YAML"
     echo "  - download_url: $DOWNLOAD_URL"    >> "$ARTIFACTS_LOCK_YAML"
     echo "    filename: $FILENAME"            >> "$ARTIFACTS_LOCK_YAML"
     echo "    checksum: sha256:$SHA256"       >> "$ARTIFACTS_LOCK_YAML"
