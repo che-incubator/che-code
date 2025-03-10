@@ -14,9 +14,9 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR=$(realpath "$SCRIPT_DIR/../..")
-ARTIFACTS_LOCK_YAML="./$SCRIPT_DIR/artifacts.lock.yaml"
-ALL_PACKAGES_LOCK_JSON="./$SCRIPT_DIR/package-lock.json"
-ALL_PACKAGES_JSON="./$SCRIPT_DIR/package.json"
+ARTIFACTS_LOCK_YAML="$SCRIPT_DIR/artifacts.lock.yaml"
+ALL_PACKAGES_LOCK_JSON="$SCRIPT_DIR/package-lock.json"
+ALL_PACKAGES_JSON="$SCRIPT_DIR/package.json"
 
 makeArtifactsLockYaml () {
   rm -f $ARTIFACTS_LOCK_YAML
@@ -88,7 +88,7 @@ makeAllPackageLockJson () {
   jq '. | del(.packages)' package-lock.json > "${ALL_PACKAGES_LOCK_JSON}"
 
   # Iterate over all package-lock.json files in the project
-  find . -name "package-lock.json" ! -path "${ALL_PACKAGES_LOCK_JSON}" | while read -r file; do
+  find . -name "package-lock.json" -not -path "./build/*" | while read -r file; do
     echo "[INFO] Processing file: $file"
 
     # 1. Extract packages and remove empty one
