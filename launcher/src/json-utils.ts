@@ -8,7 +8,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
-export function merge_first_with_second(first: any, second: any) {
+/**
+ * Recursively copies all properties from the first object to the next.
+ * If the property exists in the next object, its value will be updated.
+ */
+export function mergeFirstWithSecond(first: any, second: any) {
   if (Array.isArray(first)) {
     if (!Array.isArray(second)) {
       // incompatiblity of types :: skip and do nothing
@@ -40,7 +44,7 @@ export function merge_first_with_second(first: any, second: any) {
         second[key] = first[key];
       } else if ('object' === typeof first[key] && 'object' === typeof second[key]) {
         // if the property is object, merge values
-        merge_first_with_second(first[key], second[key]);
+        mergeFirstWithSecond(first[key], second[key]);
       }
 
       // in case of incompatibility of types, do nothing

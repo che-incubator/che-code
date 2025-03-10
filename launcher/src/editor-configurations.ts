@@ -11,7 +11,7 @@
 import * as k8s from '@kubernetes/client-node';
 import * as fs from './fs-extra.js';
 import { ProductJSON } from './product-json.js';
-import { merge_first_with_second, parseJSON } from './json-utils.js';
+import { mergeFirstWithSecond, parseJSON } from './json-utils.js';
 
 const CONFIGMAP_NAME = 'vscode-editor-configurations';
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
@@ -147,7 +147,7 @@ export class EditorConfigurations {
       const product = new ProductJSON();
       await product.load();
 
-      merge_first_with_second(productFromConfigmap, product.get());
+      mergeFirstWithSecond(productFromConfigmap, product.get());
 
       await product.save();
 
