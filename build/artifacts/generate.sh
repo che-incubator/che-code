@@ -89,7 +89,7 @@ makeAllPackageLockJson () {
   jq '. | del(.packages)' package-lock.json > "${ALL_PACKAGES_LOCK_JSON}"
 
   # Iterate over all package-lock.json files in the project
-  find . -name "package-lock.json" ! -path "${ALL_PACKAGES_LOCK_JSON}" | while read -r file; do
+  find . -name "package-lock.json" -not -path "./build/*" | while read -r file; do
     echo "[INFO] Processing file: $file"
 
     # 1. Extract packages and remove empty one
