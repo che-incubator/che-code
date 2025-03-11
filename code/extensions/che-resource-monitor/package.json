@@ -27,7 +27,8 @@
     "watch": "gulp watch-extension:che-resource-monitor",
     "vscode:prepublish": "npm run compile",
     "test": "jest",
-    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
+    "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1738854228",
