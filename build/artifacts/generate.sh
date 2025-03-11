@@ -124,7 +124,7 @@ checkUrlExistence() {
 
 run() {
   makeArtifactsLockYaml
-  makeAllPackageLockJson
+  #makeAllPackageLockJson
 }
 
 run
