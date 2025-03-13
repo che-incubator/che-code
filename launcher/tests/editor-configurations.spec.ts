@@ -12,7 +12,7 @@ import { CoreV1Api, KubeConfig, V1ConfigMap } from '@kubernetes/client-node';
 import { IncomingMessage } from 'http';
 import { env } from 'process';
 import * as fs from '../src/fs-extra';
-import { EditorConfigurations, parseJsonFrom } from '../src/editor-configurations';
+import { EditorConfigurations } from '../src/editor-configurations';
 
 const DEVWORKSPACE_NAMESPACE = 'test-namespace';
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
@@ -36,7 +36,7 @@ const SETTINGS_CONTENT =
   '  }\n' +
   '}\n';
 const REMOTE_SETTINGS_FILE_CONTENT = '{\n' + '"window.commandCenter": false\n' + '}\n';
-const SETTINGS_JSON = parseJsonFrom(SETTINGS_CONTENT);
+const SETTINGS_JSON = JSON.parse(SETTINGS_CONTENT);
 const SETTINGS_TO_FILE = JSON.stringify(SETTINGS_JSON, null, '\t');
 const CONFIGMAP_SETTINGS_DATA = {
   'settings.json': SETTINGS_CONTENT,
@@ -49,8 +49,8 @@ const EXTENSIONS_CONTENT =
   '      "github.vscode-pull-request-github"\n' +
   '  ]\n' +
   '}\n';
-const EXTENSIONS_JSON = parseJsonFrom(EXTENSIONS_CONTENT);
-const WORKSPACE_CONFIG_JSON = parseJsonFrom(WORKSPACE_FILE_CONTENT);
+const EXTENSIONS_JSON = JSON.parse(EXTENSIONS_CONTENT);
+const WORKSPACE_CONFIG_JSON = JSON.parse(WORKSPACE_FILE_CONTENT);
 WORKSPACE_CONFIG_JSON['extensions'] = EXTENSIONS_JSON;
 const WORKSPACE_CONFIG_WITH_EXTENSIONS_TO_FILE = JSON.stringify(WORKSPACE_CONFIG_JSON, null, '\t');
 const CONFIGMAP_EXTENSIOSN_DATA = {
@@ -107,12 +107,11 @@ describe('Test applying editor configurations:', () => {
   });
 
   it('should skip applying editor congis if there is no DEVWORKSPACE_NAMESPACE', async () => {
-    const editorConfigs = new EditorConfigurations();
-    await editorConfigs.configure();
+    await new EditorConfigurations().configure();
 
-    expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
-    expect(mockCoreV1Api.readNamespacedConfigMap).toBeCalledTimes(0);
-    expect(fs.writeFile).toBeCalledTimes(0);
+    expect(mockMakeApiClient).not.toHaveBeenCalled();
+    expect(mockCoreV1Api.readNamespacedConfigMap).not.toHaveBeenCalled();
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
   it('should skip applying configs when request for a configmap is failed', async () => {
@@ -120,8 +119,7 @@ describe('Test applying editor configurations:', () => {
     const mockError = new Error('Request failed');
     mockCoreV1Api.readNamespacedConfigMap.mockRejectedValue(mockError);
 
-    const editorConfigs = new EditorConfigurations(WORKSPACE_FILE_PATH);
-    await editorConfigs.configure();
+    await new EditorConfigurations(WORKSPACE_FILE_PATH).configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
@@ -129,8 +127,8 @@ describe('Test applying editor configurations:', () => {
       DEVWORKSPACE_NAMESPACE
     );
 
-    expect(fileExistsMock).toBeCalledTimes(0); // no sense to read files if we have no configmap content
-    expect(fs.writeFile).toBeCalledTimes(0);
+    expect(fileExistsMock).not.toHaveBeenCalled(); // no sense to read files if we have no configmap content
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
   it('should skip applying configs when incorrect data in a configmap', async () => {
@@ -142,15 +140,14 @@ describe('Test applying editor configurations:', () => {
     mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
     fileExistsMock.mockResolvedValue(false);
 
-    const editorConfigs = new EditorConfigurations(WORKSPACE_FILE_PATH);
-    await editorConfigs.configure();
+    await new EditorConfigurations(WORKSPACE_FILE_PATH).configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(0);
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
   it('should apply settings from a configmap', async () => {
@@ -162,16 +159,15 @@ describe('Test applying editor configurations:', () => {
     mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
     fileExistsMock.mockResolvedValue(false);
 
-    const editorConfigs = new EditorConfigurations();
-    await editorConfigs.configure();
+    await new EditorConfigurations().configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(1); // only settings were applied
-    expect(fs.writeFile).toBeCalledWith(REMOTE_SETTINGS_PATH, SETTINGS_TO_FILE);
+    expect(writeFileMock).toBeCalledTimes(1); // only settings were applied
+    expect(writeFileMock).toBeCalledWith(REMOTE_SETTINGS_PATH, SETTINGS_TO_FILE);
   });
 
   it('should merge settings from a configmap with existing one', async () => {
@@ -183,20 +179,19 @@ describe('Test applying editor configurations:', () => {
     mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
     fileExistsMock.mockResolvedValue(true);
     readFileMock.mockResolvedValue(REMOTE_SETTINGS_FILE_CONTENT);
-    const existingSettingsJson = parseJsonFrom(REMOTE_SETTINGS_FILE_CONTENT);
+    const existingSettingsJson = JSON.parse(REMOTE_SETTINGS_FILE_CONTENT);
     const mergedSettings = { ...existingSettingsJson, ...SETTINGS_JSON };
     const mergedSettingsToFile = JSON.stringify(mergedSettings, null, '\t');
 
-    const editorConfigs = new EditorConfigurations();
-    await editorConfigs.configure();
+    await new EditorConfigurations().configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(1);
-    expect(fs.writeFile).toBeCalledWith(REMOTE_SETTINGS_PATH, mergedSettingsToFile);
+    expect(writeFileMock).toBeCalledTimes(1);
+    expect(writeFileMock).toBeCalledWith(REMOTE_SETTINGS_PATH, mergedSettingsToFile);
   });
 
   it('should skip applying extensions when incorrect data in the workspace file', async () => {
@@ -209,15 +204,14 @@ describe('Test applying editor configurations:', () => {
     fileExistsMock.mockResolvedValue(true);
     readFileMock.mockResolvedValue(WORKSPACE_FILE_INCORRECT_CONTENT);
 
-    const editorConfigs = new EditorConfigurations(WORKSPACE_FILE_PATH);
-    await editorConfigs.configure();
+    await new EditorConfigurations(WORKSPACE_FILE_PATH).configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(0);
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
   it('should skip applying extensions when the workspace file is not found', async () => {
@@ -229,15 +223,14 @@ describe('Test applying editor configurations:', () => {
     mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
     fileExistsMock.mockResolvedValue(true);
 
-    const editorConfigs = new EditorConfigurations();
-    await editorConfigs.configure();
+    await new EditorConfigurations().configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(0);
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
   it('should apply extensions from a configmap', async () => {
@@ -250,15 +243,99 @@ describe('Test applying editor configurations:', () => {
     fileExistsMock.mockResolvedValue(true);
     readFileMock.mockResolvedValue(WORKSPACE_FILE_CONTENT);
 
-    const editorConfigs = new EditorConfigurations(WORKSPACE_FILE_PATH);
-    await editorConfigs.configure();
+    await new EditorConfigurations(WORKSPACE_FILE_PATH).configure();
 
     expect(mockMakeApiClient).toHaveBeenCalledWith(CoreV1Api);
     expect(mockCoreV1Api.readNamespacedConfigMap).toHaveBeenCalledWith(
       'vscode-editor-configurations',
       DEVWORKSPACE_NAMESPACE
     );
-    expect(fs.writeFile).toBeCalledTimes(1); // only extensions were applied
-    expect(fs.writeFile).toBeCalledWith(WORKSPACE_FILE_PATH, WORKSPACE_CONFIG_WITH_EXTENSIONS_TO_FILE);
+    expect(writeFileMock).toBeCalledTimes(1); // only extensions were applied
+    expect(writeFileMock).toBeCalledWith(WORKSPACE_FILE_PATH, WORKSPACE_CONFIG_WITH_EXTENSIONS_TO_FILE);
+  });
+
+  it('should merge product.json with a provided config map', async () => {
+    env.DEVWORKSPACE_NAMESPACE = DEVWORKSPACE_NAMESPACE;
+
+    const existingProductJSON = `{
+      "nameShort": "CheCode",
+      "extensionEnabledApiProposals": {
+        "vgulyy.console-writer": [
+          "terminalDataWriteEvent",
+          "terminalExecuteCommandEvent"
+        ]
+      },
+      "extensionsGallery": {
+        "serviceUrl": "https://openvsix.org/extensions/gallery",
+        "itemUrl": "https://openvsix.org/extensions/items"
+      },
+      "apiVersion": 1
+    }`;
+
+    const configmap = {
+      'product.json': `{
+        "extensionEnabledApiProposals": {
+          "ms-python.python": [
+            "contribEditorContentMenu",
+            "quickPickSortByLabel"
+          ],
+          "vgulyy.console-writer": [
+            "terminalCoolors",
+            "terminalCharacters"
+          ]
+        },
+        "extensionsGallery": {
+          "serviceUrl": "https://marketplace/gallery",
+          "itemUrl": "https://marketplace/items"
+        },
+        "trustedExtensionAuthAccess": [
+          "thepublisher.say-hello"
+        ],
+        "apiVersion": 2
+      }`,
+    };
+
+    const mergedProductJSON = `{
+      "nameShort": "CheCode",
+      "extensionEnabledApiProposals": {
+        "vgulyy.console-writer": [
+          "terminalDataWriteEvent",
+          "terminalExecuteCommandEvent",
+          "terminalCoolors",
+          "terminalCharacters"
+        ],
+        "ms-python.python": [
+          "contribEditorContentMenu",
+          "quickPickSortByLabel"
+        ]
+      },
+      "extensionsGallery": {
+        "serviceUrl": "https://marketplace/gallery",
+        "itemUrl": "https://marketplace/items"
+      },
+      "apiVersion": 2,
+      "trustedExtensionAuthAccess": [
+        "thepublisher.say-hello"
+      ]
+    }`;
+
+    mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue({
+      response: {} as IncomingMessage,
+      body: { data: configmap } as V1ConfigMap,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if ('product.json' === path) {
+        return existingProductJSON;
+      }
+    });
+
+    await new EditorConfigurations(WORKSPACE_FILE_PATH).configure();
+
+    expect(writeFileMock).toBeCalledTimes(1);
+    expect(writeFileMock).toHaveBeenCalledWith(
+      'product.json',
+      JSON.stringify(JSON.parse(mergedProductJSON), null, '\t')
+    );
   });
 });
