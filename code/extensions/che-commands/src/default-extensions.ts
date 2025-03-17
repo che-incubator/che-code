@@ -23,6 +23,13 @@ export class DefaultExtensions {
             return;
         }
 
+        const installFromVsix = process.env.EXTENSIONS_INSTALL_FROM_VSIX;
+        if (installFromVsix === 'false') {
+            console.warn('Can not install default extensions - Install from VSIX command is disabled');
+            vscode.window.showInformationMessage('Can not install default extensions - Install from VSIX command is disabled');
+            return;
+        }
+
         try {
             // get list of extesions from DEFAULT_EXTENSIONS environment variable
             let extensions: string[] = process.env.DEFAULT_EXTENSIONS!.split(';').filter(value => (value.trim()));

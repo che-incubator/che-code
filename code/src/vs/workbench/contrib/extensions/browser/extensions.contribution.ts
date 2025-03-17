@@ -850,10 +850,19 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 			category: ExtensionsLocalizedLabel,
 			menu: [{
 				id: MenuId.CommandPalette,
-				when: ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)
+				when: ContextKeyExpr.and(
+					ContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),
+						ContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),
+					ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)
+				),
 			}, {
 				id: MenuId.ViewContainerTitle,
-				when: ContextKeyExpr.and(ContextKeyExpr.equals('viewContainer', VIEWLET_ID), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),
+				when: ContextKeyExpr.and(
+					ContextKeyExpr.equals('viewContainer', VIEWLET_ID),
+					ContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),
+						ContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),
+					ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)
+				),
 				group: '3_install',
 				order: 1
 			}],
@@ -879,7 +888,11 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 			menu: [{
 				id: MenuId.ExplorerContext,
 				group: 'extensions',
-				when: ContextKeyExpr.and(ResourceContextKey.Extension.isEqualTo('.vsix'), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),
+				when: ContextKeyExpr.and(
+					ResourceContextKey.Extension.isEqualTo('.vsix'),
+					ContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),
+						ContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),
+					ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),
 			}],
 			run: async (accessor: ServicesAccessor, resources: URI[] | URI) => {
 				const extensionsWorkbenchService = accessor.get(IExtensionsWorkbenchService);
