@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2024 Red Hat, Inc.
+ * Copyright (c) 2024-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -13,13 +13,24 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { EditorConfigurations } from './editor-configurations';
+import { INSTALL_FROM_VSIX } from './install-from-vsix';
 
 const DEFAULT_EXTENSIONS_FILE = path.join(process.env.PROJECTS_ROOT!, '.default-extensions');
 
 export class DefaultExtensions {
+    constructor(private outputChannel: vscode.OutputChannel, private editorConfigs?: EditorConfigurations) { }
 
     async install(): Promise<void> {
         if (!process.env.DEFAULT_EXTENSIONS) {
+            this.outputChannel.appendLine(`[DefaultExtensions] DEFAULT_EXTENSIONS env variable not found - default extensions installation skipped`);
+            return;
+        }
+
+        const installFromVsix = this.editorConfigs?.[INSTALL_FROM_VSIX];
+        if (installFromVsix === false || installFromVsix === 'false') {
+            this.outputChannel.appendLine('[DefaultExtensions] Can not install default extensions - Install from VSIX command is disabled');
+            vscode.window.showInformationMessage('Can not install default extensions - Install from VSIX command is disabled');
             return;
         }
 
@@ -32,13 +43,14 @@ export class DefaultExtensions {
             extensions = extensions.filter(value => !installed.includes(value));
 
             if (extensions.length) {
-                console.log(`Installing default extensions: ${extensions.join('; ')}`);
+                this.outputChannel.appendLine(`[DefaultExtensions] Installing default extensions: ${extensions.join('; ')}`);
                 const result = await this.installExtensions(extensions);
                 if (result) {
                     this.writeDotDefaultExtensionsFile(extensions);
                 }
             }
         } catch (error) {
+            this.outputChannel.appendLine(`[DefaultExtensions] Failed to install default extensions. ${error}`);
             console.error(`Failed to install default extensions. ${error}`);
         }
     }
@@ -50,6 +62,7 @@ export class DefaultExtensions {
             }
 
         } catch (error) {
+            this.outputChannel.appendLine(`[DefaultExtensions] Failed to read .default-extensions file. ${error}`);
             console.error(`Failed to read .default-extensions file. ${error}`);
         }
 
@@ -74,6 +87,7 @@ export class DefaultExtensions {
             await fs.writeFile(DEFAULT_EXTENSIONS_FILE, fileContent);
 
         } catch (error) {
+            this.outputChannel.appendLine(`[DefaultExtensions] Failed to write to .default-extensions file. ${error}`);
             console.error(`Failed to write to .default-extensions file. ${error}`);
         }
     }
@@ -95,6 +109,7 @@ export class DefaultExtensions {
                 installed = true;
             } catch (error) {
                 vscode.window.showInformationMessage(`Failed to install default extensions. ${error.message ? error.message : error}`);
+                this.outputChannel.appendLine(`[DefaultExtensions] Failed to install default extensions. ${error.message ? error.message : error}`);
             }
 
             progress.report({ increment: 100 });

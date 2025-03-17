@@ -21,6 +21,10 @@ module.exports = withDefaults({
 	resolve: {
 		mainFields: ['module', 'main']
 	},
+	externals: {
+		'bufferutil': 'commonjs bufferutil', // ignored
+		'utf-8-validate': 'commonjs utf-8-validate', // ignored
+	},
 	entry: {
 		extension: './src/extension.ts',
 	}
