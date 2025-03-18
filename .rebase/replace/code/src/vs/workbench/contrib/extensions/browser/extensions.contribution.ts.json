@@ -1,0 +1,10 @@
+[
+  {
+    "from": "import { isNative, isWeb } from '../../../../base/common/platform.js';",
+    "by": "import { isLinux, isNative, isWeb } from '../../../../base/common/platform.js';"
+  },
+	{
+    "from": "\\\t\\\t\\\t\\\tincluded: isNative",
+    "by": "\\\t\\\t\\\t\\\tincluded: isNative && !isLinux"
+  }
+]

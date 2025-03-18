@@ -6,7 +6,6 @@
 import { URI } from '../../../../../base/common/uri.js';
 import { Emitter } from '../../../../../base/common/event.js';
 import { IChatRequestVariableEntry } from '../../common/chatModel.js';
-import { ChatInstructionsFileLocator } from './chatInstructionsFileLocator.js';
 import { PromptFilesConfig } from '../../common/promptSyntax/config.js';
 import { IPromptFileReference } from '../../common/promptSyntax/parsers/types.js';
 import { ChatInstructionsAttachmentModel } from './chatInstructionsAttachment.js';
@@ -26,17 +25,17 @@ import { IConfigurationService } from '../../../../../platform/configuration/com
  * @param isRoot If the reference is the root reference in the references tree.
  * 				 This object most likely was explicitly attached by the user.
  */
-const toChatVariable = (
+export const toChatVariable = (
 	reference: Pick<IPromptFileReference, 'uri' | 'isPromptSnippet'>,
 	isRoot: boolean,
 ): IChatRequestVariableEntry => {
-	const { uri } = reference;
+	const { uri, isPromptSnippet } = reference;
 
 	// default `id` is the stringified `URI`
 	let id = `${uri}`;
 
 	// for prompt files, we add a prefix to the `id`
-	if (reference.isPromptSnippet) {
+	if (isPromptSnippet) {
 		// the default prefix that is used for all prompt files
 		let prefix = 'vscode.prompt.instructions';
 		// if the reference is the root object, add the `.root` suffix
@@ -56,8 +55,7 @@ const toChatVariable = (
 		isSelection: false,
 		enabled: true,
 		isFile: true,
-		isDynamic: true,
-		isMarkedReadonly: true,
+		isMarkedReadonly: isPromptSnippet,
 	};
 };
 
@@ -66,11 +64,6 @@ const toChatVariable = (
  * See {@linkcode ChatInstructionsAttachmentModel} for individual attachment.
  */
 export class ChatInstructionAttachmentsModel extends Disposable {
-	/**
-	 * Helper to locate prompt instruction files on the disk.
-	 */
-	private readonly instructionsFileReader: ChatInstructionsFileLocator;
-
 	/**
 	 * List of all prompt instruction attachments.
 	 */
@@ -172,7 +165,6 @@ export class ChatInstructionAttachmentsModel extends Disposable {
 		super();
 
 		this._onUpdate.fire = this._onUpdate.fire.bind(this._onUpdate);
-		this.instructionsFileReader = initService.createInstance(ChatInstructionsFileLocator);
 	}
 
 	/**
@@ -216,13 +208,6 @@ export class ChatInstructionAttachmentsModel extends Disposable {
 		this.attachments.deleteAndDispose(uri.path);
 
 		return this;
-	}
-
-	/**
-	 * List prompt instruction files available and not attached yet.
-	 */
-	public async listNonAttachedFiles(): Promise<readonly URI[]> {
-		return await this.instructionsFileReader.listFiles(this.references);
 	}
 
 	/**
