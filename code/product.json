@@ -84,6 +84,7 @@
 		{
 			"name": "devfile.vscode-devfile",
 			"version": "0.0.2",
+			"sha256": "4801810f3b0e3f10e589417f9081e90bcfa89c4e6478c8e31041751c98d0a0f6",
 			"repo": "https://github.com/devfile/vscode-walkthrough-extension"
 		}
 	],

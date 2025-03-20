@@ -34,16 +34,14 @@ makeArtifactsLockYaml () {
     REPOSITORY=$(jq -r '.builtInExtensions[] | select(.name=="'${PLUGIN}'") | .repo' "$PRODUCT_JSON")
     SHA256=$(jq -r '.builtInExtensions[] | select(.name=="'${PLUGIN}'") | .sha256' "$PRODUCT_JSON")
 
-    if [[ ! $SHA256 == "null" ]]; then
-      FILENAME="$PLUGIN.$VERSION.vsix"
-      DOWNLOAD_URL="$REPOSITORY/releases/download/v$VERSION/$FILENAME"
-      checkUrlExistence "$DOWNLOAD_URL"
+    FILENAME="$PLUGIN.$VERSION.vsix"
+    DOWNLOAD_URL="$REPOSITORY/releases/download/v$VERSION/$FILENAME"
+    checkUrlExistence "$DOWNLOAD_URL"
 
-      echo "  # $PLUGIN"                      >> "$ARTIFACTS_LOCK_YAML"
-      echo "  - download_url: $DOWNLOAD_URL"  >> "$ARTIFACTS_LOCK_YAML"
-      echo "    filename: $FILENAME"          >> "$ARTIFACTS_LOCK_YAML"
-      echo "    checksum: sha256:$SHA256"     >> "$ARTIFACTS_LOCK_YAML"
-    fi
+    echo "  # $PLUGIN"                      >> "$ARTIFACTS_LOCK_YAML"
+    echo "  - download_url: $DOWNLOAD_URL"  >> "$ARTIFACTS_LOCK_YAML"
+    echo "    filename: $FILENAME"          >> "$ARTIFACTS_LOCK_YAML"
+    echo "    checksum: sha256:$SHA256"     >> "$ARTIFACTS_LOCK_YAML"
   done
 
   # Generate artifacts for ripgrep dependency
