@@ -17,7 +17,7 @@ artifacts:
   # devfile.vscode-devfile
   - download_url: https://github.com/devfile/vscode-walkthrough-extension/releases/download/v0.0.4/devfile.vscode-devfile.0.0.4.vsix
     filename: devfile.vscode-devfile.0.0.4.vsix
-    checksum: sha256:8a9db6e418cff2828948b92423109afeaa5b7675f016b1e651e2738cf1e50c43
+    checksum: sha256:c55a6c1d087e7715bfacb01c0c2b52ef0f935d85f0707265d9068cd64143744c
   # ripgrep-ppc64le
   - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-4/ripgrep-v13.0.0-4-powerpc64le-unknown-linux-gnu.tar.gz
     filename: ripgrep-v13.0.0-4-powerpc64le-unknown-linux-gnu.tar.gz
