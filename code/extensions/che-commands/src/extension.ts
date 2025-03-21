@@ -25,6 +25,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(disposable);
 
+	const installFromVsix = process.env.EXTENSIONS_INSTALL_FROM_VSIX;
+	if (installFromVsix === 'false') {
+		// disable command
+		vscode.commands.executeCommand('setContext', 'extensions.install-from-vsix-enabled', false);
+	}
 	await new DefaultExtensions().install();
 }
 
