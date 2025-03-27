@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { log } from 'node:console';
 import { isStandalone } from '../../../base/browser/browser.js';
 import { mainWindow } from '../../../base/browser/window.js';
 import { VSBuffer, decodeBase64, encodeBase64 } from '../../../base/common/buffer.js';
@@ -319,8 +320,15 @@ class LocalStorageURLCallbackProvider extends Disposable implements IURLCallback
 		}
 
 		const windowURI = URI.parse(mainWindow.location.href);
-		const fullPath = windowURI.path.replace(/\/$/, '') + this._callbackRoute;
-		return windowURI.with({ path: fullPath, query: queryParams.join('&') });
+		console.log('--------window URL---------' + windowURI.toString());
+		const windowURIPatched = windowURI.path.replace(/\/$/, '');
+		const fullPath = windowURIPatched + this._callbackRoute;
+		console.log('--------1 Part---------' + windowURIPatched);
+		console.log('--------callbackRoute---------' + this._callbackRoute);
+		console.log('--------fullPath---------' + fullPath.toString());
+		const result = windowURI.with({ path: fullPath, query: queryParams.join('&') });
+		console.log('--------Result---------' + result.toString());
+		return result;
 	}
 
 	private startListening(): void {
