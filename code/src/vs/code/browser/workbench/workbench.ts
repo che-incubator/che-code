@@ -320,12 +320,9 @@ class LocalStorageURLCallbackProvider extends Disposable implements IURLCallback
 
 		const windowURI = URI.parse(mainWindow.location.href);
 		console.log('--------window URL---------' + windowURI.toString());
-		const windowURIPatched = windowURI.path.replace(/\/$/, '');
-		const fullPath = windowURIPatched + this._callbackRoute;
-		console.log('--------1 Part---------' + windowURIPatched);
-		console.log('--------callbackRoute---------' + this._callbackRoute);
-		console.log('--------fullPath---------' + fullPath.toString());
-		const result = windowURI.with({ path: fullPath, query: queryParams.join('&') });
+		const callback = this._callbackRoute.replace(', ', '');
+		console.log('--------callbackRoute---------' + callback);
+		const result = windowURI.with({ path: callback, query: queryParams.join('&') });
 		console.log('--------Result---------' + result.toString());
 		return result;
 	}
