@@ -1,7 +1,7 @@
 [
   {
     "from": "return URI.parse(mainWindow.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });",
-    "by": "const windowURI = URI.parse(mainWindow.location.href);\\\n\\\t\\\tconst fullPath = windowURI.path.replace(/\\\\/$/, '') + this._callbackRoute;\\\n\\\t\\\treturn windowURI.with({ path: fullPath, query: queryParams.join('\\&') });"
+    "by": "const windowURI = URI.parse(mainWindow.location.href);\\\n\\\t\\\tconst callback = this._callbackRoute.replace(', ', '');\\\n\\\t\\\treturn windowURI.with({ path: callback, query: queryParams.join('\\&') });"
   },
   {
     "from": "private _serverKey: Uint8Array \\| undefined;",
