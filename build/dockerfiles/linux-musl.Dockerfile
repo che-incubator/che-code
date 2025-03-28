@@ -60,7 +60,7 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     # workaround to fix build
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-RUN NODE_OPTIONS="--max_old_space_size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
+RUN NODE_OPTIONS="--max-old-space-size=6500" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
 RUN chmod a+x /checode/out/server-main.js \
