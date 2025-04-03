@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -12,7 +12,7 @@
 
 import * as vscode from 'vscode';
 import { DevfileTaskProvider } from './taskProvider';
-import { DefaultExtensions } from './default-extensions';
+import { EditorConfigurations } from './editorConfigs/editor-configurations';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const channel: vscode.OutputChannel = vscode.window.createOutputChannel('Devfile Commands');
@@ -25,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	context.subscriptions.push(disposable);
 
-	await new DefaultExtensions().install();
+	await new EditorConfigurations(channel).initialize();
 }
 
 async function getExtensionAPI(extID: string): Promise<any> {
