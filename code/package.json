@@ -65,7 +65,9 @@
     "extensions-ci": "node ./node_modules/gulp/bin/gulp.js extensions-ci",
     "extensions-ci-pr": "node ./node_modules/gulp/bin/gulp.js extensions-ci-pr",
     "perf": "node scripts/code-perf.js",
-    "update-build-ts-version": "npm install typescript@next && tsc -p ./build/tsconfig.build.json"
+    "update-build-ts-version": "npm install typescript@next && tsc -p ./build/tsconfig.build.json",
+    "license:check": "docker run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next --check",
+    "license:generate": "docker run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
   },
   "dependencies": {
     "@microsoft/1ds-core-js": "^3.2.13",

@@ -8,7 +8,9 @@
     "server": "cd code && VSCODE_DEV=1 node out/server-main.js --host 0.0.0.0 --without-connection-token",
     "build": "cd code && node ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64",
     "build:min": "cd code && node ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64-min",
-    "rebuild-native-modules": "cd code && npm rebuild"
+    "rebuild-native-modules": "cd code && npm rebuild",
+    "license:check": "cd code && npm run license:check && cd -",
+    "license:generate": "cd code && npm run license:generate && cd -"
   },
   "license": "EPL-2.0"
 }
