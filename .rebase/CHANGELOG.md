@@ -8,6 +8,13 @@ https://github.com/che-incubator/che-code/pull/528
 - code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts
 ---
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/526
+
+- code/package.json
+- code/src/vs/platform/utilityProcess/electron-main/utilityProcess.ts
+---
+
 #### @svor
 https://github.com/che-incubator/che-code/pull/532
 
