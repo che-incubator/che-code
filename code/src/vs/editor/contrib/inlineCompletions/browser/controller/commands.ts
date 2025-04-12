@@ -17,7 +17,7 @@ import { ICodeEditor } from '../../../../browser/editorBrowser.js';
 import { EditorAction, EditorCommand, ServicesAccessor } from '../../../../browser/editorExtensions.js';
 import { EditorContextKeys } from '../../../../common/editorContextKeys.js';
 import { Context as SuggestContext } from '../../../suggest/browser/suggest.js';
-import { hideInlineCompletionId, inlineSuggestCommitId, jumpToNextInlineEditId, showNextInlineSuggestionActionId, showPreviousInlineSuggestionActionId, togglePressToRevealId } from './commandIds.js';
+import { hideInlineCompletionId, inlineSuggestCommitId, jumpToNextInlineEditId, showNextInlineSuggestionActionId, showPreviousInlineSuggestionActionId, toggleShowCollapsedId } from './commandIds.js';
 import { InlineCompletionContextKeys } from './inlineCompletionContextKeys.js';
 import { InlineCompletionsController } from './inlineCompletionsController.js';
 
@@ -261,6 +261,25 @@ export class JumpToNextInlineEdit extends EditorAction {
 	}
 }
 
+export class AcceptNextInlineEditPart extends EditorAction {
+	constructor() {
+		super({
+			id: 'editor.action.inlineSuggest.acceptNextInlineEditPart',
+			label: nls.localize2('action.inlineSuggest.acceptNextInlineEditPart', "Accept Next Inline Edit Part"),
+			precondition: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineEditVisible),
+			kbOpts: {
+				weight: KeybindingWeight.EditorContrib + 1,
+				kbExpr: ContextKeyExpr.and(EditorContextKeys.writable, InlineCompletionContextKeys.inlineEditVisible),
+			},
+		});
+	}
+
+	public async run(accessor: ServicesAccessor | undefined, editor: ICodeEditor): Promise<void> {
+		const controller = InlineCompletionsController.get(editor);
+		await controller?.model.get()?.acceptNextInlineEditPart(controller.editor);
+	}
+}
+
 export class HideInlineCompletion extends EditorAction {
 	public static ID = hideInlineCompletionId;
 
@@ -291,21 +310,21 @@ export class HideInlineCompletion extends EditorAction {
 	}
 }
 
-export class ToggleInlineCompletionPressToReveal extends EditorAction {
-	public static ID = togglePressToRevealId;
+export class ToggleInlineCompletionShowCollapsed extends EditorAction {
+	public static ID = toggleShowCollapsedId;
 
 	constructor() {
 		super({
-			id: ToggleInlineCompletionPressToReveal.ID,
-			label: nls.localize2('action.inlineSuggest.togglePressToShow', "Toggle Inline Suggestions Press To Show"),
+			id: ToggleInlineCompletionShowCollapsed.ID,
+			label: nls.localize2('action.inlineSuggest.toggleShowCollapsed', "Toggle Inline Suggestions Show Collapsed"),
 			precondition: ContextKeyExpr.true(),
 		});
 	}
 
 	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
 		const configurationService = accessor.get(IConfigurationService);
-		const pressToReveal = configurationService.getValue<boolean>('editor.inlineSuggest.edits.pressToReveal');
-		configurationService.updateValue('editor.inlineSuggest.edits.pressToReveal', !pressToReveal);
+		const showCollapsed = configurationService.getValue<boolean>('editor.inlineSuggest.edits.showCollapsed');
+		configurationService.updateValue('editor.inlineSuggest.edits.showCollapsed', !showCollapsed);
 	}
 }
 

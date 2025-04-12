@@ -78,6 +78,7 @@ const posixShellTypeMap = new Map<string, PosixShellType>([
 
 const generalShellTypeMap = new Map<string, GeneralShellType>([
 	['pwsh', GeneralShellType.PowerShell],
+	['powershell', GeneralShellType.PowerShell],
 	['python', GeneralShellType.Python],
 	['julia', GeneralShellType.Julia],
 	['nu', GeneralShellType.NuShell],
@@ -209,7 +210,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 
 		let injection: IShellIntegrationConfigInjection | undefined;
 		if (this._options.shellIntegration.enabled) {
-			injection = getShellIntegrationInjection(this.shellLaunchConfig, this._options, this._ptyOptions.env, this._logService, this._productService);
+			injection = await getShellIntegrationInjection(this.shellLaunchConfig, this._options, this._ptyOptions.env, this._logService, this._productService);
 			if (injection) {
 				this._onDidChangeProperty.fire({ type: ProcessPropertyType.UsedShellIntegrationInjection, value: true });
 				if (injection.envMixin) {
@@ -418,7 +419,12 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 		this._currentTitle = (ptyProcess.process ?? '');
 		this._onDidChangeProperty.fire({ type: ProcessPropertyType.Title, value: this._currentTitle });
 		// If fig is installed it may change the title of the process
-		const sanitizedTitle = this.currentTitle.replace(/ \(figterm\)$/g, '');
+		let sanitizedTitle = this.currentTitle.replace(/ \(figterm\)$/g, '');
+		// Ensure any prefixed path is removed so that the executable name since we use this to
+		// detect the shell type
+		if (!isWindows) {
+			sanitizedTitle = path.basename(sanitizedTitle);
+		}
 
 		if (sanitizedTitle.toLowerCase().startsWith('python')) {
 			this._onDidChangeProperty.fire({ type: ProcessPropertyType.ShellType, value: GeneralShellType.Python });
