@@ -927,7 +927,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 	private readonly _onReset = new Emitter<void>();
 	get onReset() { return this._onReset.event; }
 
-	readonly preferPreReleases = this.productService.quality !== 'stable';
+	readonly preferPreReleases: boolean = false;
 
 	private installing: IExtension[] = [];
 	private tasksInProgress: CancelablePromise<any>[] = [];
