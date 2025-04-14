@@ -196,10 +196,5 @@ export const enum WindowError {
 	/**
 	 * Maps to the `did-fail-load` event on a `WebContents`.
 	 */
-	LOAD = 3,
-
-	/**
-	 * Maps to the `responsive` event on a `BrowserWindow`.
-	 */
-	RESPONSIVE = 4,
+	LOAD = 3
 }
