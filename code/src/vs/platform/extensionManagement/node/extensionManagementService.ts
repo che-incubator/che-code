@@ -341,7 +341,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 			&& !(verificationStatus === ExtensionSignatureVerificationCode.NotSigned && !shouldRequireSignature)
 			&& verifySignature
 			&& this.environmentService.isBuilt
-			&& !(isLinux && this.productService.quality === 'stable')
+			&& !isLinux
 		) {
 			try {
 				await this.extensionsDownloader.delete(location);
