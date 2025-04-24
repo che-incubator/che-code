@@ -3,6 +3,14 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/540 \
+https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394
+
+- code/package.json
+- code/remote/package.json
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/528
 
 - code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts
