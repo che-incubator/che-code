@@ -1,10 +1,6 @@
 [
-  {
-    "from": "import { IConfigurationService } from '../../configuration/common/configuration.js';",
-    "by": "import { IConfigurationService } from '../../configuration/common/configuration.js';\\\nimport { isLinux } from '../../../base/common/platform.js';"
-  },
 	{
-    "from": "if (verificationStatus !== ExtensionSignatureVerificationCode.Success && verificationStatus !== ExtensionSignatureVerificationCode.NotSigned && verifySignature && this.environmentService.isBuilt) {",
-    "by": "if (verificationStatus !== ExtensionSignatureVerificationCode.Success && verificationStatus !== ExtensionSignatureVerificationCode.NotSigned && verifySignature && this.environmentService.isBuilt && !isLinux) {"
+    "from": "&& !(isLinux && this.productService.quality === 'stable')",
+    "by": "\\&\\& !isLinux"
   }
 ]
