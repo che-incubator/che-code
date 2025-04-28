@@ -3,6 +3,18 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/540 \
+https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394 \
+https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d \
+https://github.com/RomanNikitenko/che-code/commit/7ea82ac755a21d2cb021736a07d8216fe294beff
+
+- code/package.json
+- code/remote/package.json
+- code/src/vs/platform/extensionManagement/node/extensionManagementService.ts
+- code/src/vs/platform/webContentExtractor/node/sharedWebContentExtractorService.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/528
 
 - code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts

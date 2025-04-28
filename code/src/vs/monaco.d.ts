@@ -1099,7 +1099,7 @@ declare namespace monaco.editor {
 	 * Create a new web worker that has model syncing capabilities built in.
 	 * Specify an AMD module to load that will `create` an object that will be proxied.
 	 */
-	export function createWebWorker<T extends object>(opts: IWebWorkerOptions): MonacoWebWorker<T>;
+	export function createWebWorker<T extends object>(opts: IInternalWebWorkerOptions): MonacoWebWorker<T>;
 
 	/**
 	 * Colorize the contents of `domNode` using attribute `data-lang`.
@@ -1218,20 +1218,11 @@ declare namespace monaco.editor {
 		withSyncedResources(resources: Uri[]): Promise<T>;
 	}
 
-	export interface IWebWorkerOptions {
+	export interface IInternalWebWorkerOptions {
 		/**
-		 * The AMD moduleId to load.
-		 * It should export a function `create` that should return the exported proxy.
+		 * The worker.
 		 */
-		moduleId: string;
-		/**
-		 * The data to send over when calling create on the module.
-		 */
-		createData?: any;
-		/**
-		 * A label to be used to identify the web worker for debugging purposes.
-		 */
-		label?: string;
+		worker: Worker;
 		/**
 		 * An object that can be used by the web worker to make calls back to the main thread.
 		 */
@@ -4377,6 +4368,17 @@ declare namespace monaco.editor {
 		 */
 		showMarkSectionHeaders?: boolean;
 		/**
+		 * When specified, is used to create a custom section header parser regexp.
+		 * Must contain a match group named 'label' (written as (?<label>.+)) that encapsulates the section header.
+		 * Optionally can include another match group named 'separator'.
+		 * To match multi-line headers like:
+		 *   // ==========
+		 *   // My Section
+		 *   // ==========
+		 * Use a pattern like: ^={3,}\n^\/\/ *(?<label>[^\n]*?)\n^={3,}$
+		 */
+		markSectionHeaderRegex?: string;
+		/**
 		 * Font size of section headers. Defaults to 9.
 		 */
 		sectionHeaderFontSize?: number;
@@ -6909,12 +6911,15 @@ declare namespace monaco.languages {
 	export interface SyntaxNode {
 		startIndex: number;
 		endIndex: number;
+		startPosition: IPosition;
+		endPosition: IPosition;
 	}
 
 	export interface QueryCapture {
 		name: string;
 		text?: string;
 		node: SyntaxNode;
+		encodedLanguageId: number;
 	}
 
 	/**
@@ -7290,6 +7295,7 @@ declare namespace monaco.languages {
 		readonly action?: Command;
 		/**
 		 * Is called the first time an inline completion is shown.
+		 * @deprecated. Use `onDidShow` of the provider instead.
 		*/
 		readonly shownCommand?: Command;
 		/**
@@ -7298,6 +7304,7 @@ declare namespace monaco.languages {
 		*/
 		readonly completeBracketPairs?: boolean;
 		readonly isInlineEdit?: boolean;
+		readonly showInlineEditMenu?: boolean;
 		readonly showRange?: IRange;
 		readonly warning?: InlineCompletionWarning;
 	}

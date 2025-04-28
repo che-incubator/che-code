@@ -247,7 +247,7 @@ export class UtilityProcess extends Disposable {
 		}>({
 			serviceName,
 			env,
-			execArgv,
+			execArgv, // !!! Add `--trace-warnings` for node.js tracing !!!
 			allowLoadingUnsignedLibraries,
 			respondToAuthRequestsFromMainProcess,
 			stdio

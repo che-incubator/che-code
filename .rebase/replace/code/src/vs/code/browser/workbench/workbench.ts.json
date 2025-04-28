@@ -4,8 +4,8 @@
     "by": "const windowURI = URI.parse(mainWindow.location.href);\\\n\\\t\\\tconst callback = this._callbackRoute.replace(', ', '');\\\n\\\t\\\treturn windowURI.with({ path: callback, query: queryParams.join('\\&') });"
   },
   {
-    "from": "private _serverKey: Uint8Array \\| undefined;",
-    "by": "private _serverKey: Uint8Array \\| undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');"
+    "from": "private serverKey: Uint8Array \\| undefined;",
+    "by": "private serverKey: Uint8Array \\| undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');"
   },
   {
     "from": "const secretStorageKeyPath = readCookie('vscode-secret-key-path');",

@@ -457,6 +457,8 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/webContentExtractor/node/sharedWebContentExtractorService.ts" ]]; then
+      apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
