@@ -395,6 +395,8 @@ resolve_conflicts() {
     echo " ➡️  Analyzing conflict for $conflictingFile"
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
+    elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package-lock.json" ]]; then
