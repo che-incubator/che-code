@@ -25,6 +25,9 @@ components:
           secure: true
           protocol: http
           targetPort: 8000
+      env:
+        - name: KUBEDOCK_ENABLED
+          value: "true"
 
   - name: projects
     volume:

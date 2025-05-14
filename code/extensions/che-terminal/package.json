@@ -35,7 +35,8 @@
     "compile": "gulp compile-extension:che-terminal",
     "watch": "gulp watch-extension:che-terminal",
     "vscode:prepublish": "npm run compile",
-    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
+    "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
+    "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
     },
   "dependencies": {
     "fs-extra": "^11.2.0",
