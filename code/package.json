@@ -239,12 +239,6 @@
     },
     "kerberos@2.1.1": {
       "node-addon-api": "7.1.0"
-    },
-    "@vscode/test-web": {
-      "tar-fs": "3.0.8"
-    },
-    "prebuild-install": {
-      "tar-fs": "2.1.2"
     }
   },
   "repository": {
