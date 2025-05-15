@@ -15,7 +15,7 @@ FROM linux-musl as linux-musl-content
 FROM quay.io/eclipse/che-machine-exec:7.56.0 as machine-exec
 
 # https://registry.access.redhat.com/ubi8/ubi
-FROM registry.access.redhat.com/ubi8/ubi:8.9 AS ubi-builder
+FROM registry.access.redhat.com/ubi8/ubi:8.10 AS ubi-builder
 RUN mkdir -p /mnt/rootfs
 RUN yum install --installroot /mnt/rootfs brotli libstdc++ coreutils glibc-minimal-langpack --releasever 8 --setopt install_weak_deps=false --nodocs -y && yum --installroot /mnt/rootfs clean all
 RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
