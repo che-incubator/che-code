@@ -86,6 +86,32 @@ For a main branch:
 $ git diff upstream-code/main main:code
 ```
 
+## License Check for Eclipse Che extensions
+License check tools work for the next extensions:
+1. `che-activity-tracker`
+2. `che-api`
+3. `che-commands`
+4. `che-github-authentication`
+5. `che-port`
+6. `che-remote`
+7. `che-resource-monitor`
+8. `che-terminal`
+
+Dependencies usage restrictions could be checked with the `license:check` command. Example for `che-api`:
+
+```bash
+$ npm --prefix code/extensions/che-api run license:generate
+```
+This command will check the dependencies used in the `che-api` extension and generate a report with the following files:
+ - `prod.md` with the list of production dependencies;
+ - `dev.md` which contains only build and test dependencies;
+ - `problems.md` will be created if some dependencies are not covered with the referenced IP request(CQ).
+
+These files wil be in the `code/extensions/che-api/.deps` directory.
+
+**Note**: Detailed information on how to create the required CQs with
+         [clearlydefined](https://clearlydefined.io/) can be found [here](https://docs.clearlydefined.io/docs/get-involved/adding-sources).
+
 ## Fixing the [`rebase-insiders`](https://github.com/che-incubator/che-code/actions/workflows/rebase-insiders.yml) Workflow?
 Upstream VS Code changes may bring a breakage to Che-Code. In this case, the [`rebase-insiders`](https://github.com/che-incubator/che-code/actions/workflows/rebase-insiders.yml) Workflow run is failed. To fix it, follow the steps below:
 1. Checkout to a new branch, e.g.`fix-rebase`.
