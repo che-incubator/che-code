@@ -13,53 +13,6 @@ name: Pull Request Check
 on: [pull_request]
 
 jobs:
-  check-che-extensions-licenses:
-    runs-on: ubuntu-22.04
-    if: ${{ github.base_ref == 'main' }}
-    steps:
-      - name: Checkout che-code source code
-        uses: actions/checkout@v4
-      - name: Check che-activity-tracker dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-activity-tracker:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-api dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-api:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-commands dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-commands:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-github-authentication dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-github-authentication:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-port dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-port:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-remote dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-remote:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-resource-monitor dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-resource-monitor:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check
-      - name: Check che-terminal dependencies usage restrictions
-        run: |
-          docker run --rm -t \
-            -v $PWD/code/extensions/che-terminal:/workspace/project \
-            quay.io/che-incubator/dash-licenses:next --check          
-
   check-artifacts:
     runs-on: ubuntu-22.04
     steps:

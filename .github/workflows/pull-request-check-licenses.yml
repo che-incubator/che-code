@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2021-2025 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: License Check
+
+# Trigger the workflow on pull request
+on: [pull_request]
+
+jobs:
+  check-che-extensions-licenses:
+    runs-on: ubuntu-22.04
+    if: ${{ github.base_ref == 'main' }}
+    steps:
+      - name: Checkout che-code source code
+        uses: actions/checkout@v4
+      - name: Check che-activity-tracker dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-activity-tracker:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-api dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-api:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-commands dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-commands:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-github-authentication dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-github-authentication:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-port dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-port:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-remote dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-remote:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-resource-monitor dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-resource-monitor:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check
+      - name: Check che-terminal dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-terminal:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check          
