@@ -12,7 +12,7 @@ FROM linux-libc-ubi9 as linux-libc-ubi9-content
 FROM linux-musl as linux-musl-content
 
 # https://quay.io/eclipse/che-machine-exec#^7\.
-FROM quay.io/eclipse/che-machine-exec:7.103.0 as machine-exec
+FROM quay.io/eclipse/che-machine-exec:7.104.0 as machine-exec
 
 # https://registry.access.redhat.com/ubi8/ubi
 FROM registry.access.redhat.com/ubi8/ubi:8.10 AS ubi-builder
