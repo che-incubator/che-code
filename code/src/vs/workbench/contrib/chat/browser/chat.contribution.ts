@@ -143,7 +143,7 @@ configurationRegistry.registerConfiguration({
 		'chat.commandCenter.enabled': {
 			type: 'boolean',
 			markdownDescription: nls.localize('chat.commandCenter.enabled', "Controls whether the command center shows a menu for actions to control Copilot (requires {0}).", '`#window.commandCenter#`'),
-			default: true
+			default: false
 		},
 		'chat.implicitContext.enabled': {
 			type: 'object',
