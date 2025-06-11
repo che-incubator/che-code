@@ -51,15 +51,16 @@ makeArtifactsLockYaml () {
   VSIX_RIPGREP_PREBUILT_VERSION=$(echo "${POST_INSTALL_SCRIPT}" | grep "const VERSION" | cut -d"'" -f 2 )
   VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION=$(echo "${POST_INSTALL_SCRIPT}" | grep "const MULTI_ARCH_LINUX_VERSION" | cut -d"'" -f 2 )
 
-  PLATFORMS=("ppc64le" "s390x" "x86_64")
+  PLATFORMS=("ppc64le" "s390x" "x86_64" "aarch64")
   for PLATFORM in "${PLATFORMS[@]}"; do
     case $PLATFORM in
       'ppc64le') RG_ARCH_SUFFIX='powerpc64le-unknown-linux-gnu';;
       's390x') RG_ARCH_SUFFIX='s390x-unknown-linux-gnu';;
       'x86_64') RG_ARCH_SUFFIX='x86_64-unknown-linux-musl';;
+      'aarch64') RG_ARCH_SUFFIX='aarch64-unknown-linux-musl';;
     esac
     case $PLATFORM in
-      'ppc64le' | 's390x') RG_VERSION=${VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION};;
+      'ppc64le' | 'aarch64' | 's390x') RG_VERSION=${VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION};;
       'x86_64') RG_VERSION="${VSIX_RIPGREP_PREBUILT_VERSION}";;
     esac
 
