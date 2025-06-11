@@ -60,8 +60,8 @@ makeArtifactsLockYaml () {
       'aarch64') RG_ARCH_SUFFIX='aarch64-unknown-linux-musl';;
     esac
     case $PLATFORM in
-      'ppc64le' | 'aarch64' | 's390x') RG_VERSION=${VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION};;
-      'x86_64') RG_VERSION="${VSIX_RIPGREP_PREBUILT_VERSION}";;
+      'ppc64le' | 's390x') RG_VERSION=${VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION};;
+      'x86_64' | 'aarch64') RG_VERSION="${VSIX_RIPGREP_PREBUILT_VERSION}";;
     esac
 
     FILENAME="ripgrep-${RG_VERSION}-${RG_ARCH_SUFFIX}.tar.gz"
