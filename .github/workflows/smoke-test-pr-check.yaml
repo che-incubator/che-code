@@ -78,12 +78,12 @@ jobs:
         run: |
           docker images
 
-      - name: Cleanup docker images
+      - name: Clean up to save disk space
         run: |
+          df -h
+
           docker system prune -af
 
-      - name: Disk free
-        run: |
           df -h
 
       - name: Start minikube
