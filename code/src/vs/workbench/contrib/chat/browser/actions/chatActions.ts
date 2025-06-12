@@ -709,7 +709,10 @@ registerAction2(class ToggleCopilotControl extends ToggleTitleBarConfigAction {
 			'chat.commandCenter.enabled',
 			localize('toggle.chatControl', 'Copilot Controls'),
 			localize('toggle.chatControlsDescription', "Toggle visibility of the Copilot Controls in title bar"), 5, false,
-			ChatContextKeys.supported
+			ContextKeyExpr.and(
+				ChatContextKeys.supported,
+				ContextKeyExpr.has('config.chat.commandCenter.enabled')
+			)
 		);
 	}
 });
