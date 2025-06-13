@@ -1,3 +1,4 @@
 {
-  "git.defaultCloneDirectory": "/projects/"
+  "git.defaultCloneDirectory": "/projects/",
+  "chat.commandCenter.enabled": false
 }
