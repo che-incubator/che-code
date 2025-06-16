@@ -3,6 +3,12 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/549
+
+- code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/546
 
 - code/package.json 
