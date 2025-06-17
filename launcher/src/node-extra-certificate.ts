@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+import { env } from 'process';
 import * as fs from './fs-extra.js';
 
 export const NODE_EXTRA_CERTIFICATE_DIR = '/tmp/node-extra-certificates';
@@ -27,6 +28,11 @@ export class NodeExtraCertificate {
    *****************************************************************************************************************/
   async configure(): Promise<void> {
     console.log('# Configuring Node extra certificates...');
+
+    if (env.NODE_EXTRA_CA_CERTS) {
+      console.log(`  > NODE_EXTRA_CA_CERTS environment variable is already defined, skip this step`);
+      return;
+    }
 
     if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
       console.log(`  > File ${NODE_EXTRA_CERTIFICATE} is already exist, skip this step`);

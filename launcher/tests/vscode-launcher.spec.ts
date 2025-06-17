@@ -179,6 +179,52 @@ describe('Test VS Code launcher:', () => {
     expect(env.NODE_EXTRA_CA_CERTS).not.toBeDefined();
   });
 
+  test('should launch VS Code and do not overwrite existing NODE_EXTRA_CA_CERTS environment variable', async () => {
+    env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
+
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.PROJECT_SOURCE = '/tmp/projects/sample-project';
+    env.SHELL = '/bin/testshell';
+
+    env.NODE_EXTRA_CA_CERTS = '/tmp/user.crt';
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    const spawnMock = jest.fn();
+    (spawn as jest.Mock).mockImplementation(spawnMock);
+
+    spawnMock.mockImplementation(() => ({
+      on: jest.fn(),
+      stdout: {
+        on: jest.fn(),
+      },
+      stderr: {
+        on: jest.fn(),
+      },
+    }));
+
+    const launcher = new VSCodeLauncher();
+    await launcher.launch();
+
+    expect(pathExistsMock).not.toBeCalled();
+
+    expect(spawnMock).toBeCalledWith('/tmp/vscode-nodejs-runtime/node', [
+      'out/server-main.js',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      '3100',
+      '--without-connection-token',
+      '--default-folder',
+      '/tmp/projects/sample-project',
+    ]);
+
+    expect(env.NODE_EXTRA_CA_CERTS).toBe('/tmp/user.crt');
+  });
+
   test('should fail when trying to use env.PROJECT_SOURCE but the variable is not set', async () => {
     env.VSCODE_NODEJS_RUNTIME_DIR = '/tmp/vscode-nodejs-runtime';
     env.PROJECTS_ROOT = '/tmp/projects';

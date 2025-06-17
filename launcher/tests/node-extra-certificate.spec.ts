@@ -8,11 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+import { env } from 'process';
 import * as fs from '../src/fs-extra';
 import { NodeExtraCertificate } from '../src/node-extra-certificate';
 
 describe('Test generating Node Extra Certificate:', () => {
   beforeEach(() => {
+    delete env.NODE_EXTRA_CA_CERTS;
+
     Object.assign(fs, {
       pathExists: jest.fn(),
       isFile: jest.fn(),
@@ -37,6 +40,19 @@ describe('Test generating Node Extra Certificate:', () => {
 
     expect(pathExistsMock).toBeCalledTimes(1);
     expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
+  });
+
+  test('should skip if NODE_EXTRA_CA_CERTS environment variable is already defined', async () => {
+    env.NODE_EXTRA_CA_CERTS = '/tmp/user.crt';
+
+    const pathExistsMock = jest.fn();
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+    });
+
+    await new NodeExtraCertificate().configure();
+
+    expect(pathExistsMock).not.toBeCalled();
   });
 
   test('should not create a bundle if nothing found', async () => {
