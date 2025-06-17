@@ -73,7 +73,7 @@ describe('Test generating Node Extra Certificate:', () => {
 
     await new NodeExtraCertificate().configure();
 
-    expect(pathExistsMock).toBeCalledTimes(3);
+    expect(pathExistsMock).toBeCalledTimes(4);
 
     expect(pathExistsMock).toBeCalledWith('/tmp/node-extra-certificates/ca.crt');
     expect(pathExistsMock).toBeCalledWith('/tmp/che/secret/ca.crt');
@@ -120,7 +120,7 @@ describe('Test generating Node Extra Certificate:', () => {
 
     await new NodeExtraCertificate().configure();
 
-    expect(pathExistsMock).toBeCalledTimes(3);
+    expect(pathExistsMock).toBeCalledTimes(4);
     expect(mkdirMock).toBeCalled();
     expect(writeFileMock).toBeCalledTimes(1);
 
@@ -170,14 +170,14 @@ describe('Test generating Node Extra Certificate:', () => {
 
     await new NodeExtraCertificate().configure();
 
-    expect(pathExistsMock).toBeCalledTimes(3);
+    expect(pathExistsMock).toBeCalledTimes(4);
     expect(mkdirMock).toBeCalled();
     expect(writeFileMock).toBeCalledTimes(1);
 
     expect(test).toBe('first-certificate\nsecond-certificate\n');
   });
 
-  test('should create a bundle containing custom Che certificate and all public certificates', async () => {
+  test('should create a bundle containing tls-ca-bundle.pem certificate, custom Che certificate and all public certificates', async () => {
     const pathExistsMock = jest.fn();
     const readdirMock = jest.fn();
     const isFileMock = jest.fn();
@@ -195,7 +195,11 @@ describe('Test generating Node Extra Certificate:', () => {
     });
 
     pathExistsMock.mockImplementation(async (path: string) => {
-      return '/tmp/che/secret/ca.crt' === path || '/public-certs' === path;
+      return (
+        '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem' === path ||
+        '/tmp/che/secret/ca.crt' === path ||
+        '/public-certs' === path
+      );
     });
 
     readdirMock.mockImplementation(async (dir) => {
@@ -212,6 +216,8 @@ describe('Test generating Node Extra Certificate:', () => {
 
     readFileMock.mockImplementation(async (file: string) => {
       switch (file) {
+        case '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem':
+          return 'tls-ca-bundle';
         case '/tmp/che/secret/ca.crt':
           return 'custom-che-certificate';
         case '/public-certs/first-key':
@@ -230,10 +236,12 @@ describe('Test generating Node Extra Certificate:', () => {
 
     await new NodeExtraCertificate().configure();
 
-    expect(pathExistsMock).toBeCalledTimes(3);
+    expect(pathExistsMock).toBeCalledTimes(4);
     expect(mkdirMock).toBeCalled();
     expect(writeFileMock).toBeCalledTimes(1);
 
-    expect(test).toBe('custom-che-certificate\nfirst-certificate\nsecond-certificate\nthird-certificate\n');
+    expect(test).toBe(
+      'tls-ca-bundle\ncustom-che-certificate\nfirst-certificate\nsecond-certificate\nthird-certificate\n'
+    );
   });
 });

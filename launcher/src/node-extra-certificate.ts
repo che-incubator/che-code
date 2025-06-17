@@ -15,6 +15,7 @@ export const NODE_EXTRA_CERTIFICATE_DIR = '/tmp/node-extra-certificates';
 export const NODE_EXTRA_CERTIFICATE = `${NODE_EXTRA_CERTIFICATE_DIR}/ca.crt`;
 
 const CHE_CERTIFICATE = '/tmp/che/secret/ca.crt';
+const TLS_CA_BUNDLE = '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem';
 const PUBLIC_CERTS_DIR = '/public-certs';
 
 export class NodeExtraCertificate {
@@ -41,7 +42,15 @@ export class NodeExtraCertificate {
 
     let data = '';
 
-    // Check if we have a custom Che CA certificate
+    // Check if there is /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem certificate
+    if (await fs.pathExists(TLS_CA_BUNDLE)) {
+      console.log(`  > found ${TLS_CA_BUNDLE}`);
+
+      let content = await fs.readFile(TLS_CA_BUNDLE);
+      data += content ? (content.endsWith('\n') ? content : (content += '\n')) : '';
+    }
+
+    // DEPRECATED :: Check if there is custom Che CA certificate
     if (await fs.pathExists(CHE_CERTIFICATE)) {
       console.log(`  > found ${CHE_CERTIFICATE}`);
 
@@ -49,7 +58,7 @@ export class NodeExtraCertificate {
       data += content ? (content.endsWith('\n') ? content : (content += '\n')) : '';
     }
 
-    // Check if we have public certificates in /public-certs
+    // DEPRECATED :: Check if there are public certificates in /public-certs
     if (await fs.pathExists(PUBLIC_CERTS_DIR)) {
       const dir = await fs.readdir(PUBLIC_CERTS_DIR);
 
