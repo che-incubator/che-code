@@ -44,7 +44,7 @@ export class VSCodeLauncher {
       params.push('--default-folder', env.PROJECT_SOURCE);
     }
 
-    if (await fs.pathExists(NODE_EXTRA_CERTIFICATE)) {
+    if (!env.NODE_EXTRA_CA_CERTS && (await fs.pathExists(NODE_EXTRA_CERTIFICATE))) {
       env.NODE_EXTRA_CA_CERTS = NODE_EXTRA_CERTIFICATE;
     }
 
