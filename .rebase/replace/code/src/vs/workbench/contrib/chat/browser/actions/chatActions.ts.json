@@ -1,0 +1,6 @@
+[
+    {
+      "from": "localize('toggle.chatControlsDescription', \"Toggle visibility of the Copilot Controls in title bar\"), 5, false,\n\t\t\tChatContextKeys.supported",
+      "by": "localize('toggle.chatControlsDescription', \\\"Toggle visibility of the Copilot Controls in title bar\\\"), 5, false,\n\t\t\tContextKeyExpr.and(\n\t\t\t\tChatContextKeys.supported,\n\t\t\t\tContextKeyExpr.has('config.chat.commandCenter.enabled')\n\t\t\t)"
+    }
+  ]
