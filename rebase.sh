@@ -85,6 +85,33 @@ apply_replace() {
 
 }
 
+apply_multi_line_replace() {
+  local -r filename=$1
+  local -r replaceSettings=".rebase/replace/$filename.json"
+  
+  local -r replaceCommands=$(jq -c '.[]' "${replaceSettings}")
+  
+  IFS=$'\n'
+  local from
+  local by
+  for replaceCommand in $replaceCommands; do
+    # need to replace from by the by
+    from=$(jq -n "$replaceCommand" | jq -r '.from')
+    by=$(jq -n "$replaceCommand" | jq -r '.by')
+
+    cp "$filename" "$filename.bak"
+    perl -0777 -pe "s|\Q$from\E|$by|g" "$filename.bak" > "$filename"
+    if diff "$filename" "$filename.bak" &> /dev/null; then
+      echo "Unable to perform the replace. Value is not present in the resulting file"
+      echo "Wanted to check ${from}"
+      echo "File content is"
+      cat "${filename}"
+      exit 1
+    fi
+    rm "$filename.bak"
+  done
+}
+
 
 # Apply changes on code/package.json file
 apply_code_package_changes() {
@@ -461,6 +488,8 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/webContentExtractor/node/sharedWebContentExtractorService.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts" ]]; then
+      apply_multi_line_replace "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
