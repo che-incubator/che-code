@@ -14,7 +14,6 @@ const dirs = [
 	'extensions/che-api',
 	'extensions/che-commands',
 	'extensions/che-port',
-	'extensions/che-remote',
 	'extensions/che-resource-monitor',
 	'extensions/che-terminal',
 	'extensions/che-github-authentication',

@@ -13,7 +13,7 @@ import { Iterable } from '../../../base/common/iterator.js';
 import { Disposable, DisposableMap, DisposableStore, toDisposable } from '../../../base/common/lifecycle.js';
 import { revive } from '../../../base/common/marshalling.js';
 import { StopWatch } from '../../../base/common/stopwatch.js';
-import { assertType } from '../../../base/common/types.js';
+import { assertType, isDefined } from '../../../base/common/types.js';
 import { URI } from '../../../base/common/uri.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { Location } from '../../../editor/common/languages.js';
@@ -255,6 +255,7 @@ class ChatAgentResponseStream {
 						part instanceof extHostTypes.ChatResponseConfirmationPart ||
 						part instanceof extHostTypes.ChatResponseCodeCitationPart ||
 						part instanceof extHostTypes.ChatResponseMovePart ||
+						part instanceof extHostTypes.ChatResponseExtensionsPart ||
 						part instanceof extHostTypes.ChatResponseProgressPart2
 					) {
 						checkProposedApiEnabled(that._extension, 'chatParticipantAdditions');
@@ -409,8 +410,15 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 		const { request, location, history } = await this._createRequest(requestDto, context, detector.extension);
 
 		const model = await this.getModelForRequest(request, detector.extension);
-		const includeInteractionId = isProposedApiEnabled(detector.extension, 'chatParticipantPrivate');
-		const extRequest = typeConvert.ChatAgentRequest.to(includeInteractionId ? request : { ...request, requestId: '' }, location, model, this.getDiagnosticsWhenEnabled(detector.extension), this.getToolsForRequest(detector.extension, request));
+		const extRequest = typeConvert.ChatAgentRequest.to(
+			request,
+			location,
+			model,
+			this.getDiagnosticsWhenEnabled(detector.extension),
+			this.getToolsForRequest(detector.extension, request),
+			this.getTools2ForRequest(detector.extension, request),
+			detector.extension,
+			this._logService);
 
 		return detector.provider.provideParticipantDetection(
 			extRequest,
@@ -494,13 +502,15 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 			stream = new ChatAgentResponseStream(agent.extension, request, this._proxy, this._commands.converter, sessionDisposables);
 
 			const model = await this.getModelForRequest(request, agent.extension);
-			const includeInteractionId = isProposedApiEnabled(agent.extension, 'chatParticipantPrivate');
 			const extRequest = typeConvert.ChatAgentRequest.to(
-				includeInteractionId ? request : { ...request, requestId: '' },
+				request,
 				location,
 				model,
 				this.getDiagnosticsWhenEnabled(agent.extension),
-				this.getToolsForRequest(agent.extension, request)
+				this.getToolsForRequest(agent.extension, request),
+				this.getTools2ForRequest(agent.extension, request),
+				agent.extension,
+				this._logService
 			);
 			inFlightRequest = { requestId: requestDto.requestId, extRequest };
 			this._inFlightRequests.add(inFlightRequest);
@@ -560,12 +570,29 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 		return this._diagnostics.getDiagnostics();
 	}
 
-	private getToolsForRequest(extension: IExtensionDescription, request: Dto<IChatAgentRequest>) {
+	private getTools2ForRequest(extension: IExtensionDescription, request: Dto<IChatAgentRequest>): Map<string, boolean> {
+		if (!request.userSelectedTools2) {
+			return new Map();
+		}
+		const result = new Map<string, boolean>();
+		for (const tool of this._tools.getTools(extension)) {
+			if (typeof request.userSelectedTools2[tool.name] === 'boolean') {
+				result.set(tool.name, request.userSelectedTools2[tool.name]);
+			}
+		}
+		return result;
+	}
+
+	private getToolsForRequest(extension: IExtensionDescription, request: Dto<IChatAgentRequest>): vscode.ChatRequestToolSelection | undefined {
 		if (!isNonEmptyArray(request.userSelectedTools)) {
 			return undefined;
 		}
 		const selector = new Set(request.userSelectedTools);
-		return this._tools.getTools(extension).filter(candidate => selector.has(candidate.name));
+		const tools = this._tools.getTools(extension).filter(candidate => selector.has(candidate.name));
+		return {
+			tools,
+			isExclusive: request.toolSelectionIsExclusive,
+		};
 	}
 
 	private async prepareHistoryTurns(extension: Readonly<IRelaxedExtensionDescription>, agentId: string, context: { history: IChatAgentHistoryEntryDto[] }): Promise<(vscode.ChatRequestTurn | vscode.ChatResponseTurn)[]> {
@@ -579,12 +606,14 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 
 			// REQUEST turn
 			const varsWithoutTools = h.request.variables.variables
-				.filter(v => !v.isTool)
-				.map(v => typeConvert.ChatPromptReference.to(v, this.getDiagnosticsWhenEnabled(extension)));
+				.filter(v => v.kind !== 'tool')
+				.map(v => typeConvert.ChatPromptReference.to(v, this.getDiagnosticsWhenEnabled(extension), this._logService))
+				.filter(isDefined);
 			const toolReferences = h.request.variables.variables
-				.filter(v => v.isTool)
+				.filter(v => v.kind === 'tool')
 				.map(typeConvert.ChatLanguageModelToolReference.to);
-			const turn = new extHostTypes.ChatRequestTurn(h.request.message, h.request.command, varsWithoutTools, h.request.agentId, toolReferences);
+			const editedFileEvents = isProposedApiEnabled(extension, 'chatParticipantPrivate') ? h.request.editedFileEvents : undefined;
+			const turn = new extHostTypes.ChatRequestTurn(h.request.message, h.request.command, varsWithoutTools, h.request.agentId, toolReferences, editedFileEvents);
 			res.push(turn);
 
 			// RESPONSE turn
@@ -732,7 +761,7 @@ class ExtHostChatAgent {
 	private _supportIssueReporting: boolean | undefined;
 	private _agentVariableProvider?: { provider: vscode.ChatParticipantCompletionItemProvider; triggerCharacters: string[] };
 	private _welcomeMessageProvider?: vscode.ChatWelcomeMessageProvider | undefined;
-	private _welcomeMessageContent?: vscode.ChatWelcomeMessageContent | undefined;
+	private _additionalWelcomeMessage?: string | vscode.MarkdownString | undefined;
 	private _titleProvider?: vscode.ChatTitleProvider | undefined;
 	private _requester: vscode.ChatRequesterInformation | undefined;
 	private _pauseStateEmitter = new Emitter<vscode.ChatParticipantPauseStateEvent>();
@@ -828,10 +857,7 @@ class ExtHostChatAgent {
 					helpTextPostfix: (!this._helpTextPostfix || typeof this._helpTextPostfix === 'string') ? this._helpTextPostfix : typeConvert.MarkdownString.from(this._helpTextPostfix),
 					supportIssueReporting: this._supportIssueReporting,
 					requester: this._requester,
-					welcomeMessageContent: this._welcomeMessageContent && {
-						...this._welcomeMessageContent,
-						message: typeConvert.MarkdownString.from(this._welcomeMessageContent.message),
-					}
+					additionalWelcomeMessage: (!this._additionalWelcomeMessage || typeof this._additionalWelcomeMessage === 'string') ? this._additionalWelcomeMessage : typeConvert.MarkdownString.from(this._additionalWelcomeMessage),
 				});
 				updateScheduled = false;
 			});
@@ -928,14 +954,14 @@ class ExtHostChatAgent {
 				checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
 				return that._welcomeMessageProvider;
 			},
-			set welcomeMessageContent(v) {
+			set additionalWelcomeMessage(v) {
 				checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
-				that._welcomeMessageContent = v;
+				that._additionalWelcomeMessage = v;
 				updateMetadataSoon();
 			},
-			get welcomeMessageContent() {
+			get additionalWelcomeMessage() {
 				checkProposedApiEnabled(that.extension, 'defaultChatParticipant');
-				return that._welcomeMessageContent;
+				return that._additionalWelcomeMessage;
 			},
 			set titleProvider(v) {
 				checkProposedApiEnabled(that.extension, 'defaultChatParticipant');

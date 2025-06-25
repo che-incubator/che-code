@@ -9,14 +9,6 @@ https://github.com/che-incubator/che-code/pull/549
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/546
-
-- code/package.json 
-- code/build/package.json
-- code/remote/package.json
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/545
 
 - code/build/package.json
