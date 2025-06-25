@@ -32,7 +32,6 @@ const compilations = [
     'extensions/che-api/tsconfig.json',
     'extensions/che-commands/tsconfig.json',
     'extensions/che-port/tsconfig.json',
-    'extensions/che-remote/tsconfig.json',
     'extensions/che-resource-monitor/tsconfig.json',
     'extensions/che-terminal/tsconfig.json',
     'extensions/che-telemetry/tsconfig.json',
