@@ -50,7 +50,7 @@ export abstract class BaseEdit<T extends BaseReplacement<T> = BaseReplacement<an
 	 * Normalizes the edit by removing empty replacements and joining touching replacements (if the replacements allow joining).
 	 * Two edits have an equal normalized edit if and only if they have the same effect on any input.
 	 *
-	 * ![](./docs/BaseEdit_normalize.dio.svg)
+	 * ![](https://raw.githubusercontent.com/microsoft/vscode/refs/heads/main/src/vs/editor/common/core/edits/docs/BaseEdit_normalize.drawio.png)
 	 *
 	 * Invariant:
 	 * ```
@@ -92,7 +92,7 @@ export abstract class BaseEdit<T extends BaseReplacement<T> = BaseReplacement<an
 	/**
 	 * Combines two edits into one with the same effect.
 	 *
-	 * ![](./docs/BaseEdit_compose.dio.svg)
+	 * ![](https://raw.githubusercontent.com/microsoft/vscode/refs/heads/main/src/vs/editor/common/core/edits/docs/BaseEdit_compose.drawio.png)
 	 *
 	 * Invariant:
 	 * ```
