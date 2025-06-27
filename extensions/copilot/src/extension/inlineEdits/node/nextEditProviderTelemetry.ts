@@ -193,7 +193,7 @@ export class LlmNESTelemetryBuilder extends Disposable {
 			let recording: ITelemetryRecording | undefined;
 			if (this._debugRecorder && this._requestBookmark) {
 				const entries = this._debugRecorder.getRecentLog();
-				const entriesSize = JSON.stringify(entries).length;
+				const entriesSize = JSON.stringify(entries)?.length || 0;
 				recording = {
 					entries: entriesSize > 200 * 1024 ? undefined : entries,
 					entriesSize: entriesSize,
