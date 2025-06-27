@@ -226,12 +226,16 @@ export class UserFeedbackService implements IUserFeedbackService {
 			};
 
 			// Copy actions have a copiedCharacters/Lines property since this includes manual copying which can be partial
+			let compType: 'full' | 'partial' = 'full';
 			if (e.action.kind === 'copy') {
 				measurements = {
 					...measurements,
 					copiedCharacters: e.action.copiedCharacters,
 					copiedLines: e.action.copiedLines,
 				};
+				if (e.action.copiedCharacters !== e.action.totalCharacters) {
+					compType = 'partial';
+				}
 			}
 
 			// If there is a document and selection, include cursor location
@@ -251,6 +255,7 @@ export class UserFeedbackService implements IUserFeedbackService {
 					participant: agentId,
 					languageId: e.action.languageId ?? '',
 					modelId: e.action.modelId ?? '',
+					comp_type: compType
 				},
 				measurements,
 				e.action.kind === 'copy' ? 'conversation.acceptedCopy' : 'conversation.acceptedInsert'
