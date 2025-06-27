@@ -1954,6 +1954,11 @@
 				"category": "Developer"
 			},
 			{
+				"command": "github.copilot.debug.showChatLogView",
+				"title": "%github.copilot.command.showChatLogView%",
+				"category": "Developer"
+			},
+			{
 				"command": "github.copilot.terminal.explainTerminalSelection",
 				"title": "%github.copilot.command.explainTerminalSelection%",
 				"category": "GitHub Copilot"
@@ -3432,7 +3437,7 @@
 					"id": "copilot-chat",
 					"name": "Copilot Chat Debug",
 					"icon": "assets/debug-icon.svg",
-					"visibility": "hidden"
+					"when": "github.copilot.chat.showLogView"
 				}
 			]
 		},
