@@ -1,0 +1,134 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+import { IDisposable } from 'monaco-editor';
+import { ICopilotTokenStore } from '../../authentication/common/copilotTokenStore';
+import { BaseGHTelemetrySender } from './ghTelemetrySender';
+import { BaseMsftTelemetrySender } from './msftTelemetrySender';
+import { ITelemetryService, TelemetryDestination, TelemetryEventMeasurements, TelemetryEventProperties } from './telemetry';
+
+export class BaseTelemetryService implements ITelemetryService {
+	declare readonly _serviceBrand: undefined;
+	// Properties that are applied to all telemetry events (currently only used by the exp service
+	// TODO @lramos15 extend further to include more
+	private _sharedProperties: Record<string, string> = {};
+	private _disposables: IDisposable[] = [];
+	constructor(
+		protected readonly _tokenStore: ICopilotTokenStore,
+		protected readonly _microsoftTelemetrySender: BaseMsftTelemetrySender,
+		protected readonly _ghTelemetrySender: BaseGHTelemetrySender,
+	) {
+		this._disposables.push(this._microsoftTelemetrySender, this._ghTelemetrySender);
+		this._disposables.push(_tokenStore.onDidStoreUpdate(() => {
+			const token = _tokenStore.copilotToken;
+			if (!token) {
+				return;
+			}
+			/* __GDPR__
+				"token" : {
+					"owner": "digitarald",
+					"comment": "Copilot token received from the service.",
+					"chatEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Indicates if the token enabled chat." },
+					"snippyEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "If the block setting for public suggestions is enabled." },
+					"telemetryEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "If the subscription has telemetry enabled." }
+				}
+			*/
+			this.sendMSFTTelemetryEvent('token', undefined, {
+				chatEnabled: token.isChatEnabled() ? 1 : 0,
+				snippyEnabled: token.isPublicSuggestionsEnabled() ? 1 : 0,
+				telemetryEnabled: token.isTelemetryEnabled() ? 1 : 0
+			});
+		}));
+	}
+
+	dispose(): void {
+		this._disposables.forEach(d => d.dispose());
+	}
+
+	sendMSFTTelemetryEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		this.sendTelemetryEvent(eventName, { github: false, microsoft: true }, properties, measurements);
+	}
+
+	sendMSFTTelemetryErrorEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		this.sendTelemetryErrorEvent(eventName, { github: false, microsoft: true }, properties, measurements);
+	}
+
+	sendGHTelemetryEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		this.sendTelemetryEvent(eventName, { github: true, microsoft: false }, properties, measurements);
+	}
+
+	sendGHTelemetryErrorEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		this.sendTelemetryErrorEvent(eventName, { github: true, microsoft: false }, properties, measurements);
+	}
+
+	sendGHTelemetryException(maybeError: unknown, origin: string) {
+		this._ghTelemetrySender.sendExceptionTelemetry(maybeError, origin);
+	}
+
+	sendEnhancedGHTelemetryEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		properties = { ...properties, ...this._sharedProperties };
+		this._ghTelemetrySender.sendEnhancedTelemetryEvent(eventName, properties, measurements);
+	}
+	sendEnhancedGHTelemetryErrorEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		properties = { ...properties, ...this._sharedProperties };
+		this._ghTelemetrySender.sendEnhancedTelemetryErrorEvent(eventName, properties, measurements);
+	}
+
+	sendInternalMSFTTelemetryEvent(eventName: string, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		properties = { ...properties, ...this._sharedProperties };
+		this._microsoftTelemetrySender.sendInternalTelemetryEvent(eventName, properties, measurements);
+	}
+
+	private _getEventName(eventName: string, github: boolean | { eventNamePrefix: string }): string {
+		let prefix = '';
+		if (typeof github === 'object') {
+			prefix = github.eventNamePrefix;
+		}
+		return prefix + eventName;
+	}
+
+	sendTelemetryEvent(eventName: string, destination: TelemetryDestination, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		properties = { ...properties, ...this._sharedProperties };
+		if (destination.github) {
+			this._ghTelemetrySender.sendTelemetryEvent(this._getEventName(eventName, destination.github), properties, measurements);
+		}
+
+		if (destination.microsoft) {
+			this._microsoftTelemetrySender.sendTelemetryEvent(eventName, properties, measurements);
+		}
+	}
+
+	sendTelemetryErrorEvent(eventName: string, destination: TelemetryDestination, properties?: TelemetryEventProperties | undefined, measurements?: TelemetryEventMeasurements | undefined): void {
+		properties = { ...properties, ...this._sharedProperties };
+		if (destination.github) {
+			this._ghTelemetrySender.sendTelemetryErrorEvent(this._getEventName(eventName, destination.github), properties, measurements);
+		}
+
+		if (destination.microsoft) {
+			this._microsoftTelemetrySender.sendTelemetryErrorEvent(eventName, properties, measurements);
+		}
+	}
+
+	setSharedProperty(name: string, value: string): void {
+		/* __GDPR__
+			"query-expfeature" : {
+				"ABExp.queriedFeature": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+			}
+		*/
+		/* __GDPR__
+			"call-tas-error" : {
+				"errortype": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth"}
+			}
+		*/
+		this._sharedProperties[name] = value;
+	}
+
+	postEvent(eventName: string, props: Map<string, string>): void {
+		for (const [key, value] of Object.entries(this._sharedProperties)) {
+			props.set(key, value);
+		}
+		this._microsoftTelemetrySender.postEvent(eventName, props);
+	}
+}

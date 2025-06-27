@@ -1,0 +1,33 @@
+.DS_Store
+.vscode-test/
+.vscode-test-web/
+node_modules/
+dist/
+
+# created by simulation
+.simulation
+
+# stores wasm and other build files
+.build
+
+# created by python scripts
+__pycache__/
+.venv*
+.ruff_cache/
+*.egg-info/
+
+# Secret token files
+/.env
+*.token
+
+# Test infra
+test/simulation/language/harness/
+
+# localization files are generated in the build
+l10n/
+
+# vitest --coverage
+coverage/
+
+# Base cache database (GC mode)
+test/simulation/cache/_base.sqlite

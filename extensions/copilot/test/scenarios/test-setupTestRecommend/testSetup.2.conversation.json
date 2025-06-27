@@ -1,0 +1,17 @@
+[
+  {
+    "name": "pythonFlaskApp",
+    "question": "@workspace /setupTests",
+    "keywords": {
+      "anyOf": [
+        "pytest",
+        "unittest"
+      ]
+    },
+    "files": [
+      "app.py",
+      "requirements.txt",
+      "setup.py"
+    ]
+  }
+]

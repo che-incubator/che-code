@@ -1,0 +1,30 @@
+[
+	{
+		"name": "notebook (generate) [inline] [markdown] - edit markdown cell should support code example",
+		"requests": [
+			"b25bdd1d4ef3cfcca40ec9b0796e8226e13407d7b73bbe15b7f307d6e226de5d",
+			"ce34f7013abcf24b423c18177d0eb920be96b13b2ca0c7ead444cb42a3b09000"
+		]
+	},
+	{
+		"name": "notebook (generate) [inline] [python] - create a model to predict the likelihood of a flight being delayed",
+		"requests": [
+			"7fb48e32034195f57a6996b4f53b4477263a78278ff5683eef6ec3beb666bac3",
+			"a38bf819ae260fa08a863c01152fd3b8baee19cef4949cd6aae1f896d002f032"
+		]
+	},
+	{
+		"name": "notebook (generate) [inline] [python] - How many items were orderd in total?",
+		"requests": [
+			"4f0613d4e5a79dcee7dc306751ab7b1aabd6f7e23d287b7c1eb84aa82b94dd4b",
+			"abd2e9f197f6ced5641c464ef56452707a792438de7808e76a227fe128a18249"
+		]
+	},
+	{
+		"name": "notebook (generate) [inline] [python] - Which was the most-ordered item",
+		"requests": [
+			"5ead18d46607476b95fe719af1e431dc330daa920a77c2cbcc88a30b6e3cc569",
+			"87bd63683e37521fc14cb581839a8f66067265a0c9f5b41702a5d01f00fef5cb"
+		]
+	}
+]

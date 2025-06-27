@@ -1,0 +1,50 @@
+[
+	{
+		"name": "fix (roslyn) [inline] [csharp] - (AML-10-28) field is never used",
+		"requests": [
+			"e4a1b176f8340f83c0f32a37c5108b9f016fd69b1cfd9fffdb92ffb954927b0e"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - (AML-10-57) call is not awaited, execution continues",
+		"requests": [
+			"a00637b6919d949ce86bba7309d998430b57a597e60ac7920775043880c674e7"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - (AML-17-3523) has same name as",
+		"requests": [
+			"cb76fcdd5bacea2ccd162414d3778ebef7421fbed838922f6a0bf3ad55c6a7e3"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - does not contain a definition",
+		"requests": [
+			"32a99f8ae02a9073084d9405cba12b88bfa461d26d8697b44bd01af489a2d22a"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - does not exist",
+		"requests": [
+			"6f03b207d7f89f1fc5ac238eaa279fba7c43a12a6e026315af51a375bf9c7434"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - missing using directive",
+		"requests": [
+			"c140e551e9b32d8692978708cdeda45a6dda7077d4d4bdd96c0a94439354a7f8"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - no argument given",
+		"requests": [
+			"a4a88c5ad0ad8de039764c1c47b846446397a2ddc0bed6d0fd75922fa0285bfc"
+		]
+	},
+	{
+		"name": "fix (roslyn) [inline] [csharp] - semi-colon expected",
+		"requests": [
+			"f08640d2682d7e226d6151ad04dc8dc3e9a4e86e948f4313e0ae9bdda8051e27"
+		]
+	}
+]

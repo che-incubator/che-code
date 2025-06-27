@@ -1,0 +1,4 @@
+path_classifiers:
+  tests:
+    - "test/simulation/fixtures/edit-asyncawait-4151/*.ts"
+    - "test/simulation/fixtures/edit-slice-4149/*.ts"

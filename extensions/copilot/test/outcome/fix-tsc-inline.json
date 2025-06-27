@@ -1,0 +1,218 @@
+[
+	{
+		"name": "fix (TSC) [inline] [typescript] - (AML-10-31) Parameter data implicitly has an any type.",
+		"requests": [
+			"11ec7cb34396e8630b0238fa424851cd883c8089fd54d40d876d47a8395958a7"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - 22222 Error 2322 - type undefined is not assignable to type",
+		"requests": [
+			"37fe71c209640fff794ef050f628a509494e6eaed6ac5f3a99fae488861c2ebf"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - can not assign to parameter of type",
+		"requests": [
+			"1dd39b6053b58566a2833e9c292d585202d3f40801d516084d2f5173ca21d2f9"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - declaration or statement expected",
+		"requests": [
+			"b5bc25882762aca18845661e6f68baa408367e8211f1792c3f7fbcfd98efe50f"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - duplicate identifier",
+		"requests": [
+			"e96f3d371a4b4ef6f449f7501f9af223eab2540cbf28297bf58dc18cdf7864b6"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 1015 - parameter cannot have question mark and initializer, with corresponding diagnostics",
+		"requests": [
+			"92edb7968463f795e6b9daa892a6e81c3a46ccb785f06fcc7af6c3233fd1f085"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 1015 - parameter cannot have question mark and initializer, without corresponding diagnostics",
+		"requests": [
+			"92edb7968463f795e6b9daa892a6e81c3a46ccb785f06fcc7af6c3233fd1f085"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 18047 - (AML-10-64) possibly null",
+		"requests": [
+			"066a43c35f0a56031f2d3454aeb262fdf591b968a921087571e4f4a3c76db93d"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 18047 - (AML-8-1) property does not exist on type window",
+		"requests": [
+			"81d9d16765f30267fa8ad43c8cf328bef499e468792140a09daf45443429840c"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 18048 - (AML-10-86) possibly undefined",
+		"requests": [
+			"a65c9f7b6b7213bb367f1d6352dd837814419332616b316c32c1033a6b83e773"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2304 - (AML-10-14) can not find module",
+		"requests": [
+			"cc63cc0ee9fd4977ec69bed43d815c27eff34b09e59c051299e26b5e59c4977d"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2304 - (AML-8-125) can not find name",
+		"requests": [
+			"b920f4baf810b591b49a29b336ab1a571f6e519fef9a9cf686a2137d50389451"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2304 - (AML-8-125) can not find name 2",
+		"requests": [
+			"8718a15ceeaaa59d09358c337e995680cf76c0847d8d5bba679001c90579a2e3"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2304 - can not find name",
+		"requests": [
+			"c5db384867f9fe02180de756f16ed4cafabe0d8d1afdae3ef41e936032d8493f"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2307 - can not find module",
+		"requests": [
+			"c778ecc0a7907a8639dbd1a31db4e850417c11b8fdc20b7bc5efb3d19acbb338"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2322 - type undefined is not assignable to type",
+		"requests": [
+			"37fe71c209640fff794ef050f628a509494e6eaed6ac5f3a99fae488861c2ebf"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2339 - (AML-10-55) property does not exist on type 2",
+		"requests": [
+			"0d4cf566c1dc93146d8d33784f53db57c7bc9b22070ed4a670fdf1a26bd72781"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2339 - (AML-10-98) property does not exist on type 3",
+		"requests": [
+			"60b335292b95f2c3da70178a46264126d3c42d8389f163454938fcea26c1cf55"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2339 - property does not exist on type 1",
+		"requests": [
+			"05145a58466b2acb4a1e213f25b733eea76e903e2c265ec96f335c1d35cda76b"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2341 - property is private and only accessible within class",
+		"requests": [
+			"08345fc14e2836263e3fcd2ba1337caa7b0416e76284bb8c6bf50d0080bdb6ac"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2345 - Got boolean but expected options bag",
+		"requests": [
+			"0fb571481067855cff332b1c285ee6f179c74f3448a6abbfad0b3bc05cf04186"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2345 - Last two arguments swapped",
+		"requests": [
+			"8bd03d351e86c33681b36324c5885886ac5dab1091f2464bb5fcbdf59858059b"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2355 - a function whose declared type is neither undefined, void, nor any must return a value.",
+		"requests": [
+			"f43e62dc069c6caf9b419f62fa1ccad8bfcb45711b1583ab67ed2d70b85a6007"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2391 - function implementation is missing or not immediately following the declaration",
+		"requests": [
+			"58787b9921ccb369aba7c673b9025c3946eaa09fe32a08dc6a3f6d18b19be356"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2420 - incorrect interface implementation",
+		"requests": [
+			"dde3adfbd8f8d38dff8f370741efa640b74646325c673e54af1bb703b4fd9646"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2420 - incorrect interface implementation, with related information",
+		"requests": [
+			"4ecc45427681f24c17a0171f21bb15ded78ba72df9bd3c7200040f5fe5b6dc01"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2454 - variable is used before being assigned",
+		"requests": [
+			"fbac250f31dada80afadb172f0968d4242aae01aab432c5afb2bbfc7a088e1a8"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2554 - expected m arguments, but got n.",
+		"requests": [
+			"8e8561573da62d91750cd3c6928ea67542585559ef0c4096ebb7795d1ea13a71"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2554 - Got two args but expected options bag",
+		"requests": [
+			"9943a1da763c96ca94c5213cfa5adaa71e4512ab73ae7fdd00907335b21ce92e"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 2802 - large file - Type Uint32Array can only be iterated through",
+		"requests": [
+			"827974bf3f046c096e80a9bc3e4979e471dc365cd70a802601f09863c2ac4e91"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 7006 - (AML-10-23) implicitly has any type",
+		"requests": [
+			"c0da363999cd9acba61ae2cf2700e0f8b8425b3c47325050184abe8c7c9e82d6"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Error 7053 - (AML-10-25) expression of type can't be used to index",
+		"requests": [
+			"46346235b5ca297c8cd0a55c59e775758a54eee1125f12574f1638ff82d11ffc"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Issue #7300",
+		"requests": [
+			"4e9e583a019a47ef55d099d94dc10de4275a9fa552a86bc04e161f39c1881c64"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - Issue 6571",
+		"requests": [
+			"12c638989d4e9e6672ea9709ea4bc504bf75fc030d3b272ec40dd339d3eed104"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - left side of comma operator is unused",
+		"requests": [
+			"5c6bc898b64332ee96c79499b6eee828740f2cb914bd65efff6047ae71aba1d4"
+		]
+	},
+	{
+		"name": "fix (TSC) [inline] [typescript] - object is possibly undefined",
+		"requests": [
+			"9744903644bccb08cc8886845c4bbe853e07b8087e7333e6984a1d4bb58c93c6"
+		]
+	}
+]

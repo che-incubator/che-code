@@ -1,0 +1,17 @@
+[
+  {
+    "name": "goWebApp",
+    "question": "@workspace /setupTests",
+    "keywords": {
+      "anyOf": [
+        "testing",
+        "ginkgo"
+      ]
+    },
+    "files": [
+      "main.go",
+      "go.mod",
+      "go.sum"
+    ]
+  }
+]

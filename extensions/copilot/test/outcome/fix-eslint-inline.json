@@ -1,0 +1,201 @@
+[
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-10-1) do not access hasOwnProperty",
+		"requests": [
+			"3390e7dcc77c13f00e7e4a05008c6b6bceccb6fdb767845cf2adb670ba1d7506"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-10-52) expected conditional expression",
+		"requests": [
+			"1ba832e178275d9a124751270b7d7f7fdd0a2cd9b2c441a0433e687cc9d5cc95"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-17-10) unexpected constant condition 1",
+		"requests": [
+			"f2a20119e5d24618b73f37853f1885840e5f9771d16ebfd6835f7998e377f300"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-17-152) unreachable code",
+		"requests": [
+			"fa25f3c079753a5e7502b7371568bb957491cd5749c60a2310da91777c6dd3db"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-17-166) unexpected control character",
+		"requests": [
+			"0e21df23e64cb465a56182da3c01017a4656899f5833993b9b5008fe52f6ade1"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - (AML-17-243) unexpected constant condition 2",
+		"requests": [
+			"e9c810a1c67f9e91a18bc83e2961f7e9321a1462aaf792b820f374515c4ca14b"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - class-methods-use-this with cookbook",
+		"requests": [
+			"8baae5a92fa8c77c9a6fd460099c55d8bba4be5d4b8ab16b94384cf2186a773e"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - comma expected",
+		"requests": [
+			"5967d7bdfe5bf2d1195390939d2d6be15179d4793a37a02899dbe2a07aacc70c"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - consistent-this with cookbook",
+		"requests": [
+			"a56b436915256bf59e6e2b7e11d201bf08ccaeb903b3e59953aa06ff2dbc0be7"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - constructor-super with cookbook",
+		"requests": [
+			"b30bc49027f671fa65c080dde03c27a31f129f6d039ebb5b5f43f83c635f9da5"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - func-names with cookbook",
+		"requests": [
+			"79715ffd42e3f56ec444f091b1b331a9eeeb50aee095028fa621d61abc78e15f"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - func-style with cookbook",
+		"requests": [
+			"8cd305d16816ac2ce6e5e97d2dd0ad421efac256887e7a694c8bff8084cb3e1a"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - Issue #7544",
+		"requests": [
+			"1c8f17395233ff30cb839780b955b19f76eccd70752d6f6b9838133bebff58c1",
+			"97ae81b53856f50da5b0381503531a3e37589b27fe5e9fcbf48ef9c1f775d692"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - max-lines-per-function with cookbook",
+		"requests": [
+			"4c5affb768fe1a170fbc562dfca73de4d97ef2c84f9de08d7d5769b2565f2c0b"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - max-params with cookbook",
+		"requests": [
+			"596f5535086ddfd4c22130fd86d18c3e22956dacf67a3574faba70a68334d091"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - max-statements with cookbook",
+		"requests": [
+			"98bd4f2948110058a1269af04bf741387b659717de9748ee5d996b5e7bf229f1"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-case-declarations with cookbook",
+		"requests": [
+			"ab66d93bf17c4a143ce50bdf5cd5be162c2ee51d9ec49327c05fb519ffcb46c5"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-dupe-else-if with cookbook",
+		"requests": [
+			"a8b9a8ab0c3f6df034f6dca1d5f2b8b4437c2cbccdb85e7fbcf42bc064770087"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-duplicate-case with cookbook",
+		"requests": [
+			"d67073cef6d1e073df018fa08c4296b085afaf69cf23dd76f5997b721855bc43"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-duplicate-imports with cookbook",
+		"requests": [
+			"f4eaec00522b938203daa10290da3e8d6fe9b2e994e346cd83c56954393e1761"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-fallthrough with cookbook",
+		"requests": [
+			"3e22487eb281262088282ae4bf275c708c3cfc40a150bf2ab10875a31c4dc96d"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-inner-declarations with cookbook",
+		"requests": [
+			"d54cac4bf1efe1fb5111df1b2bfd4e5ade72c6cd232b825132d266625e5bc11b"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-multi-assign with cookbook",
+		"requests": [
+			"e8b8b339347dca787181b21bbc314c4639275578157bd0835aa03cbf96bb7c9b"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-negated-condition 2 with cookbook",
+		"requests": [
+			"52efb003149600b1fdc2cd0375dfa6bd04672fcf0b01ce744366ef0cbc0b80c0"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-negated-condition with cookbook",
+		"requests": [
+			"dde573d825bc53f5d9f869d8f0c2b87578da923c42396f3403c3d660d16843d4"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-new with cookbook",
+		"requests": [
+			"b0f4b106a4c0e413ed478346f58af6620339a86455fad0d6bb250aaf3d062b1b"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-sequences with cookbook",
+		"requests": [
+			"cc80f306aa2bcd7f70dc0a7d5333757bf5b15ae6bb014064bf97f3ca025de53f"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-sparse-arrays 2 with cookbook",
+		"requests": [
+			"bdba0ac8292216ef03133b96e62daf9e431681944032eaae65734613e048cd8c"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-sparse-arrays 3 with cookbook",
+		"requests": [
+			"0288b7c81ab64b6fd60f5935713e10d56763b7479d139bf8f99bc1b81d7f4ca2"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - no-sparse-arrays with cookbook",
+		"requests": [
+			"cb5f347722e8b7f228c5d884355edfed509ce87a291243d9bb996f2777605e01"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - require-await with cookbook",
+		"requests": [
+			"6fbea45c54797c4770a8c05ddbc02290d22d0e85fe8a7c2f557f6688233deab0"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - sort-keys with cookbook",
+		"requests": [
+			"4856643e1c340c70190f59b4b345569e3e78fdce0ed51b7285956b883a1914d7"
+		]
+	},
+	{
+		"name": "fix (eslint) [inline] [typescript] - unexpected token",
+		"requests": [
+			"fc15f69ce44aca6d92acf03d14e2d64a71e0eee39f1faf594a9921a45e576226"
+		]
+	}
+]

@@ -1,0 +1,187 @@
+# Run on a schedule
+trigger: none
+pr: none
+
+schedules:
+  - cron: '0 4 * * Mon-Fri'
+    displayName: Nightly Release Schedule
+    branches:
+      include:
+        - main
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
+
+parameters:
+  - name: publishExtension
+    displayName: 🚀 Publish Pre-Release
+    type: boolean
+    default: false
+
+extends:
+  template: azure-pipelines/extension/pre-release.yml@templates
+  parameters:
+    l10nSourcePaths: ./src
+    nodeVersion: 22.14.x
+    standardizedVersioning: true
+
+    cgIgnoreDirectories: $(Build.SourcesDirectory)/script
+
+    # Suppress false positive strings SG.default.* that show up in
+    # dist/extension.js after the build. The original strings come from ora.
+    vscePackageArgs: '--allow-package-secrets sendgrid'
+
+    buildSteps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.14.x'
+
+      - task: Cache@2
+        inputs:
+          key: '"release_build_cache" | build/.cachesalt | build/setup-emsdk.sh | package-lock.json'
+          path: .build/build_cache
+          cacheHitVar: BUILD_CACHE_RESTORED
+        displayName: Restore build cache (node modules, python packages)
+
+      - script: ./build/setup-emsdk.sh
+        displayName: Setup emsdk
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+      - script: echo '##vso[task.prependpath]/opt/dev/emsdk/upstream/emscripten'
+        displayName: Setup emsdk path 1
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+      - script: echo '##vso[task.prependpath]/opt/dev/emsdk'
+        displayName: Setup emsdk path 2
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+
+      - script: tar -xzf .build/build_cache/cache.tgz
+        condition: and(succeeded(), eq(variables.BUILD_CACHE_RESTORED, 'true'))
+        displayName: Extract build cache
+
+      - script: npm ci
+        displayName: Install dependencies
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+
+      - script: |
+          set -e
+          mkdir -p .build
+          node build/listBuildCacheFiles.js .build/build_cache_list.txt
+          mkdir -p .build/build_cache
+          tar -czf .build/build_cache/cache.tgz --files-from .build/build_cache_list.txt
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+        displayName: Create build cache archive
+
+      - pwsh: |
+          # Get the OAuth token from the git config
+          $result = git config --get-regexp .*extraheader ^AUTHORIZATION:
+          $basicToken = $result -split "AUTHORIZATION: basic " | Select-Object -Last 1
+          $oauthToken = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($basicToken)) -split ":" | Select-Object -Last 1
+
+          # Clone the vscode-capi repository
+          git clone https://vscode:$oauthToken@github.com/microsoft/vscode-capi.git --depth 1 ../vscode-capi
+
+          # Run the mixin script
+          Push-Location ../vscode-capi
+          npm ci && npm run mixin
+
+          # Clean up the cloned repository
+          Pop-Location
+          Remove-Item -Recurse -Force ../vscode-capi
+        displayName: mixin
+
+      - script: npm run build -- --prerelease
+        displayName: npm run build
+
+    # testPlatforms:
+    #     - name: Linux
+    #       nodeVersions: [16.x]
+    #     - name: MacOS
+    #       nodeVersions: [16.x]
+    #     - name: Windows
+    #       nodeVersions: [16.x]
+
+    testSteps:
+      - checkout: self
+        lfs: true
+
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.x'
+
+      - task: Cache@2
+        inputs:
+          key: '"release_build_cache" | build/.cachesalt | build/setup-emsdk.sh | package-lock.json'
+          path: .build/build_cache
+          cacheHitVar: BUILD_CACHE_RESTORED
+        displayName: Restore build cache (node modules, python packages)
+
+      - script: ./build/setup-emsdk.sh
+        displayName: Setup emsdk
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+      - script: echo '##vso[task.prependpath]/opt/dev/emsdk/upstream/emscripten'
+        displayName: Setup emsdk path 1
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+      - script: echo '##vso[task.prependpath]/opt/dev/emsdk'
+        displayName: Setup emsdk path 2
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+
+      - script: tar -xzf .build/build_cache/cache.tgz
+        condition: and(succeeded(), eq(variables.BUILD_CACHE_RESTORED, 'true'))
+        displayName: Extract build cache
+
+      - script: npm ci
+        displayName: Install dependencies
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+
+      - script: |
+          set -e
+          mkdir -p .build
+          node build/listBuildCacheFiles.js .build/build_cache_list.txt
+          mkdir -p .build/build_cache
+          tar -czf .build/build_cache/cache.tgz --files-from .build/build_cache_list.txt
+        condition: and(succeeded(), ne(variables.BUILD_CACHE_RESTORED, 'true'))
+        displayName: Create build cache archive
+
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: 'VS Code Development WIF'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          inlineScript: npm run setup
+        displayName: npm run setup
+
+      - script: npm run setup:dotnet
+        displayName: Install dotnet cli
+
+      - script: npm run typecheck
+        displayName: npm run typecheck
+
+      - script: npm run lint
+        displayName: npm run lint
+
+      - script: npm run compile
+        displayName: npm run compile
+
+      - script: npm run test:unit
+        displayName: Run vitest unit tests
+
+      - script: npm run simulate-ci
+        displayName: Run simulation tests
+
+      - script: xvfb-run -a npm run test:extension
+        displayName: Run extension tests using VS Code
+
+      - script: xvfb-run -a npm run test:sanity
+        displayName: Run extension sanity tests using VS Code
+
+    tsa:
+      config:
+        areaPath: 'Visual Studio Code Copilot Extensions'
+        serviceTreeID: '1788a767-5861-45fb-973b-c686b67c5541'
+      enabled: true
+
+    publishExtension: ${{ parameters.publishExtension }}

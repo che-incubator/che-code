@@ -1,0 +1,50 @@
+[
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [cpp] - [MustHave] 8-cppIndividual-1-point.cpp",
+		"requests": [
+			"18b0153202214f3eb6ea3ed73c0df7c81d3fccc9efbf763747fdcf8cc976521a"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [cpp] - [MustHave] 8-cppIndividual-2-collection-farewell",
+		"requests": [
+			"19a8e50993649f5fa89e3b0cd7c3e987ead4ccfec55a0870be86ce3910c0e387"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [cpp] - [MustHave] 9-cppProject-add-header-expect-implementation",
+		"requests": [
+			"fd833677e1d1f3868c0ac3cfb38669d394b74c2f81b11efbf225cd157a58e56c"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [cpp] - [MustHave] 9-cppProject-add-implementation-expect-header",
+		"requests": [
+			"044861dec72d6aeed8602537ee55316fc6ee65d809199c7705e81cbd00f6afaf"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [java] - [MustHave] 6-vscode-remote-try-java-part-1",
+		"requests": [
+			"1e55e59ab0ea0bc59e20bbd92425fdcf917e0fff1442afeca4afc9c44656042b"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [java] - [MustHave] 6-vscode-remote-try-java-part-2",
+		"requests": [
+			"fc8f8cfc63e544cc0ff17a0dd9a50c7ea2c537ed0dc2ee45b78d7dbe8e4ee9ff"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [typescript] - [MustHave] 1-point.ts",
+		"requests": [
+			"e616f37dad7d37f952fb75a984cd829198dab974b07d0667e435a652ef8b45b8"
+		]
+	},
+	{
+		"name": "InlineEdit GoldenScenario ([xtab]) [external] [typescript] - [NiceToHave] 2-helloworld-sample-remove-generic-parameter",
+		"requests": [
+			"b8f71b88715f36e3a5ae263ea3be4ac030bec689579e342ce1dc3deaad39d1b1"
+		]
+	}
+]

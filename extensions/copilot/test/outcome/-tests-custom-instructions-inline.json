@@ -1,0 +1,14 @@
+[
+	{
+		"name": "/tests (custom instructions) [inline] [typescript] - [code gen + test gen config] can add a test after an existing one with empty line",
+		"requests": [
+			"fd4ed64297a2ccc93f3357a809cf7d44f38523ae5f6b335d4e50360ff6a22d93"
+		]
+	},
+	{
+		"name": "/tests (custom instructions) [inline] [typescript] - [test gen config] can add a test after an existing one with empty line",
+		"requests": [
+			"fd4ed64297a2ccc93f3357a809cf7d44f38523ae5f6b335d4e50360ff6a22d93"
+		]
+	}
+]

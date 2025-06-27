@@ -1,0 +1,100 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "compile",
+			"type": "npm",
+			"script": "compile",
+			"problemMatcher": "$esbuild"
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"label": "npm: watch - DO NOT USE", // The auto-discovered npm task is also called watch, so we change its name here. This is here until people clear their histories.
+		},
+		{
+			"label": "watch",
+			"dependsOn": [
+				"npm: watch:tsc-extension",
+				"npm: watch:tsc-extension-web",
+				"npm: watch:tsc-simulation-workbench",
+				"npm: watch:esbuild"
+			],
+			"presentation": {
+				"reveal": "never",
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:tsc-extension",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: watch:tsc-extension",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:tsc-extension-web",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: watch:tsc-extension-web",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:tsc-simulation-workbench",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: watch:tsc-simulation-workbench",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:esbuild",
+			"group": "build",
+			"problemMatcher": "$esbuild-watch",
+			"isBackground": true,
+			"label": "npm: watch:esbuild",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"label": "simulate",
+			"type": "process",
+			"command": "${workspaceFolder}/script/simulate.sh",
+			"args": [],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"clear": true,
+				"focus": true
+			},
+			"problemMatcher": []
+		}
+	]
+}
