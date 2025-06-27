@@ -54,7 +54,9 @@ export class InlineEditModel extends Disposable {
 
 		this._predictor = createNextEditProvider(this._predictorId, this._instantiationService);
 		const xtabDiffNEntries = this._configurationService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabDiffNEntries, this._expService);
-		this.nextEditProvider = this._instantiationService.createInstance(NextEditProvider, this.workspace, this._predictor, historyContextProvider, new NesXtabHistoryTracker(this.workspace, xtabDiffNEntries), this.debugRecorder);
+		const xtabHistoryTracker = new NesXtabHistoryTracker(this.workspace, xtabDiffNEntries);
+		this.nextEditProvider = this._instantiationService.createInstance(NextEditProvider, this.workspace, this._predictor, historyContextProvider, xtabHistoryTracker, this.debugRecorder);
+
 		if (this._predictor.dependsOnSelection) {
 			const documentsToLastChangeEvents = new Map<DocumentId, { lastEditedTimestamp: number; lineNumberTriggers: Map<number /* lineNumber */, number /* timestamp */> }>();
 			this._store.add(this._register(vscode.workspace.onDidChangeTextDocument(e => {
