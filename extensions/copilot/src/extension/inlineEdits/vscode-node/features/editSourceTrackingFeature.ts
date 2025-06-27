@@ -151,6 +151,7 @@ export class EditSourceTrackingFeature extends Disposable {
 			}));
 
 			reader.store.add(vscode.commands.registerCommand(this._showStateInMarkdownDoc, async () => {
+				const docs = impl.docsState.get();
 				const allDocsData: string[] = [];
 				for (const [doc, state] of docs) {
 					const tracker = state.longtermTracker.get();
