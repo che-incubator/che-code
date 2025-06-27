@@ -19,6 +19,7 @@ import { IInstantiationService } from '../../../util/vs/platform/instantiation/c
 import { createNextEditProvider } from '../node/createNextEditProvider';
 import { DebugRecorder } from '../node/debugRecorder';
 import { NextEditProvider } from '../node/nextEditProvider';
+import { TRIGGER_INLINE_EDIT_COMMAND } from './commands';
 import { DiagnosticsNextEditProvider } from './features/diagnosticsInlineEditProvider';
 import { VSCodeWorkspace } from './parts/vscodeWorkspace';
 
@@ -187,7 +188,13 @@ class InlineEditTriggerer extends Disposable {
 
 			mostRecentChange.lineNumberTriggers.set(selectionLine, now);
 			tracer.returns('triggering inline edit');
-			this.onChange.trigger(undefined);
+
+			const shouldTriggerChange = false; // TODO@hediet
+			if (shouldTriggerChange) {
+				this.onChange.trigger(undefined);
+			} else {
+				vscode.commands.executeCommand(TRIGGER_INLINE_EDIT_COMMAND);
+			}
 		})));
 	}
 }
