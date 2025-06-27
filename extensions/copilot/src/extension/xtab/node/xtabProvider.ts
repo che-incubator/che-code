@@ -159,6 +159,12 @@ export class XtabProvider extends ChainedStatelessNextEditProvider {
 
 		const cursorLineIdx = cursorPosition.lineNumber - 1 /* to convert to 0-based */;
 
+		const cursorLine = currentFileContentLines[cursorLineIdx];
+		const isCursorAtEndOfLine = cursorPosition.column === cursorLine.trimEnd().length;
+		if (isCursorAtEndOfLine) {
+			delaySession.setExtraDebounce(this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsExtraDebounceEndOfLine, this.expService));
+		}
+
 		const areaAroundEditWindowLinesRange = this.computeAreaAroundEditWindowLinesRange(currentFileContentLines, cursorLineIdx);
 
 		const editWindowLinesRange = this.computeEditWindowLinesRange(currentFileContentLines, cursorLineIdx);
