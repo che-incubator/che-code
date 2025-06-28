@@ -27,7 +27,7 @@ import { NotebookSummary } from '../../../tools/node/notebookSummaryTool';
 import { renderPromptElement } from '../base/promptRenderer';
 import { Tag } from '../base/tag';
 import { ChatToolCalls } from '../panel/toolCalling';
-import { AgentUserMessage, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './agentPrompt';
+import { AgentUserMessage, getKeepGoingReminder, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './agentPrompt';
 
 export class ConversationHistorySummarizationPrompt extends PromptElement<SummarizedAgentHistoryProps> {
 	constructor(
@@ -176,16 +176,7 @@ export interface NotebookSummaryProps extends BasePromptElementProps {
 	notebook: NotebookDocument;
 }
 
-export interface ConversationHistoryProps extends SummarizedAgentHistoryProps {
-}
-
-export class ConversationHistory extends PromptElement<ConversationHistoryProps> {
-	constructor(
-		props: ConversationHistoryProps,
-	) {
-		super(props);
-	}
-
+class ConversationHistory extends PromptElement<SummarizedAgentHistoryProps> {
 	override async render(state: void, sizing: PromptSizing) {
 		// Iterate over the turns in reverse order until we find a turn with a tool call round that was summarized
 		const history: PromptElement[] = [];
@@ -210,11 +201,7 @@ export class ConversationHistory extends PromptElement<ConversationHistoryProps>
 		}
 
 		if (summaryForCurrentTurn) {
-			history.push(<UserMessage>
-				<Tag name='conversation-summary'>
-					{summaryForCurrentTurn}
-				</Tag>
-			</UserMessage>);
+			history.push(<SummaryMessageElement endpoint={this.props.endpoint} summaryText={summaryForCurrentTurn} />);
 
 			return (<PrioritizedList priority={this.props.priority} descending={false} passPriority={true}>
 				{history.reverse()}
@@ -267,11 +254,7 @@ export class ConversationHistory extends PromptElement<ConversationHistoryProps>
 
 			if (summaryForTurn) {
 				// We have a summary for a tool call round that was part of this turn
-				turnComponents.push(<UserMessage flexGrow={1}>
-					<Tag name='conversation-summary'>
-						{summaryForTurn.text}
-					</Tag>
-				</UserMessage>);
+				turnComponents.push(<SummaryMessageElement endpoint={this.props.endpoint} summaryText={summaryForTurn.text} />);
 			} else {
 				turnComponents.push(<AgentUserMessage flexGrow={1} {...getUserMessagePropsFromTurn(turn, this.props.endpoint)} />);
 			}
@@ -556,5 +539,24 @@ export class SummarizedConversationHistoryPropsBuilder {
 		}
 
 		return undefined;
+	}
+}
+
+interface SummaryMessageProps extends BasePromptElementProps {
+	summaryText: string;
+	endpoint: IChatEndpoint;
+}
+
+class SummaryMessageElement extends PromptElement<SummaryMessageProps> {
+	override async render(state: void, sizing: PromptSizing) {
+		const keepGoingReminder = getKeepGoingReminder(this.props.endpoint.family);
+		return <UserMessage>
+			<Tag name='conversation-summary'>
+				{this.props.summaryText}
+			</Tag>
+			{keepGoingReminder && <Tag name='reminderInstructions'>
+				{keepGoingReminder}
+			</Tag>}
+		</UserMessage>;
 	}
 }
