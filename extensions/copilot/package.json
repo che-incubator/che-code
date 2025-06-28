@@ -290,15 +290,15 @@
 					"properties": {
 						"query": {
 							"type": "string",
-							"description": "The pattern to search for in files in the workspace. Use regex with alternation (e.g., 'word1|word2|word3') or character classes to find multiple potential words in a single search. The isRegexp property declares whether it's a regex or plain text pattern. Is case-insensitive."
+							"description": "The pattern to search for in files in the workspace. Use regex with alternation (e.g., 'word1|word2|word3') or character classes to find multiple potential words in a single search. Be sure to set the isRegexp property properly to declare whether it's a regex or plain text pattern. Is case-insensitive."
 						},
 						"isRegexp": {
 							"type": "boolean",
-							"description": "Whether the pattern is a regex. False by default."
+							"description": "Whether the pattern is a regex."
 						},
 						"includePattern": {
 							"type": "string",
-							"description": "Search files matching this glob pattern. Will be applied to the relative path of files within the workspace."
+							"description": "Search files matching this glob pattern. Will be applied to the relative path of files within the workspace. To search recursively inside a folder, use a proper glob pattern like \"src/folder/**\". Do not use | in includePattern."
 						},
 						"maxResults": {
 							"type": "number",
