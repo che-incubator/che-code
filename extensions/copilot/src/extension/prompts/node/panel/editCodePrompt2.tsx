@@ -10,13 +10,13 @@ import { IExperimentationService } from '../../../../platform/telemetry/common/n
 import { isLocation, isUri } from '../../../../util/common/types';
 import { ToolName } from '../../../tools/common/toolNames';
 import { IToolsService } from '../../../tools/common/toolsService';
+import { AgentConversationHistory } from '../agent/agentInstructions';
+import { AgentPromptProps, getEditingReminder } from '../agent/agentPrompt';
 import { CopilotIdentityRules } from '../base/copilotIdentity';
 import { InstructionMessage } from '../base/instructionMessage';
 import { ResponseTranslationRules } from '../base/responseTranslationRules';
 import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
-import { AgentConversationHistory } from './agentInstructions';
-import { AgentPromptProps, getEditingReminder } from './agentPrompt';
 import { ChatToolReferences, ChatVariables, UserQuery } from './chatVariables';
 import { EXISTING_CODE_MARKER } from './codeBlockFormattingRules';
 import { CustomInstructions } from './customInstructions';

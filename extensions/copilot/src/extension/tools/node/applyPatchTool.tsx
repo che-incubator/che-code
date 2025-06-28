@@ -33,10 +33,10 @@ import { IInstantiationService } from '../../../util/vs/platform/instantiation/c
 import { ChatResponseTextEditPart, LanguageModelPromptTsxPart, LanguageModelTextPart, LanguageModelToolResult, Position, Range, WorkspaceEdit } from '../../../vscodeTypes';
 import { IBuildPromptContext } from '../../prompt/common/intents';
 import { guessIndentation, normalizeIndentation } from '../../prompt/node/indentationGuesser';
+import { ApplyPatchFormatInstructions } from '../../prompts/node/agent/agentInstructions';
 import { PromptRenderer, renderPromptElementJSON } from '../../prompts/node/base/promptRenderer';
 import { Tag } from '../../prompts/node/base/tag';
 import { processFullRewriteNotebook } from '../../prompts/node/codeMapper/codeMapper';
-import { ApplyPatchFormatInstructions } from '../../prompts/node/panel/agentInstructions';
 import { CodeBlock } from '../../prompts/node/panel/safeElements';
 import { ToolName } from '../common/toolNames';
 import { ICopilotTool, ToolRegistry } from '../common/toolsRegistry';

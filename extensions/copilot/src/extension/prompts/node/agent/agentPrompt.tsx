@@ -34,18 +34,18 @@ import { IPromptEndpoint, renderPromptElement } from '../base/promptRenderer';
 import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
 import { TerminalAndTaskStatePromptElement } from '../base/terminalAndTaskState';
+import { ChatVariables } from '../panel/chatVariables';
+import { EXISTING_CODE_MARKER } from '../panel/codeBlockFormattingRules';
+import { CustomInstructions } from '../panel/customInstructions';
+import { NotebookFormat } from '../panel/notebookEditCodePrompt';
+import { NotebookSummaryChange } from '../panel/notebookSummaryChangePrompt';
+import { UserPreferences } from '../panel/preferences';
+import { TerminalCwdPrompt } from '../panel/terminalPrompt';
+import { ChatToolCalls } from '../panel/toolCalling';
+import { MultirootWorkspaceStructure } from '../panel/workspace/workspaceStructure';
 import { AgentConversationHistory } from './agentConversationHistory';
 import { DefaultAgentPrompt, SweBenchAgentPrompt } from './agentInstructions';
-import { ChatVariables } from './chatVariables';
-import { EXISTING_CODE_MARKER } from './codeBlockFormattingRules';
-import { CustomInstructions } from './customInstructions';
-import { NotebookFormat } from './notebookEditCodePrompt';
-import { NotebookSummaryChange } from './notebookSummaryChangePrompt';
-import { UserPreferences } from './preferences';
 import { SummarizedConversationHistory } from './summarizedConversationHistory';
-import { TerminalCwdPrompt } from './terminalPrompt';
-import { ChatToolCalls } from './toolCalling';
-import { MultirootWorkspaceStructure } from './workspace/workspaceStructure';
 
 export interface AgentPromptProps extends GenericBasePromptElementProps {
 	readonly endpoint: IChatEndpoint;
