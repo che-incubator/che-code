@@ -28,9 +28,9 @@ import { PromptRenderer } from '../base/promptRenderer';
 import { ResponseTranslationRules } from '../base/responseTranslationRules';
 import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
+import { AgentConversationHistory } from './agentInstructions';
 import { ChatToolReferences, ChatVariablesAndQuery } from './chatVariables';
 import { HistoryWithInstructions } from './conversationHistory';
-import { AgentConversationHistory } from './editAgentInstructions';
 import { ChatToolCalls } from './toolCalling';
 import { UnsafeCodeBlock } from './unsafeElements';
 

@@ -7,8 +7,8 @@ import { AssistantMessage, BasePromptElementProps, Chunk, PrioritizedList, Promp
 import { IResultMetadata, Turn } from '../../../prompt/common/conversation';
 import { IBuildPromptContext } from '../../../prompt/common/intents';
 import { Tag } from '../base/tag';
+import { EditedFileEvents, renderedMessageToTsxChildren } from './agentPrompt';
 import { ChatVariables } from './chatVariables';
-import { EditedFileEvents, renderedMessageToTsxChildren } from './editAgentPrompt';
 import { ChatToolCalls } from './toolCalling';
 
 export interface AgentUserMessageInHistoryProps extends BasePromptElementProps {

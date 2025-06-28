@@ -36,7 +36,7 @@ import { guessIndentation, normalizeIndentation } from '../../prompt/node/indent
 import { PromptRenderer, renderPromptElementJSON } from '../../prompts/node/base/promptRenderer';
 import { Tag } from '../../prompts/node/base/tag';
 import { processFullRewriteNotebook } from '../../prompts/node/codeMapper/codeMapper';
-import { ApplyPatchFormatInstructions } from '../../prompts/node/panel/editAgentInstructions';
+import { ApplyPatchFormatInstructions } from '../../prompts/node/panel/agentInstructions';
 import { CodeBlock } from '../../prompts/node/panel/safeElements';
 import { ToolName } from '../common/toolNames';
 import { ICopilotTool, ToolRegistry } from '../common/toolsRegistry';

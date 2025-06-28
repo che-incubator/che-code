@@ -27,9 +27,9 @@ import { DefaultIntentRequestHandler, IDefaultIntentRequestHandlerOptions } from
 import { IDocumentContext } from '../../prompt/node/documentContext';
 import { IIntent, IIntentInvocationContext, IntentLinkificationOptions } from '../../prompt/node/intents';
 import { ICodeMapperService } from '../../prompts/node/codeMapper/codeMapperService';
-import { AgentPrompt } from '../../prompts/node/panel/editAgentPrompt';
+import { AgentPrompt } from '../../prompts/node/panel/agentPrompt';
 import { IToolsService } from '../../tools/common/toolsService';
-import { AgentIntentInvocation } from './editAgentIntent';
+import { AgentIntentInvocation } from './agentIntent';
 import { getRequestedToolCallIterationLimit } from './toolCallingLoop';
 
 

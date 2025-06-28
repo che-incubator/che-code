@@ -26,7 +26,7 @@ import { normalizeToolSchema } from '../../../tools/common/toolSchemaNormalizer'
 import { NotebookSummary } from '../../../tools/node/notebookSummaryTool';
 import { renderPromptElement } from '../base/promptRenderer';
 import { Tag } from '../base/tag';
-import { AgentUserMessage, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './editAgentPrompt';
+import { AgentUserMessage, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './agentPrompt';
 import { ChatToolCalls } from './toolCalling';
 
 export class ConversationHistorySummarizationPrompt extends PromptElement<SummarizedAgentHistoryProps> {

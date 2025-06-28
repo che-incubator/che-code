@@ -39,7 +39,7 @@ import { IBuildPromptResult, IIntent, IntentLinkificationOptions } from '../../p
 import { PromptRenderer } from '../../prompts/node/base/promptRenderer';
 import { ICodeMapperService } from '../../prompts/node/codeMapper/codeMapperService';
 import { TemporalContextStats } from '../../prompts/node/inline/temporalContext';
-import { AgentPrompt, AgentPromptProps } from '../../prompts/node/panel/editAgentPrompt';
+import { AgentPrompt, AgentPromptProps } from '../../prompts/node/panel/agentPrompt';
 import { EditCodePrompt2 } from '../../prompts/node/panel/editCodePrompt2';
 import { ToolResultMetadata } from '../../prompts/node/panel/toolCalling';
 import { ToolName } from '../../tools/common/toolNames';
