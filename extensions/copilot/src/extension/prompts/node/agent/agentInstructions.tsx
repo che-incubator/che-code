@@ -12,10 +12,10 @@ import { IToolsService } from '../../../tools/common/toolsService';
 import { InstructionMessage } from '../base/instructionMessage';
 import { ResponseTranslationRules } from '../base/responseTranslationRules';
 import { Tag } from '../base/tag';
-import { CodeBlockFormattingRules, EXISTING_CODE_MARKER } from './codeBlockFormattingRules';
-import { AgentUserMessageInHistory } from './editAgentConversationHistory';
-import { getKeepGoingReminder, renderedMessageToTsxChildren } from './editAgentPrompt';
-import { ChatToolCalls } from './toolCalling';
+import { CodeBlockFormattingRules, EXISTING_CODE_MARKER } from '../panel/codeBlockFormattingRules';
+import { ChatToolCalls } from '../panel/toolCalling';
+import { AgentUserMessageInHistory } from './agentConversationHistory';
+import { getKeepGoingReminder, renderedMessageToTsxChildren } from './agentPrompt';
 
 export interface AgentConversationHistoryProps extends BasePromptElementProps {
 	readonly priority: number;

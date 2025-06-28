@@ -7,9 +7,9 @@ import { AssistantMessage, BasePromptElementProps, Chunk, PrioritizedList, Promp
 import { IResultMetadata, Turn } from '../../../prompt/common/conversation';
 import { IBuildPromptContext } from '../../../prompt/common/intents';
 import { Tag } from '../base/tag';
-import { ChatVariables } from './chatVariables';
-import { EditedFileEvents, renderedMessageToTsxChildren } from './editAgentPrompt';
-import { ChatToolCalls } from './toolCalling';
+import { ChatVariables } from '../panel/chatVariables';
+import { ChatToolCalls } from '../panel/toolCalling';
+import { EditedFileEvents, renderedMessageToTsxChildren } from './agentPrompt';
 
 export interface AgentUserMessageInHistoryProps extends BasePromptElementProps {
 	readonly turn: Turn;

@@ -22,6 +22,7 @@ import { ChatResponseProgressPart } from '../../../../vscodeTypes';
 import { Turn } from '../../../prompt/common/conversation';
 import { IBuildPromptContext } from '../../../prompt/common/intents';
 import { ToolName } from '../../../tools/common/toolNames';
+import { AgentConversationHistory } from '../agent/agentInstructions';
 import { CopilotIdentityRules } from '../base/copilotIdentity';
 import { InstructionMessage } from '../base/instructionMessage';
 import { PromptRenderer } from '../base/promptRenderer';
@@ -30,7 +31,6 @@ import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
 import { ChatToolReferences, ChatVariablesAndQuery } from './chatVariables';
 import { HistoryWithInstructions } from './conversationHistory';
-import { AgentConversationHistory } from './editAgentInstructions';
 import { ChatToolCalls } from './toolCalling';
 import { UnsafeCodeBlock } from './unsafeElements';
 

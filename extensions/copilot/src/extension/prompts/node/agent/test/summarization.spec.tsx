@@ -20,7 +20,7 @@ import { URI } from '../../../../../util/vs/base/common/uri';
 import { SyncDescriptor } from '../../../../../util/vs/platform/instantiation/common/descriptors';
 import { IInstantiationService } from '../../../../../util/vs/platform/instantiation/common/instantiation';
 import { LanguageModelTextPart, LanguageModelToolResult } from '../../../../../vscodeTypes';
-import { addCacheBreakpoints } from '../../../../intents/node/editAgentIntent';
+import { addCacheBreakpoints } from '../../../../intents/node/agentIntent';
 import { ChatVariablesCollection } from '../../../../prompt/common/chatVariablesCollection';
 import { Conversation, ICopilotChatResultIn, normalizeSummariesOnRounds, Turn, TurnStatus } from '../../../../prompt/common/conversation';
 import { IBuildPromptContext, IToolCall } from '../../../../prompt/common/intents';
@@ -28,7 +28,7 @@ import { ToolCallRound } from '../../../../prompt/common/toolCallRound';
 import { createExtensionUnitTestingServices } from '../../../../test/node/services';
 import { ToolName } from '../../../../tools/common/toolNames';
 import { PromptRenderer } from '../../base/promptRenderer';
-import { AgentPrompt, AgentPromptProps } from '../editAgentPrompt';
+import { AgentPrompt, AgentPromptProps } from '../agentPrompt';
 import { ConversationHistorySummarizationPrompt, SummarizedConversationHistoryMetadata, SummarizedConversationHistoryPropsBuilder } from '../summarizedConversationHistory';
 
 suite('Agent Summarization', () => {
