@@ -940,9 +940,9 @@
   {
     "name": "edit (toolCalling) [panel] - does not read",
     "contentFilterCount": 0,
-    "passCount": 7,
-    "failCount": 3,
-    "score": 0.7
+    "passCount": 10,
+    "failCount": 0,
+    "score": 1
   },
   {
     "name": "edit [inline] [cpp] - edit for cpp",
@@ -9481,9 +9481,9 @@
   {
     "name": "notebooks (toolCalling) [panel] - Run cell tool should avoid running markdown cells",
     "contentFilterCount": 0,
-    "passCount": 10,
-    "failCount": 0,
-    "score": 1
+    "passCount": 5,
+    "failCount": 5,
+    "score": 0.5
   },
   {
     "name": "PR Title and Description [context] - Multiple commits without issue information",
