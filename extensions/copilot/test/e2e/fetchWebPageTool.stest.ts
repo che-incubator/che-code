@@ -16,7 +16,7 @@ interface IFetchWebPageToolParams {
 }
 
 ssuite({ title: 'fetchWebPageTool', subtitle: 'toolCalling', location: 'panel' }, () => {
-	const scenarioFolder = path.join(__dirname, '..', '.test-scenarios/test-tools');
+	const scenarioFolder = path.join(__dirname, '..', 'test/scenarios/test-tools');
 	const getState = () => deserializeWorkbenchState(scenarioFolder, path.join(scenarioFolder, 'tools.state.json'));
 
 	stest('proper URL validation and query handling', generateToolTestRunner({
