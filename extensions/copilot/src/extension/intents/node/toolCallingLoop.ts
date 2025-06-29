@@ -510,18 +510,6 @@ export abstract class ToolCallingLoop<TOptions extends IToolCallingLoopOptions =
 		};
 
 		const buildPromptResult = await this.buildPrompt(buildPromptContext, progress, token);
-
-		// If we had to summarize a tool call round that's part of the in-progress turn,
-		// associate the generated summary with the tool call round
-		// const summarizedConversationMetadata = buildPromptResult.metadata.get(SummarizedConversationHistoryMetadata);
-		// if (summarizedConversationMetadata) {
-		// 	for (const toolCallRound of this.toolCallRounds) {
-		// 		if (toolCallRound.id === summarizedConversationMetadata.toolCallRoundId) {
-		// 			toolCallRound.summary = summarizedConversationMetadata.text;
-		// 		}
-		// 	}
-		// }
-
 		for (const metadata of buildPromptResult.metadata.getAll(ToolResultMetadata)) {
 			this.logToolResult(buildPromptContext, metadata);
 			this.toolCallResults[metadata.toolCallId] = metadata.result;
