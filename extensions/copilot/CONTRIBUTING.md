@@ -277,6 +277,12 @@ We have now moved to https://github.com/microsoft/vscode-tree-sitter-wasm for WA
 
 ## Troubleshooting
 
+### Reading requests
+
+To easily see the details of requests made by Copilot Chat, run the command "Show Chat Debug View". This will show a treeview with an entry for each request made. You can see the prompt that was sent to the model, the tools that were enabled, the response, and other key details. Always read the prompt when making any changes, to ensure that it's being rendered as you expect!
+
+The view also has entries for tool calls on their own, and a prompt-tsx debug view that opens in the Simple Browser.
+
 ## API updates
 
 When updating VS Code proposed extension API that is used by the extension, we have two tools to make sure that the version of the extension that gets installed will be compatible with the version of VS Code: the `engines.vscode` field in `package.json`, and the proposed API version.
