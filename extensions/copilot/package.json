@@ -441,7 +441,6 @@
 				"toolReferenceName": "problems",
 				"canBeReferencedInPrompt": true,
 				"icon": "$(error)",
-				"when": "config.chat.agent.enabled",
 				"userDescription": "%copilot.tools.errors.description%",
 				"modelDescription": "Get any compile or lint errors in a code file. If the user mentions errors or problems in a file, they may be referring to these. Use the tool to see the same errors that the user is seeing. Also use this tool after editing a file to validate the change.",
 				"tags": [],
@@ -515,7 +514,6 @@
 					"enable_other_tool_copilot_findFiles",
 					"enable_other_tool_copilot_runTests"
 				],
-				"when": "config.chat.agent.enabled",
 				"canBeReferencedInPrompt": true
 			},
 			{
@@ -566,8 +564,7 @@
 					"enable_other_tool_copilot_listDirectory",
 					"enable_other_tool_copilot_findFiles",
 					"enable_other_tool_copilot_runTests"
-				],
-				"when": "config.chat.agent.enabled"
+				]
 			},
 			{
 				"name": "copilot_getTerminalSelection",
@@ -1389,7 +1386,7 @@
 				],
 				"isDefault": true,
 				"isAgent": true,
-				"when": "config.chat.agent.enabled && !chatAgentModeDisallowed",
+				"when": "config.chat.agent.enabled",
 				"commands": [
 					{
 						"name": "list"
