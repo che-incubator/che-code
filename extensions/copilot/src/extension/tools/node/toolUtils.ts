@@ -84,15 +84,16 @@ export async function assertFileOkForTool(accessor: ServicesAccessor, uri: URI):
 	const workspaceService = accessor.get(IWorkspaceService);
 	const tabsAndEditorsService = accessor.get(ITabsAndEditorsService);
 	const ignoreService = accessor.get(IIgnoreService);
+	const promptPathRepresentationService = accessor.get(IPromptPathRepresentationService);
 
 	if (workspaceService.getWorkspaceFolders.length > 0 && !workspaceService.getWorkspaceFolder(normalizePath(uri))) {
 		const fileOpenInSomeTab = tabsAndEditorsService.tabs.some(tab => isEqual(tab.uri, uri));
 		if (!fileOpenInSomeTab) {
-			throw new Error(`File is outside of the workspace and can't be read`);
+			throw new Error(`File ${promptPathRepresentationService.getFilePath(uri)} is outside of the workspace and can't be read`);
 		}
 	}
 
 	if (await ignoreService.isCopilotIgnored(uri)) {
-		throw new Error(`File is configured to be ignored by Copilot`);
+		throw new Error(`File ${promptPathRepresentationService.getFilePath(uri)} is configured to be ignored by Copilot`);
 	}
 }
