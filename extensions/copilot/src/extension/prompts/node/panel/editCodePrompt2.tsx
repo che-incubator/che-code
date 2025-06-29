@@ -10,7 +10,6 @@ import { IExperimentationService } from '../../../../platform/telemetry/common/n
 import { isLocation, isUri } from '../../../../util/common/types';
 import { ToolName } from '../../../tools/common/toolNames';
 import { IToolsService } from '../../../tools/common/toolsService';
-import { AgentConversationHistory } from '../agent/agentInstructions';
 import { AgentPromptProps, getEditingReminder } from '../agent/agentPrompt';
 import { CopilotIdentityRules } from '../base/copilotIdentity';
 import { InstructionMessage } from '../base/instructionMessage';
@@ -19,6 +18,7 @@ import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
 import { ChatToolReferences, ChatVariables, UserQuery } from './chatVariables';
 import { EXISTING_CODE_MARKER } from './codeBlockFormattingRules';
+import { ConversationHistoryWithTools } from './conversationHistory';
 import { CustomInstructions } from './customInstructions';
 import { NewFilesLocationHint } from './editCodePrompt';
 import { NotebookFormat } from './notebookEditCodePrompt';
@@ -115,7 +115,7 @@ export class EditCodePrompt2 extends PromptElement<AgentPromptProps> {
 					<SafetyRules />
 				</SystemMessage>
 				{instructionsAfterHistory ? undefined : instructions}
-				<AgentConversationHistory flexGrow={1} priority={700} promptContext={this.props.promptContext} />
+				<ConversationHistoryWithTools flexGrow={1} priority={700} promptContext={this.props.promptContext} />
 				{instructionsAfterHistory ? instructions : undefined}
 				<EditCode2UserMessage flexGrow={2} priority={900} promptContext={this.props.promptContext} endpoint={this.props.endpoint} location={this.props.location} />
 				<ChatToolCalls priority={899} flexGrow={3} promptContext={this.props.promptContext} toolCallRounds={this.props.promptContext.toolCallRounds} toolCallResults={this.props.promptContext.toolCallResults} />

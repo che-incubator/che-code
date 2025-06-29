@@ -58,12 +58,18 @@ export interface AgentPromptProps extends GenericBasePromptElementProps {
 	 */
 	readonly enableCacheBreakpoints?: boolean;
 
+	/**
+	 * Codesearch mode, aka agentic Ask mode
+	 */
 	readonly codesearchMode?: boolean;
 }
 
-// Proportion of the prompt token budget any singular textual tool result is allowed to use.
+/** Proportion of the prompt token budget any singular textual tool result is allowed to use. */
 const MAX_TOOL_RESPONSE_PCT = 0.5;
 
+/**
+ * The agent mode prompt, rendered on each request
+ */
 export class AgentPrompt extends PromptElement<AgentPromptProps> {
 	constructor(
 		props: AgentPromptProps,
@@ -73,6 +79,7 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 	) {
 		super(props);
 	}
+
 	async render(state: void, sizing: PromptSizing) {
 		const instructions = this.configurationService.getConfig(ConfigKey.Internal.SweBenchAgentPrompt) ?
 			<SweBenchAgentPrompt availableTools={this.props.promptContext.tools?.availableTools} modelFamily={this.props.endpoint.family} codesearchMode={undefined} /> :
@@ -81,8 +88,6 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 				modelFamily={this.props.endpoint.family}
 				codesearchMode={this.props.codesearchMode}
 			/>;
-
-		const globalContext = await this.getOrCreateGlobalAgentContext(this.props.endpoint);
 
 		const baseInstructions = <>
 			<SystemMessage>
@@ -100,7 +105,7 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 				</Tag>}
 			</UserMessage>
 			<UserMessage>
-				{globalContext}
+				{await this.getOrCreateGlobalAgentContext(this.props.endpoint)}
 			</UserMessage>
 		</>;
 
@@ -160,6 +165,10 @@ interface GlobalAgentContextProps extends BasePromptElementProps {
 	readonly enableCacheBreakpoints?: boolean;
 }
 
+/**
+ * The "global agent context" is a static prompt at the start of a conversation containing user environment info, initial workspace structure, anything else that is a useful beginning
+ * hint for the agent but is not updated during the conversation.
+ */
 class GlobalAgentContext extends PromptElement<GlobalAgentContextProps> {
 	render() {
 		return <UserMessage>
@@ -223,7 +232,8 @@ export function getUserMessagePropsFromAgentProps(agentProps: AgentPromptProps):
 }
 
 /**
- * Uses frozen content if available, otherwise renders from scratch.
+ * Is sent with each user message. Includes the user message and also any ambient context that we want to update with each request.
+ * Uses frozen content if available, for prompt caching and to avoid being updated by any agent action below this point in the conversation.
  */
 export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 	constructor(
@@ -273,6 +283,7 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 					<CurrentEditorContext endpoint={this.props.endpoint} />
 					<RepoContext />
 					<Tag name='reminderInstructions'>
+						{/* Critical reminders that are effective when repeated right next to the user message */}
 						{getKeepGoingReminder(this.props.endpoint.family)}
 						{getEditingReminder(hasEditFileTool, hasReplaceStringTool)}
 					</Tag>
@@ -305,6 +316,9 @@ interface ToolReferencesHintProps extends BasePromptElementProps {
 	readonly toolReferences: readonly InternalToolReference[];
 }
 
+/**
+ * `#` tool references included in the request are a strong hint to the model that the tool is relevant, but we don't force a tool call.
+ */
 class ToolReferencesHint extends PromptElement<ToolReferencesHintProps> {
 	render() {
 		if (!this.props.toolReferences.length) {
@@ -384,6 +398,10 @@ class CurrentDatePrompt extends PromptElement<BasePromptElementProps> {
 interface CurrentEditorContextProps extends BasePromptElementProps {
 	endpoint: IChatEndpoint;
 }
+
+/**
+ * Include the user's open editor and cursor position, but not content. This is independent of the "implicit context" attachment.
+ */
 class CurrentEditorContext extends PromptElement<CurrentEditorContextProps> {
 	constructor(
 		props: CurrentEditorContextProps,
@@ -583,6 +601,9 @@ export function getEditingReminder(hasEditFileTool: boolean, hasReplaceStringToo
 	return lines;
 }
 
+/**
+ * Remind gpt-4.1 to keep going and not stop to ask questions...
+ */
 export function getKeepGoingReminder(modelFamily: string | undefined) {
 	return modelFamily === 'gpt-4.1' ?
 		<>
@@ -596,6 +617,9 @@ export interface EditedFileEventsProps extends BasePromptElementProps {
 	readonly editedFileEvents: readonly ChatRequestEditedFileEvent[] | undefined;
 }
 
+/**
+ * Context about manual edits made to files that the agent previously edited.
+ */
 export class EditedFileEvents extends PromptElement<EditedFileEventsProps> {
 	constructor(
 		props: EditedFileEventsProps,
