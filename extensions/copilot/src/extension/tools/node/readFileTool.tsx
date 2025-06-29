@@ -140,6 +140,7 @@ class ReadFileTool implements ICopilotTool<ReadFileParams> {
 			]);
 		} catch (err) {
 			void this.sendReadFileTelemetry('error', options, ranges || { start: 0, end: 0, truncated: false });
+			throw err;
 		}
 	}
 
