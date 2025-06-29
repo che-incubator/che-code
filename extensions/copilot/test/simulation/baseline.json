@@ -1710,6 +1710,34 @@
     "score": 1
   },
   {
+    "name": "fetchWebPageTool (toolCalling) [panel] - multiple URLs boundary test with 6 URLs",
+    "contentFilterCount": 0,
+    "passCount": 10,
+    "failCount": 0,
+    "score": 1
+  },
+  {
+    "name": "fetchWebPageTool (toolCalling) [panel] - multiple URLs handling",
+    "contentFilterCount": 0,
+    "passCount": 10,
+    "failCount": 0,
+    "score": 1
+  },
+  {
+    "name": "fetchWebPageTool (toolCalling) [panel] - proper URL validation and query handling",
+    "contentFilterCount": 0,
+    "passCount": 10,
+    "failCount": 0,
+    "score": 1
+  },
+  {
+    "name": "fetchWebPageTool (toolCalling) [panel] - query parameter extraction",
+    "contentFilterCount": 0,
+    "passCount": 10,
+    "failCount": 0,
+    "score": 1
+  },
+  {
     "name": "findFilesTool (toolCalling) [panel] - proper glob patterns",
     "contentFilterCount": 0,
     "passCount": 10,

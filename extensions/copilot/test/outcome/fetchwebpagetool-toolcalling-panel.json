@@ -1,0 +1,26 @@
+[
+	{
+		"name": "fetchWebPageTool (toolCalling) [panel] - multiple URLs boundary test with 6 URLs",
+		"requests": [
+			"628617aa6daa0086980244da820b382d1202f025277b5c89196f8ec9ee88a683"
+		]
+	},
+	{
+		"name": "fetchWebPageTool (toolCalling) [panel] - multiple URLs handling",
+		"requests": [
+			"1ddf227d012d488d69ddb37af932d0643998dd55ed030baf61c67f4864399fb0"
+		]
+	},
+	{
+		"name": "fetchWebPageTool (toolCalling) [panel] - proper URL validation and query handling",
+		"requests": [
+			"ccf8c8565d2c6d199931277f59a63c8004cee4124f647d5d52bc7e8f47fd2111"
+		]
+	},
+	{
+		"name": "fetchWebPageTool (toolCalling) [panel] - query parameter extraction",
+		"requests": [
+			"c3654994e4ed97bbd7678dcee7caa2186ab3c0a9605d3c2b4a942a765194018d"
+		]
+	}
+]
