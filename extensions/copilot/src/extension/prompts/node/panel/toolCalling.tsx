@@ -235,7 +235,7 @@ class ToolResultElement extends PromptElement<ToolResultElementProps, void> {
 				"owner": "donjayamanne",
 				"comment": "Details about invocation of tools",
 				"validationOutcome": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The outcome of the tool input validation. valid, invalid and unknown" },
-				"validationOutcome": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The outcome of the tool Invokcation. invalidInput, disabledByUser, success, error, cancelled" },
+				"invokeOutcome": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The outcome of the tool Invokcation. invalidInput, disabledByUser, success, error, cancelled" },
 				"toolName": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The name of the tool being invoked." },
 				"model": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The model that invoked the tool" }
 			}
