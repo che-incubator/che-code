@@ -40,14 +40,10 @@ export interface AgentConversationHistoryProps extends BasePromptElementProps {
 	readonly promptContext: IBuildPromptContext;
 }
 
+/**
+ * Agent conversation history for when summarization/cache breakpoints are disabled.
+ */
 export class AgentConversationHistory extends PromptElement<AgentConversationHistoryProps> {
-
-	constructor(
-		props: AgentConversationHistoryProps,
-	) {
-		super(props);
-	}
-
 	override async render(state: void, sizing: PromptSizing) {
 		const history: PromptElement[] = [];
 		const contextHistory = this.props.promptContext.history;

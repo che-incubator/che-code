@@ -29,6 +29,9 @@ import { Tag } from '../base/tag';
 import { ChatToolCalls } from '../panel/toolCalling';
 import { AgentUserMessage, getKeepGoingReminder, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './agentPrompt';
 
+/**
+ * Prompt used to summarize conversation history when the context window is exceeded.
+ */
 export class ConversationHistorySummarizationPrompt extends PromptElement<SummarizedAgentHistoryProps> {
 	constructor(
 		props: SummarizedAgentHistoryProps,
@@ -176,6 +179,9 @@ export interface NotebookSummaryProps extends BasePromptElementProps {
 	notebook: NotebookDocument;
 }
 
+/**
+ * Conversation history rendered with tool calls and summaries.
+ */
 class ConversationHistory extends PromptElement<SummarizedAgentHistoryProps> {
 	override async render(state: void, sizing: PromptSizing) {
 		// Iterate over the turns in reverse order until we find a turn with a tool call round that was summarized
@@ -304,6 +310,9 @@ export interface SummarizedAgentHistoryProps extends BasePromptElementProps {
 	readonly maxToolResultLength: number;
 }
 
+/**
+ * Renders conversation history with tool calls and summaries, triggering summarization while rendering if necessary.
+ */
 export class SummarizedConversationHistory extends PromptElement<SummarizedAgentHistoryProps> {
 	constructor(
 		props: SummarizedAgentHistoryProps,
