@@ -441,7 +441,7 @@ function sendNotebookEditToolValidationTelemetry(invokeOutcome: ToolInvocationOu
 	let newCodeType: 'string' | 'string[]' | 'object' | 'object[]' | 'unknown' | '' = 'unknown';
 	let cellId: 'TOP' | 'BOTTOM' | 'cellid' | 'unknown' | 'empty' = 'unknown';
 	let inputParsed = 0;
-	const knownProps = ['editType', 'explanation', 'newCode', 'cellId'];
+	const knownProps = ['editType', 'explanation', 'newCode', 'cellId', 'filePath', 'language'];
 	let missingProps: string[] = [];
 	let unknownProps: string[] = [];
 	try {
