@@ -9,6 +9,7 @@ import { BudgetExceededError } from '@vscode/prompt-tsx/dist/base/materialized';
 import { ChatMessage } from '@vscode/prompt-tsx/dist/base/output/rawTypes';
 import type { ChatResponsePart, LanguageModelToolInformation, NotebookDocument, Progress } from 'vscode';
 import { ChatFetchResponseType, ChatLocation, ChatResponse, FetchSuccess } from '../../../../platform/chat/common/commonTypes';
+import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { IChatEndpoint } from '../../../../platform/networking/common/networking';
 import { IPromptPathRepresentationService } from '../../../../platform/prompts/common/promptPathRepresentationService';
@@ -30,7 +31,6 @@ import { Tag } from '../base/tag';
 import { ChatToolCalls } from '../panel/toolCalling';
 import { AgentUserMessage, getKeepGoingReminder, getUserMessagePropsFromAgentProps, getUserMessagePropsFromTurn } from './agentPrompt';
 import { SimpleSummarizedHistory } from './simpleSummarizedHistoryPrompt';
-import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
 
 export interface ConversationHistorySummarizationPromptProps extends SummarizedAgentHistoryProps {
 	simpleMode?: boolean;
@@ -386,7 +386,13 @@ class ConversationHistorySummarizer {
 		// Just a function for test to create props and call this
 		const propsInfo = this.instantiationService.createInstance(SummarizedConversationHistoryPropsBuilder).getProps(this.props);
 
-		const summary = await this.getSummaryWithFallback(propsInfo);
+		const summaryPromise = this.getSummaryWithFallback(propsInfo);
+		this.progress?.report(new ChatResponseProgressPart2(l10n.t('Summarizing conversation history...'), async () => {
+			await summaryPromise;
+			return l10n.t('Summarized conversation history');
+		}));
+
+		const summary = await summaryPromise;
 		return {
 			summary: summary.value,
 			toolCallRoundId: propsInfo.summarizedToolCallRoundId
@@ -394,25 +400,19 @@ class ConversationHistorySummarizer {
 	}
 
 	private async getSummaryWithFallback(propsInfo: ISummarizedConversationHistoryInfo): Promise<FetchSuccess<string>> {
-		let response: ChatResponse;
-		let mode: SummaryMode = SummaryMode.Full;
 		const forceMode = this.configurationService.getConfig<string | undefined>(ConfigKey.Internal.AgentHistorySummarizationMode);
 		if (forceMode === SummaryMode.Simple) {
-			mode = SummaryMode.Simple;
-			response = await this.getSummary(mode, propsInfo);
+			return await this.getSummary(SummaryMode.Simple, propsInfo);
 		} else {
 			try {
-				response = await this.getSummary(mode, propsInfo);
+				return await this.getSummary(SummaryMode.Full, propsInfo);
 			} catch (e) {
-				mode = SummaryMode.Simple;
-				response = await this.getSummary(mode, propsInfo);
+				return await this.getSummary(SummaryMode.Simple, propsInfo);
 			}
 		}
-
-		return await this.handleSummarizationResponse(response, mode);
 	}
 
-	private async getSummary(mode: SummaryMode, propsInfo: ISummarizedConversationHistoryInfo): Promise<ChatResponse> {
+	private async getSummary(mode: SummaryMode, propsInfo: ISummarizedConversationHistoryInfo): Promise<FetchSuccess<string>> {
 		const endpoint = this.props.endpoint;
 
 		let summarizationPrompt: ChatMessage[];
@@ -427,12 +427,10 @@ class ConversationHistorySummarizer {
 			throw e;
 		}
 
-		let summary: ChatResponse;
+		let summaryResponse: ChatResponse;
 		try {
-			const summaryPromise = endpoint.makeChatRequest('summarizeConversationHistory', ToolCallingLoop.stripInternalToolCallIds(summarizationPrompt), undefined, this.token ?? CancellationToken.None, ChatLocation.Other, undefined, {
-				temperature: 0,
-				stream: false,
-				tool_choice: 'none',
+			const toolOpts = mode === SummaryMode.Full ? {
+				tool_choice: 'none' as const,
 				tools: normalizeToolSchema(
 					endpoint.family,
 					this.props.tools?.map(tool => ({
@@ -447,20 +445,18 @@ class ConversationHistorySummarizer {
 						this.logService.logger.warn(`Tool ${tool} failed validation: ${rule}`);
 					},
 				),
+			} : undefined;
+			summaryResponse = await endpoint.makeChatRequest('summarizeConversationHistory', ToolCallingLoop.stripInternalToolCallIds(summarizationPrompt), undefined, this.token ?? CancellationToken.None, ChatLocation.Other, undefined, {
+				temperature: 0,
+				stream: false,
+				...toolOpts
 			});
-			this.progress?.report(new ChatResponseProgressPart2(l10n.t('Summarizing conversation history...'), async () => {
-				await summaryPromise;
-				return l10n.t('Summarized conversation history');
-			}));
-
-			// Make sure the summary actually fits in the token budget
-			summary = await summaryPromise;
 		} catch (e) {
 			this.sendSummarizationTelemetry('requestThrow', '', this.props.endpoint.model, mode);
 			throw e;
 		}
 
-		return summary;
+		return this.handleSummarizationResponse(summaryResponse, mode);
 	}
 
 	private async handleSummarizationResponse(response: ChatResponse, mode: SummaryMode): Promise<FetchSuccess<string>> {
