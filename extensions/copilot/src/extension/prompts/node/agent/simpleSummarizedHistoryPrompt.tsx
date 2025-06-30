@@ -9,8 +9,8 @@ import { truncate } from '../../../../util/vs/base/common/strings';
 import { IToolCall, IToolCallRound } from '../../../prompt/common/intents';
 import { Tag } from '../base/tag';
 import { ToolResult } from '../panel/toolCalling';
-import { SummarizedAgentHistoryProps } from './summarizedConversationHistory';
 import { getKeepGoingReminder } from './agentPrompt';
+import { SummarizedAgentHistoryProps } from './summarizedConversationHistory';
 
 /**
  * "SimpleSummarizedHistory" is a fallback for when the main history summarization fails, either due to the conversation history being longer than the context window, or some other reason.
@@ -37,7 +37,7 @@ export class SimpleSummarizedHistory extends PromptElement<SummarizedAgentHistor
 		const restEntries = historyEntries.slice(1);
 
 		return <UserMessage priority={this.props.priority}>
-			The following is a compressed version of the preceeding history in the current conversation:<br />
+			The following is a compressed version of the preceeding history in the current conversation. The first message is kept, some history may be truncated after that:<br />
 			{firstEntry && this.renderEntry(firstEntry, Number.MAX_SAFE_INTEGER)}
 			<PrioritizedList priority={5000} descending={false}>
 				{...restEntries.map(entry => this.renderEntry(entry))}
@@ -55,9 +55,14 @@ export class SimpleSummarizedHistory extends PromptElement<SummarizedAgentHistor
 			}
 		}
 
+		if (this.props.promptContext.query) {
+			entries.unshift(this.props.promptContext.query);
+		}
+
 		for (const turn of Array.from(this.props.promptContext.history ?? []).reverse()) {
 			for (const round of Array.from(turn.rounds).reverse()) {
-				entries.unshift({ round, results: this.props.promptContext.toolCallResults });
+				const results = turn.resultMetadata?.toolCallResults;
+				entries.unshift({ round, results });
 				if (round.summary) {
 					return entries;
 				}
@@ -89,10 +94,13 @@ export class SimpleSummarizedHistory extends PromptElement<SummarizedAgentHistor
 	}
 
 	private renderRound(round: IToolCallRound, results: Record<string, LanguageModelToolResult>) {
-		return [
+		const asstMsg = round.response ?
 			<ChunkTag name='assistant'>
-				{round.response ? round.response : undefined}
-			</ChunkTag>,
+				{round.response}
+			</ChunkTag> :
+			<ChunkTag name='assistant' />;
+		return [
+			asstMsg,
 			...round.toolCalls.map(toolCall => this.renderToolCall(toolCall, results[toolCall.id]))
 		];
 	}

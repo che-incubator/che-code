@@ -68,7 +68,8 @@ suite('Agent Summarization', () => {
 
 	enum TestPromptType {
 		Agent = 'Agent',
-		FullSummarization = 'FullSumm'
+		FullSummarization = 'FullSumm',
+		SimpleSummarization = 'SimpleSummarizedHistory'
 	}
 
 	async function agentPromptToString(accessor: ITestingServicesAccessor, promptContext: IBuildPromptContext, otherProps?: Partial<AgentPromptProps>, promptType: TestPromptType = TestPromptType.Agent): Promise<string> {
@@ -94,7 +95,8 @@ suite('Agent Summarization', () => {
 			renderer = PromptRenderer.create(instaService, endpoint, AgentPrompt, props);
 		} else {
 			const propsInfo = instaService.createInstance(SummarizedConversationHistoryPropsBuilder).getProps(baseProps);
-			renderer = PromptRenderer.create(instaService, endpoint, ConversationHistorySummarizationPrompt, propsInfo.props);
+			const simpleMode = promptType === TestPromptType.SimpleSummarization;
+			renderer = PromptRenderer.create(instaService, endpoint, ConversationHistorySummarizationPrompt, { ...propsInfo.props, simpleMode });
 		}
 
 		const r = await renderer.render();
@@ -134,7 +136,7 @@ suite('Agent Summarization', () => {
 	}
 
 	function getSnapshotFile(promptType: TestPromptType, name: string): string {
-		return `./__snapshots__/summarization-${promptType}-${name}.spec.snap`;
+		return `./__snapshots__/summarization-${name}-${promptType}.spec.snap`;
 	}
 
 	const tools: IBuildPromptContext['tools'] = {
@@ -193,7 +195,8 @@ suite('Agent Summarization', () => {
 
 	// Summarization for rounds in current turn
 	test('trigger summarization during tool calling', async () => await testTriggerSummarizationDuringToolCalling(TestPromptType.Agent));
-	test('ConversationHistorySummarizationPrompt - trigger summarization during tool calling', async () => await testTriggerSummarizationDuringToolCalling(TestPromptType.FullSummarization));
+	test('FullSummarization - trigger summarization during tool calling', async () => await testTriggerSummarizationDuringToolCalling(TestPromptType.FullSummarization));
+	test('SimpleSummarization - trigger summarization during tool calling', async () => await testTriggerSummarizationDuringToolCalling(TestPromptType.SimpleSummarization));
 
 	async function testSummaryCurrentTurn(promptType: TestPromptType) {
 		const excludedPreviousRound = new ToolCallRound('previous round EXCLUDED', [createEditFileToolCall(1)]);
@@ -245,7 +248,8 @@ suite('Agent Summarization', () => {
 	}
 
 	test('render summary in previous turn', async () => await testSummaryCurrentTurnEarlierRound(TestPromptType.Agent));
-	test('ConversationHistorySummarizationPrompt - render summary in previous turn', async () => await testSummaryCurrentTurnEarlierRound(TestPromptType.FullSummarization));
+	test('FullSummarization - render summary in previous turn', async () => await testSummaryCurrentTurnEarlierRound(TestPromptType.FullSummarization));
+	test('SimpleSummarization - render summary in previous turn', async () => await testSummaryCurrentTurnEarlierRound(TestPromptType.SimpleSummarization));
 
 	async function testSummaryPrevTurnMultiple(promptType: TestPromptType) {
 		const previousTurn = new Turn('id', { type: 'user', message: 'previous turn excluded' });
@@ -296,7 +300,8 @@ suite('Agent Summarization', () => {
 	}
 
 	test('render summary in previous turn (with multiple)', () => testSummaryPrevTurnMultiple(TestPromptType.Agent));
-	test('ConversationHistorySummarizationPrompt - render summary in previous turn (with multiple)', () => testSummaryPrevTurnMultiple(TestPromptType.FullSummarization));
+	test('FullSummarization - render summary in previous turn (with multiple)', () => testSummaryPrevTurnMultiple(TestPromptType.FullSummarization));
+	test('SimpleSummarization - render summary in previous turn (with multiple)', () => testSummaryPrevTurnMultiple(TestPromptType.SimpleSummarization));
 
 	async function testSummarizeWithNoRoundsInCurrentTurn(promptType: TestPromptType) {
 		const previousTurn1 = new Turn('id', { type: 'user', message: 'previous turn 1' });
@@ -328,5 +333,6 @@ suite('Agent Summarization', () => {
 	}
 
 	test('summary for previous turn, no tool call rounds', async () => testSummarizeWithNoRoundsInCurrentTurn(TestPromptType.Agent));
-	test('ConversationHistorySummarizationPrompt - summary for previous turn, no tool call rounds', async () => testSummarizeWithNoRoundsInCurrentTurn(TestPromptType.FullSummarization));
+	test('FullSummarization - summary for previous turn, no tool call rounds', async () => testSummarizeWithNoRoundsInCurrentTurn(TestPromptType.FullSummarization));
+	test('SimpleSummarization - summary for previous turn, no tool call rounds', async () => testSummarizeWithNoRoundsInCurrentTurn(TestPromptType.SimpleSummarization));
 });
