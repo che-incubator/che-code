@@ -222,8 +222,11 @@ export class XtabProvider extends ChainedStatelessNextEditProvider {
 			});
 			promptOptions = {
 				promptingStrategy,
-				currentFileMaxTokens: this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabCurrentFileMaxTokens, this.expService),
-				includeTagsInCurrentFile: promptingStrategy !== xtabPromptOptions.PromptingStrategy.UnifiedModel /* unified model doesn't use tags in current file */ && this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabIncludeTagsInCurrentFile, this.expService),
+				currentFile: {
+					maxTokens: this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabCurrentFileMaxTokens, this.expService),
+					includeTags: promptingStrategy !== xtabPromptOptions.PromptingStrategy.UnifiedModel /* unified model doesn't use tags in current file */ && this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabIncludeTagsInCurrentFile, this.expService),
+					prioritizeAboveCursor: this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabPrioritizeAboveCursor, this.expService)
+				},
 				pagedClipping: {
 					pageSize: this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabPageSize, this.expService)
 				},
@@ -244,7 +247,7 @@ export class XtabProvider extends ChainedStatelessNextEditProvider {
 			};
 		}
 
-		const areaAroundCodeToEditForCurrentFile = promptOptions.includeTagsInCurrentFile
+		const areaAroundCodeToEditForCurrentFile = promptOptions.currentFile.includeTags
 			? areaAroundCodeToEdit
 			: [
 				...contentWithCursorLines.slice(areaAroundEditWindowLinesRange.start, editWindowLinesRange.start),
@@ -255,9 +258,9 @@ export class XtabProvider extends ChainedStatelessNextEditProvider {
 			currentFileContentLines,
 			areaAroundCodeToEditForCurrentFile,
 			areaAroundEditWindowLinesRange,
-			promptOptions.currentFileMaxTokens,
 			computeTokens,
 			promptOptions.pagedClipping.pageSize,
+			promptOptions.currentFile,
 		);
 
 		const recordingEnabled = this.configService.getConfig<boolean>(ConfigKey.Internal.InlineEditsLogContextRecorderEnabled);
