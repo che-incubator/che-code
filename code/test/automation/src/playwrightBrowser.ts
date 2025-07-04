@@ -93,7 +93,6 @@ async function launchBrowser(options: LaunchOptions, endpoint: string) {
 	const [browserType, browserChannel] = (options.browser ?? 'chromium').split('-');
 	const browser = await measureAndLog(() => playwright[browserType as unknown as 'chromium' | 'webkit' | 'firefox'].launch({
 		headless: headless ?? false,
-		args: ['--headless=new'],
 		timeout: 0,
 		channel: browserChannel,
 	}), 'playwright#launch', logger);
