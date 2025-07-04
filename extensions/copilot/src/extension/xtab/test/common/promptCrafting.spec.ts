@@ -113,7 +113,7 @@ suite('Paged clipping - current file', () => {
 </area_around_code_to_edit>
 `.trim();
 
-		const output = createTaggedCurrentFileContentUsingPagedClipping(
+		const { taggedCurrentFileContent } = createTaggedCurrentFileContentUsingPagedClipping(
 			docLines.getLines(),
 			areaAroundCodeToEdit,
 			new OffsetRange(21, 26),
@@ -122,7 +122,7 @@ suite('Paged clipping - current file', () => {
 			{ ...opts, maxTokens: 2000 }
 		);
 
-		expect(output).toMatchInlineSnapshot(`
+		expect(taggedCurrentFileContent).toMatchInlineSnapshot(`
 			"1
 			2
 			3
@@ -187,7 +187,7 @@ suite('Paged clipping - current file', () => {
 </area_around_code_to_edit>
 `.trim();
 
-		const output = createTaggedCurrentFileContentUsingPagedClipping(
+		const { taggedCurrentFileContent } = createTaggedCurrentFileContentUsingPagedClipping(
 			docLines.getLines(),
 			areaAroundCodeToEdit,
 			new OffsetRange(21, 26),
@@ -196,7 +196,7 @@ suite('Paged clipping - current file', () => {
 			{ ...opts, maxTokens: 20 },
 		);
 
-		expect(output).toMatchInlineSnapshot(`
+		expect(taggedCurrentFileContent).toMatchInlineSnapshot(`
 			"21
 			<area_around_code_to_edit>
 			22
@@ -230,7 +230,7 @@ suite('Paged clipping - current file', () => {
 </a>
 `.trim();
 
-		const output = createTaggedCurrentFileContentUsingPagedClipping(
+		const { taggedCurrentFileContent } = createTaggedCurrentFileContentUsingPagedClipping(
 			docLines.getLines(),
 			areaAroundCodeToEdit,
 			new OffsetRange(10, 14),
@@ -239,7 +239,7 @@ suite('Paged clipping - current file', () => {
 			{ ...opts, maxTokens: 50 }
 		);
 
-		expect(output).toMatchInlineSnapshot(`
+		expect(taggedCurrentFileContent).toMatchInlineSnapshot(`
 			"<a>
 			11
 			12
