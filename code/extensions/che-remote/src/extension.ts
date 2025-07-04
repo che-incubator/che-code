@@ -191,7 +191,7 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
         devfilePath,
         editorContent: EDITOR_CONTENT_STUB,
         projects: []
-      }, axiosInstance);
+      }, axiosInstance as unknown as any);
   } catch (error) {
     const action = await vscode.window.showErrorMessage('Failed to generate new Devfile Context.', {
       modal: true,
