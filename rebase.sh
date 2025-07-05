@@ -476,10 +476,6 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/automation/src/playwrightBrowser.ts" ]]; then
-      apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/integration/browser/src/index.ts" ]]; then
-      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/utilityProcess/electron-main/utilityProcess.ts" ]]; then
