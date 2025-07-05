@@ -7,9 +7,9 @@ artifacts:
     filename: ms-vscode.js-debug-companion.1.1.3.vsix
     checksum: sha256:7380a890787452f14b2db7835dfa94de538caf358ebc263f9d46dd68ac52de93
   # ms-vscode.js-debug
-  - download_url: https://open-vsx.org/api/ms-vscode/js-debug/1.97.1/file/ms-vscode.js-debug-1.97.1.vsix
-    filename: ms-vscode.js-debug.1.97.1.vsix
-    checksum: sha256:977dd854805547702e312e176f68a1b142fa123f228258f47f0964560ad32496
+  - download_url: https://open-vsx.org/api/ms-vscode/js-debug/1.100.1/file/ms-vscode.js-debug-1.100.1.vsix
+    filename: ms-vscode.js-debug.1.100.1.vsix
+    checksum: sha256:8c2218df3422d45b95e96d9d28cdc4aa4426a2799aaaedd862d3f60ecab03844
   # ms-vscode.vscode-js-profile-table
   - download_url: https://open-vsx.org/api/ms-vscode/vscode-js-profile-table/1.0.10/file/ms-vscode.vscode-js-profile-table-1.0.10.vsix
     filename: ms-vscode.vscode-js-profile-table.1.0.10.vsix

@@ -93,11 +93,12 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
       npm run playwright-install; \
     fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/) && \
-      rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-      ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-      ls -la /checode-compilation/extensions/vscode-api-tests/ && \
-      ls -la /checode-compilation/extensions/vscode-api-tests/out/; \
+      PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux) && \
+      echo "Found headless_shell path: $PLAYWRIGHT_HEADLESS_PATH" && \
+      rm -f "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
+      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
+      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/chrome" && \
+      ls -la "$PLAYWRIGHT_HEADLESS_PATH"; \
     fi
 
 # Run integration tests (Browser)

@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "vscode-nls": "^5.0.0",
-    "axios": "^1.7.4",
-    "@eclipse-che/che-devworkspace-generator": "7.99.0-next-aef9b62",
+    "axios": "^1.8.3",
+    "@eclipse-che/che-devworkspace-generator": "7.105.0-next-a6fff71",
     "https": "^1.0.0",
     "js-yaml": "^4.0.0"
   },

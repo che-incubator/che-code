@@ -28,7 +28,7 @@ export class SharedWebContentExtractorService implements ISharedWebContentExtrac
 				return undefined;
 			}
 
-			const content = VSBuffer.wrap(new Uint8Array(await response.arrayBuffer()));
+			const content = VSBuffer.wrap(await response.bytes());
 			return content;
 		} catch (err) {
 			console.log(err);

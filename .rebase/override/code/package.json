@@ -6,7 +6,6 @@
     },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
-      "electron": "30.5.1",
-      "typescript": "5.6.0-dev.20240715"
+      "electron": "30.5.1"
     }
 }
