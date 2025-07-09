@@ -2,7 +2,7 @@
 
 | Packages | License | Resolved CQs |
 | --- | --- | --- |
-| `@devfile/api@2.3.0-1738854228` |  | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/@devfile/api/2.3.0-1738854228) |
+| `@devfile/api@2.3.0-1738854228` | Apache-2.0 | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/@devfile/api/2.3.0-1738854228) |
 | `@eclipse-che/api@7.93.0` | EPL-2.0 | ecd.che |
 | `@eclipse-che/workspace-telemetry-client@0.0.1-1685523760` | EPL-2.0 | ecd.che |
 | `@isaacs/cliui@8.0.2` | ISC | #8260 |
@@ -25,7 +25,7 @@
 | `ansi-styles@4.3.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/ansi-styles/4.3.0) |
 | `ansi-styles@6.2.1` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/ansi-styles/6.2.1) |
 | `argparse@2.0.1` | Python-2.0 | CQ22954 |
-| `asn1@0.2.6` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/asn1/0.2.6) |
+| `asn1@0.2.6` | MIT | #21125 |
 | `assert-plus@1.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/assert-plus/1.0.0) |
 | `asynckit@0.4.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/asynckit/0.4.0) |
 | `aws-sign2@0.7.0` | Apache-2.0 | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/aws-sign2/0.7.0) |
@@ -46,7 +46,7 @@
 | `dashdash@1.14.1` | MIT | #14596 |
 | `delayed-stream@1.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/delayed-stream/1.0.0) |
 | `eastasianwidth@0.2.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/eastasianwidth/0.2.0) |
-| `ecc-jsbn@0.1.2` |  | #17389 |
+| `ecc-jsbn@0.1.2` | MIT | #17389 |
 | `emoji-regex@8.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/emoji-regex/8.0.0) |
 | `emoji-regex@9.2.2` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/emoji-regex/9.2.2) |
 | `es6-promise@4.2.8` | MIT | #2898 |
