@@ -10,6 +10,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: che-code
+
 components:
 
   - name: dev
