@@ -2,13 +2,19 @@
 
 | Packages | License | Resolved CQs |
 | --- | --- | --- |
-| `@devfile/api@2.3.0-1738342178` | Apache-2.0 | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/@devfile/api/2.3.0-1738342178) |
-| `@eclipse-che/che-devworkspace-generator@7.99.0-next-aef9b62` | EPL-2.0 | ecd.che |
+| `@devfile/api@2.3.0-1747843475` |  | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/@devfile/api/2.3.0-1747843475) |
+| `@eclipse-che/che-devworkspace-generator@7.105.0-next-a6fff71` | EPL-2.0 | ecd.che |
+| `@inversifyjs/common@1.5.2` |  | transitive dependency |
+| `@inversifyjs/container@1.10.3` |  | transitive dependency |
+| `@inversifyjs/core@5.3.3` |  | transitive dependency |
+| `@inversifyjs/plugin@0.2.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/@inversifyjs/plugin/0.2.0) |
+| `@inversifyjs/prototype-utils@0.1.2` |  | transitive dependency |
+| `@inversifyjs/reflect-metadata-utils@1.2.0` |  | transitive dependency |
 | `@types/node-fetch@2.6.12` | MIT | #11004 |
 | `@types/node@20.16.14` | MIT | #16051 |
 | `argparse@2.0.1` | Python-2.0 | CQ22954 |
 | `asynckit@0.4.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/asynckit/0.4.0) |
-| `axios@1.7.7` | MIT | #14871 |
+| `axios@1.10.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/axios/1.10.0) |
 | `call-bind-apply-helpers@1.0.2` | MIT | #17826 |
 | `combined-stream@1.0.8` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/combined-stream/1.0.8) |
 | `delayed-stream@1.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/delayed-stream/1.0.0) |
@@ -21,10 +27,10 @@
 | `follow-redirects@1.15.9` | MIT | #10782 |
 | `form-data@2.5.3` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/form-data/2.5.3) |
 | `form-data@4.0.1` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/form-data/4.0.1) |
-| `form-data@4.0.2` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/form-data/4.0.2) |
+| `form-data@4.0.3` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/form-data/4.0.3) |
 | `fs-extra@11.2.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/fs-extra/11.2.0) |
 | `function-bind@1.1.2` | MIT | #11063 |
-| `get-intrinsic@1.2.7` | MIT | #8453 |
+| `get-intrinsic@1.3.0` | MIT | #19525 |
 | `get-proto@1.0.1` | MIT | #18351 |
 | `gopd@1.2.0` | MIT | #17752 |
 | `graceful-fs@4.2.11` | ISC | #7413 |
@@ -32,11 +38,12 @@
 | `has-tostringtag@1.0.2` | MIT | #13161 |
 | `hasown@2.0.2` | MIT | #11097 |
 | `https@1.0.0` | ISC | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/https/1.0.0) |
-| `inversify@6.0.2` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/inversify/6.0.2) |
+| `inversify@7.5.4` |  | transitive dependency |
 | `js-yaml@4.1.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/js-yaml/4.1.0) |
 | `jsonc-parser@3.3.1` | MIT | #15491 |
 | `jsonfile@6.1.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/jsonfile/6.1.0) |
 | `jsonschema@1.4.1` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/jsonschema/1.4.1) |
+| `lodash@4.17.21` | CC0-1.0 | #2096 |
 | `math-intrinsics@1.1.0` | MIT | #17964 |
 | `mime-db@1.52.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/mime-db/1.52.0) |
 | `mime-types@2.1.35` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/mime-types/2.1.35) |
