@@ -5,11 +5,12 @@
 import { EmbeddingVector } from '../../src/platform/embeddings/common/embeddingsComputer';
 import { SQLiteCache } from './cache';
 import { CacheableEmbeddingRequest, IEmbeddingsCache } from './cachingEmbeddingsFetcher';
+import { CurrentTestRunInfo } from './simulationContext';
 
 export const usedEmbeddingsCaches = new Set<string>();
 
 export class EmbeddingsSQLiteCache extends SQLiteCache<CacheableEmbeddingRequest, EmbeddingVector> implements IEmbeddingsCache {
-	constructor(salt: string) {
-		super('embeddings', salt);
+	constructor(salt: string, currentTestRunInfo: CurrentTestRunInfo) {
+		super('embeddings', salt, currentTestRunInfo);
 	}
 }

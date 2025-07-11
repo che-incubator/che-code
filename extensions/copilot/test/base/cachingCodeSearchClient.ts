@@ -9,6 +9,7 @@ import { IInstantiationService } from '../../src/util/vs/platform/instantiation/
 import { CODE_SEARCH_CACHE_SALT } from '../cacheSalt';
 import { SQLiteCache } from './cache';
 import { computeSHA256 } from './hash';
+import { CurrentTestRunInfo } from './simulationContext';
 
 class CacheableCodeOrDocSearchRequest {
 
@@ -36,8 +37,8 @@ interface ICodeOrDocSearchCache {
 
 export class CodeOrDocSearchSQLiteCache extends SQLiteCache<CacheableCodeOrDocSearchRequest, ICodeOrDocsSearchItem[] | ICodeOrDocsSearchResult> implements ICodeOrDocSearchCache {
 
-	constructor(salt: string) {
-		super('docs-search', salt);
+	constructor(salt: string, currentTestRunInfo: CurrentTestRunInfo) {
+		super('docs-search', salt, currentTestRunInfo);
 	}
 }
 
