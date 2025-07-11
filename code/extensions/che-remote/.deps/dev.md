@@ -270,7 +270,6 @@
 | `locate-path@6.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/locate-path/6.0.0) |
 | `lodash.memoize@4.1.2` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/lodash.memoize/4.1.2) |
 | `lodash.merge@4.6.2` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/lodash.merge/4.6.2) |
-| `lodash@4.17.21` | CC0-1.0 | #2096 |
 | `lru-cache@5.1.1` | ISC | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/lru-cache/5.1.1) |
 | `make-dir@4.0.0` | MIT | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/make-dir/4.0.0) |
 | `make-error@1.3.6` | ISC | [clearlydefined](https://clearlydefined.io/definitions/npm/npmjs/-/make-error/1.3.6) |

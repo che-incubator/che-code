@@ -476,17 +476,11 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/automation/src/playwrightBrowser.ts" ]]; then
-      apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/integration/browser/src/index.ts" ]]; then
-      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/utilityProcess/electron-main/utilityProcess.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
-      apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/platform/webContentExtractor/node/sharedWebContentExtractorService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
@@ -516,7 +510,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/main)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.100)
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version

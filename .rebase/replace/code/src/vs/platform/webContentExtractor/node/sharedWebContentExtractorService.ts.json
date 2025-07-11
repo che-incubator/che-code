@@ -1,6 +1,0 @@
-[
-    {
-        "from": "const content = VSBuffer.wrap(await response.bytes());",
-        "by": "const content = VSBuffer.wrap(new Uint8Array(await response.arrayBuffer()));"
-    }
-]

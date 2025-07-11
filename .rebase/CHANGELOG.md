@@ -9,14 +9,6 @@ https://github.com/che-incubator/che-code/pull/549
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/546
-
-- code/package.json 
-- code/build/package.json
-- code/remote/package.json
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/545
 
 - code/build/package.json
@@ -25,13 +17,11 @@ https://github.com/che-incubator/che-code/pull/545
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/540 \
 https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394 \
-https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d \
-https://github.com/RomanNikitenko/che-code/commit/7ea82ac755a21d2cb021736a07d8216fe294beff
+https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d
 
 - code/package.json
 - code/remote/package.json
 - code/src/vs/platform/extensionManagement/node/extensionManagementService.ts
-- code/src/vs/platform/webContentExtractor/node/sharedWebContentExtractorService.ts
 ---
 
 #### @RomanNikitenko

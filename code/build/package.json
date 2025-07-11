@@ -54,7 +54,8 @@
     "tree-sitter": "^0.22.4",
     "vscode-universal-bundler": "^0.1.3",
     "workerpool": "^6.4.0",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "zx": "8.5.0"
   },
   "type": "commonjs",
   "scripts": {
@@ -65,10 +66,5 @@
   "optionalDependencies": {
     "tree-sitter-typescript": "^0.23.2",
     "vscode-gulp-watch": "^5.0.3"
-  },
-  "overrides": {
-    "prebuild-install": {
-      "tar-fs": "2.1.2"
-    }
   }
 }
