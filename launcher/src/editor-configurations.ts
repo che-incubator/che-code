@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2024 Red Hat, Inc.
+ * Copyright (c) 2024-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -91,15 +91,28 @@ export class EditorConfigurations {
   private async configureExtensions(configmap: k8s.V1ConfigMap): Promise<void> {
     const configmapContent = configmap.data![EditorConfigs.Extensions];
     if (!configmapContent) {
+      console.log(`    > Configmap does not contain ${EditorConfigs.Extensions}. Skip this step.`);
       return;
     }
 
     console.log('  > Configure workspace extensions...');
 
     try {
-      const extensionsFromConfigmap = parseJSON(configmapContent, {
+      const parsedConfigmapContent = parseJSON(configmapContent, {
         errorMessage: 'Configmap content is not valid.',
       });
+
+      const configMapExtensions = parsedConfigmapContent?.recommendations;
+      if (!Array.isArray(configMapExtensions) || configMapExtensions.length < 1) {
+        console.log(
+          `    > ${EditorConfigs.Extensions} section of Configmap does not contain recomendations. Skip this step.`
+        );
+        return;
+      } else {
+        console.log(
+          `    > ${EditorConfigs.Extensions} section of Configmap contains ${configMapExtensions.length} extensions.`
+        );
+      }
 
       if (!this.workspaceFilePath) {
         console.log('    > Missing workspace file. Skip this step.');
@@ -118,10 +131,12 @@ export class EditorConfigurations {
         errorMessage: 'Workspace file is not valid.',
       });
 
-      workspaceConfigData['extensions'] = {
-        ...(workspaceConfigData['extensions'] || {}),
-        ...extensionsFromConfigmap,
-      };
+      const workspaceFileExtensions = workspaceConfigData?.extensions?.recommendations || [];
+      console.log(`    > Workspace file contains ${workspaceFileExtensions.length} extensions.`);
+
+      const combinedExtensions = Array.from(new Set([...configMapExtensions, ...workspaceFileExtensions]));
+      workspaceConfigData.extensions = workspaceConfigData.extensions ?? {};
+      workspaceConfigData.extensions.recommendations = combinedExtensions;
 
       const json = JSON.stringify(workspaceConfigData, null, '\t');
       await fs.writeFile(this.workspaceFilePath, json);
