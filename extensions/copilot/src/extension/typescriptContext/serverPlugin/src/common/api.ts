@@ -8,12 +8,13 @@ const ts = TS();
 
 import { CompilerOptionsRunnable } from './baseContextProviders';
 import { ClassContextProvider } from './classContextProvider';
-import { ContextProvider, ContextRunnableCollector, RecoverableError, RequestContext, type ComputeContextSession, type ContextProviderFactory, type ContextResult, type ContextRunnable, type ProviderComputeContext } from './contextProvider';
+import { ContextProvider, ContextRunnableCollector, RequestContext, type ComputeContextSession, type ContextProviderFactory, type ContextResult, type ContextRunnable, type ProviderComputeContext } from './contextProvider';
 import { FunctionContextProvider } from './functionContextProvider';
 import { ConstructorContextProvider, MethodContextProvider } from './methodContextProvider';
 import { ModuleContextProvider } from './moduleContextProvider';
 import { type FilePath } from './protocol';
 import { SourceFileContextProvider } from './sourceFileContextProvider';
+import { RecoverableError } from './types';
 import tss from './typescripts';
 
 class ProviderComputeContextImpl implements ProviderComputeContext {
@@ -87,7 +88,7 @@ class ContextProviders {
 
 	private getContextRunnables(session: ComputeContextSession, languageService: tt.LanguageService, context: RequestContext, token: tt.CancellationToken): ContextRunnableCollector {
 		const result: ContextRunnableCollector = new ContextRunnableCollector(context.clientSideRunnableResults);
-		result.addPrimary(new CompilerOptionsRunnable(session, languageService, context));
+		result.addPrimary(new CompilerOptionsRunnable(session, languageService, context, this.tokenInfo.token.getSourceFile()));
 		const providers = this.computeProviders();
 		for (const provider of providers) {
 			provider.provide(result, session, languageService, context, token);

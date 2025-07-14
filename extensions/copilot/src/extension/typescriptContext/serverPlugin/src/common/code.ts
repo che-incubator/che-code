@@ -6,8 +6,8 @@ import type tt from 'typescript/lib/tsserverlibrary';
 import TS from './typescript';
 const ts = TS();
 
-import { ProgramContext, RecoverableError, type ComputeContextSession, type SnippetProvider } from './contextProvider';
-import { CodeSnippet, type SpeculativeKind } from './protocol';
+import { CodeSnippet } from './protocol';
+import { type EmitterContext, ProgramContext, RecoverableError, SnippetProvider } from './types';
 import { Symbols } from './typescripts';
 
 namespace Nodes {
@@ -76,7 +76,7 @@ namespace Nodes {
 
 abstract class AbstractEmitter {
 
-	protected readonly session: ComputeContextSession;
+	protected readonly context: EmitterContext;
 
 	private indent: number;
 
@@ -85,8 +85,8 @@ abstract class AbstractEmitter {
 	protected readonly additionalSources: Set<string>;
 
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, indent: number = 0) {
-		this.session = session;
+	constructor(context: EmitterContext, source: tt.SourceFile, indent: number = 0) {
+		this.context = context;
 		this.indent = indent;
 		this.source = source.fileName;
 		this.lines = [];
@@ -103,7 +103,7 @@ abstract class AbstractEmitter {
 			}
 			let keys: string[] | undefined = [];
 			for (const symbol of symbols) {
-				const key = Symbols.createVersionedKey(symbol, this.session, this.session.host);
+				const key = Symbols.createVersionedKey(symbol, this.context);
 				if (key !== undefined) {
 					keys.push(key);
 				} else {
@@ -113,7 +113,7 @@ abstract class AbstractEmitter {
 			}
 			return keys === undefined ? undefined : keys.join(';');
 		} else {
-			return Symbols.createVersionedKey(symbols, this.session, this.session.host);
+			return Symbols.createVersionedKey(symbols, this.context);
 		}
 	}
 
@@ -304,8 +304,8 @@ abstract class TypeEmitter extends AbstractEmitter {
 	protected readonly type: tt.Symbol;
 	protected readonly name: string;
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, type: tt.Symbol, name: string) {
-		super(session, source);
+	constructor(context: EmitterContext, source: tt.SourceFile, type: tt.Symbol, name: string) {
+		super(context, source);
 		this.type = type;
 		this.name = name;
 	}
@@ -377,8 +377,8 @@ class ClassEmitter extends TypeEmitter {
 
 	public readonly key: string | undefined;
 
-	constructor(session: ComputeContextSession, symbols: Symbols, source: tt.SourceFile, clazz: tt.Symbol, name: string, includeSuperClasses: boolean, includePrivates: boolean) {
-		super(session, source, clazz, name);
+	constructor(context: EmitterContext, symbols: Symbols, source: tt.SourceFile, clazz: tt.Symbol, name: string, includeSuperClasses: boolean, includePrivates: boolean) {
+		super(context, source, clazz, name);
 		this.includePrivates = includePrivates;
 		this.key = undefined;
 		if (includeSuperClasses) {
@@ -424,8 +424,8 @@ class InterfaceEmitter extends TypeEmitter {
 
 	public readonly key: string | undefined;
 
-	constructor(session: ComputeContextSession, symbols: Symbols, source: tt.SourceFile, type: tt.Symbol, name: string) {
-		super(session, source, type, name);
+	constructor(context: EmitterContext, symbols: Symbols, source: tt.SourceFile, type: tt.Symbol, name: string) {
+		super(context, source, type, name);
 		this.superTypes = new Array<tt.Symbol>(...symbols.getAllSuperTypes(type)).filter(t => Symbols.isInterface(t));
 		if (this.superTypes.length === 0) {
 			this.key = this.makeKey(type);
@@ -460,8 +460,8 @@ class EnumEmitter extends AbstractEmitter {
 
 	public readonly key: string | undefined;
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, type: tt.Symbol, name: string) {
-		super(session, source);
+	constructor(context: EmitterContext, source: tt.SourceFile, type: tt.Symbol, name: string) {
+		super(context, source);
 		this.type = type;
 		this.name = name;
 		this.key = this.makeKey(type);
@@ -498,8 +498,8 @@ class TypeLiteralEmitter extends TypeEmitter {
 
 	public readonly key: string | undefined;
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, type: tt.Symbol, name: string) {
-		super(session, source, type, name);
+	constructor(context: EmitterContext, source: tt.SourceFile, type: tt.Symbol, name: string) {
+		super(context, source, type, name);
 	}
 
 	public emit(): void {
@@ -518,8 +518,8 @@ class FunctionEmitter extends AbstractEmitter {
 	private readonly func: tt.Symbol;
 	private readonly name: string;
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, func: tt.Symbol, name?: string) {
-		super(session, source);
+	constructor(context: EmitterContext, source: tt.SourceFile, func: tt.Symbol, name?: string) {
+		super(context, source);
 		this.func = func;
 		this.name = name ?? func.getName();
 	}
@@ -551,8 +551,8 @@ class ModuleEmitter extends AbstractEmitter {
 	private readonly module: tt.Symbol;
 	private readonly name: string;
 
-	constructor(session: ComputeContextSession, source: tt.SourceFile, module: tt.Symbol, name?: string) {
-		super(session, source);
+	constructor(context: EmitterContext, source: tt.SourceFile, module: tt.Symbol, name?: string) {
+		super(context, source);
 		this.module = module;
 		this.name = name ?? module.getName();
 	}
@@ -602,16 +602,16 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 	private readonly additionalSources: Set<string>;
 	private indent: number = 0;
 
-	private readonly session: ComputeContextSession;
+	private readonly context: EmitterContext;
 	private readonly symbols: Symbols;
 	private readonly currentSourceFile: tt.SourceFile;
 
-	constructor(session: ComputeContextSession, symbols: Symbols, currentSourceFile: tt.SourceFile) {
+	constructor(context: EmitterContext, symbols: Symbols, currentSourceFile: tt.SourceFile) {
 		super();
 		this.lines = [];
 		this.source = undefined;
 		this.additionalSources = new Set();
-		this.session = session;
+		this.context = context;
 		this.symbols = symbols;
 		this.currentSourceFile = currentSourceFile;
 	}
@@ -658,12 +658,12 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		return this.lines.length === 0 || this.source === undefined;
 	}
 
-	public snippet(key: string | undefined, priority: number, speculativeKind: SpeculativeKind): CodeSnippet {
+	public snippet(key: string | undefined, priority: number): CodeSnippet {
 		if (this.source === undefined) {
 			throw new RecoverableError('No source', RecoverableError.NoSourceFile);
 		}
 		this.additionalSources.delete(this.source);
-		return CodeSnippet.create(key, this.source, this.additionalSources.size === 0 ? undefined : [...this.additionalSources], this.lines.join('\n'), priority, speculativeKind);
+		return CodeSnippet.create(key, this.source, this.additionalSources.size === 0 ? undefined : [...this.additionalSources], this.lines.join('\n'), priority);
 	}
 
 	public addDeclaration(declaration: tt.Declaration): void {
@@ -671,13 +671,19 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (sourceFile.fileName === this.currentSourceFile.fileName || this.skipDeclaration(declaration, sourceFile)) {
 			return;
 		}
-		const lines = Nodes.getLines(declaration, sourceFile);
+		this.addLines(Nodes.getLines(declaration, sourceFile));
+		this.addSource(sourceFile.fileName);
+	}
+
+	public addLines(lines: string[]): void {
+		if (lines.length === 0) {
+			return;
+		}
 		if (this.indent === 0) {
 			this.lines.push(...lines);
 		} else {
-			this.lines.push(...lines.map(line => `${'\t'.repeat(this.indent)}${line})`));
+			this.lines.push(...lines.map(line => `${'\t'.repeat(this.indent)}${line}`));
 		}
-		this.addSource(sourceFile.fileName);
 	}
 
 	public addClassSymbol(clazz: tt.Symbol, name: string, includeSuperClasses: boolean = true, includePrivates: boolean = false): void {
@@ -688,7 +694,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new ClassEmitter(this.session, this.symbols, info.primary, clazz, name, includeSuperClasses, includePrivates));
+		this.addEmitter(new ClassEmitter(this.context, this.symbols, info.primary, clazz, name, includeSuperClasses, includePrivates));
 	}
 
 	public addTypeLiteralSymbol(type: tt.Symbol, name: string): void {
@@ -699,7 +705,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new TypeLiteralEmitter(this.session, info.primary, type, name));
+		this.addEmitter(new TypeLiteralEmitter(this.context, info.primary, type, name));
 	}
 
 	public addInterfaceSymbol(iface: tt.Symbol, name: string): void {
@@ -710,29 +716,14 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new InterfaceEmitter(this.session, this.symbols, info.primary, iface, name));
+		this.addEmitter(new InterfaceEmitter(this.context, this.symbols, info.primary, iface, name));
 	}
 
-	public addTypeAliasSymbol(type: tt.Symbol, name: string): void {
-		if (!Symbols.isTypeAlias(type)) {
+	public addTypeAliasSymbol(symbol: tt.Symbol, _name: string): void {
+		if (!Symbols.isTypeAlias(symbol)) {
 			return;
 		}
-		const typeToEmit = this.getTypeToEmit(type);
-		if (typeToEmit === undefined) {
-			return;
-		}
-		const info = this.getSymbolInfo(typeToEmit);
-		if (info.skip) {
-			return;
-		}
-		const source = info.primary;
-		if (Symbols.isClass(typeToEmit)) {
-			this.addEmitter(new ClassEmitter(this.session, this.symbols, source, typeToEmit, name, true, false));
-		} else if (Symbols.isInterface(typeToEmit)) {
-			this.addEmitter(new InterfaceEmitter(this.session, this.symbols, source, typeToEmit, name));
-		} else if (Symbols.isTypeLiteral(typeToEmit)) {
-			this.addEmitter(new TypeLiteralEmitter(this.session, source, typeToEmit, name));
-		}
+		// This should not happens since we flatten the type aliases in the symbols.
 	}
 
 	public addEnumSymbol(enm: tt.Symbol, name: string): void {
@@ -743,7 +734,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new EnumEmitter(this.session, info.primary, enm, name));
+		this.addEmitter(new EnumEmitter(this.context, info.primary, enm, name));
 	}
 
 	public addFunctionSymbol(func: tt.Symbol, name?: string): void {
@@ -754,7 +745,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new FunctionEmitter(this.session, info.primary, func, name));
+		this.addEmitter(new FunctionEmitter(this.context, info.primary, func, name));
 	}
 
 	public addModuleSymbol(module: tt.Symbol, name?: string): void {
@@ -765,7 +756,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		if (info.skip) {
 			return;
 		}
-		this.addEmitter(new ModuleEmitter(this.session, info.primary, module, name));
+		this.addEmitter(new ModuleEmitter(this.context, info.primary, module, name));
 	}
 
 	public addTypeSymbol(type: tt.Symbol, name?: string): void {
@@ -795,7 +786,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		let uri: string | undefined;
 		let additionalUris: Set<string> | undefined;
 		if (emitter.key !== undefined) {
-			const code = this.session.getCachedCode(emitter.key);
+			const code = this.context.getCachedCode(emitter.key);
 			if (code !== undefined) {
 				lines = code.value;
 				uri = code.uri;
@@ -808,7 +799,7 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 			uri = emitter.source;
 			additionalUris = emitter.getAdditionalSources();
 			if (emitter.key !== undefined) {
-				this.session.cacheCode(emitter.key, { value: lines, uri, additionalUris });
+				this.context.cacheCode(emitter.key, { value: lines, uri, additionalUris });
 			}
 		}
 		if (this.indent === 0) {
@@ -818,32 +809,5 @@ export class CodeSnippetBuilder extends ProgramContext implements SnippetProvide
 		}
 		this.addSource(uri);
 		this.addAdditionalSource(additionalUris);
-	}
-
-	private getTypeToEmit(type: tt.Symbol): tt.Symbol | undefined {
-		if (!Symbols.isTypeAlias(type)) {
-			return undefined;
-		}
-		const declarations = type.declarations;
-		if (declarations === undefined) {
-			return undefined;
-		}
-		for (const declaration of declarations) {
-			if (ts.isTypeAliasDeclaration(declaration)) {
-				const type = declaration.type;
-				if (ts.isTypeLiteralNode(type)) {
-					const symbol = this.symbols.getLeafSymbolAtLocation(type);
-					if (Symbols.isTypeLiteral(symbol)) {
-						return symbol;
-					}
-				} else if (ts.isTypeReferenceNode(type)) {
-					const symbol = this.symbols.getLeafSymbolAtLocation(type.typeName);
-					if (Symbols.isInterface(symbol) || Symbols.isTypeLiteral(symbol) || Symbols.isTypeLiteral(symbol)) {
-						return symbol;
-					}
-				}
-			}
-		}
-		return undefined;
 	}
 }
