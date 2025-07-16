@@ -3156,6 +3156,10 @@
 					"submenu": "github.copilot.chat.debug.filter",
 					"when": "view == copilot-chat",
 					"group": "navigation"
+				},
+				{
+					"command": "github.copilot.debug.showChatLogView",
+					"when": "view == workbench.panel.chat.view.copilot"
 				}
 			],
 			"view/item/context": [
