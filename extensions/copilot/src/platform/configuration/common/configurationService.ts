@@ -711,6 +711,7 @@ export namespace ConfigKey {
 		export const AskAgent = defineExpSetting<boolean>('chat.advanced.enableAskAgent', { defaultValue: false, teamDefaultValue: true, internalDefaultValue: true }, INTERNAL_RESTRICTED);
 		export const VerifyTextDocumentChanges = defineExpSetting<boolean>('chat.advanced.inlineEdits.verifyTextDocumentChanges', true, INTERNAL_RESTRICTED);
 		export const EnableApplyPatchForNotebooks = defineExpSetting<boolean>('chat.advanced.enableApplyPatchForNotebooks', false, INTERNAL_RESTRICTED);
+		export const OmitBaseAgentInstructions = defineSetting<boolean>('chat.advanced.omitBaseAgentInstructions', false, INTERNAL);
 	}
 
 	export const AgentThinkingTool = defineSetting<boolean>('chat.agent.thinkingTool', false);
@@ -773,6 +774,7 @@ export namespace ConfigKey {
 	export const EditsCodeNewNotebookAgentEnabled = defineExpSetting<boolean>('chat.edits.newNotebook.enabled', true);
 	export const AutoFixDiagnostics = defineSetting<boolean>('chat.agent.autoFix', true);
 	export const NotebookFollowCellExecution = defineSetting<boolean>('chat.notebook.followCellExecution.enabled', false);
+	export const CustomInstructionsInSystemMessage = defineSetting<boolean>('chat.customInstructionsInSystemMessage', false);
 }
 
 export function getAllConfigKeys(): string[] {

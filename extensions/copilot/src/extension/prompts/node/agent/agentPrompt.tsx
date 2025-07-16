@@ -90,21 +90,18 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 				codesearchMode={this.props.codesearchMode}
 			/>;
 
-		const baseInstructions = <>
+		const omitBaseAgentInstructions = this.configurationService.getConfig(ConfigKey.Internal.OmitBaseAgentInstructions);
+		const baseAgentInstructions = <>
 			<SystemMessage>
 				You are an expert AI programming assistant, working with a user in the VS Code editor.<br />
 				<CopilotIdentityRules />
 				<SafetyRules />
 			</SystemMessage>
 			{instructions}
-			<UserMessage>
-				<CustomInstructions languageId={undefined} chatVariables={this.props.promptContext.chatVariables} />
-				{this.props.promptContext.modeInstructions && <Tag name='customInstructions'>
-					Below are some additional instructions from the user.<br />
-					<br />
-					{this.props.promptContext.modeInstructions}
-				</Tag>}
-			</UserMessage>
+		</>;
+		const baseInstructions = <>
+			{!omitBaseAgentInstructions && baseAgentInstructions}
+			{this.getAgentCustomInstructions()}
 			<UserMessage>
 				{await this.getOrCreateGlobalAgentContext(this.props.endpoint)}
 			</UserMessage>
@@ -135,6 +132,28 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 				<ChatToolCalls priority={899} flexGrow={2} promptContext={this.props.promptContext} toolCallRounds={this.props.promptContext.toolCallRounds} toolCallResults={this.props.promptContext.toolCallResults} truncateAt={maxToolResultLength} enableCacheBreakpoints={false} />
 			</>;
 		}
+	}
+
+	private getAgentCustomInstructions() {
+		const putCustomInstructionsInSystemMessage = this.configurationService.getConfig(ConfigKey.CustomInstructionsInSystemMessage);
+		const customInstructionsBody = <>
+			<CustomInstructions
+				languageId={undefined}
+				chatVariables={this.props.promptContext.chatVariables}
+				includeSystemMessageConflictWarning={!putCustomInstructionsInSystemMessage}
+				customIntroduction={putCustomInstructionsInSystemMessage ? '' : undefined} // If in system message, skip the "follow these user-provided coding instructions" intro
+			/>
+			{
+				this.props.promptContext.modeInstructions && <Tag name='customInstructions'>
+					Below are some additional instructions from the user.<br />
+					<br />
+					{this.props.promptContext.modeInstructions}
+				</Tag>
+			}
+		</>;
+		return putCustomInstructionsInSystemMessage ?
+			<SystemMessage>{customInstructionsBody}</SystemMessage> :
+			<UserMessage>{customInstructionsBody}</UserMessage>;
 	}
 
 	private async getOrCreateGlobalAgentContext(endpoint: IChatEndpoint): Promise<PromptPieceChild[]> {
