@@ -22,7 +22,7 @@
 	"icon": "assets/copilot.png",
 	"pricing": "Trial",
 	"engines": {
-		"vscode": "^1.103.0-insider",
+		"vscode": "^1.103.0-20250717",
 		"npm": ">=9.0.0",
 		"node": ">=22.14.0"
 	},
@@ -130,7 +130,8 @@
 		"contribLanguageModelToolSets",
 		"textDocumentChangeReason",
 		"resolvers",
-		"taskExecutionTerminal"
+		"taskExecutionTerminal",
+		"dataChannels"
 	],
 	"contributes": {
 		"languageModelTools": [
