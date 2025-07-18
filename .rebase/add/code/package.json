@@ -16,6 +16,12 @@
         },
         "postcss": {
             "nanoid": "3.3.8"
+        },
+        "@vscode/test-web": {
+            "tar-fs": "3.0.9"
+        },
+        "prebuild-install": {
+            "tar-fs": "2.1.3"
         }
     }
 }
