@@ -66,5 +66,10 @@
   "optionalDependencies": {
     "tree-sitter-typescript": "^0.23.2",
     "vscode-gulp-watch": "^5.0.3"
+  },
+  "overrides": {
+    "prebuild-install": {
+      "tar-fs": "2.1.3"
+    }
   }
 }
