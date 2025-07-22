@@ -49,6 +49,8 @@ export const enum ToolName {
 
 	CoreRunInTerminal = 'run_in_terminal',
 	CoreGetTerminalOutput = 'get_terminal_output',
+	CoreRunTask = 'run__task',
+	CoreGetTaskOutput = 'get_task_output2',
 }
 
 // When updating this, also update contributedToolNameToToolNames
