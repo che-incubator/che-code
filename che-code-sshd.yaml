@@ -1,0 +1,64 @@
+#
+# Copyright (c) 2025 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# Contributors:
+#   Red Hat, Inc. - initial API and implementation
+#
+
+schemaVersion: 2.3.0
+metadata:
+  name: che-code-sshd
+  displayName: Visual Studio Code (desktop) (SSH)
+  description: Visual Studio Code server for Eclipse Che over SSH - latest
+  tags:
+    - ssh
+    - CLI
+    - vscode
+  attributes:
+    arch:
+      - x86_64
+      - arm64
+      - s390x
+      - ppc64le
+    publisher: che-incubator
+    version: latest
+    provider: Provided by [Microsoft](https://www.microsoft.com/) under [License](https://code.visualstudio.com/License)
+    title: Visual Studio Code server for Eclipse Che over SSH - latest
+    repository: https://github.com/rgrunber/che-code
+    firstPublicationDate: '2025-08-01'
+
+components:
+  - name: che-code-sshd
+    container:
+      image: quay.io/rgrunber/che-code-sshd:latest
+      memoryLimit: 1024Mi
+      memoryRequest: 256Mi
+      cpuLimit: 500m
+      cpuRequest: 30m
+      command:
+        - sh
+        - -c
+        - "nohup /entrypoint.sh & nohup /sshd.start & nohup node /opt/www/server.js & tail -f /dev/null"
+      endpoints:
+        - name: che-code-sshd
+          attributes:
+            type: main
+            discoverable: false
+            urlRewriteSupported: true
+          targetPort: 3400
+          exposure: public
+          secure: true
+          protocol: https
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+    attributes:
+      app.kubernetes.io/component: che-code-sshd
+      app.kubernetes.io/part-of: che-code-server.eclipse.org
+  - name: m2
+    volume: {}

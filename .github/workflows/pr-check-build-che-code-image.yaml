@@ -13,7 +13,7 @@
 name: Pull Request Check
 
 # Trigger the workflow on pull request
-on: [pull_request]
+on: [workflow_dispatch]
 
 jobs:
   # build:
@@ -124,10 +124,7 @@ jobs:
 
       - name: Build Che-Code Docker image
         run: |
-          PR_NUMBER="${{ github.event.number }}"
-          echo "Pull request $PR_NUMBER"
-          
-          DEV_IMAGE_NAME="quay.io/che-incubator-pull-requests/che-code-dev:pr-$PR_NUMBER-dev-amd64"
+          DEV_IMAGE_NAME="quay.io/rgrunber/che-code-sshd:latest"
           echo "Dev image $DEV_IMAGE_NAME"
           echo "_DEV_IMAGE_NAME=${DEV_IMAGE_NAME}" >> $GITHUB_ENV
           
@@ -135,21 +132,9 @@ jobs:
             --platform linux/amd64 \
             --progress=plain \
             --push \
-            -f build/dockerfiles/dev.ssh.Dockerfile \
+            -f build/dockerfiles/dev.sshd.Dockerfile \
             -t ${DEV_IMAGE_NAME} .
 
       - name: Display docker images
         run: |
           docker images
-
-      - name: 'Comment PR'
-        uses: actions/github-script@v6
-        with:
-         script: |
-           const { repo: { owner, repo } } = context;
-           await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `Pull Request Dev image published:\n👉 [${process.env._DEV_IMAGE_NAME}](https://${process.env._DEV_IMAGE_NAME})`
-            })
