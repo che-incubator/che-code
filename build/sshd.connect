@@ -1,6 +1,0 @@
-#!/bin/bash
-
-rm -rf /home/user/.ssh
-mkdir -p /home/user/.ssh
-
-ssh -l user -p 2022 -i /home/user/ssh/host_ed25519_key 127.0.0.1
