@@ -1,0 +1,6 @@
+[
+    {
+        "from": "this.preferPreReleases = this.productService.quality !== 'stable';",
+        "by": "this.preferPreReleases = false;"
+    }
+]
