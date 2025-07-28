@@ -3,6 +3,12 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/539
+
+- code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/557
 
 - code/package.json

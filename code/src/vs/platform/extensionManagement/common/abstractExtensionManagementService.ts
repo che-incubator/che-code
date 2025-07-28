@@ -69,7 +69,7 @@ export abstract class CommontExtensionManagementService extends Disposable imple
 		@IAllowedExtensionsService protected readonly allowedExtensionsService: IAllowedExtensionsService,
 	) {
 		super();
-		this.preferPreReleases = this.productService.quality !== 'stable';
+		this.preferPreReleases = false;
 	}
 
 	async canInstall(extension: IGalleryExtension): Promise<true | IMarkdownString> {
