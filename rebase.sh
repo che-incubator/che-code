@@ -438,10 +438,6 @@ resolve_conflicts() {
       apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
-    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
-      apply_code_remote_package_changes
-    elif [[ "$conflictingFile" == "code/remote/package-lock.json" ]]; then
-      apply_code_remote_package_lock_changes      
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
@@ -512,7 +508,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.100)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.101)
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version
