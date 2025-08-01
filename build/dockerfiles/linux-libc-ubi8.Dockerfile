@@ -59,7 +59,8 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    PATH="/opt/rh/gcc-toolset-13/root/usr/bin:${PATH}"
 
 # Initialize a git repository for code build tools
 RUN git init .
