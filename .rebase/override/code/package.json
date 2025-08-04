@@ -2,7 +2,6 @@
     "name": "che-code",
     "bin": "out/vs/server/main.js",
     "devDependencies": {
-      "@vscode/l10n-dev": "0.0.18",
-      "electron": "30.5.1"
+      "@vscode/l10n-dev": "0.0.18"
     }
 }
