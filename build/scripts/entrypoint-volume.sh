@@ -87,6 +87,9 @@ else
 
   case "${openssl_version}" in
   *"1"*)
+    export LD_LIBRARY_PATH="/checode/checode-linux-libc/ubi8/ld_libs:$LD_LIBRARY_PATH"
+    echo "[INFO] LD_LIBRARY_PATH is: $LD_LIBRARY_PATH"
+
     echo "[INFO] Using linux-libc ubi8-based assembly..."
     cd /checode/checode-linux-libc/ubi8 || exit
     ;;
