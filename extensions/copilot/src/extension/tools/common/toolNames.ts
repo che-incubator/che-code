@@ -5,7 +5,7 @@
 
 import { cloneAndChange } from '../../../util/vs/base/common/objects';
 
-export const enum ToolName {
+export enum ToolName {
 	ApplyPatch = 'apply_patch',
 	Codebase = 'semantic_search',
 	VSCodeAPI = 'get_vscode_api',
@@ -53,8 +53,7 @@ export const enum ToolName {
 	CoreRunTest = 'runTests',
 }
 
-// When updating this, also update contributedToolNameToToolNames
-export const enum ContributedToolName {
+export enum ContributedToolName {
 	ApplyPatch = 'copilot_applyPatch',
 	Codebase = 'copilot_searchCodebase',
 	SearchWorkspaceSymbols = 'copilot_searchWorkspaceSymbols',
@@ -94,46 +93,14 @@ export const enum ContributedToolName {
 	RunVscodeCmd = 'copilot_runVscodeCommand',
 }
 
-const contributedToolNameToToolNames = new Map<ContributedToolName, ToolName>([
-	[ContributedToolName.ApplyPatch, ToolName.ApplyPatch],
-	[ContributedToolName.Codebase, ToolName.Codebase],
-	[ContributedToolName.SearchWorkspaceSymbols, ToolName.SearchWorkspaceSymbols],
-	[ContributedToolName.Usages, ToolName.Usages],
-	[ContributedToolName.VSCodeAPI, ToolName.VSCodeAPI],
-	[ContributedToolName.TestFailure, ToolName.TestFailure],
-	[ContributedToolName.FindFiles, ToolName.FindFiles],
-	[ContributedToolName.FindTextInFiles, ToolName.FindTextInFiles],
-	[ContributedToolName.ReadFile, ToolName.ReadFile],
-	[ContributedToolName.ListDirectory, ToolName.ListDirectory],
-	[ContributedToolName.GetErrors, ToolName.GetErrors],
-	[ContributedToolName.DocInfo, ToolName.DocInfo],
-	[ContributedToolName.GetScmChanges, ToolName.GetScmChanges],
-	[ContributedToolName.ReadProjectStructure, ToolName.ReadProjectStructure],
-	[ContributedToolName.EditFile, ToolName.EditFile],
-	[ContributedToolName.UpdateUserPreferences, ToolName.UpdateUserPreferences],
-	[ContributedToolName.CreateNewWorkspace, ToolName.CreateNewWorkspace],
-	[ContributedToolName.CreateNewJupyterNotebook, ToolName.CreateNewJupyterNotebook],
-	[ContributedToolName.InstallExtension, ToolName.InstallExtension],
-	[ContributedToolName.Think, ToolName.Think],
-	[ContributedToolName.FetchWebPage, ToolName.FetchWebPage],
-	[ContributedToolName.FindTestFiles, ToolName.FindTestFiles],
-	[ContributedToolName.CreateFile, ToolName.CreateFile],
-	[ContributedToolName.ReplaceString, ToolName.ReplaceString],
-	[ContributedToolName.EditNotebook, ToolName.EditNotebook],
-	[ContributedToolName.RunNotebookCell, ToolName.RunNotebookCell],
-	[ContributedToolName.GetNotebookSummary, ToolName.GetNotebookSummary],
-	[ContributedToolName.ReadCellOutput, ToolName.ReadCellOutput],
-	[ContributedToolName.GetProjectSetupInfo, ToolName.GetProjectSetupInfo],
-	[ContributedToolName.SearchViewResults, ToolName.SearchViewResults],
-	[ContributedToolName.GithubRepo, ToolName.GithubRepo],
-	[ContributedToolName.SimpleBrowser, ToolName.SimpleBrowser],
-	[ContributedToolName.CreateDirectory, ToolName.CreateDirectory],
-	[ContributedToolName.RunVscodeCmd, ToolName.RunVscodeCmd],
-]);
-
 const toolNameToContributedToolNames = new Map<ToolName, ContributedToolName>();
-for (const [contributedName, name] of contributedToolNameToToolNames) {
-	toolNameToContributedToolNames.set(name, contributedName);
+const contributedToolNameToToolNames = new Map<ContributedToolName, ToolName>();
+for (const [contributedNameKey, contributedName] of Object.entries(ContributedToolName)) {
+	const toolName = ToolName[contributedNameKey as keyof typeof ToolName];
+	if (toolName) {
+		toolNameToContributedToolNames.set(toolName, contributedName);
+		contributedToolNameToToolNames.set(contributedName, toolName);
+	}
 }
 
 export function getContributedToolName(name: string | ToolName): string | ContributedToolName {
