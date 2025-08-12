@@ -45,7 +45,7 @@ import { UserPreferences } from '../panel/preferences';
 import { ChatToolCalls } from '../panel/toolCalling';
 import { MultirootWorkspaceStructure } from '../panel/workspace/workspaceStructure';
 import { AgentConversationHistory } from './agentConversationHistory';
-import { AlternateGPTPrompt, DefaultAgentPrompt, SweBenchAgentPrompt } from './agentInstructions';
+import { AlternateGPTPrompt, CodexStyleGPTPrompt, DefaultAgentPrompt, GPT5PromptV2, SweBenchAgentPrompt } from './agentInstructions';
 import { SummarizedConversationHistory } from './summarizedConversationHistory';
 
 export interface AgentPromptProps extends GenericBasePromptElementProps {
@@ -83,19 +83,7 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 	}
 
 	async render(state: void, sizing: PromptSizing) {
-		const instructions = this.configurationService.getConfig(ConfigKey.Internal.SweBenchAgentPrompt) ?
-			<SweBenchAgentPrompt availableTools={this.props.promptContext.tools?.availableTools} modelFamily={this.props.endpoint.family} codesearchMode={undefined} /> :
-			this.props.endpoint.family.startsWith('gpt-') && this.configurationService.getExperimentBasedConfig(ConfigKey.EnableAlternateGptPrompt, this.experimentationService) ?
-				<AlternateGPTPrompt
-					availableTools={this.props.promptContext.tools?.availableTools}
-					modelFamily={this.props.endpoint.family}
-					codesearchMode={this.props.codesearchMode}
-				/> :
-				<DefaultAgentPrompt
-					availableTools={this.props.promptContext.tools?.availableTools}
-					modelFamily={this.props.endpoint.family}
-					codesearchMode={this.props.codesearchMode}
-				/>;
+		const instructions = this.getInstructions();
 
 		const omitBaseAgentInstructions = this.configurationService.getConfig(ConfigKey.Internal.OmitBaseAgentInstructions);
 		const baseAgentInstructions = <>
@@ -139,6 +127,52 @@ export class AgentPrompt extends PromptElement<AgentPromptProps> {
 				<ChatToolCalls priority={899} flexGrow={2} promptContext={this.props.promptContext} toolCallRounds={this.props.promptContext.toolCallRounds} toolCallResults={this.props.promptContext.toolCallResults} truncateAt={maxToolResultLength} enableCacheBreakpoints={false} />
 			</>;
 		}
+	}
+
+	private getInstructions() {
+		if (this.configurationService.getConfig(ConfigKey.Internal.SweBenchAgentPrompt)) {
+			return <SweBenchAgentPrompt availableTools={this.props.promptContext.tools?.availableTools} modelFamily={this.props.endpoint.family} codesearchMode={undefined} />;
+		}
+
+		const promptType = this.configurationService.getConfig(ConfigKey.Internal.Gpt5AlternatePromptConfig);
+		const modelFamily = this.props.endpoint.family;
+
+		if (modelFamily.startsWith('gpt-5') && promptType) {
+			switch (promptType) {
+				case 'codex':
+					return <CodexStyleGPTPrompt
+						availableTools={this.props.promptContext.tools?.availableTools}
+						modelFamily={this.props.endpoint.family}
+						codesearchMode={this.props.codesearchMode}
+					/>;
+				case 'v2':
+					return <GPT5PromptV2
+						availableTools={this.props.promptContext.tools?.availableTools}
+						modelFamily={this.props.endpoint.family}
+						codesearchMode={this.props.codesearchMode}
+					/>;
+				case 'alternate':
+					return <AlternateGPTPrompt
+						availableTools={this.props.promptContext.tools?.availableTools}
+						modelFamily={this.props.endpoint.family}
+						codesearchMode={this.props.codesearchMode}
+					/>;
+			}
+		}
+
+		if (this.props.endpoint.family.startsWith('gpt-') && this.configurationService.getExperimentBasedConfig(ConfigKey.EnableAlternateGptPrompt, this.experimentationService)) {
+			return <AlternateGPTPrompt
+				availableTools={this.props.promptContext.tools?.availableTools}
+				modelFamily={this.props.endpoint.family}
+				codesearchMode={this.props.codesearchMode}
+			/>;
+		}
+
+		return <DefaultAgentPrompt
+			availableTools={this.props.promptContext.tools?.availableTools}
+			modelFamily={this.props.endpoint.family}
+			codesearchMode={this.props.codesearchMode}
+		/>;
 	}
 
 	private getAgentCustomInstructions() {
@@ -267,6 +301,7 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 		props: AgentUserMessageProps,
 		@IPromptVariablesService private readonly promptVariablesService: IPromptVariablesService,
 		@ILogService private readonly logService: ILogService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super(props);
 	}
@@ -293,6 +328,7 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 			: '';
 		const hasToolsToEditNotebook = hasCreateFileTool || hasEditNotebookTool || hasReplaceStringTool || hasApplyPatchTool || hasEditFileTool;
 		const hasTodoTool = !!this.props.availableTools?.find(tool => tool.name === ToolName.CoreManageTodoList);
+		const skipReminderInstructions = this.props.endpoint.family.startsWith('gpt-5') && this.configurationService.getConfig(ConfigKey.Internal.Gpt5AlternatePromptConfig);
 
 		return (
 			<>
@@ -310,13 +346,16 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 					</Tag>
 					<CurrentEditorContext endpoint={this.props.endpoint} />
 					<RepoContext />
-					<Tag name='reminderInstructions'>
-						{/* Critical reminders that are effective when repeated right next to the user message */}
-						<KeepGoingReminder modelFamily={this.props.endpoint.family} />
-						{getEditingReminder(hasEditFileTool, hasReplaceStringTool, modelNeedsStrongReplaceStringHint(this.props.endpoint))}
-						<NotebookReminderInstructions chatVariables={this.props.chatVariables} query={this.props.request} />
-						{getExplanationReminder(this.props.endpoint.family, hasTodoTool)}
-					</Tag>
+
+					{!skipReminderInstructions && (
+						<Tag name='reminderInstructions'>
+							{/* Critical reminders that are effective when repeated right next to the user message */}
+							<KeepGoingReminder modelFamily={this.props.endpoint.family} />
+							{getEditingReminder(hasEditFileTool, hasReplaceStringTool, modelNeedsStrongReplaceStringHint(this.props.endpoint))}
+							<NotebookReminderInstructions chatVariables={this.props.chatVariables} query={this.props.request} />
+							{getExplanationReminder(this.props.endpoint.family, hasTodoTool)}
+						</Tag>
+					)}
 					{query && <Tag name='userRequest' priority={900} flexGrow={7}>{query + attachmentHint}</Tag>}
 					{this.props.enableCacheBreakpoints && <cacheBreakpoint type={CacheType} />}
 				</UserMessage>
