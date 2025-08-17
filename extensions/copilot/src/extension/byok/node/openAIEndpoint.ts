@@ -19,6 +19,8 @@ import { ITelemetryService } from '../../../platform/telemetry/common/telemetry'
 import { IThinkingDataService } from '../../../platform/thinking/node/thinkingDataService';
 import { ITokenizerProvider } from '../../../platform/tokenizer/node/tokenizer';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
+import { IConfigurationService } from '../../../platform/configuration/common/configurationService';
+import { IExperimentationService } from '../../../platform/telemetry/common/nullExperimentationService';
 
 function hydrateBYOKErrorMessages(response: ChatResponse): ChatResponse {
 	if (response.type === ChatFetchResponseType.Failed && response.streamError) {
@@ -56,7 +58,9 @@ export class OpenAIEndpoint extends ChatEndpoint {
 		@IChatMLFetcher chatMLFetcher: IChatMLFetcher,
 		@ITokenizerProvider tokenizerProvider: ITokenizerProvider,
 		@IInstantiationService protected instantiationService: IInstantiationService,
-		@IThinkingDataService private thinkingDataService: IThinkingDataService
+		@IThinkingDataService private thinkingDataService: IThinkingDataService,
+		@IConfigurationService configurationService: IConfigurationService,
+		@IExperimentationService expService: IExperimentationService
 	) {
 		super(
 			_modelInfo,
@@ -68,7 +72,9 @@ export class OpenAIEndpoint extends ChatEndpoint {
 			authService,
 			chatMLFetcher,
 			tokenizerProvider,
-			instantiationService
+			instantiationService,
+			configurationService,
+			expService
 		);
 	}
 
@@ -115,6 +121,15 @@ export class OpenAIEndpoint extends ChatEndpoint {
 			// Removing max tokens defaults to the maximum which is what we want for BYOK
 			delete body.max_tokens;
 			body['stream_options'] = { 'include_usage': true };
+
+			if (this.useResponsesApi) {
+				body.n = undefined;
+				body.stream_options = undefined;
+
+				if (!this._modelInfo.capabilities.supports.thinking) {
+					body.reasoning = undefined;
+				}
+			}
 		}
 	}
 
