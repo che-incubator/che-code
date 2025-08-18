@@ -37,7 +37,6 @@ import { ICopilotTool, ToolRegistry } from '../common/toolsRegistry';
 
 export interface IEditNotebookToolParams {
 	filePath: string;
-	explanation?: string;
 	cellId?: string;
 	newCode?: string | string[];
 	language?: string;
@@ -50,7 +49,7 @@ type DeleteCell = { cell: vscode.NotebookCell; index: number; type: 'delete' };
 type ChangedCell = ExistingCell | InsertCell | DeleteCell;
 
 class ErrorWithTelemetrySafeReason extends Error {
-	constructor(message: string, public readonly reason: string) {
+	constructor(message: string, public readonly reason: string, public readonly data?: string) {
 		super(message);
 	}
 }
@@ -127,6 +126,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 		disposables.add(toDisposable(() => sendEndEdit()));
 		const counters = { insert: 0, edit: 0, delete: 0 };
 		let failureReason: string | undefined = undefined;
+		let failureData: string | undefined = undefined;
 		try {
 			// First validate all of the args begore applying any changes.
 			this.fixInput(options.input, notebook, provider);
@@ -166,7 +166,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 				} else {
 					const cell = cellId ? cellMap.get(cellId) : undefined;
 					if (cellId && !cell) {
-						throw new ErrorWithTelemetrySafeReason(`Invalid cell id: ${cellId}, notebook may have been modified, try reading the file again`, 'invalid_cell_id_insert_after');
+						throw new ErrorWithTelemetrySafeReason(`Invalid cell id: ${cellId}, notebook may have been modified, try reading the file again`, 'invalid_cell_id_insert_after', cellId);
 					}
 					const entry = cells.find(item => item.cell === cell)!;
 					cellsCellIndex = cells.indexOf(entry) + 1;
@@ -196,7 +196,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 				previousCellIdUsedForInsertion = '';
 				const cell = cellId ? cellMap.get(cellId) : undefined;
 				if (!cell) {
-					throw new ErrorWithTelemetrySafeReason(`Invalid cell id: ${cellId}, notebook may have been modified, try reading the file again`, 'invalid_cell_id_empty');
+					throw new ErrorWithTelemetrySafeReason(`Invalid cell id: ${cellId}, notebook may have been modified, try reading the file again`, 'invalid_cell_id_empty', cellId);
 				}
 				const cellIndex = cells.find(i => i.cell === cell)!.index;
 				if (cellIndex === -1) {
@@ -291,6 +291,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 				failureReason = 'cancellation';
 			} else {
 				failureReason = error && error instanceof ErrorWithTelemetrySafeReason ? error.reason : 'unknown';
+				failureData = error && error instanceof ErrorWithTelemetrySafeReason ? error.data : '';
 			}
 			throw error;
 		} finally {
@@ -298,7 +299,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 			if (!failureReason) {
 				sendEditNotebookCellOperationsTelemetry(this.telemetryService, this.endpointProvider, options, counters);
 			}
-			sendEditNotebookToolOutcomeTelemetry(this.telemetryService, this.endpointProvider, options, failureReason ?? 'success');
+			sendEditNotebookToolOutcomeTelemetry(this.telemetryService, this.endpointProvider, options, failureReason ?? 'success', failureData);
 			sendEditNotebookTelemetry(this.telemetryService, this.endpointProvider, 'notebookEdit', notebookUri, this.promptContext?.requestId, options.model ?? this.promptContext?.request?.model);
 		}
 
@@ -311,8 +312,8 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 
 	prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<IEditNotebookToolParams>, token: vscode.CancellationToken): vscode.ProviderResult<vscode.PreparedToolInvocation> {
 		return {
-			invocationMessage: options.input.explanation || l10n.t('Editing notebook'),
-			presentation: options.input.explanation ? undefined : 'hidden'
+			invocationMessage: l10n.t('Editing notebook'),
+			presentation: 'hidden'
 		};
 	}
 
@@ -323,7 +324,7 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 		const cellMap = getCellIdMap(notebook);
 		const cell = (id && id !== 'top' && id !== 'bottom') ? cellMap.get(id) : undefined;
 		if (id && id !== 'top' && id !== 'bottom' && !cell) {
-			throw new ErrorWithTelemetrySafeReason(`None of the edits were applied as cell id: ${id} is invalid. Notebook may have been modified, try reading the file again`, 'invalidCellId');
+			throw new ErrorWithTelemetrySafeReason(`None of the edits were applied as cell id: ${id} is invalid. Notebook may have been modified, try reading the file again`, 'invalidCellId', cellId);
 		}
 		switch (editType) {
 			case 'insert':
@@ -358,8 +359,8 @@ export class EditNotebookTool implements ICopilotTool<IEditNotebookToolParams> {
 		if (input.cellId.toLowerCase() === 'bottom') {
 			input.cellId = 'bottom';
 		}
-		if (input.editType === 'insert' && input.newCode) {
-			input.newCode = provider.stripCellMarkers(Array.isArray(input.newCode) ? input.newCode.join(EOL) : input.newCode);
+		if (input.editType === 'insert') {
+			input.newCode = input.newCode ? provider.stripCellMarkers(Array.isArray(input.newCode) ? input.newCode.join(EOL) : input.newCode) : '';
 		}
 		if (input.newCode && Array.isArray(input.newCode)) {
 			input.newCode = Array.isArray(input.newCode) ? input.newCode.join(EOL) : input.newCode;
@@ -590,7 +591,7 @@ export async function sendEditNotebookTelemetry(telemetryService: ITelemetryServ
 	);
 }
 
-async function sendEditNotebookToolOutcomeTelemetry(telemetryService: ITelemetryService, endpointProvider: IEndpointProvider | undefined, options: vscode.LanguageModelToolInvocationOptions<IEditNotebookToolParams>, outcome: string) {
+async function sendEditNotebookToolOutcomeTelemetry(telemetryService: ITelemetryService, endpointProvider: IEndpointProvider | undefined, options: vscode.LanguageModelToolInvocationOptions<IEditNotebookToolParams>, outcome: string, failureData?: string) {
 	const model = (options.model && endpointProvider && (await endpointProvider.getChatEndpoint(options.model)).model);
 
 	/* __GDPR__
@@ -600,11 +601,12 @@ async function sendEditNotebookToolOutcomeTelemetry(telemetryService: ITelemetry
 			"requestId": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The id of the current request turn." },
 			"isNotebook": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Whether the document is a notebook (this measure is used to identify notebook related telemetry)." },
 			"outcome": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Outcome of the edit operation" },
+			"failureData": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Additional data about the failure, if any" },
 			"model": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The model used for the request." }
 		}
 	*/
 	telemetryService.sendMSFTTelemetryEvent('editNotebook.toolOutcome',
-		{ requestId: options.chatRequestId, outcome, model }, { isNotebook: 1 }
+		{ requestId: options.chatRequestId, outcome, model, failureData }, { isNotebook: 1 }
 	);
 }
 
@@ -667,25 +669,21 @@ async function sendEditNotebookCellTelemetry(telemetryService: ITelemetryService
 🛠️ edit_notebook_file (call_j3TEKk5R0KHfMYhJo1x88QeS) {
 	"filePath": "/Users/donjayamanne/demo/chat/sample.ipynb",
 	"cellIndex": 2,
-	"explanation": "Deleting empty cell",
 	"editType": "delete"
 }
 🛠️ edit_notebook_file (call_Gv6WxrMzSIDMPE0lqqM3GbWo) {
 	"filePath": "/Users/donjayamanne/demo/chat/sample.ipynb",
 	"cellIndex": 3,
-	"explanation": "Deleting empty cell",
 	"editType": "delete"
 }
 🛠️ edit_notebook_file (call_iPokgpiaeYDV7JwnbAFgdgZD) {
 	"filePath": "/Users/donjayamanne/demo/chat/sample.ipynb",
 	"cellIndex": 4,
-	"explanation": "Deleting empty cell",
 	"editType": "delete"
 }
 🛠️ edit_notebook_file (call_8t3Ls4C3QLVDAeFXwU1dE7Hh) {
 	"filePath": "/Users/donjayamanne/demo/chat/sample.ipynb",
 	"cellIndex": 6,
-	"explanation": "Deleting empty cell",
 	"editType": "delete"
 }
 ````
