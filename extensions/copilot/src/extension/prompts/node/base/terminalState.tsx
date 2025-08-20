@@ -8,16 +8,16 @@ import { ITasksService } from '../../../../platform/tasks/common/tasksService';
 import { ITerminalService } from '../../../../platform/terminal/common/terminalService';
 import { ToolName } from '../../../tools/common/toolNames';
 
-export interface TerminalAndTaskStateProps extends BasePromptElementProps {
+export interface TerminalStateProps extends BasePromptElementProps {
 	sessionId?: string;
 }
 
 /**
  * PromptElement that gets the current task and terminal state for the chat context.
  */
-export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAndTaskStateProps> {
+export class TerminalStatePromptElement extends PromptElement<TerminalStateProps> {
 	constructor(
-		props: TerminalAndTaskStateProps,
+		props: TerminalStateProps,
 		@ITasksService private readonly tasksService: ITasksService,
 		@ITerminalService private readonly terminalService: ITerminalService
 	) {
@@ -27,22 +27,7 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 		const resultTasks: ITaskPromptInfo[] = [];
 		const allTasks = this.tasksService.getTasks()?.[0]?.[1] ?? [];
 		const tasks = Array.isArray(allTasks) ? allTasks : [];
-		const tasksToRender = tasks.filter(async (task) => this.tasksService.isTaskActive(task) || (await this.tasksService.getTerminalForTask(task)));
-		for (const exec of tasksToRender) {
-			if (exec?.label) {
-				resultTasks.push({
-					name: exec.label,
-					isBackground: exec.isBackground,
-					type: exec?.type,
-					command: exec?.command,
-					script: exec.script,
-					problemMatcher: Array.isArray(exec.problemMatcher) && exec.problemMatcher.length > 0 ? exec.problemMatcher.join(', ') : '',
-					group: exec.group,
-					dependsOn: exec.dependsOn,
-					isActive: this.tasksService.isTaskActive(exec),
-				});
-			}
-		}
+		const activeTaskNames = tasks.filter(t => this.tasksService.isTaskActive(t)).map(t => t.label);
 
 		if (this.terminalService && Array.isArray(this.terminalService.terminals)) {
 			const terminals = await Promise.all(this.terminalService.terminals.map(async (term) => {
@@ -56,31 +41,11 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 					} : undefined
 				} as ITerminalPromptInfo;
 			}));
-			const resultTerminals = terminals.filter(t => !!t);
+			const resultTerminals = terminals.filter(t => !!t && !activeTaskNames.includes(t.name));
 
 			if (resultTerminals.length === 0 && resultTasks.length === 0) {
 				return 'No tasks or terminals found.';
 			}
-
-			const renderTasks = () =>
-				resultTasks.length > 0 && (
-					<>
-						Tasks:<br />
-						{resultTasks.map((t) => (
-							<>
-								Task: {t.name} ({t.isBackground && `is background: ${String(t.isBackground)} `}
-								{t.isActive ? ', is running' : 'is inactive'}
-								{t.type ? `, type: ${t.type}` : ''}
-								{t.command ? `, command: ${t.command}` : ''}
-								{t.script ? `, script: ${t.script}` : ''}
-								{t.problemMatcher ? `Problem Matchers: ${t.problemMatcher}` : ''}
-								{t.group?.kind ? `Group: ${t.group.isDefault ? 'isDefault ' + t.group.kind : t.group.kind} ` : ''}
-								{t.dependsOn ? `Depends On: ${t.dependsOn}` : ''})
-								<br />
-							</>
-						))}
-					</>
-				);
 
 			const renderTerminals = () => (
 				<>
@@ -97,19 +62,16 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 											Exit Code: {term.lastCommand.exitCode ?? '(unknown)'}<br />
 										</>
 									) : ''}
-									Output: {'{'}Use {ToolName.CoreGetTerminalOutput} for terminal with ID: {term.pid}.{'}'}<br />
+									Output: {'{'}Use {ToolName.CoreGetTerminalOutput} for terminal.{'}'}<br />
 								</>
 							))}
 						</>
 					)}
 				</>
 			);
-			const renderedTasks = renderTasks();
-			const renderedTerminals = renderTerminals();
 			return (
 				<>
-					{resultTasks.length > 0 ? renderedTasks : 'Tasks: No tasks found.\n'}
-					{resultTerminals.length > 0 ? renderedTerminals : 'Terminals: No terminals found.\n'}
+					{resultTerminals.length > 0 ? renderTerminals() : 'Terminals: No terminals found.\n'}
 				</>
 			);
 		}
