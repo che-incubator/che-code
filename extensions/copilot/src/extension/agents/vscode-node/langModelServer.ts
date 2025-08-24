@@ -12,28 +12,18 @@ import { ILogService } from '../../../platform/log/common/logService';
 import { OpenAiFunctionTool } from '../../../platform/networking/common/fetch';
 import { IChatEndpoint } from '../../../platform/networking/common/networking';
 import { generateUuid } from '../../../util/vs/base/common/uuid';
-import { AnthropicAdapter, IProtocolAdapter, IStreamingContext, OpenAIAdapter } from './adapters';
+import { AnthropicAdapterFactory } from './adapters/anthropicAdapter';
+import { IAgentStreamBlock, IProtocolAdapter, IProtocolAdapterFactory, IStreamingContext } from './adapters/types';
 
-export interface ServerTextLineResponse {
-	type: 'text';
-	content: string;
-}
-export interface ServerToolCallResponse {
-	type: 'tool_call';
-	callId: string;
-	name: string;
-	input: object;
-}
-
-interface ServerConfig {
+export interface IServerConfig {
 	port: number;
 	nonce: string;
 }
 
-class LanguageModelServer {
+export class LanguageModelServer {
 	private server: http.Server;
-	private config: ServerConfig;
-	private adapters: Map<string, IProtocolAdapter>;
+	private config: IServerConfig;
+	private adapterFactories: Map<string, IProtocolAdapterFactory>;
 
 	constructor(
 		@ILogService private readonly logService: ILogService,
@@ -43,9 +33,8 @@ class LanguageModelServer {
 			port: 0, // Will be set to random available port
 			nonce: 'vscode-lm-' + generateUuid()
 		};
-		this.adapters = new Map();
-		this.adapters.set('/v1/chat/completions', new OpenAIAdapter());
-		this.adapters.set('/v1/messages', new AnthropicAdapter());
+		this.adapterFactories = new Map();
+		this.adapterFactories.set('/v1/messages', new AnthropicAdapterFactory());
 
 		this.server = this.createServer();
 	}
@@ -71,10 +60,13 @@ class LanguageModelServer {
 			}
 
 			if (req.method === 'POST') {
-				const adapter = this.getAdapterForPath(req.url || '');
-				if (adapter) {
+				const adapterFactory = this.getAdapterFactoryForPath(req.url || '');
+				if (adapterFactory) {
 					try {
 						const body = await this.readRequestBody(req);
+
+						// Create new adapter instance for this request
+						const adapter = adapterFactory.createAdapter();
 
 						// Verify nonce for authentication
 						const authKey = adapter.extractAuthKey(req.headers);
@@ -117,9 +109,9 @@ class LanguageModelServer {
 		}
 	}
 
-	private getAdapterForPath(url: string): IProtocolAdapter | undefined {
+	private getAdapterFactoryForPath(url: string): IProtocolAdapterFactory | undefined {
 		const pathname = this.parseUrlPathname(url);
-		return this.adapters.get(pathname);
+		return this.adapterFactories.get(pathname);
 	}
 
 	private async readRequestBody(req: http.IncomingMessage): Promise<string> {
@@ -173,14 +165,10 @@ class LanguageModelServer {
 			});
 
 			try {
-				// Create streaming context
+				// Create streaming context with only essential shared data
 				const context: IStreamingContext = {
 					requestId: `req_${Math.random().toString(36).substr(2, 20)}`,
-					modelId: selectedEndpoint.model,
-					currentBlockIndex: 0,
-					hasTextBlock: false,
-					hadToolCalls: false,
-					outputTokens: 0
+					modelId: selectedEndpoint.model
 				};
 
 				// Send initial events if adapter supports them
@@ -213,8 +201,11 @@ class LanguageModelServer {
 						}
 						// Emit text deltas
 						if (delta.text) {
-							const textPart = new vscode.LanguageModelTextPart(delta.text);
-							for (const event of adapter.formatStreamResponse(textPart, context)) {
+							const textData: IAgentStreamBlock = {
+								type: 'text',
+								content: delta.text
+							};
+							for (const event of adapter.formatStreamResponse(textData, context)) {
 								res.write(`event: ${event.event}\ndata: ${event.data}\n\n`);
 							}
 						}
@@ -223,8 +214,13 @@ class LanguageModelServer {
 							for (const call of delta.copilotToolCalls) {
 								let input: object = {};
 								try { input = call.arguments ? JSON.parse(call.arguments) : {}; } catch { input = {}; }
-								const toolPart = new vscode.LanguageModelToolCallPart(call.id, call.name, input);
-								for (const event of adapter.formatStreamResponse(toolPart, context)) {
+								const toolData: IAgentStreamBlock = {
+									type: 'tool_call',
+									callId: call.id,
+									name: call.name,
+									input
+								};
+								for (const event of adapter.formatStreamResponse(toolData, context)) {
 									res.write(`event: ${event.event}\ndata: ${event.data}\n\n`);
 								}
 							}
@@ -339,7 +335,7 @@ class LanguageModelServer {
 		this.server.close();
 	}
 
-	public getConfig(): ServerConfig {
+	public getConfig(): IServerConfig {
 		return { ...this.config };
 	}
 
@@ -367,5 +363,3 @@ class LanguageModelServer {
 		}
 	}
 }
-
-export { LanguageModelServer, ServerConfig };

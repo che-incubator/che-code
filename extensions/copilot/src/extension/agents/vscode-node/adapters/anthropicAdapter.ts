@@ -7,9 +7,19 @@ import Anthropic from '@anthropic-ai/sdk';
 import * as http from 'http';
 import * as vscode from 'vscode';
 import { anthropicMessagesToRawMessages } from '../../../byok/common/anthropicMessageConverter';
-import { IParsedRequest, IProtocolAdapter, IStreamEventData, IStreamingContext } from './types';
+import { IAgentStreamBlock, IParsedRequest, IProtocolAdapter, IProtocolAdapterFactory, IStreamEventData, IStreamingContext } from './types';
 
-export class AnthropicAdapter implements IProtocolAdapter {
+export class AnthropicAdapterFactory implements IProtocolAdapterFactory {
+	createAdapter(): IProtocolAdapter {
+		return new AnthropicAdapter();
+	}
+}
+
+class AnthropicAdapter implements IProtocolAdapter {
+	// Per-request state
+	private currentBlockIndex = 0;
+	private hasTextBlock = false;
+	private hadToolCalls = false;
 	parseRequest(body: string): IParsedRequest {
 		const requestBody: Anthropic.MessageStreamParams = JSON.parse(body);
 
@@ -55,17 +65,17 @@ export class AnthropicAdapter implements IProtocolAdapter {
 	}
 
 	formatStreamResponse(
-		part: vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart,
+		streamData: IAgentStreamBlock,
 		context: IStreamingContext
 	): IStreamEventData[] {
 		const events: IStreamEventData[] = [];
 
-		if (part instanceof vscode.LanguageModelTextPart) {
-			if (!context.hasTextBlock) {
+		if (streamData.type === 'text') {
+			if (!this.hasTextBlock) {
 				// Send content_block_start for text
 				const contentBlockStart: Anthropic.RawContentBlockStartEvent = {
 					type: 'content_block_start',
-					index: context.currentBlockIndex,
+					index: this.currentBlockIndex,
 					content_block: {
 						type: 'text',
 						text: '',
@@ -74,85 +84,82 @@ export class AnthropicAdapter implements IProtocolAdapter {
 				};
 				events.push({
 					event: contentBlockStart.type,
-					data: JSON.stringify(contentBlockStart).replace(/\n/g, '\\n')
+					data: this.formatEventData(contentBlockStart)
 				});
-				context.hasTextBlock = true;
+				this.hasTextBlock = true;
 			}
 
 			// Send content_block_delta for text
 			const contentDelta: Anthropic.RawContentBlockDeltaEvent = {
 				type: 'content_block_delta',
-				index: context.currentBlockIndex,
+				index: this.currentBlockIndex,
 				delta: {
 					type: 'text_delta',
-					text: part.value
+					text: streamData.content
 				}
 			};
 			events.push({
 				event: contentDelta.type,
-				data: JSON.stringify(contentDelta).replace(/\n/g, '\\n')
+				data: this.formatEventData(contentDelta)
 			});
 
-			// Count tokens
-			context.outputTokens += part.value.split(/\s+/).filter(Boolean).length;
-
-		} else if (part instanceof vscode.LanguageModelToolCallPart) {
+		} else if (streamData.type === 'tool_call') {
 			// End current text block if it exists
-			if (context.hasTextBlock) {
+			if (this.hasTextBlock) {
 				const contentBlockStop: Anthropic.RawContentBlockStopEvent = {
 					type: 'content_block_stop',
-					index: context.currentBlockIndex
+					index: this.currentBlockIndex
 				};
 				events.push({
 					event: contentBlockStop.type,
-					data: JSON.stringify(contentBlockStop).replace(/\n/g, '\\n')
+					data: this.formatEventData(contentBlockStop)
 				});
-				context.currentBlockIndex++;
-				context.hasTextBlock = false;
+				this.currentBlockIndex++;
+				this.hasTextBlock = false;
 			}
 
-			context.hadToolCalls = true;
+			this.hadToolCalls = true;
 
 			// Send tool use block
 			const toolBlockStart: Anthropic.RawContentBlockStartEvent = {
 				type: 'content_block_start',
-				index: context.currentBlockIndex,
+				index: this.currentBlockIndex,
 				content_block: {
 					type: 'tool_use',
-					id: part.callId,
-					name: part.name,
+					id: streamData.callId,
+					name: streamData.name,
 					input: {},
 				}
 			};
 			events.push({
 				event: toolBlockStart.type,
-				data: JSON.stringify(toolBlockStart).replace(/\n/g, '\\n')
+				data: this.formatEventData(toolBlockStart)
 			});
 
 			// Send tool use content
 			const toolBlockContent: Anthropic.RawContentBlockDeltaEvent = {
 				type: 'content_block_delta',
-				index: context.currentBlockIndex,
+				index: this.currentBlockIndex,
 				delta: {
 					type: "input_json_delta",
-					partial_json: JSON.stringify(part.input || {})
+					partial_json: JSON.stringify(streamData.input || {})
 				}
 			};
 			events.push({
 				event: toolBlockContent.type,
-				data: JSON.stringify(toolBlockContent).replace(/\n/g, '\\n')
+				data: this.formatEventData(toolBlockContent)
 			});
 
 			const toolBlockStop: Anthropic.RawContentBlockStopEvent = {
 				type: 'content_block_stop',
-				index: context.currentBlockIndex
+				index: this.currentBlockIndex
 			};
 			events.push({
 				event: toolBlockStop.type,
-				data: JSON.stringify(toolBlockStop).replace(/\n/g, '\\n')
+				data: this.formatEventData(toolBlockStop)
 			});
 
-			context.currentBlockIndex++;
+			this.currentBlockIndex++;
 		}
 
 		return events;
@@ -162,21 +169,21 @@ export class AnthropicAdapter implements IProtocolAdapter {
 		const events: IStreamEventData[] = [];
 
 		// Send final events
-		if (context.hasTextBlock) {
+		if (this.hasTextBlock) {
 			const contentBlockStop: Anthropic.RawContentBlockStopEvent = {
 				type: 'content_block_stop',
-				index: context.currentBlockIndex
+				index: this.currentBlockIndex
 			};
 			events.push({
 				event: contentBlockStop.type,
-				data: JSON.stringify(contentBlockStop).replace(/\n/g, '\\n')
+				data: this.formatEventData(contentBlockStop)
 			});
 		}
 
 		const messageDelta: Anthropic.RawMessageDeltaEvent = {
 			type: 'message_delta',
 			delta: {
-				stop_reason: context.hadToolCalls ? 'tool_use' : 'end_turn',
+				stop_reason: this.hadToolCalls ? 'tool_use' : 'end_turn',
 				stop_sequence: null
 			},
 			usage: {
@@ -189,7 +196,7 @@ export class AnthropicAdapter implements IProtocolAdapter {
 		};
 		events.push({
 			event: messageDelta.type,
-			data: JSON.stringify(messageDelta).replace(/\n/g, '\\n')
+			data: this.formatEventData(messageDelta)
 		});
 
 		const messageStop: Anthropic.RawMessageStopEvent = {
@@ -197,7 +204,7 @@ export class AnthropicAdapter implements IProtocolAdapter {
 		};
 		events.push({
 			event: messageStop.type,
-			data: JSON.stringify(messageStop).replace(/\n/g, '\\n')
+			data: this.formatEventData(messageStop)
 		});
 
 		return events;
@@ -231,7 +238,7 @@ export class AnthropicAdapter implements IProtocolAdapter {
 
 		return [{
 			event: messageStart.type,
-			data: JSON.stringify(messageStart).replace(/\n/g, '\\n')
+			data: this.formatEventData(messageStart)
 		}];
 	}
 
@@ -241,5 +248,9 @@ export class AnthropicAdapter implements IProtocolAdapter {
 
 	extractAuthKey(headers: http.IncomingHttpHeaders): string | undefined {
 		return headers['x-api-key'] as string | undefined;
+	}
+
+	private formatEventData(data: any): string {
+		return JSON.stringify(data).replace(/\n/g, '\\n');
 	}
 }

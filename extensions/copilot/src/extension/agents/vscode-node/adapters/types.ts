@@ -19,6 +19,20 @@ export interface IStreamEventData {
 	data: string;
 }
 
+export interface IAgentTextBlock {
+	type: 'text';
+	content: string;
+}
+
+export interface IAgentToolCallBlock {
+	type: 'tool_call';
+	callId: string;
+	name: string;
+	input: object;
+}
+
+export type IAgentStreamBlock = IAgentTextBlock | IAgentToolCallBlock;
+
 export interface IProtocolAdapter {
 	/**
 	 * Parse the incoming request body and convert to VS Code format
@@ -26,10 +40,10 @@ export interface IProtocolAdapter {
 	parseRequest(body: string): IParsedRequest;
 
 	/**
-	 * Convert VS Code streaming response parts to protocol-specific events
+	 * Convert raw streaming data to protocol-specific events
 	 */
 	formatStreamResponse(
-		part: vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart,
+		streamData: IAgentStreamBlock,
 		context: IStreamingContext
 	): IStreamEventData[];
 
@@ -54,11 +68,14 @@ export interface IProtocolAdapter {
 	extractAuthKey(headers: http.IncomingHttpHeaders): string | undefined;
 }
 
+export interface IProtocolAdapterFactory {
+	/**
+	 * Create a new adapter instance for a request
+	 */
+	createAdapter(): IProtocolAdapter;
+}
+
 export interface IStreamingContext {
 	requestId: string;
 	modelId: string;
-	currentBlockIndex: number;
-	hasTextBlock: boolean;
-	hadToolCalls: boolean;
-	outputTokens: number;
 }
