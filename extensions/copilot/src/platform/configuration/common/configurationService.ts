@@ -219,6 +219,7 @@ export abstract class AbstractConfigurationService extends Disposable implements
 			// no change
 			return;
 		}
+
 		this._isInternal = userInfo.isInternal;
 		this._isTeamMember = userInfo.isTeamMember;
 		this._teamMemberUsername = userInfo.teamMemberUsername;
