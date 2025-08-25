@@ -1045,6 +1045,29 @@
 						"query"
 					]
 				}
+			},
+			{
+				"name": "copilot_toolReplay",
+				"modelDescription": "Replays a tool call from a previous chat session.",
+				"displayName": "tool replay",
+				"when": "false",
+				"inputSchema": {
+					"type": "object",
+					"properties": {
+						"toolCallId": {
+							"type": "string",
+							"description": "the id of the tool original tool call"
+						},
+						"toolName": {
+							"type": "string",
+							"description": "the name of the tool being replayed"
+						},
+						"toolCallArgs": {
+							"type": "object",
+							"description": "the arguments of the tool call"
+						}
+					}
+				}
 			}
 		],
 		"languageModelToolSets": [
@@ -1588,6 +1611,15 @@
 						]
 					}
 				]
+			},
+			{
+				"id": "github.copilot.chatReplay",
+				"name": "chatReplay",
+				"fullName": "Chat Replay",
+				"when": "debugType == 'vscode-chat-replay'",
+				"locations": [
+					"panel"
+				]
 			}
 		],
 		"languageModels": [
@@ -1700,6 +1732,11 @@
 			}
 		],
 		"commands": [
+			{
+				"command": "github.copilot.chat.replay",
+				"title": "Start Chat Replay",
+        		"icon": "$(debug-line-by-line)"
+			},
 			{
 				"command": "github.copilot.chat.explain",
 				"title": "%github.copilot.command.explainThis%",
@@ -2922,6 +2959,11 @@
 					"command": "github.copilot.chat.notebook.disableFollowCellExecution",
 					"when": "config.github.copilot.chat.notebook.followCellExecution.enabled && github.copilot.notebookFollowInSessionEnabled && github.copilot.notebookAgentModeUsage && !config.notebook.globalToolbar",
 					"group": "navigation@10"
+				},
+				{
+					"command": "github.copilot.chat.replay",
+					"group": "navigation@9",
+					"when": "resourceLangId == chatReplay"
 				}
 			],
 			"editor/context": [
@@ -3489,7 +3531,18 @@
 				"extensions": [
 					".copilotmd"
 				]
-			}
+			},
+			{
+				"id": "chatReplay",
+				"aliases": [
+					"chatReplay",
+					"Chat Replay"
+				],
+				"extensions": [
+					".chatReplay.json",
+					".chatreplay.json"
+				]
+      		}
 		],
 		"views": {
 			"copilot-chat": [
@@ -3716,6 +3769,43 @@
 				"description": "The Claude Code agent",
 				"when": "config.github.copilot.chat.advanced.claudeCode.enabled"
 			}
+		],
+		"debuggers": [
+			{
+				"type": "vscode-chat-replay",
+				"label": "vscode-chat-replay",
+				"languages": [
+				"chatReplay"
+				],
+				"configurationAttributes": {
+				"launch": {
+					"properties": {
+						"program": {
+							"type": "string",
+							"description": "Chat replay file to debug (parse for headers)",
+							"default": "${file}"
+						},
+						"stopOnEntry": {
+							"type": "boolean",
+							"default": true,
+							"description": "Break immediately to step through manually."
+						}
+					},
+					"required": [
+						"program"
+					]
+				}
+				},
+				"initialConfigurations": [
+					{
+						"type": "vscode-chat-replay",
+						"request": "launch",
+						"name": "Debug Chat Replay",
+						"program": "${file}",
+						"stopOnEntry": true
+					}
+				]
+			}
 		]
 	},
 	"extensionPack": [
@@ -3797,6 +3887,8 @@
 		"@vitest/coverage-v8": "^3.2.4",
 		"@vitest/snapshot": "^1.5.0",
 		"@vscode/dts": "^0.4.1",
+		"@vscode/debugadapter": "^1.68.0",
+		"@vscode/debugprotocol": "^1.68.0",
 		"@vscode/lsif-language-service": "^0.1.0-pre.4",
 		"@vscode/test-cli": "^0.0.11",
 		"@vscode/test-electron": "^2.5.2",
