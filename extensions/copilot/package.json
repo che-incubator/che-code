@@ -1742,7 +1742,19 @@
 			{
 				"command": "github.copilot.chat.replay",
 				"title": "Start Chat Replay",
-        		"icon": "$(debug-line-by-line)"
+				"icon": "$(debug-line-by-line)"
+			},
+			{
+				"command": "github.copilot.chat.replay.enableWorkspaceEditTracing",
+				"title": "%github.copilot.command.enableEditTracing%",
+				"category": "Developer",
+				"enablement": "!github.copilot.chat.replay.workspaceEditTracing"
+			},
+			{
+				"command": "github.copilot.chat.replay.disableWorkspaceEditTracing",
+				"title": "%github.copilot.command.disableEditTracing%",
+				"category": "Developer",
+				"enablement": "github.copilot.chat.replay.workspaceEditTracing"
 			},
 			{
 				"command": "github.copilot.chat.explain",
@@ -3549,7 +3561,7 @@
 					".chatReplay.json",
 					".chatreplay.json"
 				]
-      		}
+			}
 		],
 		"views": {
 			"copilot-chat": [
@@ -3782,26 +3794,26 @@
 				"type": "vscode-chat-replay",
 				"label": "vscode-chat-replay",
 				"languages": [
-				"chatReplay"
+					"chatReplay"
 				],
 				"configurationAttributes": {
-				"launch": {
-					"properties": {
-						"program": {
-							"type": "string",
-							"description": "Chat replay file to debug (parse for headers)",
-							"default": "${file}"
+					"launch": {
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "Chat replay file to debug (parse for headers)",
+								"default": "${file}"
+							},
+							"stopOnEntry": {
+								"type": "boolean",
+								"default": true,
+								"description": "Break immediately to step through manually."
+							}
 						},
-						"stopOnEntry": {
-							"type": "boolean",
-							"default": true,
-							"description": "Break immediately to step through manually."
-						}
-					},
-					"required": [
-						"program"
-					]
-				}
+						"required": [
+							"program"
+						]
+					}
 				},
 				"initialConfigurations": [
 					{
