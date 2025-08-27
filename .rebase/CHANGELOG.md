@@ -48,7 +48,6 @@ https://github.com/che-incubator/che-code/pull/528
 https://github.com/che-incubator/che-code/pull/526
 
 - code/package.json
-- code/src/vs/platform/utilityProcess/electron-main/utilityProcess.ts
 ---
 
 #### @svor
