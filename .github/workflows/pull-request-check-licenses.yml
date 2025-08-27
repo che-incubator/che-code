@@ -10,11 +10,12 @@
 name: License Check
 
 # Trigger the workflow on pull request
-on: workflow_dispatch
+on: [pull_request]
 
 jobs:
   check-che-extensions-licenses:
     runs-on: ubuntu-22.04
+    if: ${{ github.base_ref == 'main' }}
     steps:
       - name: Checkout che-code source code
         uses: actions/checkout@v4

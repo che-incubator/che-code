@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Red Hat, Inc.
+# Copyright (c) 2023-2025 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -28,30 +28,30 @@ jobs:
     steps:
 
       - name: Checkout che-code source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
           #
           # truncate Dockerfile, remove section that runs tests
           #
-          cp -f build/dockerfiles/linux-libc.Dockerfile build/dockerfiles/linux-libc.no-test.Dockerfile
+          cp -f build/dockerfiles/linux-libc-ubi9.Dockerfile build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
           REMOVE_FROM="### Beginning of tests"
           REMOVE_TO="### Ending of tests"
-          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc.no-test.Dockerfile
+          sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/{/${REMOVE_FROM}/n;/${REMOVE_TO}/!d;}" build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
           #
           # show the Dockerfile
           #
-          cat build/dockerfiles/linux-libc.no-test.Dockerfile
+          cat build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile
 
       - name: Compile Che-Code editor
         run: |
           #
-          # build linux-libc-amd64:latest docker image
+          # build linux-libc-ubi9:latest docker image
           #
           docker image prune -a -f
-          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc.no-test.Dockerfile -t linux-libc-amd64 .
+          docker build --memory-swap -1 --memory 12g -f build/dockerfiles/linux-libc-ubi9.no-test.Dockerfile -t linux-libc-ubi9 .
 
       - name: Build Che-Code Docker image
         run: |
@@ -59,9 +59,13 @@ jobs:
           # build che-code:latest docker image
           #
           cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.copy.Dockerfile
-          REPLACE_FROM="FROM linux-musl-amd64 as linux-musl-content"
+          REPLACE_FROM="FROM linux-musl as linux-musl-content"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           REPLACE_FROM="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
+          sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
+          REPLACE_FROM="FROM linux-libc-ubi8 as linux-libc-ubi8-content"
+          sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
+          REPLACE_FROM="COPY --from=linux-libc-ubi8-content --chown=0:0 /checode-linux-libc/ubi8 /mnt/rootfs/checode-linux-libc/ubi8"
           sed -i -r -e "s|${REPLACE_FROM}||" build/dockerfiles/assembly.copy.Dockerfile
           
           export DOCKER_BUILDKIT=1
@@ -89,7 +93,7 @@ jobs:
           minikube-version: v1.23.2
 
       - name: Install chectl
-        run: bash <(curl -sL https://www.eclipse.org/che/chectl/) --channel=next
+        run: bash <(curl -sL https://che-incubator.github.io/chectl/install.sh) --channel=next
 
       - name: Deploy Che
         run: |
@@ -104,8 +108,8 @@ jobs:
           chectl server:deploy \
             --batch \
             --platform minikube \
-            --k8spodwaittimeout=120000 \
-            --k8spodreadytimeout=120000 \
+            --k8spodwaittimeout=480000 \
+            --k8spodreadytimeout=480000 \
             --che-operator-cr-patch-yaml "${GITHUB_WORKSPACE}/build/test/github-minikube-checluster-patch.yaml"
 
           #
@@ -118,7 +122,7 @@ jobs:
 
       - name: Pull Universal Base Image
         run: |
-          minikube image pull quay.io/devfile/universal-developer-image:ubi8-latest
+          minikube image pull quay.io/devfile/universal-developer-image:ubi9-latest
 
       - name: Run Smoke test
         run: |
@@ -163,14 +167,14 @@ jobs:
 
       - name: Store e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-artifacts
           path: /tmp/tests
       
       - name: Store k8s logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: k8s-logs
           path: /tmp/devworkspace-happy-path-artifacts/admin-che-info
