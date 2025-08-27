@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2021-2025 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+name: rebase-insiders
+
+# Trigger on demand or every 4 hour
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 */4 * * *"
+  
+jobs:
+
+  rebase-insiders:
+    name: rebase
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+           fetch-depth: 0
+           token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: configure git
+        run: |
+          git config --global user.email "fbenoit+sync-checode@redhat.com"
+          git config --global user.name "Eclipse Che Sync"
+      - name: add upstream remote and fetch main branch
+        run: |
+          git remote add upstream-code https://github.com/microsoft/vscode
+          git fetch upstream-code main
+      - name: rebase
+        run: |
+          ./rebase.sh
+      - name: Disable the Workflow
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            /repos/che-incubator/che-code/actions/workflows/rebase-insiders.yml/disable
+      - name: Validate tests on libc-ubi9 image
+        env:
+          # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker buildx build --memory-swap -1 --memory 10g --platform linux/amd64 -f build/dockerfiles/linux-libc-ubi9.Dockerfile .
+      - name: Generate artifacts.lock.yaml
+        run: ./build/artifacts/generate.sh
+      - name: push changes
+        run: |
+          set -e
+          git add ./build/artifacts/artifacts.lock.yaml
+          git commit -m "Update artifacts.lock.yaml" --signoff
+          git push origin main
+
+
