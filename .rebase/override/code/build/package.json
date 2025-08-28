@@ -1,5 +1,6 @@
 {
     "devDependencies": {
-        "@vscode/ripgrep": "^1.15.11"
+        "@vscode/ripgrep": "^1.15.11",
+		"@types/minimatch": "^3.0.5"
     }
 }
