@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Options, SDKUserMessage } from '@anthropic-ai/claude-code';
+import Anthropic from '@anthropic-ai/sdk';
 import * as vscode from 'vscode';
 import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
 import { IEnvService } from '../../../../platform/env/common/envService';
@@ -12,8 +13,12 @@ import { IWorkspaceService } from '../../../../platform/workspace/common/workspa
 import { DeferredPromise } from '../../../../util/vs/base/common/async';
 import { Disposable } from '../../../../util/vs/base/common/lifecycle';
 import { isWindows } from '../../../../util/vs/base/common/platform';
+import { URI } from '../../../../util/vs/base/common/uri';
 import { IInstantiationService } from '../../../../util/vs/platform/instantiation/common/instantiation';
+import { isFileOkForTool } from '../../../tools/node/toolUtils';
 import { ILanguageModelServerConfig, LanguageModelServer } from '../../vscode-node/langModelServer';
+import { ClaudeToolNames } from '../common/constants';
+import { createFormattedToolInvocation } from '../common/toolInvocationFormatter';
 
 // Manages Claude Code agent interactions and language model server lifecycle
 export class ClaudeAgentManager extends Disposable {
@@ -62,13 +67,16 @@ export class ClaudeAgentManager extends Disposable {
 class KnownClaudeError extends Error { }
 
 class ClaudeCodeSession {
+	private static DenyToolMessage = 'The user declined to run the tool';
+
 	constructor(
 		private readonly serverConfig: ILanguageModelServerConfig,
 		public sessionId: string | undefined,
 		@ILogService private readonly logService: ILogService,
 		@IConfigurationService private readonly configService: IConfigurationService,
 		@IWorkspaceService private readonly workspaceService: IWorkspaceService,
-		@IEnvService private readonly envService: IEnvService
+		@IEnvService private readonly envService: IEnvService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) { }
 
 	public async invoke(
@@ -127,6 +135,7 @@ class ClaudeCodeSession {
 			await def.p;
 		}
 
+		const unprocessedToolCalls = new Map<string, Anthropic.ToolUseBlock>();
 		for await (const message of query({
 			prompt: createPromptIterable(prompt, this.sessionId),
 			options
@@ -141,17 +150,24 @@ class ClaudeCodeSession {
 					if (item.type === 'text' && item.text) {
 						stream.markdown(item.text);
 					} else if (item.type === 'tool_use') {
-						// currentToolTask?.complete();
-						// currentToolTask = new DeferredPromise();
-						stream.markdown(`\n\n🛠️ Using tool: ${item.name}...`);
-						stream.prepareToolInvocation(item.name);
+						stream.progress(`\n\n🛠️ Using tool: ${item.name}...`);
+						unprocessedToolCalls.set(item.id, item);
 					}
 				}
 			} else if (message.type === 'user') {
 				if (Array.isArray(message.message.content)) {
-					for (const item of message.message.content) {
-						if (item.type === 'tool_result') {
-							// currentToolTask?.complete();
+					for (const toolResult of message.message.content) {
+						if (toolResult.type === 'tool_result') {
+							const toolUse = unprocessedToolCalls.get(toolResult.tool_use_id);
+							if (toolUse) {
+								unprocessedToolCalls.delete(toolResult.tool_use_id);
+								const invocation = createFormattedToolInvocation(toolUse, toolResult);
+								if (toolResult?.content === ClaudeCodeSession.DenyToolMessage) {
+									invocation.isConfirmed = false;
+								}
+
+								stream.push(invocation);
+							}
 						}
 					}
 				}
@@ -170,24 +186,67 @@ class ClaudeCodeSession {
 	 * Handles tool permission requests by showing a confirmation dialog to the user
 	 */
 	private async canUseTool(toolName: string, input: Record<string, unknown>, toolInvocationToken: vscode.ChatParticipantToolToken): Promise<{ behavior: 'allow'; updatedInput: Record<string, unknown> } | { behavior: 'deny'; message: string }> {
-		this.logService.trace(`Claude CLI SDK: canUseTool: ${toolName}`);
-		try {
-			await vscode.lm.invokeTool('vscode_get_confirmation', {
-				input: {
-					title: `Use ${toolName}?`,
-					message: `\`\`\`\n${JSON.stringify(input, null, 2)}\n\`\`\``
-				},
-				toolInvocationToken,
-			});
+		this.logService.trace(`ClaudeCodeSession: canUseTool: ${toolName}(${JSON.stringify(input)})`);
+		if (await this.canAutoApprove(toolName, input)) {
+			this.logService.trace(`ClaudeCodeSession: auto-approving ${toolName}`);
+
 			return {
 				behavior: 'allow',
 				updatedInput: input
 			};
-		} catch {
+		}
+
+		try {
+			const result = await vscode.lm.invokeTool('vscode_get_confirmation', {
+				input: this.getConfirmationToolParams(toolName, input),
+				toolInvocationToken,
+			});
+			const firstResultPart = result.content.at(0);
+			if (firstResultPart instanceof vscode.LanguageModelTextPart && firstResultPart.value === 'yes') {
+				return {
+					behavior: 'allow',
+					updatedInput: input
+				};
+			}
+		} catch { }
+		return {
+			behavior: 'deny',
+			message: ClaudeCodeSession.DenyToolMessage
+		};
+	}
+
+	private getConfirmationToolParams(toolName: string, input: Record<string, unknown>): IConfirmationToolParams {
+		if (toolName === ClaudeToolNames.Bash) {
 			return {
-				behavior: 'deny',
-				message: 'The user declined to run the tool'
+				title: `Use ${toolName}?`,
+				message: `\`\`\`\n${JSON.stringify(input, null, 2)}\n\`\`\``,
+				confirmationType: 'terminal',
+				terminalCommand: input.command as string | undefined
 			};
 		}
+
+		return {
+			title: `Use ${toolName}?`,
+			message: `\`\`\`\n${JSON.stringify(input, null, 2)}\n\`\`\``,
+			confirmationType: 'basic'
+		};
 	}
+
+	private async canAutoApprove(toolName: string, input: Record<string, unknown>): Promise<boolean> {
+		if (toolName === ClaudeToolNames.Edit) {
+			return await this.instantiationService.invokeFunction(isFileOkForTool, URI.file(input.file_path as string));
+		}
+
+		return false;
+	}
+}
+
+/**
+ * Tool params from core
+ */
+interface IConfirmationToolParams {
+	title: string;
+	message: string;
+	confirmationType?: 'basic' | 'terminal';
+	terminalCommand?: string;
 }
