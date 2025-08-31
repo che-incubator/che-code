@@ -148,7 +148,12 @@ export class LanguageModelServer {
 			const tokenSource = new vscode.CancellationTokenSource();
 
 			// Handle client disconnect
+			let requestComplete = false;
 			res.on('close', () => {
+				if (!requestComplete) {
+					this.logService.info(`[LanguageModelServer] Client disconnected before request complete`);
+				}
+
 				tokenSource.cancel();
 			});
 
@@ -219,6 +224,7 @@ export class LanguageModelServer {
 					requestOptions: openAiTools && openAiTools.length ? { tools: openAiTools } : undefined,
 					userInitiatedRequest
 				}, tokenSource.token);
+				requestComplete = true;
 
 				// Send final events
 				const finalEvents = adapter.generateFinalEvents(context);
@@ -228,6 +234,7 @@ export class LanguageModelServer {
 
 				res.end();
 			} catch (error) {
+				requestComplete = true;
 				if (error instanceof vscode.LanguageModelError) {
 					res.write(JSON.stringify({
 						error: 'Language model error',
