@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import { ChatFetchResponseType, ChatLocation } from '../../../platform/chat/common/commonTypes';
 import { IEndpointProvider } from '../../../platform/endpoint/common/endpointProvider';
 import { ILogService } from '../../../platform/log/common/logService';
-import { OpenAiFunctionTool } from '../../../platform/networking/common/fetch';
 import { IChatEndpoint } from '../../../platform/networking/common/networking';
 import { APIUsage } from '../../../platform/networking/common/openai';
 import { generateUuid } from '../../../util/vs/base/common/uuid';
@@ -176,18 +175,6 @@ export class LanguageModelServer {
 					}
 				}
 
-				// Make the chat request using IChatEndpoint; stream via finishedCb
-				// Stream chunks via finishedCb; no need to track a response flag.
-				// Map any provided tools (from adapter) into OpenAI-style function tools for endpoints
-				const openAiTools: OpenAiFunctionTool[] | undefined = parsedRequest.options?.tools?.map(t => ({
-					type: 'function',
-					function: {
-						name: t.name,
-						description: t.description,
-						parameters: t.inputSchema ?? {}
-					}
-				}));
-
 				const userInitiatedRequest = parsedRequest.messages.at(-1)?.role === Raw.ChatRole.User;
 				const fetchResult = await selectedEndpoint.makeChatRequest2({
 					debugName: 'agentLanguageModelService',
@@ -225,7 +212,7 @@ export class LanguageModelServer {
 						return undefined;
 					},
 					location: ChatLocation.Agent,
-					requestOptions: openAiTools && openAiTools.length ? { tools: openAiTools } : undefined,
+					requestOptions: parsedRequest.options,
 					userInitiatedRequest
 				}, tokenSource.token);
 
