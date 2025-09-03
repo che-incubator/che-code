@@ -1,6 +1,6 @@
 {
 	"name": "@vscode/chat-lib",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Chat and inline editing SDK extracted from VS Code Copilot Chat",
 	"main": "dist/src/main.js",
 	"types": "dist/src/main.d.ts",
@@ -15,7 +15,7 @@
 	},
 	"dependencies": {
 		"@microsoft/tiktokenizer": "^1.0.10",
-		"@vscode/copilot-api": "^0.1.5",
+		"@vscode/copilot-api": "^0.1.7",
 		"@vscode/l10n": "^0.0.18",
 		"@vscode/prompt-tsx": "^0.4.0-alpha.5",
 		"jsonc-parser": "^3.3.1",
@@ -43,13 +43,10 @@
 	],
 	"files": [
 		"dist/src",
-		"src",
 		"README.md",
 		"LICENSE.txt",
-		"!src/**/*.tiktoken",
 		"!**/test/**",
-		"dist/src/_internal/util/common/test/shims",
-		"src/_internal/util/common/test/shims"
+		"dist/src/_internal/util/common/test/shims"
 	],
 	"scripts": {
 		"clean": "rimraf dist",
