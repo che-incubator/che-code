@@ -387,7 +387,7 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 }
 
 interface FrozenMessageContentProps extends BasePromptElementProps {
-	readonly frozenContent: Raw.ChatCompletionContentPart[];
+	readonly frozenContent: readonly Raw.ChatCompletionContentPart[];
 	readonly enableCacheBreakpoints?: boolean;
 }
 
@@ -429,7 +429,7 @@ class ToolReferencesHint extends PromptElement<ToolReferencesHintProps> {
 	}
 }
 
-export function renderedMessageToTsxChildren(message: string | Raw.ChatCompletionContentPart[], enableCacheBreakpoints: boolean): PromptPieceChild[] {
+export function renderedMessageToTsxChildren(message: string | readonly Raw.ChatCompletionContentPart[], enableCacheBreakpoints: boolean): PromptPieceChild[] {
 	if (typeof message === 'string') {
 		return [message];
 	}
@@ -498,7 +498,7 @@ class CurrentDatePrompt extends PromptElement<BasePromptElementProps> {
 }
 
 interface CurrentEditorContextProps extends BasePromptElementProps {
-	endpoint: IChatEndpoint;
+	readonly endpoint: IChatEndpoint;
 }
 
 /**
@@ -715,7 +715,7 @@ export function getEditingReminder(hasEditFileTool: boolean, hasReplaceStringToo
 }
 
 export interface IKeepGoingReminderProps extends BasePromptElementProps {
-	modelFamily: string | undefined;
+	readonly modelFamily: string | undefined;
 }
 
 export class KeepGoingReminder extends PromptElement<IKeepGoingReminderProps> {
