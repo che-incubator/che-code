@@ -50,6 +50,9 @@
     },
     "prebuild-install": {
       "tar-fs": "2.1.3"
+    },
+    "request": {
+      "form-data": "2.5.5"
     }
   }
 }
