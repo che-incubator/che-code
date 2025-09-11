@@ -2011,6 +2011,13 @@
 				"category": "GitHub Copilot"
 			},
 			{
+				"command": "github.copilot.git.resolveMergeConflicts",
+				"title": "%github.copilot.git.resolveMergeConflicts%",
+				"icon": "$(chat-sparkle)",
+				"enablement": "!github.copilot.interactiveSession.disabled",
+				"category": "GitHub Copilot"
+			},
+			{
 				"command": "github.copilot.devcontainer.generateDevContainerConfig",
 				"title": "%github.copilot.devcontainer.generateDevContainerConfig%",
 				"category": "GitHub Copilot"
@@ -3139,6 +3146,10 @@
 					"when": "false"
 				},
 				{
+					"command": "github.copilot.git.resolveMergeConflicts",
+					"when": "false"
+				},
+				{
 					"command": "github.copilot.chat.explain",
 					"when": "false"
 				},
@@ -3477,6 +3488,11 @@
 				}
 			],
 			"scm/resourceState/context": [
+				{
+					"command": "github.copilot.git.resolveMergeConflicts",
+					"when": "scmProvider == git && scmResourceGroup == merge",
+					"group": "z_chat@1"
+				},
 				{
 					"command": "github.copilot.chat.review.stagedFileChange",
 					"group": "3_copilot",
