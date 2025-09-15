@@ -382,6 +382,7 @@ export interface IExtensionQueryOptions {
 	compatible?: boolean;
 	queryAllVersions?: boolean;
 	source?: string;
+	preferResourceApi?: boolean;
 	updateCheck?: boolean;
 }
 
