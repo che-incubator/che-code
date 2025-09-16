@@ -349,20 +349,6 @@ apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
   git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html file
-apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/code/browser/workbench/workbench.ts file
 apply_code_src_vs_code_browser_workbench_workbench_changes() {
 
@@ -450,8 +436,6 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
       apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
-    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html" ]]; then
-      apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_code_src_vs_code_browser_workbench_workbench_changes
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then

@@ -205,7 +205,6 @@ https://github.com/che-incubator/che-code/commit/eed0a5213ba1b29b810d53f6365aaa2
 #### @vitaliy-guliy
 https://github.com/che-incubator/che-code/pull/211
 
-- code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
 - code/src/vs/workbench/contrib/webview/browser/pre/index.html
 ---
 
