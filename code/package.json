@@ -220,7 +220,7 @@
     "xml2js": "^0.5.0",
     "yaserver": "^0.4.0",
     "@types/ws": "8.2.0",
-    "@types/js-yaml": "^4.0.5"
+    "@types/js-yaml": "^4.0.5",
     "zx": "^8.7.0"
   },
   "overrides": {
