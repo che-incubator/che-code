@@ -2,6 +2,15 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/559
+
+- code/src/vs/workbench/contrib/webview/browser/pre/index.html
+- code/src/vs/platform/extensionManagement/common/extensionManagement.ts
+- code/src/vs/platform/extensionManagement/common/extensionGalleryService.ts
+- 
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/563
 
