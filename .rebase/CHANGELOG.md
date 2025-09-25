@@ -3,6 +3,14 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/
+
+- code/package.json
+- code/build/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/563
 
 - code/package.json
