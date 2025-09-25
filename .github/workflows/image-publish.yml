@@ -198,4 +198,5 @@ jobs:
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.Dockerfile --push -t quay.io/che-incubator/che-code-dev:insiders -t quay.io/che-incubator/che-code-dev:next -t quay.io/che-incubator/che-code-dev:insiders-${SHORT_SHA1} .
+          docker buildx build --platform linux/amd64 -f build/dockerfiles/dev.sshd.Dockerfile --push -t quay.io/che-incubator/che-code-sshd:insiders -t quay.io/che-incubator/che-code-sshd:next -t quay.io/che-incubator/che-code-sshd:insiders-${SHORT_SHA1} .
 
