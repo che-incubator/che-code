@@ -13,6 +13,7 @@ import { CancellationError } from '../../../util/vs/base/common/errors';
 import { Source } from '../../chat/common/chatMLFetcher';
 import type { ChatLocation, ChatResponse } from '../../chat/common/commonTypes';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
+import { CustomModel } from '../../endpoint/common/endpointProvider';
 import { ILogService } from '../../log/common/logService';
 import { ITelemetryService, TelemetryProperties } from '../../telemetry/common/telemetry';
 import { TelemetryData } from '../../telemetry/common/telemetryData';
@@ -166,6 +167,7 @@ export interface IChatEndpoint extends IEndpoint {
 	readonly restrictedToSkus?: string[];
 	readonly isDefault: boolean;
 	readonly isFallback: boolean;
+	readonly customModel?: CustomModel;
 	readonly policy: 'enabled' | { terms: string };
 	/**
 	 * Handles processing of responses from a chat endpoint. Each endpoint can have different response formats.

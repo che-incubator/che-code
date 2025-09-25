@@ -16,6 +16,11 @@ export type ModelPolicy = {
 	terms?: string;
 };
 
+export type CustomModel = {
+	key_name: string;
+	owner_name: string;
+};
+
 export type IChatModelCapabilities = {
 	type: 'chat';
 	family: string;
@@ -66,6 +71,7 @@ export interface IModelAPIResponse {
 	billing?: { is_premium: boolean; multiplier: number; restricted_to?: string[] };
 	capabilities: IChatModelCapabilities | ICompletionModelCapabilities | IEmbeddingModelCapabilities;
 	supported_endpoints?: ModelSupportedEndpoint[];
+	custom_model?: { key_name: string; owner_name: string };
 }
 
 export type IChatModelInformation = IModelAPIResponse & {

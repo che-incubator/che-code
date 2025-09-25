@@ -153,9 +153,16 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 			// Counting tokens requires instantiating the tokenizers, which makes this process use a lot of memory.
 			// Let's cache the results across extension activations
 			const baseCount = await this._promptBaseCountCache.getBaseCount(endpoint);
-			let multiplierString = endpoint.multiplier !== undefined ? `${endpoint.multiplier}x` : undefined;
+			let modelDetail = endpoint.multiplier !== undefined ? `${endpoint.multiplier}x` : undefined;
+
 			if (endpoint.model === AutoChatEndpoint.id) {
-				multiplierString = 'Variable';
+				modelDetail = 'Variable';
+			}
+			if (endpoint.customModel) {
+				const customModel = endpoint.customModel;
+				modelDetail = customModel.owner_name;
+				modelDescription = `${endpoint.name} is contributed by ${customModel.owner_name} using ${customModel.key_name}`;
+				modelCategory = { label: localize('languageModelHeader.custom_models', "Custom Models"), order: 1 };
 			}
 
 			const session = this._authenticationService.anyGitHubSession;
@@ -165,7 +172,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 				name: endpoint.model === AutoChatEndpoint.id ? 'Auto' : endpoint.name,
 				family: endpoint.family,
 				tooltip: modelDescription,
-				detail: multiplierString,
+				detail: modelDetail,
 				category: modelCategory,
 				version: endpoint.version,
 				maxInputTokens: endpoint.modelMaxPromptTokens - baseCount - BaseTokensPerCompletion,
