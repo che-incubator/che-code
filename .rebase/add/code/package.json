@@ -5,8 +5,7 @@
     },
     "devDependencies": {
         "@types/ws": "8.2.0",
-        "@types/js-yaml": "^4.0.5",
-        "@types/minimatch": "^3.0.5"
+        "@types/js-yaml": "^4.0.5"
     },
     "overrides": {
         "@gulp-sourcemaps/identity-map": {
