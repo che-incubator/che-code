@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-20:9.6-1749604222 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.6-1757333865 as linux-libc-ubi9-builder
 
 USER root
 
@@ -79,8 +79,11 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
-    # cache libbrotli from this image to provide it to a user's container
-    && mkdir -p /checode/ld_libs && find /usr/lib64 -name 'libbrotli*' 2>/dev/null | xargs -I {} cp -t /checode/ld_libs {}
+    # cache shared libs from this image to provide them to a user's container
+    && mkdir -p /checode/ld_libs \
+    && find /usr/lib64 -name 'libbrotli*' 2>/dev/null | xargs -I {} cp -t /checode/ld_libs {} \
+    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
+    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/ {} +
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-20
-FROM registry.access.redhat.com/ubi8/nodejs-20:1-75.1749482737 as linux-libc-ubi8-builder
+FROM registry.access.redhat.com/ubi8/nodejs-22:1-1757363030 as linux-libc-ubi8-builder
 
 USER root
 
@@ -59,7 +59,8 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    PATH="/opt/rh/gcc-toolset-13/root/usr/bin:${PATH}"
 
 # Initialize a git repository for code build tools
 RUN git init .
@@ -78,7 +79,11 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
-    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode
+    && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
+    # cache shared libs from this image to provide them to a user's container
+    && mkdir -p /checode/ld_libs \
+    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
+    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/ {} +
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
