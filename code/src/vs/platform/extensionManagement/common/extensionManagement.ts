@@ -383,6 +383,7 @@ export interface IExtensionQueryOptions {
 	queryAllVersions?: boolean;
 	source?: string;
 	preferResourceApi?: boolean;
+	updateCheck?: boolean;
 }
 
 export interface IExtensionGalleryCapabilities {
@@ -408,6 +409,7 @@ export interface IExtensionGalleryService {
 	isExtensionCompatible(extension: IGalleryExtension, includePreRelease: boolean, targetPlatform: TargetPlatform, productVersion?: IProductVersion): Promise<boolean>;
 	getCompatibleExtension(extension: IGalleryExtension, includePreRelease: boolean, targetPlatform: TargetPlatform, productVersion?: IProductVersion): Promise<IGalleryExtension | null>;
 	getAllCompatibleVersions(extensionIdentifier: IExtensionIdentifier, includePreRelease: boolean, targetPlatform: TargetPlatform): Promise<IGalleryExtensionVersion[]>;
+	getAllVersions(extensionIdentifier: IExtensionIdentifier): Promise<IGalleryExtensionVersion[]>;
 	download(extension: IGalleryExtension, location: URI, operation: InstallOperation): Promise<void>;
 	downloadSignatureArchive(extension: IGalleryExtension, location: URI): Promise<void>;
 	reportStatistic(publisher: string, name: string, version: string, type: StatisticType): Promise<void>;
@@ -703,7 +705,6 @@ export async function computeSize(location: URI, fileService: IFileService): Pro
 
 export const ExtensionsLocalizedLabel = localize2('extensions', "Extensions");
 export const PreferencesLocalizedLabel = localize2('preferences', 'Preferences');
-export const UseUnpkgResourceApiConfigKey = 'extensions.gallery.useUnpkgResourceApi';
 export const AllowedExtensionsConfigKey = 'extensions.allowed';
 export const VerifyExtensionSignatureConfigKey = 'extensions.verifySignature';
 

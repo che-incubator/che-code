@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Copyright (c) 2025 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+rm -rf /home/user/ssh
+mkdir -p /home/user/ssh
+if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
+  cp /etc/ssh/dwo_ssh_key.pub /home/user/ssh/authorized_keys
+else
+  cp /opt/ssh/ssh_client_ed25519_key.pub /home/user/ssh/authorized_keys
+fi
+
+# start
+/usr/sbin/sshd -D -f /opt/ssh/sshd_config -E /tmp/sshd.log

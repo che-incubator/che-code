@@ -1,6 +1,0 @@
-[
-	{
-		"from": "const hostname = location.hostname;",
-		"by": "const hostname = location.hostname;\\\n\\\n\\\t\\\t\\\t\\\t// Run if we are on the same host.\\\n\\\t\\\t\\\t\\\tconst parent = new URL(parentOrigin);\\\n\\\t\\\t\\\t\\\tif (parent.hostname === hostname) {\\\n\\\t\\\t\\\t\\\t\\\treturn start(parentOrigin);\\\n\\\t\\\t\\\t\\\t}"
-	}
-]

@@ -38,7 +38,7 @@
     "@types/jest": "^27.0.2",
     "@types/js-yaml": "^4.0.5",
     "@types/mocha": "^10.0.1",
-    "@types/node": "20.x",
+    "@types/node": "22.x",
     "eslint": "^7.14.0",
     "jest": "29.7.0",
     "jest-esm-transformer": "^1.0.0",

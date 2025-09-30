@@ -1,9 +1,6 @@
 {
     "name": "che-code",
     "bin": "out/vs/server/main.js",
-    "dependencies": {
-      "node-pty": "1.1.0-beta22"
-    },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
       "@vscode/gulp-electron": "^1.38.2",

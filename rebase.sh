@@ -349,20 +349,6 @@ apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
   git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html file
-apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/code/browser/workbench/workbench.ts file
 apply_code_src_vs_code_browser_workbench_workbench_changes() {
 
@@ -438,10 +424,6 @@ resolve_conflicts() {
       apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
-    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
-      apply_code_remote_package_changes
-    elif [[ "$conflictingFile" == "code/remote/package-lock.json" ]]; then
-      apply_code_remote_package_lock_changes      
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
@@ -454,8 +436,6 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
       apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
-    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index-no-csp.html" ]]; then
-      apply_code_vs_workbench_contrib_webview_browser_pre_index_no_csp_html_changes
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_code_src_vs_code_browser_workbench_workbench_changes
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
@@ -478,9 +458,9 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
       apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/platform/utilityProcess/electron-main/utilityProcess.ts" ]]; then
-      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionGalleryService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
@@ -512,7 +492,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.100)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.101)
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version

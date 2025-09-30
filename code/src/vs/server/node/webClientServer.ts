@@ -4,9 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createReadStream, promises } from 'fs';
-import * as path from 'path';
-import { getCheRedirectLocation } from './che/webClientServer.js';
 import * as http from 'http';
+import { getCheRedirectLocation } from './che/webClientServer.js';
 import * as url from 'url';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
@@ -15,7 +14,7 @@ import { getMediaMime } from '../../base/common/mime.js';
 import { isLinux } from '../../base/common/platform.js';
 import { ILogService, LogLevel } from '../../platform/log/common/log.js';
 import { IServerEnvironmentService } from './serverEnvironmentService.js';
-import { extname, dirname, join, normalize, posix } from '../../base/common/path.js';
+import { extname, dirname, join, normalize, posix, resolve } from '../../base/common/path.js';
 import { FileAccess, connectionTokenCookieName, connectionTokenQueryName, Schemas, builtinExtensionsPath } from '../../base/common/network.js';
 import { generateUuid } from '../../base/common/uuid.js';
 import { IProductService } from '../../platform/product/common/productService.js';
@@ -324,7 +323,7 @@ export class WebClientServer {
 		const callbackRoute = posix.join(basePath, this._productPath, CALLBACK_PATH);
 		const webExtensionRoute = posix.join(basePath, this._productPath, WEB_EXTENSION_PATH);
 
-		const resolveWorkspaceURI = (defaultLocation?: string) => defaultLocation && URI.file(path.resolve(defaultLocation)).with({ scheme: Schemas.vscodeRemote, authority: remoteAuthority });
+		const resolveWorkspaceURI = (defaultLocation?: string) => defaultLocation && URI.file(resolve(defaultLocation)).with({ scheme: Schemas.vscodeRemote, authority: remoteAuthority });
 
 		const filePath = FileAccess.asFileUri(`vs/code/browser/workbench/workbench${this._environmentService.isBuilt ? '' : '-dev'}.html`).fsPath;
 		const authSessionInfo = !this._environmentService.isBuilt && this._environmentService.args['github-auth'] ? {
