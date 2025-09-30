@@ -12,6 +12,14 @@ https://github.com/che-incubator/che-code/pull/559
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/572
+
+- code/package.json
+- code/build/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/563
 
 - code/package.json
