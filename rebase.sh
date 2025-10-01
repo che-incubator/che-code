@@ -460,6 +460,8 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionManagement.ts" ]]; then
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionGalleryService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
