@@ -383,6 +383,7 @@ export interface IExtensionQueryOptions {
 	productVersion?: IProductVersion;
 	compatible?: boolean;
 	queryAllVersions?: boolean;
+	preferResourceApi?: boolean;
 	source?: string;
 }
 
