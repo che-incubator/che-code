@@ -1,6 +1,6 @@
 {
   "name": "che-code",
-  "version": "7.110.0-next",
+  "version": "7.110.0",
   "description": "Run Code-OSS on kubernetes",
   "scripts": {
     "prepare": "cd code && npm install && npm run download-builtin-extensions",
