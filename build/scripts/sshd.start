@@ -8,12 +8,11 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-rm -rf /home/user/ssh
-mkdir -p /home/user/ssh
+mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
-  cp /etc/ssh/dwo_ssh_key.pub /home/user/ssh/authorized_keys
+  cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  cp /opt/ssh/ssh_client_ed25519_key.pub /home/user/ssh/authorized_keys
+  cp /opt/ssh/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
 fi
 
 # start
