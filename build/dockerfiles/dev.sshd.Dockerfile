@@ -55,7 +55,11 @@ COPY --chown=0:0 /build/scripts/sshd.start /
 RUN mkdir /opt/www
 COPY /build/scripts/server.js /opt/www/
 
-ENV USER_NAME=dev
+# Lock down /etc/passwd until fixed in UDI
+RUN chmod 644 /etc/passwd
+
+# Bypass nologin shell for random generated user
+RUN cp /bin/bash /sbin/nologin
 
 EXPOSE 2022 3400
 
