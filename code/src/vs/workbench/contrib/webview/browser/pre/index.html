@@ -222,9 +222,9 @@
 							});
 						};
 					})();
-					delete window.parent;
-					delete window.top;
-					delete window.frameElement;
+					window.parent = window;
+					window.top = window;
+					window.frameElement = null;
 				`;
 		}
 
@@ -1127,6 +1127,21 @@
 
 						if (wasFocused) {
 							contentWindow.focus();
+						}
+
+						// Get body size
+						const docEl = contentDocument.documentElement;
+						if (docEl) {
+							const postSize = () => {
+								hostMessaging.postMessage('updated-intrinsic-content-size', {
+									width: docEl.offsetWidth,
+									height: docEl.offsetHeight
+								});
+							};
+
+							const resizeObserver = new ResizeObserver(postSize);
+							resizeObserver.observe(docEl);
+							postSize();
 						}
 
 						pendingMessages.forEach((message) => {

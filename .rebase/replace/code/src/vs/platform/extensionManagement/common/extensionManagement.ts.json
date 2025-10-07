@@ -1,0 +1,6 @@
+[
+    {
+        "from": "queryAllVersions?: boolean;",
+        "by": "queryAllVersions?: boolean;\\\n\\\tpreferResourceApi?: boolean;"
+    }
+]
