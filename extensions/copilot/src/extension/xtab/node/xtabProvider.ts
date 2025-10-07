@@ -547,6 +547,8 @@ export class XtabProvider implements IStatelessNextEditProvider {
 	) {
 		const tracer = parentTracer.sub('streamEdits');
 
+		const useFetcher = this.configService.getExperimentBasedConfig(ConfigKey.NextEditSuggestionsFetcher, this.expService) || undefined;
+
 		const fetchStreamSource = new FetchStreamSource();
 
 		const fetchRequestStopWatch = new StopWatch();
@@ -592,6 +594,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 				telemetryProperties: {
 					requestId: request.id,
 				},
+				useFetcher,
 			},
 			cancellationToken,
 		);
