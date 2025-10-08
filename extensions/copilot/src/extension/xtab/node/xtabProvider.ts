@@ -73,7 +73,7 @@ namespace ResponseTags {
 
 const enum RetryState {
 	NotRetrying,
-	RetryingWithExpandedWindow
+	Retrying
 }
 
 interface ModelConfig extends xtabPromptOptions.PromptOptions {
@@ -369,7 +369,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			return contentWithCursor.getLines();
 		})();
 
-		const addLineNumbers = (lines: string[]) => lines.map((line, idx) => `${idx + 1}| ${line}`);
+		const addLineNumbers = (lines: string[]) => lines.map((line, idx) => `${idx}| ${line}`);
 
 		const contentWithCursorAsLines = opts.includeLineNumbers
 			? addLineNumbers(contentWithCursorAsLinesOriginal)
@@ -843,17 +843,16 @@ export class XtabProvider implements IStatelessNextEditProvider {
 
 		// if allowed to retry and not retrying already, flip the retry state and try again
 		if (allowRetryWithExpandedWindow && retryState === RetryState.NotRetrying && request.expandedEditWindowNLines === undefined) {
-			this.doGetNextEdit(request, pushEdit, delaySession, logContext, cancellationToken, telemetryBuilder, RetryState.RetryingWithExpandedWindow);
+			this.doGetNextEdit(request, pushEdit, delaySession, logContext, cancellationToken, telemetryBuilder, RetryState.Retrying);
 			return;
 		}
 
-		// FIXME@ulugbekna: think out how it works with retrying logic
-		if (this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsNextCursorPredictionEnabled, this.expService)) {
-			// FIXME@ulugbekna: possibly convert from 1-based to 0-based
+		const nextCursorLinePredictionEnabled = this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsNextCursorPredictionEnabled, this.expService);
+		if (nextCursorLinePredictionEnabled && retryState === RetryState.NotRetrying) {
 			const nextCursorLine = await this.predictNextCursorPosition(promptPieces);
 			if (nextCursorLine) {
 				this.tracer.trace(`Predicted next cursor line: ${nextCursorLine}`);
-				this.doGetNextEditWithSelection(request, new Range(nextCursorLine, 1, nextCursorLine, 1), pushEdit, delaySession, logContext, cancellationToken, telemetryBuilder, RetryState.NotRetrying);
+				this.doGetNextEditWithSelection(request, new Range(nextCursorLine + 1, 1, nextCursorLine + 1, 1), pushEdit, delaySession, logContext, cancellationToken, telemetryBuilder, RetryState.Retrying);
 				return;
 			}
 		}
@@ -913,7 +912,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			}
 		}
 
-		if (retryState === RetryState.RetryingWithExpandedWindow) {
+		if (retryState === RetryState.Retrying) {
 			nLinesBelow += this.configService.getExperimentBasedConfig(ConfigKey.Internal.InlineEditsXtabProviderRetryWithNMoreLinesBelow, this.expService) ?? 0;
 		}
 
@@ -1029,7 +1028,13 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			promptPieces.currentDocument,
 			promptPieces.editWindowLinesRange,
 			promptPieces.areaAroundEditWindowLinesRange,
-			promptPieces.opts,
+			{
+				...promptPieces.opts,
+				currentFile: {
+					...promptPieces.opts.currentFile,
+					includeTags: false,
+				}
+			},
 			XtabProvider.computeTokens,
 			{ includeLineNumbers: true }
 		);
