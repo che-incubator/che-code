@@ -94,6 +94,10 @@ const vscodeWebEntryPoints = [
  * @param {object} product The parsed product.json file contents
  */
 const createVSCodeWebFileContentMapper = (extensionsRoot, product, workbenchConfig) => {
+	/**
+	 * @param {string} path
+	 * @returns {((content: string) => string) | undefined}
+	 */
 	return path => {
 		if (path.endsWith('vs/platform/product/common/product.js')) {
 			return content => {
@@ -144,6 +148,10 @@ const minifyVSCodeWebTask = task.define('minify-vscode-web', task.series(
 ));
 gulp.task(minifyVSCodeWebTask);
 
+/**
+ * @param {string} sourceFolderName
+ * @param {string} destinationFolderName
+ */
 function packageTask(sourceFolderName, destinationFolderName) {
 	const destination = path.join(BUILD_ROOT, destinationFolderName);
 
