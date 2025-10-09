@@ -68,12 +68,6 @@ https://github.com/che-incubator/che-code/pull/549
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/545
-
-- code/build/package.json
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/540 \
 https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394 \
 https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d
