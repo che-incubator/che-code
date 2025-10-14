@@ -357,8 +357,24 @@ class Mangler {
         this.log = log;
         this.config = config;
         this.renameWorkerPool = workerpool_1.default.pool(path_1.default.join(__dirname, 'renameWorker.js'), {
-            maxWorkers: 4,
-            minWorkers: 'max'
+            maxWorkers: (() => {
+                const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
+                if (Number.isFinite(envVal) && envVal > 0) {
+                    // clamp to reasonable bounds [1..8]
+                    this.log(`=== Workers max : ${envVal}`);
+                    return Math.min(8, Math.max(1, Math.floor(envVal)));
+                }
+                this.log('=== Workers default');
+                return 4;
+            })(),
+            minWorkers: (() => {
+                const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
+                if (Number.isFinite(envVal) && envVal > 0) {
+                    return Math.min(8, Math.max(1, Math.floor(envVal)));
+                }
+                // use same default as maxWorkers so pool size is fixed
+                return 4;
+            })()
         });
     }
     async computeNewFileContents(strictImplicitPublicHandling) {

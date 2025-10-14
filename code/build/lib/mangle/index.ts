@@ -415,8 +415,10 @@ export class Mangler {
 				const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
 				if (Number.isFinite(envVal) && envVal > 0) {
 					// clamp to reasonable bounds [1..8]
+					this.log(`=== Workers max : ${envVal}`);
 					return Math.min(8, Math.max(1, Math.floor(envVal)));
 				}
+				this.log('=== Workers default');
 				return 4;
 			})(),
 			minWorkers: ((): number => {
