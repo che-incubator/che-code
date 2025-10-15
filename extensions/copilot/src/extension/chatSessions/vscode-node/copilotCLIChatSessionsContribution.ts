@@ -30,6 +30,11 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super();
+
+		this._register(this.copilotcliSessionService.onDidChangeSessions(() => {
+			this.refresh();
+		}));
+
 		const cliIntegration = this.configurationService.getConfig(ConfigKey.Internal.CopilotCLIKind);
 		this._terminalIntegration = cliIntegration === 'bundled' ? this.instantiationService.createInstance(CopilotBundledCLITerminalIntegration) : (cliIntegration === 'node' ? this.instantiationService.createInstance(CopilotExternalCLINodeTerminalIntegration) : this.instantiationService.createInstance(CopilotExternalCLIScriptsTerminalIntegration));
 	}
@@ -51,7 +56,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 			timing: {
 				startTime: session.timestamp.getTime()
 			},
-			iconPath: new vscode.ThemeIcon('terminal')
+			status: this.copilotcliSessionService.getSessionStatus(session.id) ?? vscode.ChatSessionStatus.Completed,
 		} satisfies vscode.ChatSessionItem));
 
 		return diskSessions;
@@ -137,6 +142,7 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 		const activeResponseCallback = pendingRequest
 			? async (stream: vscode.ChatResponseStream, token: vscode.CancellationToken) => {
 				this.sessionService.clearPendingRequest(copilotcliSessionId);
+				this.sessionService.setSessionStatus(copilotcliSessionId, vscode.ChatSessionStatus.InProgress);
 				await this.copilotcliAgentManager.handleRequest(
 					copilotcliSessionId,
 					pendingRequest.request,
@@ -144,6 +150,7 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 					stream,
 					token
 				);
+				this.sessionService.setSessionStatus(copilotcliSessionId, vscode.ChatSessionStatus.Completed);
 			}
 			: undefined;
 
@@ -206,7 +213,9 @@ export class CopilotCLIChatSessionParticipant {
 			}
 
 			const { id } = chatSessionContext.chatSessionItem;
+			this.sessionService.setSessionStatus(id, vscode.ChatSessionStatus.InProgress);
 			await this.copilotcliAgentManager.handleRequest(id, processedRequest, context, stream, token);
+			this.sessionService.setSessionStatus(id, vscode.ChatSessionStatus.Completed);
 			return {};
 		}
 
