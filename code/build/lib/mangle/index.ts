@@ -403,6 +403,7 @@ export class Mangler {
 	private readonly allExportedSymbols = new Set<DeclarationData>();
 
 	private readonly renameWorkerPool: workerpool.WorkerPool;
+	private readonly defaultWorkersNumber = 4;
 
 	constructor(
 		private readonly projectPath: string,
@@ -411,7 +412,16 @@ export class Mangler {
 	) {
 
 		this.renameWorkerPool = workerpool.pool(path.join(__dirname, 'renameWorker.js'), {
-			maxWorkers: 4,
+			maxWorkers: ((): number => {
+				const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
+				if (Number.isFinite(envVal) && envVal > 0) {
+					const maxWorkersNumber = Math.min(8, Math.max(1, Math.floor(envVal)));
+					this.log(`env.VSCODE_MANGLE_WORKERS is set to ${envVal}, using ${maxWorkersNumber} number of maxWorkers`);
+					return maxWorkersNumber;
+				}
+				this.log(`env.VSCODE_MANGLE_WORKERS is not set, using the default number of maxWorkers: ${this.defaultWorkersNumber}`);
+				return this.defaultWorkersNumber;
+			})(),
 			minWorkers: 'max'
 		});
 	}
