@@ -3,6 +3,13 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/584
+
+- code/build/lib/mangle/index.js
+- code/build/lib/mangle/index.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/573
 
 - code/src/vs/platform/extensionManagement/common/extensionManagement.ts
