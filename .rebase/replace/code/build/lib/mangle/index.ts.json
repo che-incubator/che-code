@@ -2,5 +2,13 @@
     {
         "from": "// Module passed around as type",
         "by": "// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic\\\n\\\t\\\t'devfile-service',\\\n\\\t\\\t'github-service',\\\n\\\t\\\t'telemetry-service',\\\n\\\t\\\t'workspace-service',\\\n\\\n\\\t\\\t// Module passed around as type"
+    },
+    {
+        "from": "maxWorkers: 4,",
+        "by": "maxWorkers: ((): number => {\\\n\\\t\\\t\\\t\\\tconst envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');\\\n\\\t\\\t\\\t\\\tif (Number.isFinite(envVal) \\&\\& envVal > 0) {\\\n\\\t\\\t\\\t\\\t\\\tconst maxWorkersNumber = Math.min(8, Math.max(1, Math.floor(envVal)));\\\n\\\t\\\t\\\t\\\t\\\tthis.log(`env.VSCODE_MANGLE_WORKERS is set to ${envVal}, using ${maxWorkersNumber} number of maxWorkers`);\\\n\\\t\\\t\\\t\\\t\\\treturn maxWorkersNumber;\\\n\\\t\\\t\\\t\\\t}\\\n\\\t\\\t\\\t\\\tthis.log(`env.VSCODE_MANGLE_WORKERS is not set, using the default number of maxWorkers: ${this.defaultWorkersNumber}`);\\\n\\\t\\\t\\\t\\\treturn this.defaultWorkersNumber;\\\n\\\t\\\t\\\t})(),"
+    },
+    {
+        "from": "private readonly renameWorkerPool: workerpool.WorkerPool;",
+        "by": "private readonly renameWorkerPool: workerpool.WorkerPool;\\\n\\\tprivate readonly defaultWorkersNumber = 4;"
     }
 ]
