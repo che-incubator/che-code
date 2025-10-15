@@ -23,6 +23,7 @@
         },
         "prebuild-install": {
             "tar-fs": "2.1.4"
-        }
+        },
+        "micromatch": "4.0.8"
     }
 }
