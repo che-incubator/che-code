@@ -32,7 +32,6 @@ RUN chmod 644 /opt/ssh/ssh_host_* /opt/ssh/sshd_config
 # Use non-privileged port, set user authorized keys, disable strict checks
 RUN sed -i \
 -e 's|#Port 22|Port 2022|' \
--e 's|AuthorizedKeysFile	.ssh/authorized_keys|AuthorizedKeysFile /home/user/ssh/authorized_keys|' \
 -e 's|#StrictModes yes|StrictModes=no|' \
 -e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
 -e 's|#LogLevel INFO|LogLevel DEBUG3|' \
