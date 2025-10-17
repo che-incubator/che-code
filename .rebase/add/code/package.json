@@ -24,6 +24,7 @@
         "prebuild-install": {
             "tar-fs": "2.1.4"
         },
-        "micromatch": "4.0.8"
+        "micromatch": "4.0.8",
+        "braces": "3.0.3"
     }
 }
