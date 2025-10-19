@@ -16,9 +16,11 @@ import { ExtendedChatRequest, ICopilotCLISessionService } from '../../agents/cop
 import { buildChatHistoryFromEvents } from '../../agents/copilotcli/node/copilotcliToolInvocationFormatter';
 import { ICopilotCLITerminalIntegration } from './copilotCLITerminalIntegration';
 
+const MODELS_OPTION_ID = 'model';
+
 // Track model selections per session
 // TODO@rebornix: we should have proper storage for the session model preference (revisit with API)
-const _sessionModel: Map<string, vscode.LanguageModelChatInformation | undefined> = new Map();
+const _sessionModel: Map<string, vscode.ChatSessionProviderOptionItem | undefined> = new Map();
 
 /**
  * Convert a model ID to a ModelProvider object for the Copilot CLI SDK
@@ -101,35 +103,24 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 }
 
 export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionContentProvider {
-	private readonly availableModels: vscode.LanguageModelChatInformation[] = [
-		{
-			id: 'claude-sonnet-4',
-			name: 'Claude Sonnet 4',
-			family: 'Claude',
-			version: '4',
-			maxInputTokens: 128000,
-			maxOutputTokens: 10000,
-			capabilities: {}
-		},
+	private readonly availableModels: vscode.ChatSessionProviderOptionItem[] = [
 		{
 			id: 'claude-sonnet-4.5',
-			name: 'Claude Sonnet 4.5',
-			family: 'Claude',
-			version: '4.5',
-			maxInputTokens: 128000,
-			maxOutputTokens: 10000,
-			capabilities: {}
+			name: 'Claude Sonnet 4.5'
+		},
+		{
+			id: 'claude-sonnet-4',
+			name: 'Claude Sonnet 4'
 		},
 		{
 			id: 'gpt-5',
-			name: 'GPT-5',
-			family: 'GPT',
-			version: '5',
-			maxInputTokens: 128000,
-			maxOutputTokens: 10000,
-			capabilities: {}
+			name: 'GPT-5'
 		}
 	];
+
+	private get defaultModel(): vscode.ChatSessionProviderOptionItem {
+		return this.availableModels[0];
+	}
 
 	constructor(
 		@IVSCodeExtensionContext private readonly extensionContext: IVSCodeExtensionContext,
@@ -139,8 +130,8 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 	async provideChatSessionContent(copilotcliSessionId: string, token: vscode.CancellationToken): Promise<vscode.ChatSession> {
 		if (!_sessionModel.get(copilotcliSessionId)) {
 			// Get the user's preferred model from global state, default to claude-sonnet-4.5
-			const preferredModelId = this.extensionContext.globalState.get<string>(COPILOT_CLI_MODEL_MEMENTO_KEY, 'claude-sonnet-4.5');
-			const preferredModel = this.availableModels.find(m => m.id === preferredModelId) ?? this.availableModels[1]; // fallback to claude-sonnet-4.5
+			const preferredModelId = this.extensionContext.globalState.get<string>(COPILOT_CLI_MODEL_MEMENTO_KEY, this.defaultModel.id);
+			const preferredModel = this.availableModels.find(m => m.id === preferredModelId) ?? this.defaultModel; // fallback to claude-sonnet-4.5
 			_sessionModel.set(copilotcliSessionId, preferredModel);
 		}
 
@@ -152,20 +143,29 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 			history,
 			activeResponseCallback: undefined,
 			requestHandler: undefined,
-			options: { model: _sessionModel.get(copilotcliSessionId) }
+			options: {
+				[MODELS_OPTION_ID]: _sessionModel.get(copilotcliSessionId)?.id ?? this.defaultModel.id
+			}
 		};
 	}
 
 	async provideChatSessionProviderOptions(): Promise<vscode.ChatSessionProviderOptions> {
 		return {
-			models: this.availableModels
+			optionGroups: [
+				{
+					id: MODELS_OPTION_ID,
+					name: 'Model',
+					description: 'Select the language model to use',
+					items: this.availableModels
+				}
+			]
 		};
 	}
 
 	// Handle option changes for a session (store current state in a map)
 	provideHandleOptionsChange(sessionId: string, updates: ReadonlyArray<vscode.ChatSessionOptionUpdate>, token: vscode.CancellationToken): void {
 		for (const update of updates) {
-			if (update.optionId === 'model') {
+			if (update.optionId === MODELS_OPTION_ID) {
 				if (typeof update.value === 'undefined') {
 					_sessionModel.set(sessionId, undefined);
 				} else {
