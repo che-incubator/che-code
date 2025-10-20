@@ -48,7 +48,7 @@ RUN sed -i \
 COPY --chown=0:0 /build/scripts/sshd.start /
 
 RUN mkdir /opt/www
-COPY /build/scripts/server.js /opt/www/
+COPY /build/scripts/code-sshd-page/* /opt/www/
 
 # Lock down /etc/passwd until fixed in UDI
 RUN chmod 644 /etc/passwd
