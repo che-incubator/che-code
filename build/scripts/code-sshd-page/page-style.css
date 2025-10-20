@@ -1,0 +1,64 @@
+/*
+ Copyright (c) 2025 Red Hat, Inc.
+ This program and the accompanying materials are made
+ available under the terms of the Eclipse Public License 2.0
+ which is available at https://www.eclipse.org/legal/epl-2.0/
+
+ SPDX-License-Identifier: EPL-2.0
+*/
+
+pre {
+  background-color: #f6f8fa; /* Light gray background */
+  overflow-x: auto; /* Enable horizontal scrolling for long lines */
+  font-family: monospace;
+  font-size: 14px;
+  display: table-cell;
+  width: 98%;
+  padding: 10px;
+}
+
+code {
+  background-color: #e3e6e8; /* Slightly darker gray for inline code */
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em; /* Slightly smaller than surrounding text */
+}
+
+.parent {
+  background-color: #f6f8fa; /* Light gray background */
+  display: table;
+  width: 100%;
+}
+
+.clipboard {
+  background-color: #f6f8fa; /* Light gray background */
+  display: table-cell;
+  width: 2%;
+}
+
+.clipboard-img-pre {
+    width: 15px;
+    height: 15px;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 3px;
+}
+
+.clipboard-img-code {
+    background-color: #e3e6e8; /* Slightly darker gray for inline code */
+    width: 10px;
+    height: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 3px;
+    vertical-align: bottom;
+}
+
+.clipboard-img-pre:hover {
+    background:#e3e6e8;
+}
+
+.clipboard-img-code:hover {
+    background-color: #f6f8fa;
+}
