@@ -2,6 +2,25 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/583
+
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/585
+
+- code/package.json
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/584
+
+- code/build/lib/mangle/index.js
+- code/build/lib/mangle/index.ts
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/573
 
@@ -65,12 +84,6 @@ https://github.com/che-incubator/che-code/pull/557
 https://github.com/che-incubator/che-code/pull/549
 
 - code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts
----
-
-#### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/545
-
-- code/build/package.json
 ---
 
 #### @RomanNikitenko

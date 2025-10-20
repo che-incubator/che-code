@@ -352,12 +352,22 @@ class Mangler {
     allClassDataByKey = new Map();
     allExportedSymbols = new Set();
     renameWorkerPool;
+    defaultWorkersNumber = 4;
     constructor(projectPath, log = () => { }, config) {
         this.projectPath = projectPath;
         this.log = log;
         this.config = config;
         this.renameWorkerPool = workerpool_1.default.pool(path_1.default.join(__dirname, 'renameWorker.js'), {
-            maxWorkers: 4,
+            maxWorkers: (() => {
+                const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
+                if (Number.isFinite(envVal) && envVal > 0) {
+                    const maxWorkersNumber = Math.min(8, Math.max(1, Math.floor(envVal)));
+                    this.log(`env.VSCODE_MANGLE_WORKERS is set to ${envVal}, using ${maxWorkersNumber} number of maxWorkers`);
+                    return maxWorkersNumber;
+                }
+                this.log(`env.VSCODE_MANGLE_WORKERS is not set, using the default number of maxWorkers: ${this.defaultWorkersNumber}`);
+                return this.defaultWorkersNumber;
+            })(),
             minWorkers: 'max'
         });
     }
