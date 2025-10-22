@@ -227,7 +227,7 @@ export class CopilotCLIChatSessionParticipant {
 
 			const { id } = chatSessionContext.chatSessionItem;
 
-			if (request.prompt.startsWith('/push')) {
+			if (request.prompt.startsWith('/delegate')) {
 				if (!this.cloudSessionProvider) {
 					stream.warning(localize('copilotcli.missingCloudAgent', "No cloud agent available"));
 					return {};
@@ -235,16 +235,14 @@ export class CopilotCLIChatSessionParticipant {
 
 				// Check for uncommitted changes
 				const currentRepository = this.gitService.activeRepository.get();
-				const hasChanges =
-					((currentRepository?.changes?.workingTree && currentRepository.changes.workingTree.length > 0) ||
-						(currentRepository?.changes?.indexChanges && currentRepository.changes.indexChanges.length > 0));
+				const hasChanges = (currentRepository?.changes?.indexChanges && currentRepository.changes.indexChanges.length > 0);
 
 				if (hasChanges) {
 					stream.warning(localize('copilotcli.uncommittedChanges', "You have uncommitted changes in your workspace. The cloud agent will start from the last committed state. Consider committing your changes first if you want to include them."));
 				}
 
 				const history = await this.summarizer.provideChatSummary(context, token);
-				const prompt = request.prompt.substring('/push'.length).trim();
+				const prompt = request.prompt.substring('/delegate'.length).trim();
 				const prInfo = await this.cloudSessionProvider.createDelegatedChatSession({
 					prompt,
 					history
