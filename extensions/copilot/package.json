@@ -1756,25 +1756,25 @@
 			},
 			{
 				"command": "github.copilot.cli.sessions.refresh",
-				"title": "Refresh Copilot CLI Agent Sessions",
+				"title": "%github.copilot.command.refreshAgentSessions%",
 				"icon": "$(refresh)",
 				"category": "Copilot CLI"
 			},
 			{
 				"command": "github.copilot.cli.sessions.delete",
-				"title": "Delete Copilot CLI Agent Session",
+				"title": "%github.copilot.command.deleteAgentSession%",
 				"icon": "$(close)",
 				"category": "Copilot CLI"
 			},
 			{
 				"command": "github.copilot.cli.sessions.resumeInTerminal",
-				"title": "Resume Agent Session in Terminal",
+				"title": "%github.copilot.command.cli.sessions.resumeInTerminal%",
 				"icon": "$(terminal)",
 				"category": "Copilot CLI"
 			},
 			{
 				"command": "github.copilot.cli.sessions.newTerminalSession",
-				"title": "New Agent Session in Terminal",
+				"title": "%github.copilot.cli.sessions.newTerminalSession%",
 				"icon": "$(terminal)",
 				"category": "Copilot CLI"
 			},
@@ -2205,7 +2205,7 @@
 			},
 			{
 				"command": "github.copilot.cloud.sessions.refresh",
-				"title": "%github.copilot.command.refreshCopilotAgentSessions%",
+				"title": "%github.copilot.command.refreshAgentSessions%",
 				"icon": "$(refresh)"
 			},
 			{
@@ -4184,6 +4184,9 @@
 			},
 			{
 				"type": "copilot-cloud-agent",
+				"alternativeIds": [
+					"copilot-swe-agent"
+				],
 				"name": "cloud",
 				"displayName": "GitHub Copilot Cloud Agent",
 				"icon": "$(cloud)",
