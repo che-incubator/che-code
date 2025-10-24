@@ -12,7 +12,8 @@ mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
   cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  cp /opt/ssh/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
+  ssh-keygen -q -N "" -t ed25519 -f $HOME/.ssh/ssh_client_ed25519_key
+  cp $HOME/.ssh/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
 fi
 
 # start

@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
 
     let genKey = "PRIVATE KEY NOT FOUND";
     try {
-      genKey = fs.readFileSync('/opt/ssh/ssh_client_ed25519_key', 'utf8');
+      genKey = fs.readFileSync(`${process.env["HOME"]}/.ssh/ssh_client_ed25519_key`, 'utf8');
     } catch (err) {
      // continue
     }
