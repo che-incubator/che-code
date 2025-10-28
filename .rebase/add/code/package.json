@@ -25,6 +25,12 @@
             "tar-fs": "2.1.4"
         },
         "micromatch": "4.0.8",
-        "braces": "3.0.3"
+        "braces": "3.0.3",
+        "@types/node-fetch": {
+            "form-data": "3.0.4"
+        },
+        "jsdom": {
+            "form-data": "3.0.4"
+        }
     }
 }
