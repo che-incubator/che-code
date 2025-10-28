@@ -37,7 +37,8 @@
     "@types/node": "22.x",
     "add": "^2.0.6",
     "jest": "27.3.1",
-    "ts-jest": "^27.1.4"
+    "ts-jest": "^27.1.4",
+    "form-data": "^3.0.4"
   },
   "repository": {
     "type": "git",

@@ -53,6 +53,15 @@
     "jsonpath-plus": "10.1.0",
     "request": {
       "form-data": "2.5.5"
+    },
+    "@types/node-fetch": {
+      "form-data": "4.0.4"
+    },
+    "axios": {
+      "form-data": "4.0.4"
+    },
+    "jsdom": {
+      "form-data": "3.0.4"
     }
   },
   "repository": {
