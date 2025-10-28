@@ -3,7 +3,6 @@
     "bin": "out/vs/server/main.js",
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
-      "@vscode/gulp-electron": "^1.38.2",
       "minimatch": "^3.0.5"
     }
 }
