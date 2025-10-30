@@ -44,15 +44,11 @@ RUN sed -i \
 -e 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /opt/ssh/ssh_host_ed25519_key|' \
   /opt/ssh/sshd_config
 
-# Prepare SSH Keys
-RUN ssh-keygen -q -N "" -t ed25519 -f /opt/ssh/ssh_client_ed25519_key
-RUN chmod 644 /opt/ssh/ssh_client_*
-
 # Add script to start and stop the service
 COPY --chown=0:0 /build/scripts/sshd.start /
 
 RUN mkdir /opt/www
-COPY /build/scripts/server.js /opt/www/
+COPY /build/scripts/code-sshd-page/* /opt/www/
 
 # Lock down /etc/passwd until fixed in UDI
 RUN chmod 644 /etc/passwd
