@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1738854228",
-    "axios": "^1.7.4",
+    "axios": "^1.13.1",
     "@kubernetes/client-node": "^0.22.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
@@ -55,9 +55,6 @@
       "form-data": "2.5.5"
     },
     "@types/node-fetch": {
-      "form-data": "4.0.4"
-    },
-    "axios": {
       "form-data": "4.0.4"
     },
     "jsdom": {

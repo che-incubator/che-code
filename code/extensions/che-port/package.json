@@ -41,7 +41,16 @@
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.4.0",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "22.x"
+    "@types/node": "22.x",
+    "form-data": "2.5.5"
+  },
+  "overrides": {
+    "@types/node-fetch": {
+      "form-data": "4.0.4"
+    },
+    "jsdom": {
+      "form-data": "3.0.4"
+    }
   },
   "repository": {
     "type": "git",
