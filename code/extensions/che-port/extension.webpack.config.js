@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2025 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -14,10 +14,10 @@
 
 'use strict';
 
-const withDefaults = require('../shared.webpack.config');
+import withDefaults from '../shared.webpack.config.mjs';
 
-module.exports = withDefaults({
-	context: __dirname,
+export default withDefaults({
+	context: import.meta.dirname,
 	resolve: {
 		mainFields: ['module', 'main']
 	},
