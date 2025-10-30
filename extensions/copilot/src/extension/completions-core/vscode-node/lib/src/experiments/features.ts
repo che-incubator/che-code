@@ -75,6 +75,17 @@ export class Features {
 		});
 	}
 
+	/**
+	 * Request a Copilot token and use that token to call updateExPValuesAndAssignments. Do NOT call this at startup.
+	 * Instead, register a onCopilotToken handler and use that token with updateExPValuesAndAssignments directly.
+	 */
+	async fetchTokenAndUpdateExPValuesAndAssignments(
+		filtersInfo?: CompletionsFiltersInfo,
+		telemetryData?: TelemetryData
+	) {
+		return await this.updateExPValuesAndAssignments(filtersInfo, telemetryData);
+	}
+
 	private createExpConfigAndFilters(token: CopilotToken) {
 		const expService = this.ctx.get(CompletionsExperimentationServiceBridge).experimentationService;
 
