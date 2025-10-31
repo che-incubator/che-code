@@ -35,6 +35,7 @@ export class CopilotCLIAgentManager extends Disposable {
 		context: vscode.ChatContext,
 		stream: vscode.ChatResponseStream,
 		modelId: ModelProvider | undefined,
+		workingDirectory: string | undefined,
 		token: vscode.CancellationToken
 	): Promise<{ copilotcliSessionId: string | undefined }> {
 		const sessionIdForLog = copilotcliSessionId ?? 'new';
@@ -52,7 +53,7 @@ export class CopilotCLIAgentManager extends Disposable {
 			this.sessionService.trackSessionWrapper(sdkSession.sessionId, session);
 		}
 
-		await session.invoke(prompt, attachments, request.toolInvocationToken, stream, modelId, token);
+		await session.invoke(prompt, attachments, request.toolInvocationToken, stream, modelId, workingDirectory, token);
 
 		return { copilotcliSessionId: session.sessionId };
 	}

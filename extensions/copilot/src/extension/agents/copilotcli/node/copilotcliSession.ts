@@ -62,6 +62,7 @@ export class CopilotCLISession extends DisposableStore {
 		toolInvocationToken: vscode.ChatParticipantToolToken,
 		stream: vscode.ChatResponseStream,
 		modelId: ModelProvider | undefined,
+		workingDirectory: string | undefined,
 		token: vscode.CancellationToken
 	): Promise<void> {
 		if (this.isDisposed) {
@@ -73,6 +74,8 @@ export class CopilotCLISession extends DisposableStore {
 
 		this.logService.trace(`[CopilotCLISession] Invoking session ${this.sessionId}`);
 		const copilotToken = await this._authenticationService.getCopilotToken();
+		// TODO@rebornix handle workspace properly
+		const effectiveWorkingDirectory = workingDirectory ?? this.workspaceService.getWorkspaceFolders().at(0)?.fsPath;
 
 		const options: AgentOptions = {
 			modelProvider: modelId ?? {
@@ -80,8 +83,7 @@ export class CopilotCLISession extends DisposableStore {
 				model: 'claude-sonnet-4.5',
 			},
 			abortController: this._abortController,
-			// TODO@rebornix handle workspace properly
-			workingDirectory: this.workspaceService.getWorkspaceFolders().at(0)?.fsPath,
+			workingDirectory: effectiveWorkingDirectory,
 			copilotToken: copilotToken.token,
 			env: {
 				...process.env,
