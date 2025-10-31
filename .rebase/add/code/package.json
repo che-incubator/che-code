@@ -29,7 +29,7 @@
         "@types/node-fetch": {
             "form-data": "3.0.4"
         },
-        "jsdom": {
+        "@azure/core-http": {
             "form-data": "3.0.4"
         }
     }
