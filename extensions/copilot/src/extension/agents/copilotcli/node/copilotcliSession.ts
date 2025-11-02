@@ -10,7 +10,7 @@ import { ILogService } from '../../../../platform/log/common/logService';
 import { IWorkspaceService } from '../../../../platform/workspace/common/workspaceService';
 import { CancellationToken } from '../../../../util/vs/base/common/cancellation';
 import { DisposableStore } from '../../../../util/vs/base/common/lifecycle';
-import { ChatRequestTurn2, ChatResponseThinkingProgressPart, ChatResponseTurn2, ChatSessionStatus, EventEmitter, LanguageModelTextPart } from '../../../../vscodeTypes';
+import { ChatRequestTurn2, ChatResponseThinkingProgressPart, ChatResponseTurn2, ChatSessionStatus, EventEmitter, LanguageModelTextPart, Uri } from '../../../../vscodeTypes';
 import { IToolsService } from '../../../tools/common/toolsService';
 import { ExternalEditTracker } from '../../common/externalEditTracker';
 import { getAffectedUrisForEditTool } from '../common/copilotcliTools';
@@ -19,7 +19,27 @@ import { buildChatHistoryFromEvents, processToolExecutionComplete, processToolEx
 import { getCopilotLogger } from './logger';
 import { getConfirmationToolParams, PermissionRequest } from './permissionHelpers';
 
-export class CopilotCLISession extends DisposableStore {
+export interface ICopilotCLISession {
+	readonly sessionId: string;
+	readonly status: vscode.ChatSessionStatus | undefined;
+	readonly onDidChangeStatus: vscode.Event<vscode.ChatSessionStatus | undefined>;
+
+	handleRequest(
+		prompt: string,
+		attachments: Attachment[],
+		toolInvocationToken: vscode.ChatParticipantToolToken,
+		stream: vscode.ChatResponseStream,
+		modelId: ModelProvider | undefined,
+		workingDirectory: string | undefined,
+		token: vscode.CancellationToken
+	): Promise<void>;
+
+	addUserMessage(content: string): void;
+	addUserAssistantMessage(content: string): void;
+	getSelectedModelId(): Promise<string | undefined>;
+	getChatHistory(): Promise<(ChatRequestTurn2 | ChatResponseTurn2)[]>;
+}
+export class CopilotCLISession extends DisposableStore implements ICopilotCLISession {
 	private _abortController = new AbortController();
 	private _pendingToolInvocations = new Map<string, vscode.ChatToolInvocationPart>();
 	private _editTracker = new ExternalEditTracker();
@@ -31,14 +51,6 @@ export class CopilotCLISession extends DisposableStore {
 	private readonly _statusChange = this.add(new EventEmitter<vscode.ChatSessionStatus | undefined>());
 
 	public readonly onDidChangeStatus = this._statusChange.event;
-
-	private _aborted?: boolean;
-	public get aborted(): boolean {
-		return this._aborted ?? false;
-	}
-	private readonly _onDidAbort = this.add(new EventEmitter<void>());
-
-	public readonly onDidAbort = this._onDidAbort.event;
 
 	constructor(
 		private readonly _sdkSession: Session,
@@ -64,7 +76,7 @@ export class CopilotCLISession extends DisposableStore {
 		yield* agent.query(prompt, attachments);
 	}
 
-	public async invoke(
+	public async handleRequest(
 		prompt: string,
 		attachments: Attachment[],
 		toolInvocationToken: vscode.ChatParticipantToolToken,
@@ -217,6 +229,16 @@ export class CopilotCLISession extends DisposableStore {
 		permissionRequest: PermissionRequest,
 		toolInvocationToken: vscode.ChatParticipantToolToken
 	): Promise<{ kind: 'approved' } | { kind: 'denied-interactively-by-user' }> {
+		if (permissionRequest.kind === 'read') {
+			// If user is reading a file in the workspace, auto-approve read requests.
+			// Outisde workspace reads (e.g., /etc/passwd) will still require approval.
+			const data = Uri.file(permissionRequest.path);
+			if (this.workspaceService.getWorkspaceFolder(data)) {
+				this.logService.trace(`[CopilotCLISession] Auto Approving request to read workspace file ${permissionRequest.path}`);
+				return { kind: 'approved' };
+			}
+		}
+
 		try {
 			const { tool, input } = getConfirmationToolParams(permissionRequest);
 			const result = await this.toolsService.invokeTool(tool,
