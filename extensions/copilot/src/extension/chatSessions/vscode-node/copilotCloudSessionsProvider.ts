@@ -12,7 +12,7 @@ import { PullRequestSearchItem, SessionInfo } from '../../../platform/github/com
 import { IOctoKitService, JobInfo, RemoteAgentJobPayload } from '../../../platform/github/common/githubService';
 import { ILogService } from '../../../platform/log/common/logService';
 import { ITelemetryService } from '../../../platform/telemetry/common/telemetry';
-import { Disposable } from '../../../util/vs/base/common/lifecycle';
+import { Disposable, toDisposable } from '../../../util/vs/base/common/lifecycle';
 import { body_suffix, CONTINUE_TRUNCATION, extractTitle, formatBodyPlaceholder, getAuthorDisplayName, getRepoId, JOBS_API_VERSION, RemoteAgentResult, SessionIdForPr, toOpenPullRequestWebviewUri, truncatePrompt } from '../vscode/copilotCodingAgentUtils';
 import { ChatSessionContentBuilder } from './copilotCloudSessionContentBuilder';
 import { IPullRequestFileChangesService } from './pullRequestFileChangesService';
@@ -56,6 +56,7 @@ export interface ICommentResult {
 
 const AGENTS_OPTION_GROUP_ID = 'agents';
 const DEFAULT_AGENT_ID = '___vscode_default___';
+const BACKGROUND_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 export class CopilotChatSessionsProvider extends Disposable implements vscode.ChatSessionContentProvider, vscode.ChatSessionItemProvider {
 	public static readonly TYPE = 'copilot-cloud-agent';
@@ -70,6 +71,7 @@ export class CopilotChatSessionsProvider extends Disposable implements vscode.Ch
 	public chatParticipant = vscode.chat.createChatParticipant(CopilotChatSessionsProvider.TYPE, async (request, context, stream, token) =>
 		await this.chatParticipantImpl(request, context, stream, token)
 	);
+	private cachedSessionsSize: number = 0;
 
 	constructor(
 		@IOctoKitService private readonly _octoKitService: IOctoKitService,
@@ -80,6 +82,16 @@ export class CopilotChatSessionsProvider extends Disposable implements vscode.Ch
 		@IPullRequestFileChangesService private readonly _prFileChangesService: IPullRequestFileChangesService,
 	) {
 		super();
+		const interval = setInterval(async () => {
+			const repoId = await getRepoId(this._gitService);
+			if (repoId) {
+				const sessions = await this._octoKitService.getAllOpenSessions(`${repoId.org}/${repoId.repo}`);
+				if (this.cachedSessionsSize !== sessions.length) {
+					this.refresh();
+				}
+			}
+		}, BACKGROUND_REFRESH_INTERVAL_MS);
+		this._register(toDisposable(() => clearInterval(interval)));
 	}
 
 	public refresh(): void {
@@ -142,6 +154,7 @@ export class CopilotChatSessionsProvider extends Disposable implements vscode.Ch
 			}
 
 			const sessions = await this._octoKitService.getAllOpenSessions(`${repoId.org}/${repoId.repo}`);
+			this.cachedSessionsSize = sessions.length;
 
 			// Group sessions by resource_id and keep only the latest per resource_id
 			const latestSessionsMap = new Map<number, SessionInfo>();
