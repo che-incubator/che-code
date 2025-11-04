@@ -3951,7 +3951,7 @@
 				{
 					"command": "github.copilot.cloud.sessions.openInBrowser",
 					"when": "chatSessionType == copilot-cloud-agent",
-					"group": "context"
+					"group": "navigation@10"
 				},
 				{
 					"command": "github.copilot.cloud.sessions.proxy.closeChatSessionPullRequest",
