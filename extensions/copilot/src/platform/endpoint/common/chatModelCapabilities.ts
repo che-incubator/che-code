@@ -12,7 +12,7 @@ const HIDDEN_MODEL_A_HASHES = [
 	'6b0f165d0590bf8d508540a796b4fda77bf6a0a4ed4e8524d5451b1913100a95'
 ];
 
-const VSC_MODEL_HASHES = [
+const VSC_MODEL_HASHES_A = [
 	'7b667eee9b3517fb9aae7061617fd9cec524859fcd6a20a605bfb142a6b0f14e',
 	'e7cfc1a7adaf9e419044e731b7a9e21940a5280a438b472db0c46752dd70eab3',
 	'878722e35e24b005604c37aa5371ae100e82465fbfbdf6fe3c1fdaf7c92edc96',
@@ -20,6 +20,12 @@ const VSC_MODEL_HASHES = [
 	'3104045f9b69dbb7a3d76cc8a0aa89eb05e10677c4dd914655ea87f4be000f4e',
 	'b576d46942ee2c45ecd979cbbcb62688ae3171a07ac83f53b783787f345e3dd7',
 ];
+
+const VSC_MODEL_HASHES_B = [
+	'e30111497b2a7e8f1aa7beed60b69952537d99bcdc18987abc2f6add63a89960',
+	'df610ed210bb9266ff8ab812908d5837538cdb1d7436de907fb7e970dab5d289',
+];
+
 
 function getModelId(model: LanguageModelChat | IChatEndpoint): string {
 	return 'id' in model ? model.id : model.model;
@@ -35,11 +41,16 @@ export async function isHiddenModelB(model: LanguageModelChat | IChatEndpoint): 
 	return h === '8f398886c326b5f8f07b20ac250c87de6723e062474465273fe1524f2b9092fa';
 }
 
-export async function isVSCModel(model: LanguageModelChat | IChatEndpoint) {
+
+export async function isVSCModelA(model: LanguageModelChat | IChatEndpoint) {
 	const h = await getCachedSha256Hash(getModelId(model));
-	return VSC_MODEL_HASHES.includes(h);
+	return VSC_MODEL_HASHES_A.includes(h);
 }
 
+export async function isVSCModelB(model: LanguageModelChat | IChatEndpoint) {
+	const h = await getCachedSha256Hash(getModelId(model));
+	return VSC_MODEL_HASHES_B.includes(h);
+}
 
 /**
  * Returns whether the instructions should be given in a user message instead
