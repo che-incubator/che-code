@@ -426,7 +426,7 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 		const result = await this.invokeRemoteAgent(
 			prompt,
 			[
-				this.extractFileReferences(references),
+				await this.extractFileReferences(references),
 				history
 			].join('\n\n').trim(),
 			token,
@@ -729,28 +729,57 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 		}
 	}
 
-	private extractFileReferences(references: readonly vscode.ChatPromptReference[] | undefined): string | undefined {
+	private async extractFileReferences(references: readonly vscode.ChatPromptReference[] | undefined): Promise<string | undefined> {
 		if (!references || references.length === 0) {
 			return;
 		}
 		// 'file:///Users/jospicer/dev/joshbot/.github/workflows/build-vsix.yml'  -> '.github/workflows/build-vsix.yml'
-		const parts: string[] = [];
+		const fileRefs: string[] = [];
+		const fullFileParts: string[] = [];
+		const git = this._gitExtensionService.getExtensionApi();
 		for (const ref of references) {
 			if (ref.value instanceof vscode.Uri && ref.value.scheme === 'file') { // TODO: Add support for more kinds of references
-				const git = this._gitExtensionService.getExtensionApi();
-				const repositoryForFile = git?.getRepository(ref.value);
+				const fileUri = ref.value;
+				const repositoryForFile = git?.getRepository(fileUri);
 				if (repositoryForFile) {
-					const relativePath = pathLib.relative(repositoryForFile.rootUri.fsPath, ref.value.fsPath);
-					parts.push(` - ${relativePath}`);
+					const relativePath = pathLib.relative(repositoryForFile.rootUri.fsPath, fileUri.fsPath);
+					if (repositoryForFile.state.workingTreeChanges.some(change => change.uri.fsPath === fileUri.fsPath)) {
+						try {
+							// TODO: Consider just showing the file diffs
+							const document = await vscode.workspace.openTextDocument(fileUri);
+							const content = document.getText();
+							fullFileParts.push(`<file-start>${relativePath}</file-start>`);
+							fullFileParts.push(content);
+							fullFileParts.push(`<file-end>${relativePath}</file-end>`);
+						} catch (error) {
+							this.logService.error(`Error reading file content for reference: ${fileUri.toString()}: ${error}`);
+						}
+					} else {
+						fileRefs.push(` - ${relativePath}`);
+					}
+				}
+			} else if (ref.value instanceof vscode.Uri && ref.value.scheme === 'untitled') {
+				// Get full content of untitled file
+				try {
+					const document = await vscode.workspace.openTextDocument(ref.value);
+					const content = document.getText();
+					fullFileParts.push(`<file-start>${ref.value.path}</file-start>`);
+					fullFileParts.push(content);
+					fullFileParts.push(`<file-end>${ref.value.path}</file-end>`);
+				} catch (error) {
+					this.logService.error(`Error reading untitled file content for reference: ${ref.value.toString()}: ${error}`);
 				}
 			}
 		}
 
+		const parts: string[] = [
+			...(fullFileParts.length ? ['The user has attached the following uncommitted or modified files as relevant context:', ...fullFileParts] : []),
+			...(fileRefs.length ? ['The user has attached the following file paths as relevant context:', ...fileRefs] : [])
+		];
+
 		if (!parts.length) {
 			return;
 		}
-
-		parts.unshift('The user has attached the following files as relevant context:');
 		return parts.join('\n');
 	}
 
