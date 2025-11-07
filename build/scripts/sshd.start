@@ -8,13 +8,68 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+# https://github.com/sclorg/s2i-nodejs-container/blob/master/22/root/opt/app-root/etc/generate_container_user
+USER_ID=$(id -u)
+
+if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
+  mkdir -p /var/tmp/etc
+  NSS_WRAPPER_PASSWD=/var/tmp/etc/passwd
+  NSS_WRAPPER_GROUP=/etc/group
+
+  cat /etc/passwd | sed \
+  -e "/$USER_ID/ s|/sbin/nologin|/bin/bash|" \
+  -e "/$USER_ID/ s|:/:|:/var/tmp/user:|" \
+  > $NSS_WRAPPER_PASSWD
+
+  export NSS_WRAPPER_PASSWD
+  export NSS_WRAPPER_GROUP
+  export LD_PRELOAD=/sshd/libnss_wrapper.so
+fi
+
+if [ $HOME = "/" ]; then
+  export HOME=/var/tmp/user
+  mkdir -p /var/tmp/user
+fi
+
+# Step 1. Generate SSH Host keys
+mkdir /var/tmp/ssh
+chmod 755 /var/tmp/ssh
+
+/sshd/ssh-keygen -q -N "" -t dsa -f /var/tmp/ssh/ssh_host_dsa_key && \
+/sshd/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key && \
+/sshd/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key && \
+/sshd/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key
+
+# Step 2. Configure SSH as non-root user
+
+# Step 3. Fix permissions
+chmod 600 /var/tmp/ssh/ssh_host_* /sshd/sshd_config
+
+# Use non-privileged port, set user authorized keys, disable strict checks
+sed -i \
+-e 's|#Port 22|Port 2022|' \
+-e 's|#StrictModes yes|StrictModes=no|' \
+-e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
+-e 's|#LogLevel INFO|LogLevel DEBUG1|' \
+  /sshd/sshd_config
+
+# Provide new path containing host keys
+sed -i \
+-e 's|#HostKey /etc/ssh/ssh_host_rsa_key|HostKey /var/tmp/ssh/ssh_host_rsa_key|' \
+-e 's|#HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /var/tmp/ssh/ssh_host_ecdsa_key|' \
+-e 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /var/tmp/ssh/ssh_host_ed25519_key|' \
+  /sshd/sshd_config
+
 mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
   cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  ssh-keygen -q -N "" -t ed25519 -f $HOME/.ssh/ssh_client_ed25519_key
-  cp $HOME/.ssh/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
+  /sshd/ssh-keygen -q -N '' -t ed25519 -f /sshd/ssh_client_ed25519_key
+  cp /sshd/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
 fi
 
+echo -n "$(whoami)" > /sshd/username
+
 # start
-/usr/sbin/sshd -D -f /opt/ssh/sshd_config -E /tmp/sshd.log
+exec /sshd/sshd -D -f /sshd/sshd_config -E /tmp/sshd.log
+
