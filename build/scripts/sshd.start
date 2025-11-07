@@ -8,13 +8,88 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
+# https://github.com/sclorg/s2i-nodejs-container/blob/master/22/root/opt/app-root/etc/generate_container_user
+USER_ID=$(id -u)
+
+export LD_PRELOAD=/sshd/libeconf.so.0:/sshd/libpam.so.0:/sshd/libcrypt.so.2
+
+# Configure passwd/group files for SSHD
+# Random user must have a login shell and appropriate home folder
+if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
+  mkdir -p /var/tmp/etc
+  NSS_WRAPPER_PASSWD=/var/tmp/etc/passwd
+  NSS_WRAPPER_GROUP=/etc/group
+  # Some images (eg. UDI) may contain duplicate users with different IDs
+  USER_NAME=$(grep ":$USER_ID:" /etc/passwd | cut -d: -f1)
+
+  cat /etc/passwd | sed \
+  -e "/$USER_ID/ s|/sbin/nologin|/bin/bash|" \
+  -e "/$USER_ID/ s|:/:|:/var/tmp/user:|" \
+  -e "/$USER_NAME:/{/:$USER_ID:/!d;}" \
+  > $NSS_WRAPPER_PASSWD
+
+  export NSS_WRAPPER_PASSWD
+  export NSS_WRAPPER_GROUP
+  export LD_PRELOAD=$LD_PRELOAD:/sshd/libnss_wrapper.so
+fi
+
+if [ $HOME = "/" ]; then
+  export HOME=/var/tmp/user
+  mkdir -p /var/tmp/user
+fi
+
+# Common tools needed to set up service
+mkdir -p $HOME/bin
+cp /sshd/tar /sshd/gzip $HOME/bin/
+echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
+
+# Set up environment variables injected into PID 1 (.profile & .bashrc)
+env | grep -v 'PATH=' | sed 's|^|export |' >> $HOME/.profile
+cat $HOME/.profile >> $HOME/.bashrc
+
+# Configure SSHD as non-root user
+
+mkdir /var/tmp/ssh
+chmod 755 /var/tmp/ssh
+
+# Generate SSH Host keys
+/sshd/ssh-keygen -q -N "" -t dsa -f /var/tmp/ssh/ssh_host_dsa_key && \
+/sshd/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key && \
+/sshd/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key && \
+/sshd/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key
+
+# Ensure appropriate permissions
+chmod 600 /var/tmp/ssh/ssh_host_* /sshd/sshd_config
+
+# Use non-privileged port, disable strict checks
+sed -i \
+-e 's|#Port 22|Port 2022|' \
+-e 's|#StrictModes yes|StrictModes=no|' \
+-e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
+-e 's|#LogLevel INFO|LogLevel DEBUG1|' \
+  /sshd/sshd_config
+
+# Provide new path containing host keys
+sed -i \
+-e 's|#HostKey /etc/ssh/ssh_host_rsa_key|HostKey /var/tmp/ssh/ssh_host_rsa_key|' \
+-e 's|#HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /var/tmp/ssh/ssh_host_ecdsa_key|' \
+-e 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /var/tmp/ssh/ssh_host_ed25519_key|' \
+  /sshd/sshd_config
+
+# Use keys that have been configured, and generate them otherwise
 mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
   cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  ssh-keygen -q -N "" -t ed25519 -f $HOME/.ssh/ssh_client_ed25519_key
-  cp $HOME/.ssh/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
+  /sshd/ssh-keygen -q -N '' -t ed25519 -f /sshd/ssh_client_ed25519_key
+  cp /sshd/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
 fi
 
-# start
-/usr/sbin/sshd -D -f /opt/ssh/sshd_config -E /tmp/sshd.log
+cp /sshd/sshd_config /var/tmp/ssh/
+
+# Notify that configuration has been successful and share username
+echo -n "$(whoami)" > /sshd/username
+
+# start SSHD
+exec /sshd/sshd -D -f /var/tmp/ssh/sshd_config -E /tmp/sshd.log
+
