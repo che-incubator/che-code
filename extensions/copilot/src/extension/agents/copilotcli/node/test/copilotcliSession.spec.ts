@@ -131,6 +131,7 @@ describe('CopilotCLISession', () => {
 	function createSession() {
 		return disposables.add(new CopilotCLISession(
 			sdkSession as unknown as Session,
+			{} as unknown as SessionOptions,
 			permissionHandler,
 			logger,
 			workspaceService,

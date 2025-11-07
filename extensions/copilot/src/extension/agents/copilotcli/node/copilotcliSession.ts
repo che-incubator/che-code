@@ -3,13 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Attachment, Session } from '@github/copilot/sdk';
+import type { Attachment, Session, SessionOptions } from '@github/copilot/sdk';
 import type * as vscode from 'vscode';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { IWorkspaceService } from '../../../../platform/workspace/common/workspaceService';
 import { CancellationToken } from '../../../../util/vs/base/common/cancellation';
 import { DisposableStore, IDisposable, toDisposable } from '../../../../util/vs/base/common/lifecycle';
 import { ResourceMap } from '../../../../util/vs/base/common/map';
+import { extUriBiasedIgnorePathCase } from '../../../../util/vs/base/common/resources';
 import { ChatRequestTurn2, ChatResponseThinkingProgressPart, ChatResponseTurn2, ChatSessionStatus, EventEmitter, LanguageModelTextPart, Uri } from '../../../../vscodeTypes';
 import { IToolsService } from '../../../tools/common/toolsService';
 import { ExternalEditTracker } from '../../common/externalEditTracker';
@@ -50,6 +51,7 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 
 	constructor(
 		private readonly _sdkSession: Session,
+		private readonly _options: SessionOptions,
 		private readonly _permissionHandler: CopilotCLIPermissionsHandler,
 		@ILogService private readonly logService: ILogService,
 		@IWorkspaceService private readonly workspaceService: IWorkspaceService,
@@ -92,7 +94,8 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 					const ids = editFilesAndToolCallIds.get(file);
 					return ids?.shift();
 				},
-				toolInvocationToken
+				toolInvocationToken,
+				this._options.workingDirectory
 			);
 		}));
 
@@ -101,7 +104,7 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 				sessionOptions
 			] = await Promise.all([
 				modelId ? this._sdkSession.getSelectedModel() : undefined,
-				this.cliSessionOptions.createOptions({}, this._permissionHandler)
+				this.cliSessionOptions.createOptions(this._options, this._permissionHandler)
 			]);
 			if (sessionOptions.authInfo) {
 				this._sdkSession.setAuthInfo(sessionOptions.authInfo);
@@ -203,14 +206,34 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 		stream: vscode.ChatResponseStream,
 		editTracker: ExternalEditTracker,
 		getEditKeyForFile: (file: Uri) => string | undefined,
-		toolInvocationToken: vscode.ChatParticipantToolToken
+		toolInvocationToken: vscode.ChatParticipantToolToken,
+		workingDirectory?: string
 	): Promise<{ kind: 'approved' } | { kind: 'denied-interactively-by-user' }> {
 		if (permissionRequest.kind === 'read') {
-			// If user is reading a file in the workspace, auto-approve read requests.
-			// Outisde workspace reads (e.g., /etc/passwd) will still require approval.
+			// If user is reading a file in the working directory or workspace, auto-approve
+			// read requests. Outside workspace reads (e.g., /etc/passwd) will still require
+			// approval.
 			const data = Uri.file(permissionRequest.path);
+
+			if (workingDirectory && extUriBiasedIgnorePathCase.isEqualOrParent(data, Uri.file(workingDirectory))) {
+				this.logService.trace(`[CopilotCLISession] Auto Approving request to read file in working directory ${permissionRequest.path}`);
+				return { kind: 'approved' };
+			}
+
 			if (this.workspaceService.getWorkspaceFolder(data)) {
 				this.logService.trace(`[CopilotCLISession] Auto Approving request to read workspace file ${permissionRequest.path}`);
+				return { kind: 'approved' };
+			}
+		}
+
+		if (workingDirectory && permissionRequest.kind === 'write') {
+			// TODO:@rebornix @lszomoru
+			// If user is writing a file in the working directory configured for the session, AND the working directory is not a workspace folder,
+			// auto-approve the write request. Currently we only set non-workspace working directories when using git worktrees.
+			const data = Uri.file(permissionRequest.fileName);
+
+			if (!this.workspaceService.getWorkspaceFolder(Uri.file(workingDirectory)) && extUriBiasedIgnorePathCase.isEqualOrParent(data, Uri.file(workingDirectory))) {
+				this.logService.trace(`[CopilotCLISession] Auto Approving request to write file in working directory ${permissionRequest.fileName}`);
 				return { kind: 'approved' };
 			}
 		}
