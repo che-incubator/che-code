@@ -13,7 +13,6 @@ function copyToClipboard(id) {
 }
 
 function initializePlatformContent() {
-
   if (navigator.userAgent.indexOf('Windows') !== -1) {
     var pathEntries = document.getElementsByClassName('path');
     for (var i = 0; i < pathEntries.length; i++) {
