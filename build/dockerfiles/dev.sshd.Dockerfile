@@ -34,7 +34,7 @@ RUN sed -i \
 -e 's|#Port 22|Port 2022|' \
 -e 's|#StrictModes yes|StrictModes=no|' \
 -e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
--e 's|#LogLevel INFO|LogLevel DEBUG3|' \
+-e 's|#LogLevel INFO|LogLevel DEBUG1|' \
   /opt/ssh/sshd_config
 
 # Provide new path containing host keys

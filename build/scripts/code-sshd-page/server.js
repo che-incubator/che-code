@@ -145,13 +145,9 @@ function getHostURL () {
       return undefined;
     }
     let i = 0;
-    while (i < consoleURL.length || i < devspacesURL.length) {
-      if (consoleURL.substring(consoleURL.length - 1 - i) != devspacesURL.substring(devspacesURL.length - 1 - i)) {
-        if (i != 0) {
-          break;
-        }
-      }
+    while (i < consoleURL.length && i < devspacesURL.length
+        && consoleURL.substring(consoleURL.length - 1 - i) === devspacesURL.substring(devspacesURL.length - 1 - i)) {
       i++;
-   }
+    }
     return consoleURL.substring(consoleURL.length - i);
 }
