@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { ModelMetadata, Session, internal } from '@github/copilot/sdk';
+import type { Session, internal } from '@github/copilot/sdk';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import type { CancellationToken, ChatRequest } from 'vscode';
 import { INativeEnvService } from '../../../../platform/env/common/envService';
@@ -19,7 +19,7 @@ import { Disposable, DisposableMap, DisposableStore, IDisposable, toDisposable }
 import { joinPath } from '../../../../util/vs/base/common/resources';
 import { IInstantiationService } from '../../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatSessionStatus } from '../../../../vscodeTypes';
-import { CopilotCLISessionOptions, ICopilotCLISDK, ICopilotCLISessionOptionsService } from './copilotCli';
+import { CopilotCLISessionOptions, ICopilotCLISDK } from './copilotCli';
 import { CopilotCLISession, ICopilotCLISession } from './copilotcliSession';
 import { stripReminders } from './copilotcliToolInvocationFormatter';
 import { getCopilotLogger } from './logger';
@@ -45,13 +45,13 @@ export interface ICopilotCLISessionService {
 	deleteSession(sessionId: string): Promise<void>;
 
 	// Session wrapper tracking
-	getSession(sessionId: string, model: string | undefined, workingDirectory: string | undefined, readonly: boolean, token: CancellationToken): Promise<ICopilotCLISession | undefined>;
-	createSession(prompt: string, model: string | undefined, workingDirectory: string | undefined, isolationEnabled: boolean | undefined, token: CancellationToken): Promise<ICopilotCLISession>;
+	getSession(sessionId: string, options: { model?: string; workingDirectory?: string; isolationEnabled?: boolean; readonly: boolean }, token: CancellationToken): Promise<ICopilotCLISession | undefined>;
+	createSession(prompt: string, options: { model?: string; workingDirectory?: string; isolationEnabled?: boolean }, token: CancellationToken): Promise<ICopilotCLISession>;
 }
 
 export const ICopilotCLISessionService = createServiceIdentifier<ICopilotCLISessionService>('ICopilotCLISessionService');
 
-const SESSION_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
+const SESSION_SHUTDOWN_TIMEOUT_MS = 300 * 1000;
 
 export class CopilotCLISessionService extends Disposable implements ICopilotCLISessionService {
 	declare _serviceBrand: undefined;
@@ -70,7 +70,6 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 		@ILogService private readonly logService: ILogService,
 		@ICopilotCLISDK private readonly copilotCLISDK: ICopilotCLISDK,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@ICopilotCLISessionOptionsService private readonly optionsService: ICopilotCLISessionOptionsService,
 		@INativeEnvService private readonly nativeEnv: INativeEnvService,
 		@IFileSystemService private readonly fileSystem: IFileSystemService,
 	) {
@@ -119,16 +118,7 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 						// This is a new session not yet persisted to disk by SDK
 						return undefined;
 					}
-					const timestamp = metadata.startTime;
 					const id = metadata.sessionId;
-					const label = metadata.summary ? labelFromPrompt(metadata.summary) : undefined;
-					if (label) {
-						return {
-							id,
-							label,
-							timestamp,
-						} satisfies ICopilotCLISessionItem;
-					}
 					let dispose: (() => Promise<void>) | undefined = undefined;
 					let session: Session | undefined = undefined;
 					try {
@@ -144,6 +134,18 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 							return undefined;
 						}
 						const label = this._generateSessionLabel(session.sessionId, chatMessages, undefined);
+
+						// Get timestamp from last SDK event, or fallback to metadata.startTime
+						const sdkEvents = session.getEvents();
+						const lastEventWithTimestamp = [...sdkEvents].reverse().find(event =>
+							event.type !== 'session.import_legacy'
+							&& event.type !== 'session.start'
+							&& 'timestamp' in event
+						);
+						const timestamp = lastEventWithTimestamp && 'timestamp' in lastEventWithTimestamp
+							? new Date(lastEventWithTimestamp.timestamp)
+							: metadata.startTime;
+
 						return {
 							id,
 							label,
@@ -183,14 +185,10 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 		return { session, dispose: () => Promise.resolve() };
 	}
 
-	public async createSession(prompt: string, model: string | undefined, workingDirectory: string | undefined, isolationEnabled: boolean | undefined, token: CancellationToken): Promise<CopilotCLISession> {
+	public async createSession(prompt: string, { model, workingDirectory, isolationEnabled }: { model?: string; workingDirectory?: string; isolationEnabled?: boolean }, token: CancellationToken): Promise<CopilotCLISession> {
 		const sessionDisposables = this._register(new DisposableStore());
 		try {
-			const options = await raceCancellationError(this.optionsService.createOptions({
-				model: model as unknown as ModelMetadata['model'],
-				workingDirectory
-			}), token);
-			options.isolationEnabled = isolationEnabled === true;
+			const options = new CopilotCLISessionOptions({ model, workingDirectory, isolationEnabled }, this.logService);
 			const sessionManager = await raceCancellationError(this.getSessionManager(), token);
 			const sdkSession = await sessionManager.createSession(options.toSessionOptions());
 			const chatMessages = await sdkSession.getChatContextMessages();
@@ -220,7 +218,7 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 		}
 	}
 
-	public async getSession(sessionId: string, model: string | undefined, workingDirectory: string | undefined, readonly: boolean, token: CancellationToken): Promise<CopilotCLISession | undefined> {
+	public async getSession(sessionId: string, { model, workingDirectory, isolationEnabled, readonly }: { model?: string; workingDirectory?: string; isolationEnabled?: boolean; readonly: boolean }, token: CancellationToken): Promise<CopilotCLISession | undefined> {
 		const session = this._sessionWrappers.get(sessionId);
 
 		if (session) {
@@ -231,10 +229,7 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 		const sessionDisposables = this._register(new DisposableStore());
 		try {
 			const sessionManager = await raceCancellationError(this.getSessionManager(), token);
-			const options = await raceCancellationError(this.optionsService.createOptions({
-				model: model as unknown as ModelMetadata['model'],
-				workingDirectory
-			}), token);
+			const options = new CopilotCLISessionOptions({ model, workingDirectory, isolationEnabled }, this.logService);
 
 			const sdkSession = await sessionManager.getSession({ ...options.toSessionOptions(), sessionId }, !readonly);
 			if (!sdkSession) {
