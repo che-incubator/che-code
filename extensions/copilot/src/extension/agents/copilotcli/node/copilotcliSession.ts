@@ -5,6 +5,7 @@
 
 import type { Attachment, Session } from '@github/copilot/sdk';
 import type * as vscode from 'vscode';
+import { IGitService } from '../../../../platform/git/common/gitService';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { IWorkspaceService } from '../../../../platform/workspace/common/workspaceService';
 import { CancellationToken } from '../../../../util/vs/base/common/cancellation';
@@ -67,6 +68,7 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 	constructor(
 		private readonly _options: CopilotCLISessionOptions,
 		private readonly _sdkSession: Session,
+		@IGitService private readonly gitService: IGitService,
 		@ILogService private readonly logService: ILogService,
 		@IWorkspaceService private readonly workspaceService: IWorkspaceService,
 		@ICopilotCLISessionOptionsService private readonly cliSessionOptions: ICopilotCLISessionOptionsService,
@@ -198,6 +200,16 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 
 			await this._sdkSession.send({ prompt, attachments, abortController });
 			this.logService.trace(`[CopilotCLISession] Invoking session (completed) ${this.sessionId}`);
+
+			if (this._options.isolationEnabled) {
+				// When isolation is enabled and we are using a git workspace, stage
+				// all changes in the working directory when the session is completed
+				const workingDirectory = this._options.toSessionOptions().workingDirectory;
+				if (workingDirectory) {
+					await this.gitService.add(Uri.file(workingDirectory), []);
+					this.logService.trace(`[CopilotCLISession] Staged all changes in working directory ${workingDirectory}`);
+				}
+			}
 
 			this._status = ChatSessionStatus.Completed;
 			this._statusChange.fire(this._status);

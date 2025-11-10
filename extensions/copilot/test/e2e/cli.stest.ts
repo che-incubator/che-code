@@ -67,7 +67,7 @@ const scenariosPath = path.join(__dirname, '..', 'test/scenarios/test-cli');
 ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 	stest({ description: 'can start a session' },
 		testRunner(async ({ sessionService }, stream, disposables) => {
-			const session = await sessionService.createSession('What is 1+8?', undefined, undefined, CancellationToken.None);
+			const session = await sessionService.createSession('What is 1+8?', undefined, undefined, undefined, CancellationToken.None);
 			disposables.add(session);
 			disposables.add(session.attachStream(stream));
 
@@ -90,7 +90,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 		testRunner(async ({ sessionService }, stream, disposables) => {
 			let sessionId = '';
 			{
-				const session = await sessionService.createSession('What is 1+8?', undefined, undefined, CancellationToken.None);
+				const session = await sessionService.createSession('What is 1+8?', undefined, undefined, undefined, CancellationToken.None);
 				sessionId = session.sessionId;
 				disposables.add(session);
 
@@ -126,7 +126,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			const workingDirectory = path.join(scenariosPath, 'wkspc1');
 			const file = path.join(workingDirectory, 'sample.js');
 			const prompt = `Explain the contents of the file '${path.basename(file)}'. There is no need to check for contents in the directory. This file exists on disc.`;
-			const session = await sessionService.createSession(prompt, undefined, workingDirectory, CancellationToken.None);
+			const session = await sessionService.createSession(prompt, undefined, workingDirectory, undefined, CancellationToken.None);
 			disposables.add(session);
 			disposables.add(session.attachStream(stream));
 
@@ -141,7 +141,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			const workingDirectory = path.join(scenariosPath, 'wkspc1');
 			const externalFile = path.join(scenariosPath, 'wkspc2', 'foobar.js');
 			const prompt = `Explain the contents of the file '${path.basename(externalFile)}'. This file exists on disc but not in the current working directory.`;
-			const session = await sessionService.createSession(prompt, undefined, workingDirectory, CancellationToken.None);
+			const session = await sessionService.createSession(prompt, undefined, workingDirectory, undefined, CancellationToken.None);
 			disposables.add(session);
 			disposables.add(session.attachStream(stream));
 			let permissionRequested = false;
@@ -174,7 +174,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				promptResolver
 			);
 
-			const session = await sessionService.createSession(prompt, undefined, workingDirectory, CancellationToken.None);
+			const session = await sessionService.createSession(prompt, undefined, workingDirectory, undefined, CancellationToken.None);
 			disposables.add(session);
 			disposables.add(session.attachStream(stream));
 

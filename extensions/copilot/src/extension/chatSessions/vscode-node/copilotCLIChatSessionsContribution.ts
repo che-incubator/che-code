@@ -135,6 +135,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		private readonly worktreeManager: CopilotCLIWorktreeManager,
 		@ICopilotCLISessionService private readonly copilotcliSessionService: ICopilotCLISessionService,
 		@ICopilotCLITerminalIntegration private readonly terminalIntegration: ICopilotCLITerminalIntegration,
+		@IGitService private readonly gitService: IGitService,
 		@IRunCommandExecutionService private readonly commandExecutionService: IRunCommandExecutionService
 	) {
 		super();
@@ -154,7 +155,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 
 	public async provideChatSessionItems(token: vscode.CancellationToken): Promise<vscode.ChatSessionItem[]> {
 		const sessions = await this.copilotcliSessionService.getAllSessions(token);
-		const diskSessions = sessions.map(session => this._toChatSessionItem(session));
+		const diskSessions = await Promise.all(sessions.map(session => this._toChatSessionItem(session)));
 
 		const count = diskSessions.length;
 		this.commandExecutionService.executeCommand('setContext', 'github.copilot.chat.cliSessionsEmpty', count === 0);
@@ -162,28 +163,39 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		return diskSessions;
 	}
 
-	private _toChatSessionItem(session: { id: string; label: string; timestamp: Date; status?: vscode.ChatSessionStatus }): vscode.ChatSessionItem {
+	private async _toChatSessionItem(session: { id: string; label: string; timestamp: Date; status?: vscode.ChatSessionStatus }): Promise<vscode.ChatSessionItem> {
 		const resource = SessionIdForCLI.getResource(session.id);
-		const label = session.label || 'Copilot CLI';
-		const worktreePath = this.worktreeManager.getWorktreeRelativePath(session.id);
-		let description: vscode.MarkdownString | undefined;
-		if (worktreePath) {
-			description = new vscode.MarkdownString(`$(git-merge) ${worktreePath}`);
-			description.supportThemeIcons = true;
-		}
+		const worktreePath = this.worktreeManager.getWorktreePath(session.id);
+		const worktreeRelativePath = this.worktreeManager.getWorktreeRelativePath(session.id);
+
+		const label = session.label ?? 'Copilot CLI';
 		const tooltipLines = [`Copilot CLI session: ${label}`];
-		if (worktreePath) {
-			tooltipLines.push(`Worktree: ${worktreePath}`);
+		let description: vscode.MarkdownString | undefined;
+		let statistics: { files: number; insertions: number; deletions: number } | undefined;
+
+		if (worktreePath && worktreeRelativePath) {
+			// Description
+			description = new vscode.MarkdownString(`$(list-tree) ${worktreeRelativePath}`);
+			description.supportThemeIcons = true;
+
+			// Tooltip
+			tooltipLines.push(`Worktree: ${worktreeRelativePath}`);
+
+			// Statistics
+			statistics = await this.gitService.diffIndexWithHEADShortStats(Uri.file(worktreePath));
 		}
+
 		const status = session.status ?? vscode.ChatSessionStatus.Completed;
+
 		return {
 			resource,
 			label,
 			description,
 			tooltip: tooltipLines.join('\n'),
 			timing: { startTime: session.timestamp.getTime() },
+			statistics,
 			status
-		};
+		} satisfies vscode.ChatSessionItem;
 	}
 
 	public async createCopilotCLITerminal(): Promise<void> {
@@ -380,8 +392,10 @@ export class CopilotCLIChatSessionParticipant {
 			(this.worktreeManager.getIsolationPreference(id) ? await this.worktreeManager.createWorktree(stream) : undefined) :
 			this.worktreeManager.getWorktreePath(id);
 
+		const isolationEnabled = this.worktreeManager.getIsolationPreference(id);
+
 		const session = chatSessionContext.isUntitled ?
-			await this.sessionService.createSession(prompt, modelId, workingDirectory, token) :
+			await this.sessionService.createSession(prompt, modelId, workingDirectory, isolationEnabled, token) :
 			await this.sessionService.getSession(id, undefined, workingDirectory, false, token);
 
 		if (!session) {
@@ -478,7 +492,7 @@ export class CopilotCLIChatSessionParticipant {
 		const history = context.chatSummary?.history ?? await this.summarizer.provideChatSummary(context, token);
 
 		const requestPrompt = history ? `${prompt}\n**Summary**\n${history}` : prompt;
-		const session = await this.sessionService.createSession(requestPrompt, undefined, undefined, token);
+		const session = await this.sessionService.createSession(requestPrompt, undefined, undefined, undefined, token);
 
 		await this.commandExecutionService.executeCommand('vscode.open', SessionIdForCLI.getResource(session.sessionId));
 		await this.commandExecutionService.executeCommand('workbench.action.chat.submit', { inputValue: requestPrompt });

@@ -19,6 +19,7 @@ import { CopilotCLISessionOptions, ICopilotCLISessionOptionsService } from '../c
 import { CopilotCLISession } from '../copilotcliSession';
 import { CopilotCLIToolNames } from '../copilotcliToolInvocationFormatter';
 import { PermissionRequest } from '../permissionHelpers';
+import { IGitService } from '../../../../../platform/git/common/gitService';
 
 // Minimal shapes for types coming from the Copilot SDK we interact with
 interface MockSdkEventHandler { (payload: unknown): void }
@@ -77,7 +78,8 @@ function createSessionOptionsService() {
 					permissionHandler = h;
 					return { dispose: () => { permissionHandler = undefined; } };
 				},
-				toSessionOptions: () => allOptions
+				toSessionOptions: () => allOptions,
+				isolationEnabled: false
 			} satisfies CopilotCLISessionOptions;
 		}
 	};
@@ -104,6 +106,7 @@ describe('CopilotCLISession', () => {
 	let sdkSession: MockSdkSession;
 	let workspaceService: IWorkspaceService;
 	let logger: ILogService;
+	let gitService: IGitService;
 	let sessionOptionsService: ICopilotCLISessionOptionsService;
 	let sessionOptions: CopilotCLISessionOptions;
 
@@ -111,6 +114,7 @@ describe('CopilotCLISession', () => {
 		const services = disposables.add(createExtensionUnitTestingServices());
 		const accessor = services.createTestingAccessor();
 		logger = accessor.get(ILogService);
+		gitService = accessor.get(IGitService);
 
 		sdkSession = new MockSdkSession();
 		sessionOptionsService = createSessionOptionsService();
@@ -128,6 +132,7 @@ describe('CopilotCLISession', () => {
 		return disposables.add(new CopilotCLISession(
 			sessionOptions,
 			sdkSession as unknown as Session,
+			gitService,
 			logger,
 			workspaceService,
 			sessionOptionsService,
