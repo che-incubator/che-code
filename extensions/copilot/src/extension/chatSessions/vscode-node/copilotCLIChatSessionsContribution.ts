@@ -10,7 +10,6 @@ import { ConfigKey, IConfigurationService } from '../../../platform/configuratio
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { IGitService } from '../../../platform/git/common/gitService';
 import { toGitUri } from '../../../platform/git/common/utils';
-import { ILogService } from '../../../platform/log/common/logService';
 import { ITelemetryService } from '../../../platform/telemetry/common/telemetry';
 import { IWorkspaceService } from '../../../platform/workspace/common/workspaceService';
 import { Emitter, Event } from '../../../util/vs/base/common/event';
@@ -141,7 +140,6 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		@ICopilotCLITerminalIntegration private readonly terminalIntegration: ICopilotCLITerminalIntegration,
 		@IGitService private readonly gitService: IGitService,
 		@IRunCommandExecutionService private readonly commandExecutionService: IRunCommandExecutionService,
-		@ILogService private readonly logService: ILogService
 	) {
 		super();
 		this._register(this.terminalIntegration);
@@ -178,20 +176,16 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		let description: vscode.MarkdownString | undefined;
 		let statistics: { files: number; insertions: number; deletions: number } | undefined;
 
-		try {
-			if (worktreePath && worktreeRelativePath) {
-				// Description
-				description = new vscode.MarkdownString(`$(list-tree) ${worktreeRelativePath}`);
-				description.supportThemeIcons = true;
+		if (worktreePath && worktreeRelativePath) {
+			// Description
+			description = new vscode.MarkdownString(`$(list-tree) ${worktreeRelativePath}`);
+			description.supportThemeIcons = true;
 
-				// Tooltip
-				tooltipLines.push(`Worktree: ${worktreeRelativePath}`);
+			// Tooltip
+			tooltipLines.push(`Worktree: ${worktreeRelativePath}`);
 
-				// Statistics
-				statistics = await this.gitService.diffIndexWithHEADShortStats(Uri.file(worktreePath));
-			}
-		} catch (error) {
-			this.logService.error(`Failed to get worktree info for CLI session ${session.id}`, error);
+			// Statistics
+			statistics = await this.gitService.diffIndexWithHEADShortStats(Uri.file(worktreePath));
 		}
 		const status = session.status ?? vscode.ChatSessionStatus.Completed;
 
