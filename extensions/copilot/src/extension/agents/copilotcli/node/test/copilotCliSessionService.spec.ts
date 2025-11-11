@@ -5,9 +5,12 @@
 
 import type { SessionOptions } from '@github/copilot/sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IAuthenticationService } from '../../../../../platform/authentication/common/authentication';
+import { IConfigurationService } from '../../../../../platform/configuration/common/configurationService';
 import { NullNativeEnvService } from '../../../../../platform/env/common/nullEnvService';
 import { MockFileSystemService } from '../../../../../platform/filesystem/node/test/mockFileSystemService';
 import { ILogService } from '../../../../../platform/log/common/logService';
+import { TestWorkspaceService } from '../../../../../platform/test/node/testWorkspaceService';
 import { CancellationToken } from '../../../../../util/vs/base/common/cancellation';
 import { DisposableStore, IDisposable } from '../../../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../../../util/vs/platform/instantiation/common/instantiation';
@@ -16,6 +19,7 @@ import { createExtensionUnitTestingServices } from '../../../../test/node/servic
 import { ICopilotCLISDK } from '../copilotCli';
 import { ICopilotCLISession } from '../copilotcliSession';
 import { CopilotCLISessionService } from '../copilotcliSessionService';
+import { CopilotCLIMCPHandler } from '../mcpHandler';
 
 // --- Minimal SDK & dependency stubs ---------------------------------------------------------
 
@@ -109,7 +113,11 @@ describe('CopilotCLISessionService', () => {
 			}
 		} as unknown as IInstantiationService;
 
-		service = disposables.add(new CopilotCLISessionService(logService, sdk, instantiationService, new NullNativeEnvService(), new MockFileSystemService()));
+		const mockAuthService = {
+			getCopilotToken: vi.fn(async () => ({ token: 'test-token' })),
+		} as unknown as IAuthenticationService;
+		const configurationService = accessor.get(IConfigurationService);
+		service = disposables.add(new CopilotCLISessionService(logService, sdk, instantiationService, new NullNativeEnvService(), new MockFileSystemService(), new CopilotCLIMCPHandler(logService, new TestWorkspaceService(), mockAuthService, configurationService)));
 		manager = await service.getSessionManager() as unknown as FakeCLISessionManager;
 	});
 
