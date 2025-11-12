@@ -47,6 +47,11 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.6.2"
   },
+  "overrides": {
+    "request": {
+      "form-data": "2.5.5"
+    }
+  },
   "jest": {
     "collectCoverage": true,
     "collectCoverageFrom": [
