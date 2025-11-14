@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as l10n from '@vscode/l10n';
 import type * as vscode from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { ChatFetchResponseType, ChatLocation, getErrorDetailsFromChatFetchError } from '../../../platform/chat/common/commonTypes';
@@ -16,7 +17,6 @@ import { CancellationToken } from '../../../util/vs/base/common/cancellation';
 import { toErrorMessage } from '../../../util/vs/base/common/errorMessage';
 import { Event } from '../../../util/vs/base/common/event';
 import { assertType } from '../../../util/vs/base/common/types';
-import { localize } from '../../../util/vs/nls';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatRequestEditorData, ChatResponseTextEditPart } from '../../../vscodeTypes';
 import { Intent } from '../../common/constants';
@@ -36,7 +36,6 @@ import { normalizeToolSchema } from '../../tools/common/toolSchemaNormalizer';
 import { CopilotToolMode } from '../../tools/common/toolsRegistry';
 import { isToolValidationError, isValidatedToolInput, IToolsService } from '../../tools/common/toolsService';
 import { CopilotInteractiveEditorResponse, InteractionOutcomeComputer } from './promptCraftingTypes';
-
 
 const INLINE_CHAT_EXIT_TOOL_NAME = 'inline_chat_exit';
 
@@ -75,7 +74,7 @@ export class InlineChatIntent implements IIntent {
 		if (await this._ignoreService.isCopilotIgnored(request.location2.document.uri, token)) {
 			return {
 				errorDetails: {
-					message: localize('inlineChat.ignored', "Copilot is disabled for this file."),
+					message: l10n.t('inlineChat.ignored', "Copilot is disabled for this file."),
 				}
 			};
 		}
@@ -85,7 +84,7 @@ export class InlineChatIntent implements IIntent {
 		if (!endpoint.supportsToolCalls) {
 			return {
 				errorDetails: {
-					message: localize('inlineChat.model', "{0} cannot be used for inline chat", endpoint.name),
+					message: l10n.t('inlineChat.model', "{0} cannot be used for inline chat", endpoint.name),
 				}
 			};
 		}
