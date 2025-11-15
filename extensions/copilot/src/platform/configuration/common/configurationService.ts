@@ -734,6 +734,7 @@ export namespace ConfigKey {
 		export const DebugExpUseNodeFetchFetcher = defineExpSetting<boolean | undefined>('chat.advanced.debug.useNodeFetchFetcher', undefined, INTERNAL_RESTRICTED);
 		export const DebugExpUseNodeFetcher = defineExpSetting<boolean | undefined>('chat.advanced.debug.useNodeFetcher', undefined, INTERNAL_RESTRICTED);
 		export const DebugExpUseElectronFetcher = defineExpSetting<boolean | undefined>('chat.advanced.debug.useElectronFetcher', undefined, INTERNAL_RESTRICTED);
+		export const RequestLoggerMaxEntries = defineSetting('chat.advanced.debug.requestLogger.maxEntries', 100);
 		export const InlineEditsIgnoreCompletionsDisablement = defineValidatedSetting<boolean>('chat.advanced.inlineEdits.ignoreCompletionsDisablement', vBoolean(), false, INTERNAL_RESTRICTED);
 		export const InlineEditsAsyncCompletions = defineExpSetting<boolean>('chat.advanced.inlineEdits.asyncCompletions', true, INTERNAL_RESTRICTED);
 		export const InlineEditsDebounceUseCoreRequestTime = defineExpSetting<boolean>('chat.advanced.inlineEdits.debounceUseCoreRequestTime', false, INTERNAL_RESTRICTED);
