@@ -515,6 +515,9 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 
 		const prInfo = await this.cloudSessionProvider?.createDelegatedChatSession({
 			prompt: uncommittedChangesData.metadata.prompt,
+			history: uncommittedChangesData.metadata.history,
+			references: uncommittedChangesData.metadata.references,
+			autoPushAndCommit: uncommittedChangesData.metadata.autoPushAndCommit,
 			chatContext: context
 		}, stream, token);
 		if (prInfo) {
