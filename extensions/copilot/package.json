@@ -1061,6 +1061,7 @@
 				"modelDescription": "Searches a GitHub repository for relevant source code snippets. Only use this tool if the user is very clearly asking for code snippets from a specific GitHub repository. Do not use this tool for Github repos that the user has open in their workspace.",
 				"userDescription": "%github.copilot.tools.githubRepo.userDescription%",
 				"icon": "$(repo)",
+				"when": "!config.github.copilot.chat.githubMcpServer.enabled",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
@@ -1839,6 +1840,12 @@
 				"id": "copilot",
 				"icon": "",
 				"when": "!github.copilot.interactiveSession.disabled"
+			}
+		],
+		"mcpServerDefinitionProviders": [
+			{
+				"id": "github",
+				"label": "GitHub"
 			}
 		],
 		"viewsWelcome": [
@@ -2745,6 +2752,41 @@
 			{
 				"id": "experimental",
 				"properties": {
+					"github.copilot.chat.githubMcpServer.enabled": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "%github.copilot.config.githubMcpServer.enabled%",
+						"tags": [
+							"experimental"
+						]
+					},
+					"github.copilot.chat.githubMcpServer.toolsets": {
+						"type": "array",
+						"default": ["default"],
+						"markdownDescription": "%github.copilot.config.githubMcpServer.toolsets%",
+						"items": {
+							"type": "string"
+						},
+						"tags": [
+							"experimental"
+						]
+					},
+					"github.copilot.chat.githubMcpServer.readonly": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "%github.copilot.config.githubMcpServer.readonly%",
+						"tags": [
+							"experimental"
+						]
+					},
+					"github.copilot.chat.githubMcpServer.lockdown": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "%github.copilot.config.githubMcpServer.lockdown%",
+						"tags": [
+							"experimental"
+						]
+					},
 					"github.copilot.chat.imageUpload.enabled": {
 						"type": "boolean",
 						"default": true,
