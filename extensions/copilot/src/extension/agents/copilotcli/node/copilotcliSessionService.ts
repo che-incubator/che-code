@@ -69,9 +69,9 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 	private sessionMutexForGetSession = new Map<string, Mutex>();
 
 	constructor(
-		@ILogService private readonly logService: ILogService,
+		@ILogService protected readonly logService: ILogService,
 		@ICopilotCLISDK private readonly copilotCLISDK: ICopilotCLISDK,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IInstantiationService protected readonly instantiationService: IInstantiationService,
 		@INativeEnvService private readonly nativeEnv: INativeEnvService,
 		@IFileSystemService private readonly fileSystem: IFileSystemService,
 		@ICopilotCLIMCPHandler private readonly mcpHandler: ICopilotCLIMCPHandler,
