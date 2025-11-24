@@ -32,7 +32,7 @@
   "dependencies": {
     "@devfile/api": "^2.3.0-1738854228",
     "axios": "^1.13.1",
-    "@kubernetes/client-node": "^0.22.0",
+    "@kubernetes/client-node": "^1.4.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
     "js-yaml": "^4.1.0",
@@ -42,24 +42,12 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
-    "@types/jest": "^27.4.0",
+    "@types/jest": "^29.5.0",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "22.x",
-    "jest": "^27.4.7",
-    "ts-jest": "^27.1.2",
+    "jest": "29.7.0",
+    "ts-jest": "29.4.5",
     "webpack-node-externals": "^3.0.0"
-  },
-  "overrides": {
-    "jsonpath-plus": "10.1.0",
-    "request": {
-      "form-data": "2.5.5"
-    },
-    "@types/node-fetch": {
-      "form-data": "4.0.4"
-    },
-    "jsdom": {
-      "form-data": "3.0.4"
-    }
   },
   "repository": {
     "type": "git",
@@ -85,6 +73,9 @@
       "js",
       "jsx",
       "json"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!@kubernetes/client-node)"
     ]
   }
 }

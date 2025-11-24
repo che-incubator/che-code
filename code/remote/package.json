@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@kubernetes/client-node": "^0.22.0",
+    "@kubernetes/client-node": "^1.4.0",
     "@microsoft/1ds-core-js": "^3.2.13",
     "@microsoft/1ds-post-js": "^3.2.13",
     "@parcel/watcher": "2.5.1",
@@ -51,9 +51,6 @@
     },
     "prebuild-install": {
       "tar-fs": "2.1.4"
-    },
-    "request": {
-      "form-data": "2.5.5"
     }
   }
 }

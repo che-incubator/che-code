@@ -43,7 +43,7 @@ export class K8sHelper {
   getCoreApi(): k8s.CoreV1Api {
     if (!this.coreV1API) {
       this.k8sConfig.loadFromDefault();
-      this.coreV1API = this.makeApiClient(k8s.CoreV1Api);
+      this.coreV1API = this.k8sConfig.makeApiClient(k8s.CoreV1Api);
     }
     return this.coreV1API;
   }
@@ -51,13 +51,9 @@ export class K8sHelper {
   getCustomObjectsApi(): k8s.CustomObjectsApi {
     if (!this.customObjectsApi) {
       this.k8sConfig.loadFromCluster();
-      this.customObjectsApi = this.makeApiClient(k8s.CustomObjectsApi);
+      this.customObjectsApi = this.k8sConfig.makeApiClient(k8s.CustomObjectsApi);
     }
     return this.customObjectsApi;
-  }
-
-  makeApiClient<T extends k8s.ApiType>(apiClientType: new (server: string) => T): T {
-    return this.k8sConfig.makeApiClient(apiClientType);
   }
 
   async getDevWorkspace(): Promise<V1alpha2DevWorkspace> {
@@ -66,13 +62,13 @@ export class K8sHelper {
       const namespace = this.getDevWorkspaceNamespace();
       const customObjectsApi = this.getCustomObjectsApi();
 
-      const resp = await customObjectsApi.getNamespacedCustomObject(
-        devworkspaceGroup,
-        devworkspaceLatestVersion,
-        namespace,
-        devworkspacePlural,
-        workspaceName,
-      );
+      const resp = await customObjectsApi.getNamespacedCustomObject({
+        group: devworkspaceGroup,
+        version: devworkspaceLatestVersion,
+        namespace: namespace,
+        plural: devworkspacePlural,
+        name: workspaceName,
+      });
       return resp.body as V1alpha2DevWorkspace;
     } catch (e) {
       console.error(e);
@@ -88,14 +84,10 @@ export class K8sHelper {
     }
 
     try {
-      const { body } = await coreV1API.listNamespacedSecret(
-        namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        labelSelector,
-      );
+      const body = await coreV1API.listNamespacedSecret({
+        namespace: namespace,
+        labelSelector: labelSelector,
+      });
       return body.items;
     } catch (error) {
       console.error('Can not get secret ', error);

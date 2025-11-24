@@ -18,12 +18,11 @@ import {
 import * as k8s from '@kubernetes/client-node';
 
 import * as vscode from 'vscode';
-import { ApiType } from '@kubernetes/client-node';
 import { injectable } from 'inversify';
 import { K8SRawResponse, K8SService } from '../api/k8s-service';
 import { env } from 'process';
-
-const request = require('request');
+import { Agent as HttpsAgent } from 'https';
+import fetch, { RequestInit } from 'node-fetch';
 
 @injectable()
 export class K8SServiceImpl implements K8SService {
@@ -70,7 +69,7 @@ export class K8SServiceImpl implements K8SService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendRawQuery(requestURL: string, opts: any): Promise<K8SRawResponse> {
-    this.k8sConfig.applyToRequest(opts);
+    this.k8sConfig.applyToHTTPSOptions(opts);
     const cluster = this.k8sConfig.getCurrentCluster();
     if (!cluster) {
       throw new Error('K8S cluster is not defined');
@@ -81,30 +80,54 @@ export class K8SServiceImpl implements K8SService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  makeRequest(URL: string, opts: any): Promise<K8SRawResponse> {
-    return new Promise((resolve, _reject) => {
-      request.get(URL, opts, (error: string, response: { statusCode: number }, body: string) => {
-        resolve({
-          statusCode: response.statusCode,
-          data: body,
-          error: error,
-        });
-      });
-    });
+  async makeRequest(URL: string, opts: any): Promise<K8SRawResponse> {
+    try {
+      const fetchOptions: RequestInit = {
+        method: opts.method || 'GET',
+        headers: opts.headers || {},
+      };
+
+      // Configure HTTPS agent if cert/key/ca are provided
+      if (opts.cert || opts.key || opts.ca || opts.agentOptions) {
+        const agentOptions: any = opts.agentOptions || {};
+        if (opts.cert) agentOptions.cert = opts.cert;
+        if (opts.key) agentOptions.key = opts.key;
+        if (opts.ca) agentOptions.ca = opts.ca;
+        if (opts.strictSSL !== undefined) agentOptions.rejectUnauthorized = opts.strictSSL;
+
+        // @ts-ignore - node-fetch accepts agent option
+        fetchOptions.agent = new HttpsAgent(agentOptions);
+      }
+
+      const response = await fetch(URL, fetchOptions);
+      const body = await response.text();
+
+      return {
+        statusCode: response.status,
+        data: body,
+        error: '',
+      };
+    } catch (error) {
+      return {
+        statusCode: 0,
+        data: '',
+        error: String(error),
+      };
+    }
   }
 
   getConfig(): k8s.KubeConfig {
     return this.k8sConfig;
   }
 
-  makeApiClient<T extends ApiType>(apiClientType: new (server: string) => T): T {
+  makeApiClient<T extends k8s.ApiType>(apiClientType: k8s.ApiConstructor<T>): T {
     return this.k8sConfig.makeApiClient(apiClientType);
   }
 
   getCoreApi(): k8s.CoreV1Api {
     if (!this.coreV1API) {
       this.k8sConfig.loadFromCluster();
-      this.coreV1API = this.makeApiClient(k8s.CoreV1Api);
+      this.coreV1API = this.k8sConfig.makeApiClient(k8s.CoreV1Api);
     }
     return this.coreV1API;
   }
@@ -112,7 +135,7 @@ export class K8SServiceImpl implements K8SService {
   getCustomObjectsApi(): k8s.CustomObjectsApi {
     if (!this.customObjectsApi) {
       this.k8sConfig.loadFromCluster();
-      this.customObjectsApi = this.makeApiClient(k8s.CustomObjectsApi);
+      this.customObjectsApi = this.k8sConfig.makeApiClient(k8s.CustomObjectsApi);
     }
     return this.customObjectsApi;
   }
@@ -125,15 +148,11 @@ export class K8SServiceImpl implements K8SService {
 
     try {
       const coreV1API = this.getCoreApi();
-      const { body } = await coreV1API.listNamespacedSecret(
-        namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        labelSelector,
-      );
-      return body.items;
+      const secretList = await coreV1API.listNamespacedSecret({
+        namespace: namespace,
+        labelSelector: labelSelector,
+      });
+      return secretList.items;
     } catch (error) {
       console.error('Can not get secret ', error);
       return [];
@@ -147,7 +166,11 @@ export class K8SServiceImpl implements K8SService {
     }
 
     const coreV1API = this.getCoreApi();
-    await coreV1API.replaceNamespacedSecret(name, namespace, secret);
+    await coreV1API.replaceNamespacedSecret({
+      name: name,
+      namespace: namespace,
+      body: secret,
+    });
   }
 
   async createNamespacedSecret(secret: k8s.V1Secret): Promise<void> {
@@ -157,7 +180,10 @@ export class K8SServiceImpl implements K8SService {
     }
 
     const coreV1API = this.getCoreApi();
-    await coreV1API.createNamespacedSecret(namespace, secret);
+    await coreV1API.createNamespacedSecret({
+      namespace: namespace,
+      body: secret,
+    });
   }
 
   async deleteNamespacedSecret(secret: k8s.V1Secret): Promise<void> {
@@ -172,7 +198,10 @@ export class K8SServiceImpl implements K8SService {
     }
 
     const coreV1API = this.getCoreApi();
-    await coreV1API.deleteNamespacedSecret(secretName, namespace);
+    await coreV1API.deleteNamespacedSecret({
+      name: secretName,
+      namespace: namespace,
+    });
   }
 
   async getDevWorkspace(): Promise<V1alpha2DevWorkspace> {
@@ -181,13 +210,13 @@ export class K8SServiceImpl implements K8SService {
       const namespace = this.getDevWorkspaceNamespace();
       const customObjectsApi = this.getCustomObjectsApi();
 
-      const resp = await customObjectsApi.getNamespacedCustomObject(
-        devworkspaceGroup,
-        devworkspaceLatestVersion,
-        namespace,
-        devworkspacePlural,
-        workspaceName,
-      );
+      const resp = await customObjectsApi.getNamespacedCustomObject({
+        group: devworkspaceGroup,
+        version: devworkspaceLatestVersion,
+        namespace: namespace,
+        plural: devworkspacePlural,
+        name: workspaceName,
+      });
       return resp.body as V1alpha2DevWorkspace;
     } catch (e) {
       console.error(e);
