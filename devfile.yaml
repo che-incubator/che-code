@@ -129,15 +129,13 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
-  - id: fetch-upstream-changes
-    exec:
-      label: Fetch upstream changes
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        git stash save --include-untracked
-        git fetch upstream-code main
-        ./rebase.sh
+  - id: build-and-run
+    composite:
+      commands:
+        - npm-build
+        - npm-run
+      parallel: false
+      label: Build and Run che-code
       group:
         kind: run
-
+        isDefault: true
