@@ -60,7 +60,23 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				);
 			})
 			.filter((command) => !/^init-ssh-agent-command-\d+$/.test(command.id))
-			.map((command) => this.createCheTask(command, devfileCommands))
+			.map((command) => {
+				this.channel.appendLine(`createCheTask called for: ${command.id}`);
+				const t = this.createCheTask(command, devfileCommands);
+				this.channel.appendLine(
+					`createCheTask output for ${command.id}: ${t ? "TASK CREATED" : "undefined"}`
+				);
+				if (t) {
+					const def = t.definition as DevfileTaskDefinition | any;
+					const cmd = def?.command ?? "(no-command)";
+					const wd = def?.workdir ?? "(no-workdir)";
+					const comp = def?.component ?? "(no-component)";
+					this.channel.appendLine(
+						`  -> label='${t.name}', commandPreview='${String(cmd).slice(0, 200)}', workdir='${wd}', component='${comp}'`
+					);
+				}
+				return t;
+			})
 			.filter((t): t is vscode.Task => !!t);
 		return cheTasks;
 	}
@@ -69,8 +85,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		V1alpha2DevWorkspaceSpecTemplateCommands[]
 	> {
 		const devfileService = this.cheAPI.getDevfileService();
-		const devfile: V1alpha2DevWorkspaceSpecTemplate =
-			await devfileService.get();
+		const devfile: V1alpha2DevWorkspaceSpecTemplate = await devfileService.get();
 		if (devfile.commands && devfile.commands.length) {
 			this.channel.appendLine(
 				`Detected ${devfile.commands.length} Command(s) in the flattened Devfile.`
@@ -84,14 +99,17 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		command: any,
 		allCommands: V1alpha2DevWorkspaceSpecTemplateCommands[]
 	): vscode.Task | undefined {
+		// Expand placeholders like ${VAR} using process.env.
+		// This is used only when starting the PTY so the server/container receives the real path.
 		function expandEnvVariables(line: string | undefined): string {
 			if (!line) return "";
 			const regex = /\${[a-zA-Z_][a-zA-Z0-9_]*}/g;
 			const envArray = line.match(regex);
 			if (envArray && envArray.length) {
 				for (const envName of envArray) {
-					const envValue = process.env[envName.slice(2, -1)];
-					if (envValue) {
+					const key = envName.slice(2, -1);
+					const envValue = process.env[key];
+					if (envValue !== undefined) {
 						line = line.replace(envName, envValue);
 					}
 				}
@@ -99,6 +117,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			return line;
 		}
 
+		// Normalizes commandLine: trim, join newlines with ' && ', remove trailing '&&'s
 		const normalizeExec = (execBlock: any) => {
 			if (!execBlock) return null;
 			const rawCommandLine = execBlock.commandLine;
@@ -106,20 +125,21 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 			let commandLine = "";
 			if (Array.isArray(rawCommandLine)) {
-				commandLine = rawCommandLine
-					.map((s: any) => (s ?? "").toString())
-					.join("\n");
+				commandLine = rawCommandLine.map((s: any) => (s ?? "").toString()).join("\n");
 			} else {
 				commandLine = rawCommandLine.toString();
 			}
-			if (!commandLine.trim()) return null;
 
-			const workingDir = (
-				execBlock.workingDir ?? "${PROJECT_SOURCE}"
-			).toString();
-			const component = execBlock.component
-				? execBlock.component.toString()
-				: undefined;
+			// cleanup: trim whitespace, convert newlines -> ' && ', remove trailing '&&'
+			commandLine = commandLine.trim();
+			if (commandLine.length === 0) return null;
+			commandLine = commandLine.replace(/\r?\n/g, " && ");
+			commandLine = commandLine.replace(/(?:\s*&&\s*)+$/, "");
+			commandLine = commandLine.trim();
+			if (commandLine.length === 0) return null;
+
+			const workingDir = (execBlock.workingDir ?? "${PROJECT_SOURCE}").toString();
+			const component = execBlock.component ? execBlock.component.toString() : undefined;
 			const env = Array.isArray(execBlock.env) ? execBlock.env : undefined;
 
 			return { commandLine, workingDir, component, env };
@@ -140,20 +160,24 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		};
 
 		try {
+			// EXEC command
 			if (command && command.exec) {
 				const execInfo = normalizeExec(command.exec);
 				if (execInfo) {
 					const initialVariables = buildInitialVariables(command.exec.env);
-					const cmd = execInfo.commandLine.replace(/\r?\n/g, " && ");
+					// use normalized commandLine directly (no trailing &&)
+					const cmd = execInfo.commandLine;
 					const kind: DevfileTaskDefinition = {
 						type: "devfile",
 						command: cmd,
+						// keep literal devfile value in the task definition & logs
 						workdir: execInfo.workingDir,
 						component: execInfo.component,
 					};
 
 					const execution = new vscode.CustomExecution(
 						async (): Promise<vscode.Pseudoterminal> => {
+							// PTY should run in the expanded path
 							const resolvedWorkdir = expandEnvVariables(execInfo.workingDir);
 							return this.terminalExtAPI.getMachineExecPTY(
 								execInfo.component,
@@ -162,18 +186,8 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 							);
 						}
 					);
-					const label =
-						command.exec && command.exec.label
-							? command.exec.label
-							: command.id;
-					return new vscode.Task(
-						kind,
-						vscode.TaskScope.Workspace,
-						label,
-						"devfile",
-						execution,
-						[]
-					);
+					const label = command.exec && command.exec.label ? command.exec.label : command.id;
+					return new vscode.Task(kind, vscode.TaskScope.Workspace, label, "devfile", execution, []);
 				}
 			}
 
@@ -231,10 +245,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 					}
 
 					// then composite (nested)
-					if (
-						subCommand.composite &&
-						Array.isArray(subCommand.composite.commands)
-					) {
+					if (subCommand.composite && Array.isArray(subCommand.composite.commands)) {
 						for (const nested of subCommand.composite.commands) {
 							if (!nested) continue;
 							let nestedCmd: any | undefined;
@@ -280,29 +291,25 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 							);
 						}
 					);
-					return new vscode.Task(
-						kind,
-						vscode.TaskScope.Workspace,
-						command.id,
-						"devfile",
-						execution,
-						[]
-					);
+					return new vscode.Task(kind, vscode.TaskScope.Workspace, command.id, "devfile", execution, []);
 				}
 
 				const parallel = !!(command.composite && command.composite.parallel);
 				const joiner = parallel ? " & " : " && ";
 
-				const parts: string[] = [];
+				// build structured parts (keep env/workdir/cmdLine separate)
+				const partsInfo: Array<{ envPrefix: string; wd: string; cmdLine: string }> = [];
 				for (const e of resolvedExecs) {
 					if (!e || !e.commandLine || !e.commandLine.trim()) continue;
 					const envPrefix = buildInitialVariables(e.env);
-					const cmdLine = e.commandLine.replace(/\r?\n/g, " && ");
-					const wd = expandEnvVariables(e.workingDir ?? "${PROJECT_SOURCE}");
-					parts.push(`(${envPrefix}cd '${wd}' && ${cmdLine})`);
+					let cmdLine = (e.commandLine ?? "").toString().trim();
+					// extra safety: remove trailing && if any
+					cmdLine = cmdLine.replace(/(?:\s*&&\s*)+$/, "").trim();
+					const wd = e.workingDir ?? "${PROJECT_SOURCE}";
+					partsInfo.push({ envPrefix, wd, cmdLine });
 				}
 
-				if (parts.length === 0) {
+				if (partsInfo.length === 0) {
 					const kind: DevfileTaskDefinition = {
 						type: "devfile",
 						command: "",
@@ -317,52 +324,55 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 							);
 						}
 					);
-					return new vscode.Task(
-						kind,
-						vscode.TaskScope.Workspace,
-						command.id,
-						"devfile",
-						execution,
-						[]
-					);
+					return new vscode.Task(kind, vscode.TaskScope.Workspace, command.id, "devfile", execution, []);
 				}
 
-				const compositeCommandLine = parts.join(joiner);
+				// Decide whether we can produce a clean plain join:
+				// safe when all parts share same workdir and none require envPrefix
+				const sameWorkdir = partsInfo.every((p) => p.wd === partsInfo[0].wd);
+				const anyEnv = partsInfo.some((p) => p.envPrefix && p.envPrefix.trim() !== "");
+
+				let compositeCommandLine: string;
+				if (!anyEnv && sameWorkdir) {
+					// plain join of cleaned command lines
+					compositeCommandLine = partsInfo
+						.map((p) => p.cmdLine.replace(/(?:\s*&&\s*)+$/, "").trim())
+						.filter(Boolean)
+						.join(" && ");
+				} else {
+					// build subshell-wrapped parts (safe path)
+					const parts: string[] = partsInfo.map((p) => `(${p.envPrefix}cd '${p.wd}' && ${p.cmdLine})`);
+					compositeCommandLine = parts.join(joiner);
+				}
+
+				// keep the literal devfile workdir in the task definition & logs
 				const primary = resolvedExecs[0];
+				const kindWorkdir = primary.workingDir ?? "${PROJECT_SOURCE}";
 				const targetComponent = primary.component;
-				const primaryWorkdir = expandEnvVariables(
-					primary.workingDir ?? "${PROJECT_SOURCE}"
-				);
 
 				const kind: DevfileTaskDefinition = {
 					type: "devfile",
 					command: compositeCommandLine,
-					workdir: primaryWorkdir,
+					workdir: kindWorkdir,
 					component: targetComponent,
 				};
 
-				const execution = new vscode.CustomExecution(
-					async (): Promise<vscode.Pseudoterminal> => {
-						return this.terminalExtAPI.getMachineExecPTY(
-							targetComponent,
-							compositeCommandLine,
-							primaryWorkdir
-						);
-					}
+				const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
+					// PTY receives the expanded workdir
+					const resolvedWorkdir = expandEnvVariables(kindWorkdir);
+					return this.terminalExtAPI.getMachineExecPTY(targetComponent, compositeCommandLine, resolvedWorkdir);
+				});
+
+				const label = command.id ?? (command.composite && command.composite.label) ?? "composite-task";
+
+				// debug: print composite preview
+				this.channel.appendLine(
+					`createCheTask (composite) for ${command.id}: label='${label}', compositePreview='${String(
+						compositeCommandLine
+					).slice(0, 1000)}', workdir='${kindWorkdir}'`
 				);
 
-				const label =
-					command.id ??
-					(command.composite && command.composite.label) ??
-					"composite-task";
-				return new vscode.Task(
-					kind,
-					vscode.TaskScope.Workspace,
-					label,
-					"devfile",
-					execution,
-					[]
-				);
+				return new vscode.Task(kind, vscode.TaskScope.Workspace, label, "devfile", execution, []);
 			}
 
 			// Fallback for unsupported command types
@@ -371,28 +381,18 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				command: "",
 				workdir: "${PROJECT_SOURCE}",
 			};
-			const execution = new vscode.CustomExecution(
-				async (): Promise<vscode.Pseudoterminal> => {
-					return this.terminalExtAPI.getMachineExecPTY(
-						undefined,
-						`echo "Unsupported command type for ${command?.id ?? "<unknown>"}"`,
-						"${PROJECT_SOURCE}"
-					);
-				}
-			);
-			return new vscode.Task(
-				kind,
-				vscode.TaskScope.Workspace,
-				command?.id ?? "unsupported",
-				"devfile",
-				execution,
-				[]
-			);
+			const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
+				const resolvedWorkdir = expandEnvVariables("${PROJECT_SOURCE}");
+				return this.terminalExtAPI.getMachineExecPTY(
+					undefined,
+					`echo "Unsupported command type for ${command?.id ?? "<unknown>"}"`,
+					resolvedWorkdir
+				);
+			});
+			return new vscode.Task(kind, vscode.TaskScope.Workspace, command?.id ?? "unsupported", "devfile", execution, []);
 		} catch (err: any) {
 			this.channel.appendLine(
-				`Error creating task for command ${command?.id ?? "<unknown>"}: ${
-					err?.message ?? String(err)
-				}`
+				`Error creating task for command ${command?.id ?? "<unknown>"}: ${err?.message ?? String(err)}`
 			);
 			return undefined;
 		}
