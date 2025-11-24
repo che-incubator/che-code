@@ -129,3 +129,15 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
+  - id: fetch-upstream-changes
+    exec:
+      label: Fetch upstream changes
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        git stash save --include-untracked
+        git fetch upstream-code main
+        ./rebase.sh
+      group:
+        kind: run
+
