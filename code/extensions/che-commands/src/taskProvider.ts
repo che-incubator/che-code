@@ -61,23 +61,9 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			})
 			.filter((command) => !/^init-ssh-agent-command-\d+$/.test(command.id))
 			.map((command) => {
-				this.channel.appendLine(`createCheTask called for: ${command.id}`);
-				const t = this.createCheTask(command, devfileCommands);
-				this.channel.appendLine(
-					`createCheTask output for ${command.id}: ${t ? "TASK CREATED" : "undefined"}`
-				);
-				if (t) {
-					const def = t.definition as DevfileTaskDefinition | any;
-					const cmd = def?.command ?? "(no-command)";
-					const wd = def?.workdir ?? "(no-workdir)";
-					const comp = def?.component ?? "(no-component)";
-					this.channel.appendLine(
-						`  -> label='${t.name}', commandPreview='${String(cmd).slice(0, 200)}', workdir='${wd}', component='${comp}'`
-					);
-				}
-				return t;
+				return this.createCheTask(command, devfileCommands);
 			})
-			.filter((t): t is vscode.Task => !!t);
+			.filter((createdTask): createdTask is vscode.Task => !!createdTask);
 		return cheTasks;
 	}
 
@@ -270,8 +256,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 					}
 
 					this.channel.appendLine(
-						`Warning: composite ${command.id} referenced command ${
-							typeof entry === "string" ? entry : JSON.stringify(entry)
+						`Warning: composite ${command.id} referenced command ${typeof entry === "string" ? entry : JSON.stringify(entry)
 						} has no exec.commandLine; skipping`
 					);
 				}
@@ -363,7 +348,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 					return this.terminalExtAPI.getMachineExecPTY(targetComponent, compositeCommandLine, resolvedWorkdir);
 				});
 
-				const label = command.id ?? (command.composite && command.composite.label) ?? "composite-task";
+				const label = (command.composite && command.composite.label) || command.id || "composite-task";
 
 				// debug: print composite preview
 				this.channel.appendLine(
