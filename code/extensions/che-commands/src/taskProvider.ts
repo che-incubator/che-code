@@ -88,11 +88,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return [];
 	}
 
-	/**
-	 * Expand placeholders like ${VAR} using process.env
-	 * @param line 
-	 * @returns 
-	 */
 	private expandEnvVariables(line: string | undefined): string {
 		if (!line) return '';
 		const regex = /\${[a-zA-Z_][a-zA-Z0-9_]*}/g;
@@ -109,11 +104,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return line;
 	}
 
-	/**
-	 * Normalizes an exec block into a single commandLine + metadata
-	 * @param execBlock 
-	 * @returns 
-	 */
 	private normalizeExec(execBlock: any): ResolvedExec | null {
 		if (!execBlock) return null;
 		const rawCommandLine = execBlock.commandLine;
@@ -155,12 +145,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return initial;
 	}
 
-	/**
-	 * Create a simple "message" task that just echoes to the PTY
-	 * @param message 
-	 * @param label 
-	 * @returns vscode.Task
-	 */
 	private createMessageTask(message: string, label: string): vscode.Task {
 		const kind: DevfileTaskDefinition = {
 			type: 'devfile',
@@ -191,13 +175,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		);
 	}
 
-	/**
-	 * Strict validator for composite commands (supports nesting).
-	 * @param command 
-	 * @param allCommands 
-	 * @param visited 
-	 * @returns Returns false if ANY referenced command id (even nested) is missing, or if a cycle is detected.
-	 */
 	private validateCompositeStrict(
 		command: any,
 		allCommands: V1alpha2DevWorkspaceSpecTemplateCommands[],
@@ -259,12 +236,6 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return true;
 	}
 
-	/**
-	 * Flatten all exec blocks reachable from a composite (including nested composites)
-	 * @param command 
-	 * @param allCommands 
-	 * @returns 
-	 */
 	private resolveExecsFromComposite(
 		command: any,
 		allCommands: V1alpha2DevWorkspaceSpecTemplateCommands[]

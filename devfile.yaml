@@ -44,6 +44,17 @@ commands:
       group:
         kind: build
 
+  - id: npm-build
+    exec:
+      label: Compile with npm
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code
+      commandLine: |
+        npm run watch
+      group:
+        kind: build
+        isDefault: true
+
   - id: npm-run
     exec:
       label: Run VS Code server on port 8000
@@ -118,13 +129,3 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
-  - id: build-and-run
-    composite:
-      commands:
-        - npm-build
-        - npm-run
-      parallel: false
-      label: Build and Run che-code
-      group:
-        kind: run
-        isDefault: true
