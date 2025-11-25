@@ -44,17 +44,6 @@ commands:
       group:
         kind: build
 
-  - id: npm-build
-    exec:
-      label: Compile with npm
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        npm run watch
-      group:
-        kind: build
-        isDefault: true
-
   - id: npm-run
     exec:
       label: Run VS Code server on port 8000
