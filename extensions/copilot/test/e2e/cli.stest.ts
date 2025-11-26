@@ -324,7 +324,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest('What is 1+8?', [], undefined, CancellationToken.None);
+			await session.object.handleRequest('', 'What is 1+8?', [], undefined, CancellationToken.None);
 
 			// Verify we have a response of 9.
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
@@ -332,7 +332,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			assertStreamContains(stream, '9');
 
 			// Can send a subsequent request.
-			await session.object.handleRequest('What is 11+25?', [], undefined, CancellationToken.None);
+			await session.object.handleRequest('', 'What is 11+25?', [], undefined, CancellationToken.None);
 			// Verify we have a response of 36.
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -351,7 +351,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				const session = await sessionService.createSession('What is 1+8?', { workingDirectory }, CancellationToken.None);
 				sessionId = session.object.sessionId;
 
-				await session.object.handleRequest('What is 1+8?', [], undefined, CancellationToken.None);
+				await session.object.handleRequest('', 'What is 1+8?', [], undefined, CancellationToken.None);
 				session.dispose();
 			}
 
@@ -371,7 +371,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				disposables.add(session);
 				disposables.add(session.object.attachStream(stream));
 
-				await session.object.handleRequest('What was my previous question?', [], undefined, CancellationToken.None);
+				await session.object.handleRequest('', 'What was my previous question?', [], undefined, CancellationToken.None);
 
 				// Verify we have a response of 9.
 				assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
@@ -390,7 +390,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, [], undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, [], undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -421,7 +421,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				}
 			}));
 
-			await session.object.handleRequest(prompt, [], undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, [], undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -444,7 +444,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -466,7 +466,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -480,7 +480,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				[],
 				promptResolver
 			));
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -506,7 +506,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertStreamContains(stream, 'throw');
@@ -526,7 +526,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -547,7 +547,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -574,7 +574,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertNoErrorsInStream(stream);
@@ -602,7 +602,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 			disposables.add(session);
 			disposables.add(session.object.attachStream(stream));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			const tsContents = await fs.readFile(tsFile, 'utf-8');
@@ -636,7 +636,7 @@ ssuite.skip({ title: '@cli', location: 'external' }, async (_) => {
 				}
 			}));
 
-			await session.object.handleRequest(prompt, attachments, undefined, CancellationToken.None);
+			await session.object.handleRequest('', prompt, attachments, undefined, CancellationToken.None);
 
 			assert.strictEqual(session.object.status, ChatSessionStatus.Completed);
 			assertStreamContains(stream, 'wkspc1');

@@ -127,7 +127,7 @@ describe('CopilotCLISession', () => {
 
 		// Attach stream first, then invoke with new signature (no stream param)
 		session.attachStream(stream);
-		await session.handleRequest('Hello', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Hello', [], undefined, CancellationToken.None);
 
 		expect(session.status).toBe(ChatSessionStatus.Completed);
 		expect(stream.output.join('\n')).toContain('Echo: Hello');
@@ -138,7 +138,7 @@ describe('CopilotCLISession', () => {
 		const session = await createSession();
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Hi', [], 'modelB', CancellationToken.None);
+		await session.handleRequest('', 'Hi', [], 'modelB', CancellationToken.None);
 
 		expect(sdkSession._selectedModel).toBe('modelB');
 	});
@@ -149,7 +149,7 @@ describe('CopilotCLISession', () => {
 		const session = await createSession();
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Boom', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Boom', [], undefined, CancellationToken.None);
 
 		expect(session.status).toBe(ChatSessionStatus.Failed);
 		expect(stream.output.join('\n')).toContain('Error: network');
@@ -161,7 +161,7 @@ describe('CopilotCLISession', () => {
 		const listener = disposables.add(session.onDidChangeStatus(s => statuses.push(s)));
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Status OK', [], 'modelA', CancellationToken.None);
+		await session.handleRequest('', 'Status OK', [], 'modelA', CancellationToken.None);
 		listener.dispose?.();
 
 		expect(statuses).toEqual([ChatSessionStatus.InProgress, ChatSessionStatus.Completed]);
@@ -176,7 +176,7 @@ describe('CopilotCLISession', () => {
 		const listener = disposables.add(session.onDidChangeStatus(s => statuses.push(s)));
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Will Fail', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Will Fail', [], undefined, CancellationToken.None);
 		listener.dispose?.();
 
 		expect(statuses).toEqual([ChatSessionStatus.InProgress, ChatSessionStatus.Failed]);
@@ -198,7 +198,7 @@ describe('CopilotCLISession', () => {
 		session.attachStream(stream);
 
 		// Path must be absolute within workspace, should auto-approve
-		await session.handleRequest('Test', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Test', [], undefined, CancellationToken.None);
 		expect(result).toEqual({ kind: 'approved' });
 	});
 
@@ -217,7 +217,7 @@ describe('CopilotCLISession', () => {
 		session.attachStream(stream);
 
 		// Path must be absolute within workspace, should auto-approve
-		await session.handleRequest('Test', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Test', [], undefined, CancellationToken.None);
 		expect(result).toEqual({ kind: 'approved' });
 	});
 
@@ -242,7 +242,7 @@ describe('CopilotCLISession', () => {
 		}));
 
 		// Path must be absolute within workspace, should auto-approve
-		await session.handleRequest('Test', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Test', [], undefined, CancellationToken.None);
 		const file = path.join('/workingDirectory', 'file.ts');
 		expect(result).toEqual({ kind: 'denied-interactively-by-user' });
 		expect(askedForPermission).not.toBeUndefined();
@@ -265,7 +265,7 @@ describe('CopilotCLISession', () => {
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
 
-		await session.handleRequest('Write', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Write', [], undefined, CancellationToken.None);
 
 		expect(result).toEqual({ kind: 'approved' });
 	});
@@ -283,7 +283,7 @@ describe('CopilotCLISession', () => {
 		};
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Write', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Write', [], undefined, CancellationToken.None);
 
 		expect(result).toEqual({ kind: 'denied-interactively-by-user' });
 	});
@@ -301,7 +301,7 @@ describe('CopilotCLISession', () => {
 		};
 		const stream = new MockChatResponseStream();
 		session.attachStream(stream);
-		await session.handleRequest('Write', [], undefined, CancellationToken.None);
+		await session.handleRequest('', 'Write', [], undefined, CancellationToken.None);
 
 		expect(result).toEqual({ kind: 'denied-interactively-by-user' });
 	});
@@ -323,7 +323,7 @@ describe('CopilotCLISession', () => {
 		});
 
 		// Act: start handling request (do not await yet)
-		const requestPromise = session.handleRequest('Edits', [], undefined, CancellationToken.None);
+		const requestPromise = session.handleRequest('', 'Edits', [], undefined, CancellationToken.None);
 
 		// Wait a tick to ensure event listeners are registered inside handleRequest
 		await new Promise(r => setTimeout(r, 0));
