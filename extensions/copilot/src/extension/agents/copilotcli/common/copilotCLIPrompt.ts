@@ -5,6 +5,7 @@
 
 import type { ChatPromptReference } from 'vscode';
 import { createFilepathRegexp } from '../../../../util/common/markdown';
+import { Schemas } from '../../../../util/vs/base/common/network';
 import * as path from '../../../../util/vs/base/common/path';
 import { URI } from '../../../../util/vs/base/common/uri';
 import { ChatReferenceDiagnostic, Location, Range } from '../../../../vscodeTypes';
@@ -76,6 +77,7 @@ function extractResources(prompt: string): ChatPromptReference[] {
 			// Skip prompt file attachments, handled elsewhere
 			continue;
 		}
+		const isUntitledFile = providedId?.startsWith('file:untitled-') || false;
 		// Attempt to extract fenced code block language
 		const fenceMatch = content.match(/```([^\n`]+)\n([\s\S]*?)```/);
 		const fencedLanguage = fenceMatch ? fenceMatch[1].trim() : undefined;
@@ -106,27 +108,27 @@ function extractResources(prompt: string): ChatPromptReference[] {
 		}
 
 		const linesMatch = content.match(/Excerpt from [^,]+,\s*lines\s+(\d+)\s+to\s+(\d+)/i);
-		if (!filePath || !linesMatch) { continue; }
-		const startLine = parseInt(linesMatch[1], 10);
-		const endLine = parseInt(linesMatch[2], 10);
-		if (isNaN(startLine) || isNaN(endLine)) { continue; }
-		const uri = URI.file(filePath);
-		const location = new Location(uri, new Range(startLine - 1, 0, endLine - 1, 0));
-		const locName = providedId ?? JSON.stringify(location);
+		if (!filePath) { continue; }
+		const startLine = linesMatch ? parseInt(linesMatch[1], 10) : undefined;
+		const endLine = linesMatch ? parseInt(linesMatch[2], 10) : undefined;
+		const uri = isUntitledFile && filePath.startsWith('untitled:') ? URI.from({ scheme: Schemas.untitled, path: filePath.substring('untitled:'.length) }) : URI.file(filePath);
+		const location = (typeof startLine === 'undefined' || typeof endLine === 'undefined' || isNaN(startLine) || isNaN(endLine)) ? undefined : new Location(uri, new Range(startLine - 1, 0, endLine - 1, 0));
+
+		const locName = providedId ?? (location ? JSON.stringify(location) : uri.toString());
 		let range: [number, number] | undefined = undefined;
-		let id = JSON.stringify(location);
+		let id = (location ? JSON.stringify(location) : uri.toString());
 		if (prompt.includes(`#${locName}`)) {
 			const idx = prompt.indexOf(`#${locName}`);
 			range = [idx, idx + locName.length];
 		}
 		if (locName.startsWith('sym:')) {
-			id = `vscode.symbol/${JSON.stringify(location)}`;
+			id = `vscode.symbol/${(location ? JSON.stringify(location) : uri.toString())}`;
 		}
 		references.push({
 			id,
 			name: locName,
 			range,
-			value: location
+			value: location ?? uri
 		});
 	}
 
@@ -195,14 +197,14 @@ function extractPromptReferences(prompt: string): ChatPromptReference[] {
 		let filePath: string | undefined;
 
 		// Look for // filepath: or /// filepath: pattern
-		const filepathMatch = content.match(/^\s*\/\/+\s*filepath:\s*(.+?)/im);
+		const filepathMatch = content.match(/^\s*\/\/+\s*filepath:\s*(.+?)(?:\r?\n|$)/im);
 		if (filepathMatch) {
 			filePath = filepathMatch[1].trim();
 		}
 
 		if (!filePath) {
 			// Fallback: look for # filepath: pattern
-			const hashMatch = content.match(/^\s*#\s*filepath:\s*(.+?)/im);
+			const hashMatch = content.match(/^\s*#\s*filepath:\s*(.+?)(?:\r?\n|$)/im);
 			if (hashMatch) {
 				filePath = hashMatch[1].trim();
 			}
@@ -221,7 +223,7 @@ function extractPromptReferences(prompt: string): ChatPromptReference[] {
 		}
 
 		// Create the special ID with prefix
-		const id = `${PromptFileIdPrefix}__${idAttr}`;
+		const id = `${PromptFileIdPrefix}__${uri.toString()}`;
 		const name = idAttr;
 
 		references.push({
