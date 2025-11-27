@@ -14,6 +14,7 @@ import { Gpt5SafetyRule } from '../../base/safetyRules';
 import { Tag } from '../../base/tag';
 import { MathIntegrationRules } from '../../panel/editorIntegrationRules';
 import { ApplyPatchInstructions, DefaultAgentPromptProps, detectToolCapabilities, getEditingReminder, McpToolInstructions, ReminderInstructionsProps } from '../defaultAgentInstructions';
+import { FileLinkificationInstructions } from '../fileLinkificationInstructions';
 import { CopilotIdentityRulesConstructor, IAgentPrompt, PromptRegistry, ReminderInstructionsConstructor, SafetyRulesConstructor, SystemPrompt } from '../promptRegistry';
 
 class Gpt51Prompt extends PromptElement<DefaultAgentPromptProps> {
@@ -221,9 +222,10 @@ class Gpt51Prompt extends PromptElement<DefaultAgentPromptProps> {
 				<br />
 				**Monospace**<br />
 				<br />
-				- Wrap all commands, file paths, env vars, and code identifiers in backticks (`` `...` ``).<br />
+				- Wrap all commands, env vars, and code identifiers in backticks (`` `...` ``).<br />
 				- Apply to inline examples and to bullet keywords if the keyword itself is a literal file/command.<br />
-				- Never mix monospace and bold markers; choose one based on whether it's a keyword (`**`) or inline code/path (`` ` ``).<br />
+				- Never mix monospace and bold markers; choose one based on whether it's a keyword (`**`).<br />
+				- File path and line number formatting rules are defined in the fileLinkification section below.<br />
 				<br />
 				**Structure**<br />
 				<br />
@@ -260,6 +262,7 @@ class Gpt51Prompt extends PromptElement<DefaultAgentPromptProps> {
 				Generally, ensure your final answers adapt their shape and depth to the request. For example, answers to code explanations should have a precise, structured explanation with code references that answer the question directly. For tasks with a simple implementation, lead with the outcome and supplement only with what's needed for clarity. Larger changes can be presented as a logical walkthrough of your approach, grouping related steps, explaining rationale where it adds value, and highlighting next actions to accelerate the user. Your answers should provide the right level of detail while being easily scannable.<br />
 				<br />
 				For casual greetings, acknowledgements, or other one-off conversational messages that are not delivering substantive information or structured results, respond naturally without section headers or bullet formatting.
+				<FileLinkificationInstructions />
 			</Tag>
 			<ResponseTranslationRules />
 		</InstructionMessage >;

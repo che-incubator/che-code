@@ -12,6 +12,7 @@ import { Tag } from '../base/tag';
 import { EXISTING_CODE_MARKER } from '../panel/codeBlockFormattingRules';
 import { MathIntegrationRules } from '../panel/editorIntegrationRules';
 import { CodesearchModeInstructions, DefaultAgentPromptProps, detectToolCapabilities, GenericEditingTips, getEditingReminder, McpToolInstructions, NotebookInstructions, ReminderInstructionsProps } from './defaultAgentInstructions';
+import { FileLinkificationInstructions } from './fileLinkificationInstructions';
 import { IAgentPrompt, PromptRegistry, ReminderInstructionsConstructor, SystemPrompt } from './promptRegistry';
 
 class DefaultAnthropicAgentPrompt extends PromptElement<DefaultAgentPromptProps> {
@@ -96,12 +97,8 @@ class DefaultAnthropicAgentPrompt extends PromptElement<DefaultAgentPromptProps>
 			{this.props.availableTools && <McpToolInstructions tools={this.props.availableTools} />}
 			<NotebookInstructions {...this.props} />
 			<Tag name='outputFormatting'>
-				Use proper Markdown formatting in your answers. When referring to a filename or symbol in the user's workspace, wrap it in backticks.<br />
-				<Tag name='example'>
-					The class `Person` is in `src/models/person.ts`.<br />
-					The function `calculateTotal` is defined in `lib/utils/math.ts`.<br />
-					You can find the configuration in `config/app.config.json`.
-				</Tag>
+				Use proper Markdown formatting. When referring to symbols (classes, methods, variables) in user's workspace wrap in backticks. For file paths and line number rules, see fileLinkification section<br />
+				<FileLinkificationInstructions />
 				<MathIntegrationRules />
 			</Tag>
 			<ResponseTranslationRules />
@@ -192,12 +189,10 @@ class Claude45DefaultPrompt extends PromptElement<DefaultAgentPromptProps> {
 			{this.props.availableTools && <McpToolInstructions tools={this.props.availableTools} />}
 			<NotebookInstructions {...this.props} />
 			<Tag name='outputFormatting'>
-				Use proper Markdown formatting in your answers. When referring to a filename or symbol in the user's workspace, wrap it in backticks.<br />
-				<Tag name='example'>
-					The class `Person` is in `src/models/person.ts`.<br />
-					The function `calculateTotal` is defined in `lib/utils/math.ts`.<br />
-					You can find the configuration in `config/app.config.json`.
-				</Tag>
+				Use proper Markdown formatting:
+				- Wrap symbol names (classes, methods, variables) in backticks: `MyClass`, `handleClick()`<br />
+				- When mentioning files or line numbers, always follow the rules in fileLinkification section below:
+				<FileLinkificationInstructions />
 				<MathIntegrationRules />
 			</Tag>
 			<ResponseTranslationRules />
