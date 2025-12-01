@@ -35,6 +35,8 @@ const testFamilies = [
 	'default',
 	'gpt-4.1',
 	'gpt-5',
+	'gpt-5-mini',
+	'gpt-5-codex',
 	'gpt-5.1',
 	'gpt-5.1-codex',
 	'gpt-5.1-codex-mini',
@@ -52,7 +54,7 @@ testFamilies.forEach(family => {
 		const fileTsUri = URI.file('/workspace/file.ts');
 
 		function getSnapshotFile(name: string): string {
-			return `./__snapshots__/agentPrompts-${name}-${family}.spec.snap`;
+			return `./__snapshots__/agentPrompts-${family}/${name}.spec.snap`;
 		}
 
 		let conversation: Conversation;
