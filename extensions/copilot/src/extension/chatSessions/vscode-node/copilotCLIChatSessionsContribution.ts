@@ -140,7 +140,7 @@ export class CopilotCLIWorktreeManager {
 		if (!this.configurationService.getConfig(ConfigKey.Advanced.CLIIsolationEnabled)) {
 			return false;
 		}
-		return this.extensionContext.globalState.get<boolean>(CopilotCLIWorktreeManager.COPILOT_CLI_DEFAULT_ISOLATION_MEMENTO_KEY, false);
+		return this.extensionContext.globalState.get<boolean>(CopilotCLIWorktreeManager.COPILOT_CLI_DEFAULT_ISOLATION_MEMENTO_KEY, true);
 	}
 
 	getIsolationPreference(sessionId: string): boolean {
@@ -332,7 +332,7 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 
 	async provideChatSessionProviderOptions(): Promise<vscode.ChatSessionProviderOptions> {
 		const isolationItems = [
-			{ id: 'enabled', name: 'Isolated' },
+			{ id: 'enabled', name: 'Worktree' },
 			{ id: 'disabled', name: 'Workspace' }
 		];
 
@@ -360,7 +360,7 @@ export class CopilotCLIChatSessionContentProvider implements vscode.ChatSessionC
 				{
 					id: ISOLATION_OPTION_ID,
 					name: 'Isolation',
-					description: 'Enable worktree isolation for this session',
+					description: 'Choose Worktree or Workspace for this session',
 					items: isolationItems
 				}
 			]
