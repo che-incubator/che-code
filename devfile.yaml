@@ -38,7 +38,7 @@ commands:
     exec:
       label: Install node dependencies
       component: dev
-      workingDir: ${PROJECT_SOURCE}/che-code
+      workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
         npm install
       group:
@@ -48,7 +48,7 @@ commands:
     exec:
       label: Compile with npm
       component: dev
-      workingDir: ${PROJECT_SOURCE}/che-code
+      workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
         npm run watch
       group:
@@ -59,7 +59,7 @@ commands:
     exec:
       label: Run VS Code server on port 8000
       component: dev
-      workingDir: ${PROJECT_SOURCE}/che-code
+      workingDir: ${PROJECTS_ROOT}/che-code
       commandLine: |
         npm run server
       group:
@@ -69,13 +69,13 @@ commands:
   - id: node-version
     exec:
       label: "Check Node.js version"
-      component: tools
+      component: dev
       commandLine: "node -v"
 
   - id: npm-version
     exec:
       label: "Check npm version"
-      component: tools
+      component: dev
       commandLine: "npm -v"
 
   - id: npm-version-node-version
