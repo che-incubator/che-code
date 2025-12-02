@@ -34,98 +34,120 @@ components:
       size: 10Gi
 
 commands:
-  - id: npm-install
+  - id: install-dependencies
     exec:
       label: Install node dependencies
       component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
+      workingDir: ${PROJECT_SOURCE}/che-code
       commandLine: |
         npm install
       group:
         kind: build
 
-  - id: npm-build
+  - id: build-application
     exec:
       label: Compile with npm
       component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
+      workingDir: ${PROJECT_SOURCE}/che-code
       commandLine: |
         npm run watch
       group:
         kind: build
         isDefault: true
 
-  - id: npm-run
+  - id: run-application
     exec:
       label: Run VS Code server on port 8000
       component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
+      workingDir: ${PROJECT_SOURCE}/che-code
       commandLine: |
         npm run server
       group:
         kind: run
         isDefault: true
 
-  - id: podman-compile-libc
+  - id: node-version
     exec:
-      label: Compile che-code in a ubi8-based container using Podman
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        echo "Compile libc-ubi8 mod"
-        cp -f build/dockerfiles/linux-libc-ubi8.Dockerfile build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
-        REMOVE_FROM="### Beginning of tests"
-        REMOVE_TO="### Ending of tests"
-        sed -i "/${REMOVE_FROM}/,/${REMOVE_TO}/d" build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile
-        podman build -f build/dockerfiles/linux-libc-ubi8.no-test.Dockerfile -t linux-libc-ubi8-amd64 .
-      group:
-        kind: run
+      label: "Check Node.js version"
+      component: tools
+      commandLine: "node -v"
 
-  - id: podman-assemble-che-code
+  - id: npm-version
     exec:
-      label: Build che-code image using Podman
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        echo "Build che-code image"
-        cp -f build/dockerfiles/assembly.Dockerfile build/dockerfiles/assembly.libc.Dockerfile
-        REPLACE="FROM linux-libc-ubi9-amd64 as linux-libc-ubi9-content"
-        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
-        REPLACE="COPY --from=linux-libc-ubi9-content --chown=0:0 /checode-linux-libc/ubi9 /mnt/rootfs/checode-linux-libc/ubi9"
-        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
-        REPLACE="FROM linux-musl-amd64 as linux-musl-content"
-        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
-        REPLACE="COPY --from=linux-musl-content --chown=0:0 /checode-linux-musl /mnt/rootfs/checode-linux-musl"
-        sed -i -r -e "s|${REPLACE}||" build/dockerfiles/assembly.libc.Dockerfile
-        podman build -f build/dockerfiles/assembly.libc.Dockerfile -t che-code .
-      group:
-        kind: run
-  - id: install-git-subtree
-    exec:
-      label: Install git-subtree
-      component: dev
-      workingDir: ${PROJECTS_ROOT}
-      commandLine: |
-        mkdir temp && cd temp
-        git clone https://github.com/git/git.git
-        cd git/contrib/subtree
-        make && make prefix=${PROJECTS_ROOT}/temp install
-        cp -r ${PROJECTS_ROOT}/temp/libexec/git-core/ ~/bin
-        rm -rf ${PROJECTS_ROOT}/temp
-  - id: add-remote-upstream
-    exec:
-      label: Add remote for upstream
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        git remote add upstream-code https://github.com/microsoft/vscode
-        
-  - id: fetch-upstream-changes
-    exec:
-      label: Fetch upstream changes
-      component: dev
-      workingDir: ${PROJECTS_ROOT}/che-code
-      commandLine: |
-        git stash save --include-untracked
-        git fetch upstream-code main
-        ./rebase.sh
+      label: "Check npm version"
+      component: tools
+      commandLine: "npm -v"
+
+  - id: npm-version-node-version
+    composite:
+      label: "Sequential: Check versions"
+      commands:
+        - npm-version
+        - node-version
+      parallel: false
+
+  - id: check-versions-install-deps
+    composite:
+      label: "Check versions => Install deps"
+      commands:
+        - npm-version-node-version
+        - install-dependencies
+      parallel: false
+
+  - id: parallel-check-versions
+    composite:
+      label: "Parallel: Check versions"
+      commands:
+        - npm-version
+        - node-version
+      parallel: true
+
+  - id: install-deps-and-run-app
+    composite:
+      label: "Install deps => Build app => Run web app"
+      commands:
+        - install-dependencies
+        - build-application
+        - run-application
+      parallel: false
+
+  - id: parallel-install-deps-and-run-app
+    composite:
+      label: "Parallel: Install deps, build app and Run web app"
+      commands:
+        - install-dependencies
+        - build-application
+        - run-application
+      parallel: true
+
+  - id: check-node-and-install-deps-and-run-app
+    composite:
+      label: "Check Node.js version => Install deps => Run web app"
+      commands:
+        - node-version
+        - install-dependencies
+        - run-application
+      parallel: false
+
+  - id: check-versions-install-deps-run-app
+    composite:
+      label: "Check versions => Install deps => Run web app"
+      commands:
+        - check-versions-install-deps
+        - run-application
+      parallel: false
+
+  - id: print-env-variables-check-versions
+    composite:
+      label: "Print Env variables => Check versions"
+      commands:
+        - print-env-variables
+        - npm-version-node-version
+      parallel: false
+  - id: parallel-print-env-variables-check-versions
+    composite:
+      label: "Parallel: Print Env variables => Check versions"
+      commands:
+        - print-env-variables
+        - npm-version-node-version
+      parallel: true

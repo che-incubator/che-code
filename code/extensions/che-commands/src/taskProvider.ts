@@ -387,10 +387,27 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 						.filter(Boolean)
 						.join(joiner);
 				} else {
-					const parts: string[] = partsInfo.map(
-						(p) => `(${p.envPrefix}cd '${p.wd}' && ${p.cmdLine})`
-					);
+					const parts: string[] = partsInfo.map((p) => {
+  					const resolved = this.expandEnvVariables(p.wd);
+  					let cdExpr: string;
+  					if (/\$\{[A-Za-z_][A-Za-z0-9_]*\}/.test(resolved)) {
+					// If there are still unexpanded variables, use double quotes to allow shell expansion
+    					cdExpr = `cd ${p.wd}`;
+  					} else {
+    					// escape any single quotes in the resolved path for safe single-quoting
+    					const safe = resolved.replace(/'/g, `'\"'\"'`);
+    					cdExpr = `cd '${safe}'`;
+  					}
+  					const envPrefix = p.envPrefix ?? '';
+  					const cmd = p.cmdLine;
+  					return `(${envPrefix}${cdExpr} && ${cmd})`;
+				});
 					compositeCommandLine = parts.join(joiner);
+				}
+				
+				if (parallel) {
+  					// Append `; wait` so the shell waits for background jobs to finish
+  					compositeCommandLine = `${compositeCommandLine} ; wait`;
 				}
 
 				const primary = resolvedExecs[0];
