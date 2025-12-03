@@ -7,6 +7,7 @@
  SPDX-License-Identifier: EPL-2.0
 */
 
+/* Code block */
 pre {
   background-color: #f6f8fa; /* Light gray background */
   overflow-x: auto; /* Enable horizontal scrolling for long lines */
@@ -17,6 +18,7 @@ pre {
   padding: 10px;
 }
 
+/* Inline code */
 code {
   background-color: #e3e6e8; /* Slightly darker gray for inline code */
   padding: 2px 4px;
@@ -25,14 +27,16 @@ code {
   font-size: 0.9em; /* Slightly smaller than surrounding text */
 }
 
+/* Container for code block & clipboard icon */
 .parent {
-  background-color: #f6f8fa; /* Light gray background */
+  background-color: #f6f8fa;
   display: table;
   width: 100%;
 }
 
+/* Container for clipboard icon of code block */
 .clipboard {
-  background-color: #f6f8fa; /* Light gray background */
+  background-color: #f6f8fa;
   display: table-cell;
   width: 2%;
 }
@@ -46,7 +50,7 @@ code {
 }
 
 .clipboard-img-code {
-    background-color: #e3e6e8; /* Slightly darker gray for inline code */
+    background-color: #e3e6e8;
     width: 10px;
     height: 10px;
     border: 1px solid black;
@@ -55,6 +59,8 @@ code {
     vertical-align: bottom;
 }
 
+
+/* Colour change for clipboard icon hover */
 .clipboard-img-pre:hover {
     background:#e3e6e8;
 }
