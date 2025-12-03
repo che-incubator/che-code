@@ -65,7 +65,9 @@ import { IExtensionsScannerService } from '../../platform/extensionManagement/co
 import { ExtensionsScannerService } from './extensionsScannerService.js';
 import { IExtensionsProfileScannerService } from '../../platform/extensionManagement/common/extensionsProfileScannerService.js';
 import { IUserDataProfilesService } from '../../platform/userDataProfile/common/userDataProfile.js';
-import { NullPolicyService } from '../../platform/policy/common/policy.js';
+import { IPolicyService, NullPolicyService } from '../../platform/policy/common/policy.js';
+import { FilePolicyService } from '../../platform/policy/common/filePolicyService.js';
+import { PolicyChannel } from '../../platform/policy/common/policyIpc.js';
 import { OneDataSystemAppender } from '../../platform/telemetry/node/1dsAppender.js';
 import { LoggerService } from '../../platform/log/node/loggerService.js';
 import { ServerUserDataProfilesService } from '../../platform/userDataProfile/node/userDataProfile.js';
@@ -138,8 +140,17 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	const uriIdentityService = new UriIdentityService(fileService);
 	services.set(IUriIdentityService, uriIdentityService);
 
+	let policyService: IPolicyService;
+	if (environmentService.policyFile) {
+		policyService = disposables.add(new FilePolicyService(environmentService.policyFile, fileService, logService));
+		logService.info(`Using policy file: ${environmentService.policyFile.fsPath}`);
+	} else {
+		policyService = new NullPolicyService();
+		logService.info('Policy file not found');
+	}
+
 	// Configuration
-	const configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, new NullPolicyService(), logService);
+	const configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, policyService, logService);
 	services.set(IConfigurationService, configurationService);
 
 	// User Data Profiles
@@ -257,6 +268,9 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		socketServer.registerChannel('extensions', channel);
 
 		socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));
+
+		// Policy Channel - register after policy service is initialized
+		socketServer.registerChannel('policy', new PolicyChannel(policyService));
 
 		// clean up extensions folder
 		remoteExtensionsScanner.whenExtensionsReady().then(() => extensionManagementService.cleanUp());
