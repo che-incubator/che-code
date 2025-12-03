@@ -72,7 +72,9 @@ ${areaAroundCodeToEdit}`;
 
 	const includeBackticks = opts.promptingStrategy !== PromptingStrategy.Nes41Miniv3 && opts.promptingStrategy !== PromptingStrategy.Codexv21NesUnified;
 
-	const prompt = relatedInformation + (includeBackticks ? wrapInBackticks(mainPrompt) : mainPrompt) + postScript;
+	const packagedPrompt = includeBackticks ? wrapInBackticks(mainPrompt) : mainPrompt;
+	const packagedPromptWithRelatedInfo = addRelatedInformation(relatedInformation, packagedPrompt, opts.languageContext.traitPosition);
+	const prompt = packagedPromptWithRelatedInfo + postScript;
 
 	const trimmedPrompt = prompt.trim();
 
@@ -81,6 +83,28 @@ ${areaAroundCodeToEdit}`;
 
 function wrapInBackticks(content: string) {
 	return `\`\`\`\n${content}\n\`\`\``;
+}
+
+function addRelatedInformation(relatedInformation: string, prompt: string, position: 'before' | 'after'): string {
+	if (position === 'before') {
+		return appendWithNewLineIfNeeded(relatedInformation, prompt, 2);
+	}
+	return appendWithNewLineIfNeeded(prompt, relatedInformation, 2);
+}
+
+function appendWithNewLineIfNeeded(base: string, toAppend: string, minNewLines: number): string {
+	// Count existing newlines at the end of base and start of toAppend
+	let existingNewLines = 0;
+	for (let i = base.length - 1; i >= 0 && base[i] === '\n'; i--) {
+		existingNewLines++;
+	}
+	for (let i = 0; i < toAppend.length && toAppend[i] === '\n'; i++) {
+		existingNewLines++;
+	}
+
+	// Add newlines to reach the minimum required
+	const newLinesToAdd = Math.max(0, minNewLines - existingNewLines);
+	return (base + '\n'.repeat(newLinesToAdd) + toAppend).trim();
 }
 
 function getPostScript(strategy: PromptingStrategy | undefined, currentFilePath: string) {
@@ -134,7 +158,7 @@ function getRelatedInformation(langCtx: LanguageContextResponse | undefined): st
 		relatedInformation.push(`${trait.name}: ${trait.value}`);
 	}
 
-	return `Consider this related information:\n${relatedInformation.join('\n')}\n\n`;
+	return `Consider this related information:\n${relatedInformation.join('\n')}`;
 }
 
 function getEditDiffHistory(
