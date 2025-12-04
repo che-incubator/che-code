@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "node-forge": "^1.3.2"
+  }
+}
