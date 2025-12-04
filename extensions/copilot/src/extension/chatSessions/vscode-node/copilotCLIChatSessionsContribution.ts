@@ -242,6 +242,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		let statistics: { files: number; insertions: number; deletions: number } | undefined;
 
 		if (worktreePath && worktreeRelativePath) {
+			const worktreeUri = Uri.file(worktreePath);
 			// Description
 			description = new vscode.MarkdownString(`$(list-tree) ${worktreeRelativePath}`);
 			description.supportThemeIcons = true;
@@ -250,7 +251,9 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 			tooltipLines.push(vscode.l10n.t(`Worktree: {0}`, worktreeRelativePath));
 
 			// Statistics
-			statistics = await this.gitService.diffIndexWithHEADShortStats(Uri.file(worktreePath));
+			// Make sure the repository is opened
+			await this.gitService.getRepository(worktreeUri);
+			statistics = await this.gitService.diffIndexWithHEADShortStats(worktreeUri);
 		}
 		const status = session.status ?? vscode.ChatSessionStatus.Completed;
 
