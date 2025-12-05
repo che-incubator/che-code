@@ -115,7 +115,7 @@ suite('OrganizationAndEnterpriseAgentProvider', () => {
 			mockOctoKitService,
 			accessor.get(ILogService),
 			mockExtensionContext as any,
-			mockFileSystem
+			mockFileSystem,
 		);
 		disposables.add(provider);
 		return provider;
