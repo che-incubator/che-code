@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as fs from 'fs';
 import * as nls from '../../nls.js';
 
 import { NativeEnvironmentService } from '../../platform/environment/node/environmentService.js';
@@ -14,6 +15,7 @@ import { URI } from '../../base/common/uri.js';
 import { joinPath } from '../../base/common/resources.js';
 import { join } from '../../base/common/path.js';
 
+export const POLICY_FILE_PATH = '/checode-config/policy.json';
 export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
 
 	/* ----- server setup ----- */
@@ -239,5 +241,12 @@ export class ServerEnvironmentService extends NativeEnvironmentService implement
 	get machineSettingsResource(): URI { return joinPath(URI.file(join(this.userDataPath, 'Machine')), 'settings.json'); }
 	@memoize
 	get mcpResource(): URI { return joinPath(URI.file(join(this.userDataPath, 'User')), 'mcp.json'); }
+	@memoize
+	override get policyFile(): URI | undefined {
+		if (fs.existsSync(POLICY_FILE_PATH)) {
+			return URI.file(POLICY_FILE_PATH);
+		}
+		return super.policyFile;
+	}
 	override get args(): ServerParsedArgs { return super.args as ServerParsedArgs; }
 }

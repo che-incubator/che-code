@@ -68,7 +68,8 @@ import { IProgressService } from '../../platform/progress/common/progress.js';
 import { DelayedLogChannel } from '../services/output/common/delayedLogChannel.js';
 import { dirname, joinPath } from '../../base/common/resources.js';
 import { IUserDataProfile, IUserDataProfilesService } from '../../platform/userDataProfile/common/userDataProfile.js';
-import { NullPolicyService } from '../../platform/policy/common/policy.js';
+import { IPolicyService, NullPolicyService } from '../../platform/policy/common/policy.js';
+import { PolicyChannelClient } from '../../platform/policy/common/policyIpc.js';
 import { IRemoteExplorerService } from '../services/remote/common/remoteExplorerService.js';
 import { DisposableTunnel, TunnelProtocol } from '../../platform/tunnel/common/tunnel.js';
 import { ILabelService } from '../../platform/label/common/label.js';
@@ -567,7 +568,32 @@ export class BrowserMain extends Disposable {
 		}
 
 		const configurationCache = new ConfigurationCache([Schemas.file, Schemas.vscodeUserData, Schemas.tmp] /* Cache all non native resources */, environmentService, fileService);
-		const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, new NullPolicyService());
+		
+		// Get policy service from remote agent if available, otherwise use NullPolicyService
+		let policyService: IPolicyService;
+		if (this.configuration.remoteAuthority) {
+			try {
+				const connection = remoteAgentService.getConnection();
+				if (connection) {
+					const policyChannel = connection.getChannel('policy');
+					// PolicyChannelClient needs initial policiesData - start with empty object, policies will be loaded when definitions are registered
+					policyService = new PolicyChannelClient({}, policyChannel);
+					logService.info('Policy channel client was created successfully');
+				} else {
+					logService.warn('Failed to get remote aget connection, using NullPolicyService');
+					policyService = new NullPolicyService();
+				}
+			} catch (error) {
+				console.log('/// web main /// connection - ERROR ');
+				logService.warn('Failed to create policy channel client, using NullPolicyService', error);
+				policyService = new NullPolicyService();
+			}
+		} else {
+			logService.warn('Failed to create policy channel client(no remote authority), using NullPolicyService');
+			policyService = new NullPolicyService();
+		}
+		
+		const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, policyService);
 
 		try {
 			await workspaceService.initialize(workspace);
