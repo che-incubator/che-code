@@ -10,6 +10,15 @@
 
 /* eslint-disable header/header */
 
+// Mock @kubernetes/client-node to avoid ESM issues in Jest
+jest.mock('@kubernetes/client-node', () => ({
+  KubeConfig: jest.fn(),
+  CoreV1Api: jest.fn(),
+  AppsV1Api: jest.fn(),
+  RbacAuthorizationV1Api: jest.fn(),
+  CustomObjectsApi: jest.fn(),
+}));
+
 import 'reflect-metadata';
 
 import * as vscode from 'vscode';
@@ -23,7 +32,7 @@ const createStatusBar = jest.fn();
 const statusBarItem: vscode.StatusBarItem = {
   id: '',
   name: '',
-  backgroundColor: '',
+  backgroundColor: undefined,
   accessibilityInformation: undefined,
   alignment: 1,
   color: '',

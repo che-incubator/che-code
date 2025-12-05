@@ -73,18 +73,14 @@ export class K8sWorkspaceServiceImpl implements WorkspaceService {
       },
     ];
 
-    const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
-    await customObjectsApi.patchNamespacedCustomObject(
-      group,
-      version,
-      namespace,
-      plural,
-      name,
-      patch,
-      undefined,
-      undefined,
-      undefined,
-      options
-    );
+    // TODO: In v1.4.0, content-type header is automatically set for patch operations
+    await customObjectsApi.patchNamespacedCustomObject({
+      group: group,
+      version: version,
+      namespace: namespace,
+      plural: plural,
+      name: name,
+      body: patch,
+    });
   }
 }

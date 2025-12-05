@@ -84,9 +84,9 @@ export class ResourceMonitor {
 
   async updateContainers(): Promise<void> {
     try {
-      const { body } = await this.k8sHelper
+      const body = await this.k8sHelper
         .getCoreApi()
-        .listNamespacedPod(this.namespace, undefined, undefined, undefined, undefined, undefined);
+        .listNamespacedPod({namespace: this.namespace});
       for (const item of body.items) {
         if (item.metadata?.name === this.podName) {
           item.spec?.containers.forEach(element => {

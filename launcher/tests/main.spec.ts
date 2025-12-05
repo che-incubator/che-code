@@ -66,6 +66,13 @@ jest.mock('../src/vscode-launcher', () => ({
   },
 }));
 
+const configureEditorConfigurations = jest.fn();
+jest.mock('../src/editor-configurations', () => ({
+  EditorConfigurations: function () {
+    return { configure: configureEditorConfigurations };
+  },
+}));
+
 describe('Test main flow:', () => {
   test('should configure all the stuff', async () => {
     await new Main().start();
@@ -78,6 +85,7 @@ describe('Test main flow:', () => {
     expect(configureTustedExtensions).toBeCalled();
 
     expect(generateCodeWorkspace).toBeCalled();
+    expect(configureEditorConfigurations).toBeCalled();
 
     expect(launchVsCode).toBeCalled();
   });

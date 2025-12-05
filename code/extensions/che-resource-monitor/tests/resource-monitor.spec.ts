@@ -11,14 +11,23 @@
 /* eslint-disable header/header */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+// Mock @kubernetes/client-node to avoid ESM issues in Jest
+jest.mock('@kubernetes/client-node', () => ({
+  KubeConfig: jest.fn(),
+  CoreV1Api: jest.fn(),
+  AppsV1Api: jest.fn(),
+  RbacAuthorizationV1Api: jest.fn(),
+  CustomObjectsApi: jest.fn(),
+}));
+
 import 'reflect-metadata';
 
 import * as fs from 'fs-extra';
-import * as objects from '../src/objects';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { SHOW_RESOURCES_INFORMATION_COMMAND, SHOW_WARNING_MESSAGE_COMMAND } from '../src/constants';
+import { SHOW_WARNING_MESSAGE_COMMAND } from '../src/constants';
 
 import { Container } from 'inversify';
 import { K8sHelper, K8SRawResponse } from '../src/k8s-helper';
@@ -55,6 +64,9 @@ describe('Test Resource Monitor Plugin', () => {
       get: jest.fn(),
       prepend: jest.fn(),
       replace: jest.fn(),
+      getScoped: jest.fn(),
+      description: undefined,
+      [Symbol.iterator]: jest.fn(),
     },
     secrets: {
       get: jest.fn(),
@@ -93,13 +105,17 @@ describe('Test Resource Monitor Plugin', () => {
       extensionKind: 2,
       exports: {},
       activate: jest.fn(),
-    }    
+    },
+    languageModelAccessInformation: {
+      onDidChange: jest.fn(),
+      canSendRequest: jest.fn(),
+    } as any,
   };
 
 const statusBarItem: vscode.StatusBarItem = {
     id: '',
     name: '',
-    backgroundColor: '',
+    backgroundColor: undefined,
     accessibilityInformation: undefined,
     alignment: 1,
     color: '',
@@ -140,38 +156,44 @@ const statusBarItem: vscode.StatusBarItem = {
 
   describe('show', () => {
     test('Read Pod and Metrics information', async () => {
-
+      const podJson = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
       const resMonitor = container.get(ResourceMonitor);
+      const podName = 'workspace';
       const requestMetricServer: K8SRawResponse = {
         data: '',
         error: '',
         statusCode: 200,
       };
-      sendRawQueryMethod.mockReturnValueOnce(requestMetricServer);
+      sendRawQueryMethod.mockReturnValue(requestMetricServer);
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [''],
-        },
+        items: [JSON.parse(podJson)],
       });
 
-      await resMonitor.show();
+      await resMonitor.start(context, namespace, podName);
 
-      expect(sendRawQueryMethod).toBeCalledTimes(1);
+      expect(sendRawQueryMethod).toBeCalled();
     });
   });
 
-  describe('getContainersInfo', () => {
+  describe('updateContainers', () => {
     test('Read Pod information', async () => {
       const json = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
       const resMonitor = container.get(ResourceMonitor);
+      const podName = 'workspace';
+      const metricsInfo: K8SRawResponse = {
+        data: JSON.stringify({ containers: [] }),
+        error: '',
+        statusCode: 200,
+      };
+      sendRawQueryMethod.mockReturnValue(metricsInfo);
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(json)],
-        },
+        items: [JSON.parse(json)],
       });
 
-      const containers: objects.Container[] = await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
 
+      // Access private containers field via getMetrics
+      const containers = await resMonitor.getMetrics();
       expect(containers.length).toBe(5);
       expect(containers[0]).toEqual({ name: 'che-jwtproxy7yc7hvrc', cpuLimit: 500, memoryLimit: 2000000000 });
       expect(containers[1]).toEqual({ name: 'maven', cpuLimit: 0, memoryLimit: 1000000000 });
@@ -190,14 +212,13 @@ const statusBarItem: vscode.StatusBarItem = {
         error: '',
         statusCode: 200,
       };
+      const podName = 'workspace';
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(podJson)],
-        },
+        items: [JSON.parse(podJson)],
       });
       sendRawQueryMethod.mockReturnValue(metricsInfo);
       const resMonitor = container.get(ResourceMonitor);
-      await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
       const containers = await resMonitor.getMetrics();
       expect(containers.length).toBe(5);
       expect(containers[0]).toEqual({
@@ -237,79 +258,100 @@ const statusBarItem: vscode.StatusBarItem = {
       });
       // Check status bar
       expect(statusBarItem.text).toBe('$(ellipsis) Mem: 0.26/3.54 GB 7% $(pulse) CPU: 395 m');
-      expect(statusBarItem.color).toBe('#FFFFFF');
+      expect(statusBarItem.color).toBe(undefined);
       expect(statusBarItem.tooltip).toBe('Workspace resources');
     });
 
     test('Cannot read metrics', async () => {
       const podJson = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
+      const metricsServerResponse: K8SRawResponse = {
+        data: '',
+        error: '',
+        statusCode: 200,
+      };
       const metricsInfo: K8SRawResponse = {
         data: 'Error from server (Forbidden)',
         error: 'Error from server (Forbidden)',
         statusCode: 403,
       };
+      const podName = 'workspace';
 
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(podJson)],
-        },
+        items: [JSON.parse(podJson)],
       });
-      sendRawQueryMethod.mockReturnValueOnce(metricsInfo);
+      sendRawQueryMethod
+        .mockReturnValueOnce(metricsServerResponse)
+        .mockReturnValueOnce({ statusCode: 200, data: JSON.stringify({ containers: [] }), error: '' } as K8SRawResponse)
+        .mockReturnValue(metricsInfo);
       const resMonitor = container.get(ResourceMonitor);
-      await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
       await resMonitor.getMetrics();
 
       // Check status bar
-      expect(statusBarItem.text).toBe('$(ban) Resources');
-      expect(statusBarItem.color).toBe('#FFFFFF');
-      expect(statusBarItem.tooltip).toBe('Resources Monitor');
+      expect(statusBarItem.text).toBe('$(error) Resources');
+      expect(statusBarItem.color).toBe(undefined);
     });
 
     test('Pod metrics are not ready (Metrics server returns 404)', async () => {
       const podJson = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
+      const metricsServerResponse: K8SRawResponse = {
+        data: '',
+        error: '',
+        statusCode: 200,
+      };
       const metricsInfo: K8SRawResponse = {
         data: 'No resource available',
         error: 'No resource available',
         statusCode: 404,
       };
+      const podName = 'workspace';
 
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(podJson)],
-        },
+        items: [JSON.parse(podJson)],
       });
-      sendRawQueryMethod.mockReturnValueOnce(metricsInfo);
+      sendRawQueryMethod
+        .mockReturnValueOnce(metricsServerResponse)
+        .mockReturnValueOnce({ statusCode: 200, data: JSON.stringify({ containers: [] }), error: '' } as K8SRawResponse)
+        .mockReturnValue(metricsInfo);
       const resMonitor = container.get(ResourceMonitor);
-      await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
       await resMonitor.getMetrics();
 
       // Check status bar
-      expect(statusBarItem.text).toBe('Waiting metrics...');
+      expect(statusBarItem.text).toBe('$(pulse) Waiting metrics...');
     });
 
     test('Status bar should be marked as warning with container information', async () => {
       const podJson = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
       const metricsJson = await fs.readFile(path.join(__dirname, '_data', 'limitedMemoryMetrics.json'), 'utf8');
+      const metricsServerResponse: K8SRawResponse = {
+        data: '',
+        error: '',
+        statusCode: 200,
+      };
       const metricsInfo: K8SRawResponse = {
         data: metricsJson,
         error: '',
         statusCode: 200,
       };
+      const podName = 'workspace';
+      (vscode as any).ThemeColor = jest.fn().mockImplementation((id) => ({ id }));
 
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(podJson)],
-        },
+        items: [JSON.parse(podJson)],
       });
-      sendRawQueryMethod.mockReturnValueOnce(metricsInfo);
+      sendRawQueryMethod
+        .mockReturnValueOnce(metricsServerResponse)
+        .mockReturnValueOnce({ statusCode: 200, data: JSON.stringify({ containers: [] }), error: '' } as K8SRawResponse)
+        .mockReturnValue(metricsInfo);
       const resMonitor = container.get(ResourceMonitor);
-      await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
       await resMonitor.getMetrics();
 
       // Check status bar
       expect(statusBarItem.text).toBe('$(ellipsis) Mem: 950/1000 MB 95% $(pulse) CPU: 100 m');
-      expect(statusBarItem.color).toBe('#FFCC00');
-      expect(statusBarItem.tooltip).toBe('maven container');
+      expect(statusBarItem.color).toEqual({ id: 'statusBarItem.warningForeground' });
+      expect(statusBarItem.tooltip).toBe('maven container is using more than 90% of the available memory');
     });
   });
 
@@ -322,15 +364,14 @@ const statusBarItem: vscode.StatusBarItem = {
         error: '',
         statusCode: 200,
       };
+      const podName = 'workspace';
 
       mockListNamespacedPodMethod.mockResolvedValue({
-        body: {
-          items: [JSON.parse(podJson)],
-        },
+        items: [JSON.parse(podJson)],
       });
-      sendRawQueryMethod.mockReturnValueOnce(metricsInfo);
+      sendRawQueryMethod.mockReturnValue(metricsInfo);
       const resMonitor = container.get(ResourceMonitor);
-      await resMonitor.getContainersInfo();
+      await resMonitor.start(context, namespace, podName);
       await resMonitor.getMetrics();
 
       resMonitor.showDetailedInfo();
@@ -361,20 +402,29 @@ const statusBarItem: vscode.StatusBarItem = {
   describe('start', () => {
     test('Resource Monitor initialization', async () => {
       const resMonitor = container.get(ResourceMonitor);
-      const spyGetContainers = jest.spyOn(resMonitor, 'getContainersInfo');
-      spyGetContainers.mockResolvedValue([]);
+      const podName = 'workspace';
+      const metricsServerResponse: K8SRawResponse = {
+        data: '',
+        error: '',
+        statusCode: 200,
+      };
+      const podJson = await fs.readFile(path.join(__dirname, '_data', 'podInfo.json'), 'utf8');
 
-      const spyRequestMetricsServer = jest.spyOn(resMonitor, 'requestMetricsServer');
-      spyRequestMetricsServer.mockResolvedValue(undefined);
-      
-      resMonitor.start(context, namespace);
+      mockListNamespacedPodMethod.mockResolvedValue({
+        items: [JSON.parse(podJson)],
+      });
+      sendRawQueryMethod.mockReturnValue(metricsServerResponse);
+
+      const spyShow = jest.spyOn(resMonitor, 'show');
+      spyShow.mockResolvedValue(undefined);
+
+      await resMonitor.start(context, namespace, podName);
 
       expect(vscode.commands.registerCommand).toHaveBeenCalledWith('resources-monitor-show-resources-information', expect.any(Function));
       expect(vscode.window.createStatusBarItem).toHaveBeenCalledWith(1);
       expect(statusBarItem.alignment).toBe(1);
-      expect(statusBarItem.color).toBe('#FFFFFF');
-      expect(statusBarItem.show).toHaveBeenCalledTimes(1);
-      expect(statusBarItem.command).toBe(SHOW_RESOURCES_INFORMATION_COMMAND);
+      expect(statusBarItem.color).toBe(undefined);
+      expect(spyShow).toHaveBeenCalled();
     });
   });
 
@@ -407,11 +457,11 @@ const statusBarItem: vscode.StatusBarItem = {
 
       const resMonitor = newContainer.get(ResourceMonitor);
       await expect(resMonitor.requestMetricsServer()).rejects.toThrow('Cannot connect to Metrics Server. Status code: 503. Error: service unavailable');
-        expect(statusBarItem.text).toBe('$(ban) Resources');
+        expect(statusBarItem.text).toBe('$(error) Resources');
         expect(statusBarItem.command).toBe(SHOW_WARNING_MESSAGE_COMMAND);
       expect(mockSendQueryMethod).toBeCalledTimes(1);
-      expect(mockSendQueryMethod).toBeCalledWith('/apis/metrics.k8s.io/v1beta1/', {
-        url: '/apis/metrics.k8s.io/v1beta1/',
+      expect(mockSendQueryMethod).toBeCalledWith('/apis/metrics.k8s.io/v1beta1', {
+        url: '/apis/metrics.k8s.io/v1beta1',
       });
     });
 

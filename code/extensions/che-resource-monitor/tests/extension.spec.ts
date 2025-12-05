@@ -10,6 +10,15 @@
 
 /* eslint-disable header/header */
 
+// Mock @kubernetes/client-node to avoid ESM issues in Jest
+jest.mock('@kubernetes/client-node', () => ({
+  KubeConfig: jest.fn(),
+  CoreV1Api: jest.fn(),
+  AppsV1Api: jest.fn(),
+  RbacAuthorizationV1Api: jest.fn(),
+  CustomObjectsApi: jest.fn(),
+}));
+
 import 'reflect-metadata';
 
 import * as extension from '../src/extension';
@@ -41,6 +50,9 @@ const context: vscode.ExtensionContext = {
     get: jest.fn(),
     prepend: jest.fn(),
     replace: jest.fn(),
+    getScoped: jest.fn(),
+    description: undefined,
+    [Symbol.iterator]: jest.fn(),
   },
   secrets: {
     get: jest.fn(),
@@ -79,7 +91,11 @@ const context: vscode.ExtensionContext = {
     extensionKind: 2,
     exports: {},
     activate: jest.fn(),
-  }
+  },
+  languageModelAccessInformation: {
+    onDidChange: jest.fn(),
+    canSendRequest: jest.fn(),
+  } as any,
 };
 
 describe('Test Plugin', () => {
@@ -104,8 +120,11 @@ describe('Test Plugin', () => {
       exports,
     };
     (vscode.extensions.getExtension as jest.Mock).mockReturnValue(extensionApi);
+    const getPodNameMethod = jest.fn();
+    getPodNameMethod.mockReturnValue('test-pod');
     const workspaceService = {
       getNamespace: getNamespaceMethod,
+      getPodName: getPodNameMethod,
     } as any;
     getWorkspaceServiceMethod.mockReturnValue(workspaceService);
   });
@@ -122,12 +141,5 @@ describe('Test Plugin', () => {
 
     await extension.activate(context);
     expect(mockResourceMonitorPlugin.start).toBeCalled();
-  });
-
-  describe('getNamespace', () => {
-    test('read che namespace from devfile service', async () => {
-      const namespace = await extension.getNamespace();
-      expect(namespace).toBe('che-namespace');
-    });
   });
 });

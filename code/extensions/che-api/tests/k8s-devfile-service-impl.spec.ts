@@ -10,9 +10,59 @@
  ***********************************************************************/
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Mock vscode module FIRST, before any imports
+jest.mock('vscode', () => ({
+  window: {
+    showErrorMessage: jest.fn(),
+    showWarningMessage: jest.fn(),
+    showInformationMessage: jest.fn(),
+    createOutputChannel: jest.fn(() => ({
+      appendLine: jest.fn(),
+      append: jest.fn(),
+      show: jest.fn(),
+      dispose: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      trace: jest.fn(),
+    })),
+  },
+  Uri: {
+    parse: jest.fn(),
+  },
+}), { virtual: true });
+
+// Mock fs-extra readFile method
+jest.mock('fs-extra', () => {
+  const mockReadFile = jest.fn();
+  return {
+    ...jest.requireActual('fs-extra'),
+    readFile: mockReadFile,
+    __mockReadFile: mockReadFile, // Export for test access
+  };
+});
+
+// Mock @kubernetes/client-node
+jest.mock('@kubernetes/client-node', () => {
+  return {
+    __esModule: true,
+    KubeConfig: jest.fn().mockImplementation(() => {
+      return {
+        loadFromCluster: jest.fn(),
+        loadFromDefault: jest.fn(),
+        makeApiClient: jest.fn(),
+      };
+    }),
+    CoreV1Api: jest.fn(),
+    CustomObjectsApi: jest.fn(),
+    V1ConfigMap: class {},
+    V1Pod: class {},
+    V1PodList: class {},
+  };
+});
+
 import 'reflect-metadata';
 
-import * as fs from 'fs-extra';
 import * as jsYaml from 'js-yaml';
 import * as path from 'path';
 
@@ -21,6 +71,9 @@ import { K8SServiceImpl } from '../src/impl/k8s-service-impl';
 import { K8sDevWorkspaceEnvVariables } from '../src/impl/k8s-devworkspace-env-variables';
 import { K8sDevfileServiceImpl } from '../src/impl/k8s-devfile-service-impl';
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateComponents, V1alpha2DevWorkspaceSpecTemplateProjects } from '@devfile/api';
+
+// Get the mock from the mocked module
+const mockReadFile = (require('fs-extra') as any).__mockReadFile;
 
 describe('Test K8sDevfileServiceImpl', () => {
   let container: Container;
@@ -59,9 +112,9 @@ describe('Test K8sDevfileServiceImpl', () => {
 
   test('get', async () => {
     const flattenedDevfilePath = path.resolve(__dirname, '_data', 'flattened-devfile.yaml');
-    const flattenedDevfileContent = await fs.readFile(flattenedDevfilePath, 'utf-8');
-    const readFileSpy = jest.spyOn(fs, 'readFile') as jest.Mock;
-    readFileSpy.mockReturnValue(flattenedDevfileContent);
+    const actualFs = jest.requireActual('fs-extra');
+    const flattenedDevfileContent = await actualFs.readFile(flattenedDevfilePath, 'utf-8');
+    mockReadFile.mockResolvedValue(flattenedDevfileContent);
 
     const devfile = await k8sDevfileServiceImpl.get();
     expect(devfile).toBeDefined();
@@ -99,9 +152,9 @@ describe('Test K8sDevfileServiceImpl', () => {
 
   test('getRaw', async () => {
     const flattenedDevfilePath = path.resolve(__dirname, '_data', 'flattened-devfile.yaml');
-    const flattenedDevfileContent = await fs.readFile(flattenedDevfilePath, 'utf-8');
-    const readFileSpy = jest.spyOn(fs, 'readFile') as jest.Mock;
-    readFileSpy.mockReturnValue(flattenedDevfileContent);
+    const actualFs = jest.requireActual('fs-extra');
+    const flattenedDevfileContent = await actualFs.readFile(flattenedDevfilePath, 'utf-8');
+    mockReadFile.mockResolvedValue(flattenedDevfileContent);
 
     const devfileYaml = await k8sDevfileServiceImpl.getRaw();
     expect(devfileYaml).toBeDefined();

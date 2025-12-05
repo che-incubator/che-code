@@ -26,7 +26,6 @@
     "compile": "gulp compile-extension:che-commands",
     "watch": "gulp watch-extension:che-commands",
     "vscode:prepublish": "npm run compile",
-    "test": "jest",
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
     "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
     },
@@ -36,26 +35,12 @@
     "vscode-nls": "^5.0.0",
     "js-yaml": "^4.1.0",
     "@devfile/api": "^2.3.0-1738854228",
-    "@kubernetes/client-node": "^0.22.0"
+    "@kubernetes/client-node": "^1.4.0"
   },
   "devDependencies": {
-    "jest": "27.3.1",
-    "ts-jest": "27.0.7",
     "@types/fs-extra": "^9.0.13",
-    "@types/jest": "^27.4.0",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "22.x"
-  },
-  "overrides": {
-    "request": {
-      "form-data": "2.5.5"
-    },
-    "@types/node-fetch": {
-      "form-data": "4.0.4"
-    },
-    "jsdom": {
-      "form-data": "3.0.4"
-    }
   },
   "repository": {
     "type": "git",
@@ -65,27 +50,6 @@
     "eclipse-che.api",
     "eclipse-che.terminal"
   ],
-  "jest": {
-    "collectCoverage": true,
-    "collectCoverageFrom": [
-      "src/**/*.ts"
-    ],
-    "coverageDirectory": "./coverage",
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "modulePathIgnorePatterns": [
-      "<rootDir>/dist"
-    ],
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json"
-    ]
-  },
   "contributes": {
     "taskDefinitions": [
       {

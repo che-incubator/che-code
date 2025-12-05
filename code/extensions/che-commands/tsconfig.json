@@ -6,7 +6,6 @@
 		"emitDecoratorMetadata": true,
 		"types": [
 			"node",
-			"jest",
 			"reflect-metadata"
 		]
 	},
