@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2021-2024 Red Hat, Inc.
+# Copyright (c) 2021-2025 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -22,5 +22,6 @@ libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
 if [ -n "$libc" ]; then
     /checode-linux-musl/node /checode-linux-musl/out/server-main.js --host "${CODE_HOST}" --port 3100
 else
+    export LD_LIBRARY_PATH="/checode-linux-libc/ubi8/ld_libs:$LD_LIBRARY_PATH"
     /checode-linux-libc/ubi8/node /checode-linux-libc/ubi8/out/server-main.js --host "${CODE_HOST}" --port 3100
 fi
