@@ -35,6 +35,11 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 4. `export DOCKER_BUILDKIT=1`
 5. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
+## Running Che Code image locally
+- `podman run --rm -it -p 3100:3100 -e CODE_HOST=0.0.0.0 quay.io/che-incubator/che-code:next`
+- It's expected that Che extensions do not work locally
+- The default terminal is available only when the Che extensions are disabled (via the Extensions panel).
+
 ## Developing with Eclipse Che®
 
 This project includes [Devfile](devfile.yaml) that simplifies developing Che-Code in Eclipse Che.
