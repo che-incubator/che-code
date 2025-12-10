@@ -29,11 +29,10 @@ Upstream `Code-OSS` is stored using Git [subtree](https://git-scm.com/book/en/v2
 
 ## Image build
 
-1. `docker build -f build/dockerfiles/linux-musl.Dockerfile -t linux-musl .`
-2. `docker build -f build/dockerfiles/linux-libc-ubi8.Dockerfile -t linux-libc-ubi8 .`
-3. `docker build -f build/dockerfiles/linux-libc-ubi9.Dockerfile -t linux-libc-ubi9 .`
-4. `export DOCKER_BUILDKIT=1`
-5. `docker build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
+1. `podman build -f build/dockerfiles/linux-musl.Dockerfile -t linux-musl .`
+2. `podman build -f build/dockerfiles/linux-libc-ubi8.Dockerfile -t linux-libc-ubi8 .`
+3. `podman build -f build/dockerfiles/linux-libc-ubi9.Dockerfile -t linux-libc-ubi9 .`
+4. `podman build -f build/dockerfiles/assembly.Dockerfile -t che-code .`
 
 ## Developing with Eclipse Che®
 
