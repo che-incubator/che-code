@@ -13,6 +13,7 @@ import { memoize } from '../../base/common/decorators.js';
 import { URI } from '../../base/common/uri.js';
 import { joinPath } from '../../base/common/resources.js';
 import { join } from '../../base/common/path.js';
+import { getPolicyFile } from './che/serverServices.js';
 
 export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
 
@@ -240,4 +241,8 @@ export class ServerEnvironmentService extends NativeEnvironmentService implement
 	@memoize
 	get mcpResource(): URI { return joinPath(URI.file(join(this.userDataPath, 'User')), 'mcp.json'); }
 	override get args(): ServerParsedArgs { return super.args as ServerParsedArgs; }
+	@memoize
+	override get policyFile(): URI | undefined {
+		return getPolicyFile() || super.policyFile;
+	}
 }
