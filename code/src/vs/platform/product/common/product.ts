@@ -57,6 +57,7 @@ else {
 	// Built time configuration (do NOT modify)
 	// eslint-disable-next-line local/code-no-dangerous-type-assertions
 	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as unknown as IProductConfiguration;
+	product = loadFromFileSystem();
 
 	// Running out of sources
 	if (Object.keys(product).length === 0) {
