@@ -2,14 +2,11 @@
     "dependencies": {
         "ws": "8.2.3",
         "js-yaml": "^4.1.0",
-        "@kubernetes/client-node": "^0.22.0"
+        "@kubernetes/client-node": "^1.4.0"
     },
     "overrides": {
         "prebuild-install": {
             "tar-fs": "2.1.4"
-        },
-        "request": {
-            "form-data": "2.5.5"
         }
     }
 }

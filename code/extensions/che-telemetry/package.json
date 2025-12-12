@@ -26,7 +26,6 @@
         "compile": "gulp compile-extension:che-telemetry",
         "watch": "gulp watch-extension:che-telemetry",
         "vscode:prepublish": "npm run compile",
-        "test": "jest",
         "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\""
     },
     "repository": {

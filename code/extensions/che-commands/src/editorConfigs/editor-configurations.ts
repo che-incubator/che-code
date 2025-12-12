@@ -74,7 +74,10 @@ export class EditorConfigurations {
             k8sConfig.loadFromCluster();
             const coreV1API = k8sConfig.makeApiClient(k8s.CoreV1Api);
 
-            const { body } = await coreV1API.readNamespacedConfigMap(CONFIGMAP_NAME, process.env.DEVWORKSPACE_NAMESPACE!);
+            const body = await coreV1API.readNamespacedConfigMap({
+                name: CONFIGMAP_NAME,
+                namespace: process.env.DEVWORKSPACE_NAMESPACE!,
+            });
             return body;
         } catch (error) {
             this.outputChannel.appendLine(`[EditorConfigsHandler] Can not get Configmap with editor configurations: ${error.message},

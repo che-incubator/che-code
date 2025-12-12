@@ -50,23 +50,19 @@ export class K8sDevfileServiceImpl implements DevfileService {
     // get workspace pod
     const k8sCoreV1Api = this.k8SService.makeApiClient(k8s.CoreV1Api);
     const labelSelector = `controller.devfile.io/devworkspace_id=${this.env.getWorkspaceId()}`;
-    const { body } = await k8sCoreV1Api.listNamespacedPod(
-      this.env.getWorkspaceNamespace(),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      labelSelector
-    );
+    const podList = await k8sCoreV1Api.listNamespacedPod({
+      namespace: this.env.getWorkspaceNamespace(),
+      labelSelector: labelSelector,
+    });
 
     // ensure there is only one item
-    if (body.items.length !== 1) {
+    if (podList.items.length !== 1) {
       throw new Error(
         `Got invalid items when searching for objects with label selector ${labelSelector}. Expected only one resource`
       );
     }
 
-    return body.items[0];
+    return podList.items[0];
   }
 
 
@@ -83,22 +79,15 @@ export class K8sDevfileServiceImpl implements DevfileService {
         value: devfile,
       },
     ];
-    const options = {
-      headers: {
-        'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH,
-      },
-    };
-    await customObjectsApi.patchNamespacedCustomObject(
-      group,
-      version,
-      this.env.getWorkspaceNamespace(),
-      'devworkspaces',
-      this.env.getWorkspaceName(),
-      patch,
-      undefined,
-      undefined,
-      undefined,
-      options
-    );
+
+    // In v1.4.0, content-type header is automatically set for patch operations
+    await customObjectsApi.patchNamespacedCustomObject({
+      group: group,
+      version: version,
+      namespace: this.env.getWorkspaceNamespace(),
+      plural: 'devworkspaces',
+      name: this.env.getWorkspaceName(),
+      body: patch,
+    });
   }
 }

@@ -9,6 +9,54 @@
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
+// Mock vscode module FIRST, before any imports
+jest.mock('vscode', () => ({
+  window: {
+    showErrorMessage: jest.fn(),
+    showWarningMessage: jest.fn(),
+    showInformationMessage: jest.fn(),
+    createOutputChannel: jest.fn(() => ({
+      appendLine: jest.fn(),
+      append: jest.fn(),
+      show: jest.fn(),
+      dispose: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      trace: jest.fn(),
+    })),
+  },
+  Uri: {
+    parse: jest.fn(),
+  },
+}), { virtual: true });
+
+// Mock os.homedir before tests run
+const mockHomedir = jest.fn();
+jest.mock('os', () => ({
+  ...jest.requireActual('os'),
+  homedir: mockHomedir,
+}));
+
+// Mock @kubernetes/client-node
+jest.mock('@kubernetes/client-node', () => {
+  return {
+    __esModule: true,
+    KubeConfig: jest.fn().mockImplementation(() => {
+      return {
+        loadFromCluster: jest.fn(),
+        loadFromDefault: jest.fn(),
+        makeApiClient: jest.fn(),
+      };
+    }),
+    CoreV1Api: jest.fn(),
+    CustomObjectsApi: jest.fn(),
+    V1ConfigMap: class {},
+    V1Pod: class {},
+    V1PodList: class {},
+  };
+});
+
 import 'reflect-metadata';
 
 import * as fs from 'fs-extra';
@@ -16,8 +64,9 @@ import * as path from 'path';
 
 import { Container } from 'inversify';
 import { GithubServiceImpl } from '../src/impl/github-service-impl';
-import * as os from 'os';
 import { GithubUser } from '../src/api/github-service';
+import { Logger } from '../src/logger';
+import { K8SServiceImpl } from '../src/impl/k8s-service-impl';
 
 describe('Test GithubServiceImpl', () => {
   let container: Container;
@@ -29,14 +78,20 @@ describe('Test GithubServiceImpl', () => {
     get: axiosGetMock,
   } as any;
 
+  const k8sServiceMock = {
+    makeApiClient: jest.fn(),
+  } as any;
+
   beforeEach(async () => {
     jest.restoreAllMocks();
     jest.resetAllMocks();
     container = new Container();
     container.bind(GithubServiceImpl).toSelf().inSingletonScope();
+    container.bind(Logger).toSelf().inSingletonScope();
+    container.bind(K8SServiceImpl).toConstantValue(k8sServiceMock);
     container.bind(Symbol.for('AxiosInstance')).toConstantValue(axiosMock);
 
-    jest.spyOn(os, 'homedir').mockReturnValue(path.resolve(__dirname, '_data'));
+    mockHomedir.mockReturnValue(path.resolve(__dirname, '_data'));
     githubServiceImpl = container.get(GithubServiceImpl);
   });
 
