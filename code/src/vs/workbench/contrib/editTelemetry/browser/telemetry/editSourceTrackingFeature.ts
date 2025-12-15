@@ -61,7 +61,7 @@ export class EditTrackingFeature extends Disposable {
 		}
 
 		const copilotInstalled = getExtensionInfoObs('GitHub.copilot', this._extensionService);
-		const copilotChatInstalled = getExtensionInfoObs('GitHub.copilot-chat', this._extensionService);
+		const copilotChatInstalled = getExtensionInfoObs('github.copilot-chat', this._extensionService);
 
 		const shouldSendDetails = derived(reader => editSourceDetailsEnabled.read(reader) || !!copilotInstalled.read(reader) || !!copilotChatInstalled.read(reader));
 

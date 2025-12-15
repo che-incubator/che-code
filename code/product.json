@@ -99,6 +99,61 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
+		],
+		"github.copilot-chat": [
+		"activeComment",
+		"aiRelatedInformation",
+		"aiSettingsSearch",
+		"aiTextSearchProvider",
+		"authLearnMore",
+		"chatBinaryReferenceData",
+		"chatEditing",
+		"chatParticipantAdditions",
+		"chatParticipantPrivate",
+		"chatProvider",
+		"chatReadonlyPromptReference",
+		"chatReferenceBinaryData",
+		"chatReferenceDiagnostic",
+		"chatSessionsProvider",
+		"chatStatusItem",
+		"codeActionAI",
+		"commentReveal",
+		"contribCommentThreadAdditionalMenu",
+		"contribCommentsViewThreadMenus",
+		"contribDebugCreateConfiguration",
+		"contribEditorContentMenu",
+		"contribLanguageModelToolSets",
+		"contribSourceControlInputBoxMenu",
+		"dataChannels",
+		"defaultChatParticipant",
+		"devDeviceId",
+		"documentFiltersExclusive",
+		"embeddings",
+		"extensionsAny",
+		"findFiles2",
+		"findTextInFiles",
+		"findTextInFiles2",
+		"inlineCompletionsAdditions",
+		"interactive",
+		"languageModelCapabilities",
+		"languageModelSystem",
+		"languageModelThinkingPart",
+		"languageModelToolResultAudience",
+		"mappedEditsProvider",
+		"newSymbolNamesProvider",
+		"readonlyMessage",
+		"resolvers",
+		"scmInputBoxValueProvider",
+		"taskExecutionTerminal",
+		"taskProblemMatcherStatus",
+		"terminalDataWriteEvent",
+		"terminalExecuteCommandEvent",
+		"terminalQuickFixProvider",
+		"terminalSelection",
+		"testObserver",
+		"textDocumentChangeReason",
+		"textSearchProvider",
+		"textSearchProvider2"
 		]
 	},
 	"sendASmile": {
@@ -111,7 +166,7 @@
 	},
 	"defaultChatAgent": {
 		"extensionId": "GitHub.copilot",
-		"chatExtensionId": "GitHub.copilot-chat",
+		"chatExtensionId": "github.copilot-chat",
 		"documentationUrl": "https://aka.ms/github-copilot-overview",
 		"termsStatementUrl": "https://aka.ms/github-copilot-terms-statement",
 		"privacyStatementUrl": "https://aka.ms/github-copilot-privacy-statement",
@@ -168,5 +223,10 @@
 		"completionsAdvancedSetting": "github.copilot.advanced",
 		"completionsEnablementSetting": "github.copilot.enable",
 		"nextEditSuggestionsSetting": "github.copilot.nextEditSuggestions.enabled"
+	},
+	"trustedExtensionAuthAccess": {
+		"github": [
+			"github.copilot-chat"
+		]
 	}
 }
