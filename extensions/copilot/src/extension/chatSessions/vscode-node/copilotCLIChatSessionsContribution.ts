@@ -1009,7 +1009,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				});
 		}
 
-		stream.markdown(vscode.l10n.t('{0} has begun working on your request. Follow its progress in the Agents View.', 'Background Agent'));
+		stream.markdown(vscode.l10n.t('A background agent has begun working on your request. Follow its progress in the sessions list.'));
 
 		return {};
 	}
@@ -1036,7 +1036,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		session.addUserMessage(userPrompt);
 
 		// Add assistant message event with embedded PR metadata
-		const assistantMessage = `Cloud Agent has begun working on your request. Follow its progress in the associated chat and pull request.\n<pr_metadata uri="${prInfo.uri.toString()}" title="${escapeXml(prInfo.title)}" description="${escapeXml(prInfo.description)}" author="${escapeXml(prInfo.author)}" linkTag="${escapeXml(prInfo.linkTag)}"/>`;
+		const assistantMessage = `A cloud agent has begun working on your request. Follow its progress in the associated chat and pull request.\n<pr_metadata uri="${prInfo.uri.toString()}" title="${escapeXml(prInfo.title)}" description="${escapeXml(prInfo.description)}" author="${escapeXml(prInfo.author)}" linkTag="${escapeXml(prInfo.linkTag)}"/>`;
 		session.addUserAssistantMessage(assistantMessage);
 	}
 }
