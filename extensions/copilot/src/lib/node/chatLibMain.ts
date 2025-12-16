@@ -628,6 +628,7 @@ export type IGetInlineCompletionsOptions = Exclude<Partial<GetGhostTextOptions>,
 export interface IInlineCompletionsProvider {
 	updateTreatmentVariables(variables: Record<string, boolean | number | string>): void;
 	getInlineCompletions(textDocument: ITextDocument, position: Position, token?: CancellationToken, options?: IGetInlineCompletionsOptions): Promise<CopilotCompletion[] | undefined>;
+	inlineCompletionShown(completionId: string): Promise<void>;
 	dispose(): void;
 }
 
@@ -643,6 +644,7 @@ class InlineCompletionsProvider extends Disposable implements IInlineCompletions
 	constructor(
 		@IInstantiationService private _insta: IInstantiationService,
 		@IExperimentationService private readonly _expService: IExperimentationService,
+		@ICompletionsSpeculativeRequestCache private readonly _speculativeRequestCache: ICompletionsSpeculativeRequestCache,
 
 	) {
 		super();
@@ -658,6 +660,10 @@ class InlineCompletionsProvider extends Disposable implements IInlineCompletions
 
 	async getInlineCompletions(textDocument: ITextDocument, position: Position, token?: CancellationToken, options?: IGetInlineCompletionsOptions): Promise<CopilotCompletion[] | undefined> {
 		return await this.ghostText.getInlineCompletions(textDocument, position, token, options);
+	}
+
+	async inlineCompletionShown(completionId: string): Promise<void> {
+		return await this._speculativeRequestCache.request(completionId);
 	}
 }
 
