@@ -153,6 +153,9 @@
     "keytar": "workspace:*",
     "vscode-tas-client": "^0.1.84"
   },
+  "overrides": {
+    "jws": "^3.2.3"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
