@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { IFileSystemService } from '../../../../platform/filesystem/common/fileSystemService';
 import { FileType } from '../../../../platform/filesystem/common/fileTypes';
 import { MockFileSystemService } from '../../../../platform/filesystem/node/test/mockFileSystemService';
-import { CustomAgentDetails, CustomAgentListItem, CustomAgentListOptions, IOctoKitService } from '../../../../platform/github/common/githubService';
+import { CustomAgentDetails, CustomAgentListItem, CustomAgentListOptions, IOctoKitService, PermissiveAuthRequiredError } from '../../../../platform/github/common/githubService';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { DisposableStore } from '../../../../util/vs/base/common/lifecycle';
 import { URI } from '../../../../util/vs/base/common/uri';
@@ -44,11 +44,14 @@ class MockOctoKitService implements IOctoKitService {
 	getUserOrganizations = async () => this.userOrganizations;
 	getOrganizationRepositories = async (org: string) => [org === 'testorg' ? 'testrepo' : 'repo'];
 
-	async getCustomAgents(owner: string, repo: string, options?: CustomAgentListOptions): Promise<CustomAgentListItem[]> {
+	async getCustomAgents(owner: string, repo: string, options: CustomAgentListOptions, authOptions: { createIfNone?: boolean }): Promise<CustomAgentListItem[]> {
+		if (!(await this.getCurrentAuthedUser())) {
+			throw new PermissiveAuthRequiredError();
+		}
 		return this.customAgents;
 	}
 
-	async getCustomAgentDetails(owner: string, repo: string, agentName: string, version?: string): Promise<CustomAgentDetails | undefined> {
+	async getCustomAgentDetails(owner: string, repo: string, agentName: string, version: string, authOptions: { createIfNone?: boolean }): Promise<CustomAgentDetails | undefined> {
 		return this.agentDetails.get(agentName);
 	}
 
@@ -896,7 +899,7 @@ Test prompt
 				// Sign out user after first call
 				mockOctoKitService.getCurrentAuthedUser = async () => undefined as any;
 			}
-			return originalGetCustomAgents.call(mockOctoKitService, owner, repo, options);
+			return originalGetCustomAgents.call(mockOctoKitService, owner, repo, options, { createIfNone: false });
 		};
 
 		await provider.provideCustomAgents({}, {} as any);
