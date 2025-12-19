@@ -267,6 +267,8 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 	public get onDidChangeContentProviderSchemes() { return this._onDidChangeContentProviderSchemes.event; }
 	private readonly _onDidChangeSessionOptions = this._register(new Emitter<URI>());
 	public get onDidChangeSessionOptions() { return this._onDidChangeSessionOptions.event; }
+	private readonly _onDidChangeOptionGroups = this._register(new Emitter<string>());
+	public get onDidChangeOptionGroups() { return this._onDidChangeOptionGroups.event; }
 
 	private readonly inProgressMap: Map<string, number> = new Map();
 	private readonly _sessionTypeOptions: Map<string, IChatSessionProviderOptionGroup[]> = new Map();
@@ -347,7 +349,7 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 	private async updateInProgressStatus(chatSessionType: string): Promise<void> {
 		try {
 			const items = await this.getChatSessionItems(chatSessionType, CancellationToken.None);
-			const inProgress = items.filter(item => item.status === ChatSessionStatus.InProgress);
+			const inProgress = items.filter(item => item.status && this.isChatSessionInProgressStatus(item.status));
 			this.reportInProgress(chatSessionType, inProgress.length);
 		} catch (error) {
 			this._logService.warn(`Failed to update in-progress status for chat session type '${chatSessionType}':`, error);
@@ -913,9 +915,11 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 					}
 				});
 				addedValues.forEach((added) => {
-					const changedSignal = added.lastRequestObs.map(last => last?.response && observableSignalFromEvent('chatSessions.modelChangeListener', last.response.onDidChange));
+					const requestChangeListener = added.lastRequestObs.map(last => last?.response && observableSignalFromEvent('chatSessions.modelRequestChangeListener', last.response.onDidChange));
+					const modelChangeListener = observableSignalFromEvent('chatSessions.modelChangeListener', added.onDidChange);
 					listeners.set(added.sessionResource, autorun(reader => {
-						changedSignal.read(reader)?.read(reader);
+						requestChangeListener.read(reader)?.read(reader);
+						modelChangeListener.read(reader);
 						onChange();
 					}));
 				});
@@ -1057,6 +1061,7 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 		} else {
 			this._sessionTypeOptions.delete(chatSessionType);
 		}
+		this._onDidChangeOptionGroups.fire(chatSessionType);
 	}
 
 	/**
@@ -1139,6 +1144,10 @@ export class ChatSessionsService extends Disposable implements IChatSessionsServ
 
 	public getContentProviderSchemes(): string[] {
 		return Array.from(this._contentProviders.keys());
+	}
+
+	public isChatSessionInProgressStatus(state: ChatSessionStatus): boolean {
+		return state === ChatSessionStatus.InProgress || state === ChatSessionStatus.NeedsInput;
 	}
 }
 

@@ -384,9 +384,9 @@ configurationRegistry.registerConfiguration({
 			enumDescriptions: [
 				nls.localize('chat.viewSessions.orientation.auto', "Automatically determine the orientation based on available space."),
 				nls.localize('chat.viewSessions.orientation.stacked', "Display sessions vertically stacked unless a chat session is visible."),
-				nls.localize('chat.viewSessions.orientation.sideBySide', "Display sessions side by side if space is sufficient.")
+				nls.localize('chat.viewSessions.orientation.sideBySide', "Display sessions side by side if space is sufficient, otherwise stacked.")
 			],
-			default: 'auto',
+			default: 'sideBySide',
 			description: nls.localize('chat.viewSessions.orientation', "Controls the orientation of the chat agent sessions view when it is shown alongside the chat."),
 			tags: ['preview', 'experimental'],
 			experiment: {
@@ -574,8 +574,7 @@ configurationRegistry.registerConfiguration({
 			],
 			description: nls.localize('chat.statusWidget.enabled.description', "Controls which user type should see the status widget in new chat sessions when quota is exceeded."),
 			default: undefined,
-			tags: ['experimental'],
-			included: false,
+			tags: ['experimental', 'advanced'],
 			experiment: {
 				mode: 'auto'
 			}
