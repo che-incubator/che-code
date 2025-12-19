@@ -6,8 +6,8 @@
     "prepare": "cd code && npm install && npm run download-builtin-extensions",
     "watch": "cd code && npm run watch",
     "server": "cd code && VSCODE_DEV=1 node out/server-main.js --host 0.0.0.0 --without-connection-token",
-    "build": "cd code && VSCODE_MANGLE_WORKERS=2 node --max-old-space-size=4096 ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64",
-    "build:min": "cd code && VSCODE_MANGLE_WORKERS=2 node --max-old-space-size=4096 ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64-min",
+    "build": "cd code && VSCODE_MANGLE_WORKERS=2 node --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64",
+    "build:min": "cd code && VSCODE_MANGLE_WORKERS=2 node --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js vscode-reh-web-linux-x64-min",
     "rebuild-native-modules": "cd code && npm rebuild"
   },
   "license": "EPL-2.0"
