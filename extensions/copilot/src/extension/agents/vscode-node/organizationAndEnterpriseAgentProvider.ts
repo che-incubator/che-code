@@ -144,6 +144,9 @@ export class OrganizationAndEnterpriseAgentProvider extends Disposable implement
 			const agentsByOrg = new Map<string, Map<string, CustomAgentListItem>>();
 			let hadAnyFetchErrors = false;
 
+			// Track unique agents globally to dedupe enterprise agents that appear across multiple orgs
+			const seenAgents = new Map<string, CustomAgentListItem>();
+
 			for (const org of organizations) {
 				try {
 					const agentsForOrg = new Map<string, CustomAgentListItem>();
@@ -160,9 +163,19 @@ export class OrganizationAndEnterpriseAgentProvider extends Disposable implement
 					const repoName = repos[0];
 					const agents = await this.octoKitService.getCustomAgents(org, repoName, internalOptions, { createIfNone: false });
 					for (const agent of agents) {
+						// Create unique key to identify agents (enterprise agents may appear in multiple orgs)
+						// Note: version is not included, so different versions are deduplicated
+						const agentKey = `${agent.repo_owner}/${agent.repo_name}/${agent.name}`;
+
+						// Skip if we've already seen this agent (dedupe enterprise agents)
+						if (seenAgents.has(agentKey)) {
+							continue;
+						}
+
+						seenAgents.set(agentKey, agent);
 						agentsForOrg.set(agent.name, agent);
 					}
-					this.logService.trace(`[OrganizationAndEnterpriseAgentProvider] Fetched ${agents.length} agents from ${org} using repo ${repoName}`);
+					this.logService.trace(`[OrganizationAndEnterpriseAgentProvider] Fetched ${agents.length} agents from ${org} using repo ${repoName} (${agentsForOrg.size} added after deduplication)`);
 				} catch (error) {
 					if (error instanceof PermissiveAuthRequiredError) {
 						this.logService.trace('[OrganizationAndEnterpriseAgentProvider] User signed out during fetch, aborting');
