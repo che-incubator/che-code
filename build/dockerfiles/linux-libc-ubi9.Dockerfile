@@ -113,8 +113,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
       yum install --nobest -y procps \
         https://rpmfind.net/linux/epel/9/Everything/x86_64/Packages/e/epel-release-9-10.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
+        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-24.el9.noarch.rpm \
+        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-24.el9.noarch.rpm; \
     fi
 
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
