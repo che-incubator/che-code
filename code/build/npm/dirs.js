@@ -18,6 +18,7 @@ const dirs = [
 	'extensions/che-resource-monitor',
 	'extensions/che-terminal',
 	'extensions/che-github-authentication',
+	'extensions/che-keybindings',
 	'extensions/configuration-editing',
 	'extensions/css-language-features',
 	'extensions/css-language-features/server',
