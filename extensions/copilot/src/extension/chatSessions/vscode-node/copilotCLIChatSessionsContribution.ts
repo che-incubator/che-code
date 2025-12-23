@@ -251,6 +251,9 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 export class CopilotCLIChatSessionContentProvider extends Disposable implements vscode.ChatSessionContentProvider {
 	private readonly _onDidChangeChatSessionOptions = this._register(new Emitter<vscode.ChatSessionOptionChangeEvent>());
 	readonly onDidChangeChatSessionOptions = this._onDidChangeChatSessionOptions.event;
+	private readonly _onDidChangeChatSessionProviderOptions = this._register(new Emitter<void>());
+	readonly onDidChangeChatSessionProviderOptions = this._onDidChangeChatSessionProviderOptions.event;
+	private worktreeOptionShown: boolean = false;
 	constructor(
 		@ICopilotCLIModels private readonly copilotCLIModels: ICopilotCLIModels,
 		@ICopilotCLIAgents private readonly copilotCLIAgents: ICopilotCLIAgents,
@@ -258,6 +261,11 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		@ICopilotCLIWorktreeManagerService private readonly copilotCLIWorktreeManagerService: ICopilotCLIWorktreeManagerService,
 	) {
 		super();
+		this._register(this.copilotCLIWorktreeManagerService.onDidSupportedChanged(() => {
+			if (!this.worktreeOptionShown && this.copilotCLIWorktreeManagerService.isSupported()) {
+				this._onDidChangeChatSessionProviderOptions.fire();
+			}
+		}));
 	}
 
 	public notifySessionOptionsChange(resource: vscode.Uri, updates: ReadonlyArray<{ optionId: string; value: string | vscode.ChatSessionProviderOptionItem }>): void {
@@ -347,6 +355,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			]
 		};
 		if (this.copilotCLIWorktreeManagerService.isSupported()) {
+			this.worktreeOptionShown = true;
 			options.optionGroups.push({
 				id: ISOLATION_OPTION_ID,
 				name: vscode.l10n.t('Isolation'),
