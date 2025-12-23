@@ -45,7 +45,7 @@ const ISOLATION_OPTION_ID = 'isolation';
 const disabledIsolation: Readonly<vscode.ChatSessionProviderOptionItem> = {
 	id: 'disabled',
 	name: 'Workspace',
-	description: vscode.l10n.t('Use the current workspace for this session')
+	description: l10n.t('Use the current workspace for this session')
 };
 const disabledIsolationLocked: Readonly<vscode.ChatSessionProviderOptionItem> = { ...disabledIsolation, locked: true };
 
@@ -53,7 +53,7 @@ function getLockedIsolationOption(name: string): vscode.ChatSessionProviderOptio
 	return {
 		id: 'enabled',
 		name,
-		description: vscode.l10n.t('Using worktree for this session'),
+		description: l10n.t('Using worktree for this session'),
 		locked: true,
 		icon: new vscode.ThemeIcon('worktree')
 	};
@@ -236,7 +236,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 
 	public async createCopilotCLITerminal(): Promise<void> {
 		// TODO@rebornix should be set by CLI
-		const terminalName = process.env.COPILOTCLI_TERMINAL_TITLE || vscode.l10n.t('Background Agent');
+		const terminalName = process.env.COPILOTCLI_TERMINAL_TITLE || l10n.t('Background Agent');
 		await this.terminalIntegration.openTerminal(terminalName);
 	}
 
@@ -327,7 +327,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 
 	async provideChatSessionProviderOptions(): Promise<vscode.ChatSessionProviderOptions> {
 		const isolationItems = [
-			{ id: 'enabled', name: 'Worktree', description: vscode.l10n.t('Use a git worktree for this session') },
+			{ id: 'enabled', name: 'Worktree', description: l10n.t('Use a git worktree for this session') },
 			disabledIsolation
 		];
 
@@ -348,8 +348,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			optionGroups: [
 				{
 					id: MODELS_OPTION_ID,
-					name: vscode.l10n.t('Model'),
-					description: vscode.l10n.t('Pick Model'),
+					name: l10n.t('Model'),
+					description: l10n.t('Pick Model'),
 					items: modelItems
 				}
 			]
@@ -358,16 +358,16 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			this.worktreeOptionShown = true;
 			options.optionGroups.push({
 				id: ISOLATION_OPTION_ID,
-				name: vscode.l10n.t('Isolation'),
-				description: vscode.l10n.t('Choose Worktree or Workspace for this session'),
+				name: l10n.t('Isolation'),
+				description: l10n.t('Choose Worktree or Workspace for this session'),
 				items: isolationItems
 			});
 		}
 		if (hasAgents) {
 			options.optionGroups.unshift({
 				id: AGENTS_OPTION_ID,
-				name: vscode.l10n.t('Agent'),
-				description: vscode.l10n.t('Set Agent'),
+				name: l10n.t('Agent'),
+				description: l10n.t('Set Agent'),
 				items: agentItems
 			});
 		}
@@ -393,12 +393,12 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 }
 
 const WAIT_FOR_NEW_SESSION_TO_GET_USED = 5 * 60 * 1000; // 5 minutes
+const CLI_MOVE_CHANGES = l10n.t('Move Changes');
+const CLI_COPY_CHANGES = l10n.t('Copy Changes');
+const CLI_SKIP_CHANGES = l10n.t('Skip Changes');
+const CLI_CANCEL = l10n.t('Cancel');
 
 export class CopilotCLIChatSessionParticipant extends Disposable {
-	private CLI_MOVE_CHANGES = vscode.l10n.t('Move Changes');
-	private CLI_COPY_CHANGES = vscode.l10n.t('Copy Changes');
-	private CLI_SKIP_CHANGES = vscode.l10n.t('Skip Changes');
-	private CLI_CANCEL = vscode.l10n.t('Cancel');
 	private readonly untitledSessionIdMapping = new Map<string, string>();
 	constructor(
 		private readonly contentProvider: CopilotCLIChatSessionContentProvider,
@@ -614,7 +614,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		this.sessionItemProvider.notifySessionsChange();
 
 		if (!session) {
-			stream.warning(vscode.l10n.t('Chat session not found.'));
+			stream.warning(l10n.t('Chat session not found.'));
 			return undefined;
 		}
 
@@ -665,7 +665,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 
 	private async handleDelegationToCloud(session: ICopilotCLISession, request: vscode.ChatRequest, context: vscode.ChatContext, stream: vscode.ChatResponseStream, token: vscode.CancellationToken) {
 		if (!this.cloudSessionProvider) {
-			stream.warning(vscode.l10n.t('No cloud agent available'));
+			stream.warning(l10n.t('No cloud agent available'));
 			return;
 		}
 
@@ -674,7 +674,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		const hasChanges = (currentRepository?.changes?.indexChanges && currentRepository.changes.indexChanges.length > 0);
 
 		if (hasChanges) {
-			stream.warning(vscode.l10n.t('You have uncommitted changes in your workspace. The cloud agent will start from the last committed state. Consider committing your changes first if you want to include them.'));
+			stream.warning(l10n.t('You have uncommitted changes in your workspace. The cloud agent will start from the last committed state. Consider committing your changes first if you want to include them.'));
 		}
 
 		const prompt = request.prompt.substring('/delegate'.length).trim();
@@ -702,7 +702,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 
 		if (!uncommittedChangesData.accepted || !uncommittedChangesData.metadata) {
-			stream.markdown(vscode.l10n.t('Cloud agent delegation request cancelled.'));
+			stream.markdown(l10n.t('Cloud agent delegation request cancelled.'));
 			return {};
 		}
 
@@ -725,12 +725,12 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		if (confirmationResults.length > 0) {
 			const uncommittedChangesData = confirmationResults.find(data => data.step === UncommittedChangesStep);
 			if (!uncommittedChangesData || !uncommittedChangesData.metadata) {
-				stream.warning(vscode.l10n.t('Invalid confirmation data.'));
+				stream.warning(l10n.t('Invalid confirmation data.'));
 				return {};
 			}
 			const selection = this.getConfirmationResult(request);
 			if (selection === 'cancel' || token.isCancellationRequested) {
-				stream.markdown(vscode.l10n.t('Background Agent delegation cancelled.'));
+				stream.markdown(l10n.t('Background Agent delegation cancelled.'));
 				return {};
 			}
 
@@ -753,19 +753,19 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		stream: vscode.ChatResponseStream,
 	): vscode.ChatResult | void {
 		const message =
-			vscode.l10n.t('Background Agent will work in an isolated worktree to implement your requested changes.')
+			l10n.t('Background Agent will work in an isolated worktree to implement your requested changes.')
 			+ '\n\n'
-			+ vscode.l10n.t('This workspace has uncommitted changes. Should these changes be included in the new worktree?');
+			+ l10n.t('This workspace has uncommitted changes. Should these changes be included in the new worktree?');
 
 		const buttons = [
-			this.CLI_COPY_CHANGES,
-			this.CLI_MOVE_CHANGES,
-			this.CLI_SKIP_CHANGES,
-			this.CLI_CANCEL
+			CLI_COPY_CHANGES,
+			CLI_MOVE_CHANGES,
+			CLI_SKIP_CHANGES,
+			CLI_CANCEL
 		];
 
 		stream.confirmation(
-			vscode.l10n.t('Delegate to Background Agent'),
+			l10n.t('Delegate to Background Agent'),
 			message,
 			{
 				step: UncommittedChangesStep,
@@ -784,11 +784,11 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 	private getConfirmationResult(request: vscode.ChatRequest): 'move' | 'copy' | 'skip' | 'cancel' {
 		const selection = (request.prompt?.split(':')[0] || '').trim().toUpperCase();
 		switch (selection) {
-			case this.CLI_MOVE_CHANGES.toUpperCase():
+			case CLI_MOVE_CHANGES.toUpperCase():
 				return 'move';
-			case this.CLI_COPY_CHANGES.toUpperCase():
+			case CLI_COPY_CHANGES.toUpperCase():
 				return 'copy';
-			case this.CLI_SKIP_CHANGES.toUpperCase():
+			case CLI_SKIP_CHANGES.toUpperCase():
 				return 'skip';
 			default:
 				return 'cancel';
@@ -807,7 +807,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			if (worktreeProperties) {
 				return { workingDirectory, worktreeProperties };
 			} else {
-				stream.warning(vscode.l10n.t('Failed to create worktree. Proceeding without isolation.'));
+				stream.warning(l10n.t('Failed to create worktree. Proceeding without isolation.'));
 				const workingDirectory = await defaultWorkingDirectory;
 				return { workingDirectory, worktreeProperties: undefined };
 			}
@@ -866,7 +866,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		const disposables = new DisposableStore();
 		try {
 			// Wait for the worktree repository to be ready
-			stream.progress(vscode.l10n.t('Migrating changes to worktree...'));
+			stream.progress(l10n.t('Migrating changes to worktree...'));
 			const worktreeRepo = await raceCancellation(new Promise<typeof activeRepository | undefined>((resolve) => {
 				disposables.add(this.gitService.onDidOpenRepository(repo => {
 					if (isEqual(repo.rootUri, worktreePath)) {
@@ -884,18 +884,18 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			}), token);
 
 			if (!worktreeRepo) {
-				stream.warning(vscode.l10n.t('Failed to get worktree repository. Proceeding without migration.'));
+				stream.warning(l10n.t('Failed to get worktree repository. Proceeding without migration.'));
 			} else {
 				await this.gitService.migrateChanges(worktreeRepo.rootUri, activeRepository.rootUri, {
 					confirmation: false,
 					deleteFromSource: moveOrCopyChanges === 'move',
 					untracked: true
 				});
-				stream.markdown(vscode.l10n.t('Changes migrated to worktree.'));
+				stream.markdown(l10n.t('Changes migrated to worktree.'));
 			}
 		} catch (error) {
 			// Continue even if migration fails
-			stream.warning(vscode.l10n.t('Failed to migrate some changes: {0}. Continuing with worktree creation.', error instanceof Error ? error.message : String(error)));
+			stream.warning(l10n.t('Failed to migrate some changes: {0}. Continuing with worktree creation.', error instanceof Error ? error.message : String(error)));
 		} finally {
 			disposables.dispose();
 		}
@@ -913,7 +913,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		let summary: string | undefined;
 		const requestPromptPromise = (async () => {
 			if (this.hasHistoryToSummarize(context.history)) {
-				stream.progress(vscode.l10n.t('Analyzing chat history'));
+				stream.progress(l10n.t('Analyzing chat history'));
 				summary = await this.chatDelegationSummaryService.summarize(context, token);
 				summary = summary ? `**Summary**\n${summary}` : undefined;
 			}
@@ -966,7 +966,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				});
 		}
 
-		stream.markdown(vscode.l10n.t('A background agent has begun working on your request. Follow its progress in the sessions list.'));
+		stream.markdown(l10n.t('A background agent has begun working on your request. Follow its progress in the sessions list.'));
 
 		return {};
 	}
@@ -1023,11 +1023,11 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 					try {
 						const repository = gitService.activeRepository.get();
 						if (!repository) {
-							throw new Error(vscode.l10n.t('No active repository found to delete worktree.'));
+							throw new Error(l10n.t('No active repository found to delete worktree.'));
 						}
 						await gitService.deleteWorktree(repository.rootUri, worktreePath.fsPath);
 					} catch (error) {
-						vscode.window.showErrorMessage(vscode.l10n.t('Failed to delete worktree: {0}', error instanceof Error ? error.message : String(error)));
+						vscode.window.showErrorMessage(l10n.t('Failed to delete worktree: {0}', error instanceof Error ? error.message : String(error)));
 					}
 				}
 
@@ -1058,7 +1058,7 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 			return;
 		}
 
-		const title = vscode.l10n.t('Background Agent ({0})', sessionWorktreeName);
+		const title = l10n.t('Background Agent ({0})', sessionWorktreeName);
 		const multiDiffSourceUri = Uri.parse(`copilotcli-worktree-changes:/${sessionId}`);
 		const resources = repository.changes.indexChanges.map(change => {
 			switch (change.status) {
