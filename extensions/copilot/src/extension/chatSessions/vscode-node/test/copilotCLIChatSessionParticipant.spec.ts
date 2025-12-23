@@ -22,6 +22,7 @@ import { IWorkspaceService, NullWorkspaceService } from '../../../../platform/wo
 import { mock } from '../../../../util/common/test/simpleMock';
 import { CancellationTokenSource } from '../../../../util/vs/base/common/cancellation';
 import { DisposableStore } from '../../../../util/vs/base/common/lifecycle';
+import { ISettableObservable, observableValue } from '../../../../util/vs/base/common/observableInternal';
 import { IInstantiationService, ServicesAccessor } from '../../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatResponseConfirmationPart } from '../../../../vscodeTypes';
 import { IChatDelegationSummaryService } from '../../../agents/copilotcli/common/delegationSummaryService';
@@ -36,8 +37,8 @@ import { createExtensionUnitTestingServices } from '../../../test/node/services'
 import { MockChatResponseStream, TestChatRequest } from '../../../test/node/testHelpers';
 import type { IToolsService } from '../../../tools/common/toolsService';
 import { mockLanguageModelChat } from '../../../tools/node/test/searchToolTestUtils';
+import { IChatSessionWorktreeService } from '../chatSessionWorktreeService';
 import { CopilotCLIChatSessionContentProvider, CopilotCLIChatSessionItemProvider, CopilotCLIChatSessionParticipant, CopilotCLISessionIsolationManager } from '../copilotCLIChatSessionsContribution';
-import { ICopilotCLIWorktreeManagerService } from '../copilotCLIWorktreeManagerService';
 import { CopilotCloudSessionsProvider } from '../copilotCloudSessionsProvider';
 
 // Mock terminal integration to avoid importing PowerShell asset (.ps1) which Vite cannot parse during tests
@@ -58,16 +59,17 @@ vi.mock('../copilotCLITerminalIntegration', () => {
 	};
 });
 
-class FakeWorktreeManagerService extends mock<ICopilotCLIWorktreeManagerService>() {
-	constructor(private _isSupported: boolean = false) {
+class FakeWorktreeManagerService extends mock<IChatSessionWorktreeService>() {
+	override readonly isWorktreeSupportedObs: ISettableObservable<boolean>;
+	constructor(_isSupported: boolean = false) {
 		super();
+		this.isWorktreeSupportedObs = observableValue(this, _isSupported);
 	}
 	override createWorktree = vi.fn(async () => undefined);
 	override setWorktreeProperties = vi.fn(async () => { });
 	override getWorktreePath = vi.fn((_id: string) => undefined);
-	override isSupported = vi.fn(() => this._isSupported);
 	setSupported(supported: boolean) {
-		this._isSupported = supported;
+		this.isWorktreeSupportedObs.set(supported, undefined);
 	}
 }
 

@@ -20,6 +20,7 @@ import { isCancellationError } from '../../../util/vs/base/common/errors';
 import { Emitter, Event } from '../../../util/vs/base/common/event';
 import { Disposable, DisposableStore, IDisposable, IReference, toDisposable } from '../../../util/vs/base/common/lifecycle';
 import { ResourceMap } from '../../../util/vs/base/common/map';
+import { autorun } from '../../../util/vs/base/common/observable';
 import * as path from '../../../util/vs/base/common/path';
 import { isEqual } from '../../../util/vs/base/common/resources';
 import { URI } from '../../../util/vs/base/common/uri';
@@ -34,8 +35,8 @@ import { PermissionRequest, requestPermission } from '../../agents/copilotcli/no
 import { createTimeout } from '../../inlineEdits/common/common';
 import { ChatVariablesCollection, isPromptFile } from '../../prompt/common/chatVariablesCollection';
 import { IToolsService } from '../../tools/common/toolsService';
+import { ChatSessionWorktreeProperties, IChatSessionWorktreeService } from './chatSessionWorktreeService';
 import { ICopilotCLITerminalIntegration } from './copilotCLITerminalIntegration';
-import { CopilotCLIWorktreeProperties, ICopilotCLIWorktreeManagerService } from './copilotCLIWorktreeManagerService';
 import { CopilotCloudSessionsProvider } from './copilotCloudSessionsProvider';
 import { convertReferenceToVariable } from './copilotPromptReferences';
 
@@ -97,11 +98,11 @@ export class CopilotCLISessionIsolationManager {
 
 	constructor(
 		@IVSCodeExtensionContext private readonly extensionContext: IVSCodeExtensionContext,
-		@ICopilotCLIWorktreeManagerService private readonly worktreeManagerService: ICopilotCLIWorktreeManagerService
+		@IChatSessionWorktreeService private readonly worktreeManagerService: IChatSessionWorktreeService
 	) { }
 
 	private getDefaultIsolationPreference(): boolean {
-		if (!this.worktreeManagerService.isSupported()) {
+		if (!this.worktreeManagerService.isWorktreeSupportedObs.get()) {
 			return false;
 		}
 		return this.extensionContext.globalState.get<boolean>(CopilotCLISessionIsolationManager.COPILOT_CLI_DEFAULT_ISOLATION_MEMENTO_KEY, true);
@@ -155,7 +156,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 	constructor(
 		@ICopilotCLISessionService private readonly copilotcliSessionService: ICopilotCLISessionService,
 		@ICopilotCLITerminalIntegration private readonly terminalIntegration: ICopilotCLITerminalIntegration,
-		@ICopilotCLIWorktreeManagerService private readonly worktreeManager: ICopilotCLIWorktreeManagerService,
+		@IChatSessionWorktreeService private readonly worktreeManager: IChatSessionWorktreeService,
 		@IGitService private readonly gitService: IGitService,
 		@IRunCommandExecutionService private readonly commandExecutionService: IRunCommandExecutionService,
 	) {
@@ -222,7 +223,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		} satisfies vscode.ChatSessionItem;
 	}
 
-	private async getStatisticsForWorktree(worktreeUri: Uri, worktreeProperties: CopilotCLIWorktreeProperties | undefined): Promise<vscode.ChatSessionChangedFile[]> {
+	private async getStatisticsForWorktree(worktreeUri: Uri, worktreeProperties: ChatSessionWorktreeProperties | undefined): Promise<vscode.ChatSessionChangedFile[]> {
 		if (worktreeProperties !== undefined) {
 			// These changes are committed in the worktree branch
 			const changes = await this.gitService.diffBetweenWithStats(
@@ -290,11 +291,14 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		@ICopilotCLIModels private readonly copilotCLIModels: ICopilotCLIModels,
 		@ICopilotCLIAgents private readonly copilotCLIAgents: ICopilotCLIAgents,
 		@ICopilotCLISessionService private readonly sessionService: ICopilotCLISessionService,
-		@ICopilotCLIWorktreeManagerService private readonly copilotCLIWorktreeManagerService: ICopilotCLIWorktreeManagerService,
+		@IChatSessionWorktreeService private readonly copilotCLIWorktreeManagerService: IChatSessionWorktreeService,
 	) {
 		super();
-		this._register(this.copilotCLIWorktreeManagerService.onDidSupportedChanged(() => {
-			if (!this.worktreeOptionShown && this.copilotCLIWorktreeManagerService.isSupported()) {
+
+		this._register(autorun(reader => {
+			const isSupported = this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.read(reader);
+
+			if (isSupported && !this.worktreeOptionShown) {
 				this._onDidChangeChatSessionProviderOptions.fire();
 			}
 		}));
@@ -329,8 +333,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			options[MODELS_OPTION_ID] = model;
 		}
 
-		if (!existingSession || !this.copilotCLIWorktreeManagerService.isSupported()) {
-			options[ISOLATION_OPTION_ID] = this.copilotCLIWorktreeManagerService.isSupported() && isolationEnabled ? 'enabled' : 'disabled';
+		if (!existingSession || !this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get()) {
+			options[ISOLATION_OPTION_ID] = this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get() && isolationEnabled ? 'enabled' : 'disabled';
 		} else if (existingSession && workingDirectory) {
 			// For existing sessions with a worktree, show the worktree branch name as a locked option
 			const worktreeRelativePath = this.copilotCLIWorktreeManagerService.getWorktreeRelativePath(copilotcliSessionId);
@@ -386,7 +390,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 				}
 			]
 		};
-		if (this.copilotCLIWorktreeManagerService.isSupported()) {
+		if (this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get()) {
 			this.worktreeOptionShown = true;
 			options.optionGroups.push({
 				id: ISOLATION_OPTION_ID,
@@ -442,7 +446,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		@ICopilotCLIModels private readonly copilotCLIModels: ICopilotCLIModels,
 		@ICopilotCLIAgents private readonly copilotCLIAgents: ICopilotCLIAgents,
 		@ICopilotCLISessionService private readonly sessionService: ICopilotCLISessionService,
-		@ICopilotCLIWorktreeManagerService private readonly copilotCLIWorktreeManagerService: ICopilotCLIWorktreeManagerService,
+		@IChatSessionWorktreeService private readonly copilotCLIWorktreeManagerService: IChatSessionWorktreeService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IToolsService private readonly toolsService: IToolsService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -481,7 +485,9 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 
 			const confirmationResults = this.getAcceptedRejectedConfirmationData(request);
 			const currentRepository = this.gitService.activeRepository?.get();
-			const hasUncommittedChanges = (this.copilotCLIWorktreeManagerService.isSupported() && currentRepository?.changes) ? (currentRepository.changes.indexChanges.length > 0 || currentRepository.changes.workingTree.length > 0) : false;
+			const hasUncommittedChanges = (this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get() && currentRepository?.changes)
+				? (currentRepository.changes.indexChanges.length > 0 || currentRepository.changes.workingTree.length > 0)
+				: false;
 
 			if (!chatSessionContext) {
 				// Delegating from another chat session
@@ -519,7 +525,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			if (!session || token.isCancellationRequested) {
 				return {};
 			}
-			if (isUntitled && session.object.options.isolationEnabled && session.object.options.workingDirectory && this.copilotCLIWorktreeManagerService.isSupported()) {
+			if (isUntitled && session.object.options.isolationEnabled && session.object.options.workingDirectory && this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get()) {
 				const changes: { optionId: string; value: vscode.ChatSessionProviderOptionItem }[] = [];
 				// For existing sessions with a worktree, show the worktree branch name as a locked option
 				const worktreeRelativePath = this.copilotCLIWorktreeManagerService.getWorktreeRelativePath(session.object.sessionId);
@@ -527,7 +533,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 					changes.push({ optionId: ISOLATION_OPTION_ID, value: getLockedIsolationOption(worktreeRelativePath) });
 					this.contentProvider.notifySessionOptionsChange(resource, changes);
 				}
-			} else if (isUntitled && (!session.object.options.isolationEnabled || !this.copilotCLIWorktreeManagerService.isSupported())) {
+			} else if (isUntitled && (!session.object.options.isolationEnabled || !this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get())) {
 				const changes: { optionId: string; value: vscode.ChatSessionProviderOptionItem }[] = [];
 				changes.push({ optionId: ISOLATION_OPTION_ID, value: disabledIsolationLocked });
 				this.contentProvider.notifySessionOptionsChange(resource, changes);
@@ -773,7 +779,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 
 		// Check for uncommitted changes
-		if (!hasUncommittedChanges || !this.copilotCLIWorktreeManagerService.isSupported()) {
+		if (!hasUncommittedChanges || !this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get()) {
 			return await this.createCLISessionAndSubmitRequest(request, undefined, request.references, context, undefined, stream, token);
 		}
 
@@ -828,7 +834,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 	}
 
-	private async getOrInitializeWorkingDirectory(chatSessionContext: vscode.ChatSessionContext | undefined, uncommittedChangesAction: 'move' | 'copy' | 'skip' | undefined, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<{ workingDirectory: Uri | undefined; isolationEnabled: boolean; worktreeProperties: Awaited<ReturnType<ICopilotCLIWorktreeManagerService['createWorktree']>> | undefined }> {
+	private async getOrInitializeWorkingDirectory(chatSessionContext: vscode.ChatSessionContext | undefined, uncommittedChangesAction: 'move' | 'copy' | 'skip' | undefined, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<{ workingDirectory: Uri | undefined; isolationEnabled: boolean; worktreeProperties: Awaited<ReturnType<IChatSessionWorktreeService['createWorktree']>> | undefined }> {
 		const defaultWorkingDirectory = this.copilotCLISDK.getDefaultWorkingDirectory();
 		const createWorkingTreeIfRequired = async (create: boolean) => {
 			if (!create) {
@@ -847,7 +853,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		};
 
 		let workingDirectory: Uri | undefined;
-		let worktreeProperties: Awaited<ReturnType<ICopilotCLIWorktreeManagerService['createWorktree']>> | undefined;
+		let worktreeProperties: Awaited<ReturnType<IChatSessionWorktreeService['createWorktree']>> | undefined;
 		let isolationEnabled = false;
 
 		if (chatSessionContext) {
@@ -867,7 +873,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			}
 		} else {
 			// This happens when we're delegating from a non-Background session to a new Background session
-			isolationEnabled = this.copilotCLIWorktreeManagerService.isSupported();
+			isolationEnabled = this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get();
 			({ workingDirectory, worktreeProperties } = await createWorkingTreeIfRequired(isolationEnabled));
 			// Means we failed to create worktree
 			if (!worktreeProperties) {
@@ -1030,7 +1036,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 	}
 }
 
-export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCLIChatSessionItemProvider, copilotCLISessionService: ICopilotCLISessionService, copilotCLIWorktreeManagerService: ICopilotCLIWorktreeManagerService, gitService: IGitService): IDisposable {
+export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCLIChatSessionItemProvider, copilotCLISessionService: ICopilotCLISessionService, copilotCLIWorktreeManagerService: IChatSessionWorktreeService, gitService: IGitService): IDisposable {
 	const disposableStore = new DisposableStore();
 	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.delete', async (sessionItem?: vscode.ChatSessionItem) => {
 		if (sessionItem?.resource) {
