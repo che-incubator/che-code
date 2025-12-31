@@ -1,0 +1,7 @@
+[
+    {
+		"from": "if (extension.gallery) {\n\t\t\tif (!extension.gallery.isSigned && shouldRequireRepositorySignatureFor(extension.private, await this.extensionGalleryManifestService.getExtensionGalleryManifest())) {",
+		"by": "if (extension.gallery) {\n\t\t\t// Check if extension is allowed first (before checking platform compatibility or signing)\n\t\t\tconst allowedResult = this.allowedExtensionsService.isAllowed({ id: extension.gallery.identifier.id, publisherDisplayName: extension.gallery.publisherDisplayName });\n\t\t\tif (allowedResult !== true) {\n\t\t\t\treturn new MarkdownString(nls.localize('extension not allowed to install', \\\"This extension cannot be installed because it is not in the allowed list.\\\"));\n\t\t\t}\n\t\t\tif (!extension.gallery.isSigned && shouldRequireRepositorySignatureFor(extension.private, await this.extensionGalleryManifestService.getExtensionGalleryManifest())) {"
+
+	}
+]

@@ -1,0 +1,10 @@
+[
+	{
+		"from": "import { INotificationService, Severity } from '../../platform/notification/common/notification.js';",
+		"by": "import { INotificationService, Severity } from '../../platform/notification/common/notification.js';\\\nimport { getPolicyService } from './che/web.js';"
+	},
+	{
+		"from": "const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, new NullPolicyService());",
+		"by": "const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, getPolicyService(remoteAgentService,logService, this.configuration.remoteAuthority));"
+	}
+]
