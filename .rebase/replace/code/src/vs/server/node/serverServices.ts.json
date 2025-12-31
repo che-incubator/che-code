@@ -1,0 +1,18 @@
+[
+	{
+		"from": "import { NullPolicyService } from '../../platform/policy/common/policy.js';",
+		"by": "import { PolicyChannel } from '../../platform/policy/common/policyIpc.js';"
+	},
+	{
+		"from": "import { McpGalleryManifestIPCService } from '../../platform/mcp/common/mcpGalleryManifestServiceIpc.js';",
+		"by": "import { McpGalleryManifestIPCService } from '../../platform/mcp/common/mcpGalleryManifestServiceIpc.js';\\\nimport { getPolicyService } from './che/serverServices.js';"
+	},
+    {
+		"from": "const configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, new NullPolicyService(), logService);",
+		"by": "const policyService = getPolicyService(environmentService, fileService, logService, disposables);\\\n\\\tconst configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, policyService, logService);"
+	},
+	{
+		"from": "socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));",
+		"by": "socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));\\\n\\\t\\\tsocketServer.registerChannel('policy', new PolicyChannel(policyService));"
+	}
+]
