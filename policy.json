@@ -1,0 +1,34 @@
+{
+  "AllowedExtensions": {
+    // Deny All Extensions
+    "*": false,
+
+    // Only the following extensions can be installed
+    "dbaeumer.vscode-eslint": true,
+    "redhat.vscode-yaml": true,
+
+    // Only specified extensions can not be installed, 
+    // all other extensions are allowed
+    "*": true,
+    "dbaeumer.vscode-eslint": false,
+    "redhat.vscode-yaml": false,
+
+    // Do not allow all extensions from a specific publisher (by publisher ID)
+    "*": true,
+    "redhat": false,
+
+    // Allow only extensions from a specific publisher (by publisher ID), 
+    // other extensions are not allowed
+    "*": false,
+    "redhat": true,
+
+    // Allow only 0.28.0 version of the xml extension
+    "redhat.vscode-xml": ["0.28.0"],
+
+    // Allow only specified versions of the xml extension
+    "redhat.vscode-xml": ["0.28.0", "0.28.1"],
+
+    // Allow only stable version of extensions for specified publisher
+    "redhat": "stable"
+  }
+}
