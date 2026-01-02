@@ -14,17 +14,14 @@ import { localize } from '../../../../nls.js';
 import { ConfigurationScope } from '../../../configuration/common/configurationRegistry.js';
 import { IConfigurationService } from '../../../configuration/common/configuration.js';
 import { ILogService } from '../../../log/common/log.js';
-import { BlockInstallFromVSIXCommandExtensionsInstallationConfigKey } from '../extensionManagement.js';
 
-export type BlockInstallConfigKeys = {
-	BlockDefaultExtensionsInstallationConfigKey: string;
-	BlockCliExtensionsInstallationConfigKey: string;
-	BlockInstallFromVSIXCommandExtensionsInstallationConfigKey: string;
-};
+export const BlockDefaultExtensionsInstallationConfigKey = 'extensions.blockDefaultExtensionsInstallation';
+export const BlockCliExtensionsInstallationConfigKey = 'extensions.blockCliExtensionsInstallation';
+export const BlockInstallFromVSIXCommandExtensionsInstallationConfigKey = 'extensions.blockInstallFromVSIXCommandExtensionsInstallation';
 
-export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Record<string, any> {
+export function getCheConfigurationProperties(): Record<string, any> {
 	return {
-		[keys.BlockDefaultExtensionsInstallationConfigKey]: {
+		[BlockDefaultExtensionsInstallationConfigKey]: {
 			type: 'boolean',
 			markdownDescription: localize('extensions.blockDefaultExtensionsInstallation', "When enabled, blocks installation of default extensions (from DEFAULT_EXTENSIONS env var)"),
 			default: false,
@@ -35,7 +32,7 @@ export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Rec
 				description: localize('extensions.blockDefaultExtensionsInstallation.policy', "When enabled, blocks installation of default extensions (from DEFAULT_EXTENSIONS env var)"),
 			},
 		},
-		[keys.BlockCliExtensionsInstallationConfigKey]: {
+		[BlockCliExtensionsInstallationConfigKey]: {
 			type: 'boolean',
 			markdownDescription: localize('extensions.blockCliExtensionsInstallation', "When enabled, blocks installation of extensions via CLI."),
 			default: false,
@@ -46,7 +43,7 @@ export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Rec
 				description: localize('extensions.blockCliExtensionsInstallation.policy', "When enabled, blocks installation of extensions via CLI."),
 			},
 		},
-		[keys.BlockInstallFromVSIXCommandExtensionsInstallationConfigKey]: {
+		[BlockInstallFromVSIXCommandExtensionsInstallationConfigKey]: {
 			type: 'boolean',
 			markdownDescription: localize('extensions.blockInstallFromVSIXCommandExtensionsInstallation', "When enabled, blocks installation of extensions via the workbench.extensions.command.installFromVSIX command."),
 			default: false,
