@@ -13,6 +13,7 @@ import * as nls from '../../../../nls.js';
 import { IConfigurationService } from '../../../configuration/common/configuration.js';
 import { ILogService } from '../../../log/common/log.js';
 import {
+	BlockCliExtensionsInstallationConfigKey,
 	BlockDefaultExtensionsInstallationConfigKey,
 	InstallOptions,
 } from '../../common/extensionManagement.js';
@@ -20,7 +21,8 @@ import {
 /**
  * Throws when VSIX installation should be blocked by admin policy.
  *
- * - When installing default extensions respects `BlockDefaultExtensionsInstallationConfigKey`
+ * - When installing default extensions respects `BlockDefaultExtensionsInstallationConfigKey`.
+ * - When installing via CLI respects `BlockCliExtensionsInstallationConfigKey`.
  */
 export function assertVSIXInstallAllowed(
 	configurationService: IConfigurationService,
@@ -34,6 +36,13 @@ export function assertVSIXInstallAllowed(
 		if (blockDefaultExtensions) {
 			logService.info('ExtensionManagementService: Default extension installation has been blocked by an administrator.');
 			throw new Error(nls.localize('Default extensions blocked', "Default extension installation has been blocked by an administrator."));
+		}
+	} else {
+		const blockCliExtensions = configurationService.getValue<boolean>(BlockCliExtensionsInstallationConfigKey);
+		logService.info('ExtensionManagementService: BlockCliExtensionsInstallation ', blockCliExtensions);
+		if (blockCliExtensions) {
+			logService.info('ExtensionManagementService: Installation of extensions via CLI has been blocked by an administrator.');
+			throw new Error(nls.localize('CLI extensions blocked', "Installation of extensions via CLI has been blocked by an administrator."));
 		}
 	}
 }
