@@ -575,6 +575,7 @@ export type InstallOptions = {
 	productVersion?: IProductVersion;
 	keepExisting?: boolean;
 	downloadExtensionsLocally?: boolean;
+	isDefault?: boolean; // Indicates that this extension is from DEFAULT_EXTENSIONS env variable
 	/**
 	 * Context passed through to InstallExtensionResult
 	 */
