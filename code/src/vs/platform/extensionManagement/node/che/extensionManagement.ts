@@ -12,11 +12,11 @@
 import * as nls from '../../../../nls.js';
 import { IConfigurationService } from '../../../configuration/common/configuration.js';
 import { ILogService } from '../../../log/common/log.js';
+import { InstallOptions } from '../../common/extensionManagement.js';
 import {
 	BlockCliExtensionsInstallationConfigKey,
-	BlockDefaultExtensionsInstallationConfigKey,
-	InstallOptions,
-} from '../../common/extensionManagement.js';
+	BlockDefaultExtensionsInstallationConfigKey
+} from '../../common/che/extensionManagement.js';
 
 /**
  * Throws when VSIX installation should be blocked by admin policy.
