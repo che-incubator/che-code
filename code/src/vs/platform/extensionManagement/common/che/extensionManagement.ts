@@ -15,6 +15,7 @@ import { ConfigurationScope } from '../../../configuration/common/configurationR
 
 export type BlockInstallConfigKeys = {
 	BlockDefaultExtensionsInstallationConfigKey: string;
+	BlockCliExtensionsInstallationConfigKey: string;
 };
 
 export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Record<string, any> {
@@ -28,6 +29,17 @@ export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Rec
 				name: 'BlockDefaultExtensionsInstallation',
 				minimumVersion: '1.104.3',
 				description: localize('extensions.blockDefaultExtensionsInstallation.policy', "When enabled, blocks installation of default extensions (from DEFAULT_EXTENSIONS env var)"),
+			},
+		},
+		[keys.BlockCliExtensionsInstallationConfigKey]: {
+			type: 'boolean',
+			markdownDescription: localize('extensions.blockCliExtensionsInstallation', "When enabled, blocks installation of extensions via CLI."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			policy: {
+				name: 'BlockCliExtensionsInstallation',
+				minimumVersion: '1.104.3',
+				description: localize('extensions.blockCliExtensionsInstallation.policy', "When enabled, blocks installation of extensions via CLI."),
 			},
 		}
 	};

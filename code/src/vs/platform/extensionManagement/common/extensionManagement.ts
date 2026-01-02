@@ -712,6 +712,7 @@ export const ExtensionsLocalizedLabel = localize2('extensions', "Extensions");
 export const PreferencesLocalizedLabel = localize2('preferences', 'Preferences');
 export const AllowedExtensionsConfigKey = 'extensions.allowed';
 export const BlockDefaultExtensionsInstallationConfigKey = 'extensions.blockDefaultExtensionsInstallation';
+export const BlockCliExtensionsInstallationConfigKey = 'extensions.blockCliExtensionsInstallation';
 export const VerifyExtensionSignatureConfigKey = 'extensions.verifySignature';
 
 Registry.as<IConfigurationRegistry>(Extensions.Configuration)
@@ -721,7 +722,7 @@ Registry.as<IConfigurationRegistry>(Extensions.Configuration)
 		title: localize('extensionsConfigurationTitle', "Extensions"),
 		type: 'object',
 		properties: {
-			...getCheConfigurationProperties({ BlockDefaultExtensionsInstallationConfigKey }),
+			...getCheConfigurationProperties({ BlockDefaultExtensionsInstallationConfigKey, BlockCliExtensionsInstallationConfigKey }),
 			[AllowedExtensionsConfigKey]: {
 				// Note: Type is set only to object because to support policies generation during build time, where single type is expected.
 				type: 'object',
