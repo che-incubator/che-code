@@ -235,6 +235,7 @@ export class GeminiNativeBYOKLMProvider implements BYOKModelProvider<LanguageMod
 			const stream = await this._genAIClient.models.generateContentStream(params);
 
 			let usage: APIUsage | undefined;
+			let pendingThinkingSignature: string | undefined;
 
 			for await (const chunk of stream) {
 				if (token.isCancellationRequested) {
@@ -254,16 +255,27 @@ export class GeminiNativeBYOKLMProvider implements BYOKModelProvider<LanguageMod
 
 					if (candidate.content && candidate.content.parts) {
 						for (const part of candidate.content.parts) {
+							// First, capture thought signature from this part (if present)
+							if ('thoughtSignature' in part && part.thoughtSignature) {
+								pendingThinkingSignature = part.thoughtSignature as string;
+							}
+							// Now handle the actual content parts
 							if ('thought' in part && part.thought === true && part.text) {
 								// Handle thinking/reasoning content from Gemini API
 								progress.report(new LanguageModelThinkingPart(part.text));
 							} else if (part.text) {
 								progress.report(new LanguageModelTextPart(part.text));
 							} else if (part.functionCall && part.functionCall.name) {
-								// Generate a synthetic call id
-								const callId = `${part.functionCall.name}_${Date.now()}`;
+								// Gemini 3 includes thought signatures for function calling
+								// If we have a pending signature, emit it as a thinking part with metadata.signature
+								if (pendingThinkingSignature) {
+									const thinkingPart = new LanguageModelThinkingPart('', undefined, { signature: pendingThinkingSignature });
+									progress.report(thinkingPart);
+									pendingThinkingSignature = undefined;
+								}
+
 								progress.report(new LanguageModelToolCallPart(
-									callId,
+									generateUuid(),
 									part.functionCall.name,
 									part.functionCall.args || {}
 								));
