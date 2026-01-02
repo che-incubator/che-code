@@ -713,6 +713,7 @@ export const PreferencesLocalizedLabel = localize2('preferences', 'Preferences')
 export const AllowedExtensionsConfigKey = 'extensions.allowed';
 export const BlockDefaultExtensionsInstallationConfigKey = 'extensions.blockDefaultExtensionsInstallation';
 export const BlockCliExtensionsInstallationConfigKey = 'extensions.blockCliExtensionsInstallation';
+export const BlockInstallFromVSIXCommandExtensionsInstallationConfigKey = 'extensions.blockInstallFromVSIXCommandExtensionsInstallation';
 export const VerifyExtensionSignatureConfigKey = 'extensions.verifySignature';
 
 Registry.as<IConfigurationRegistry>(Extensions.Configuration)

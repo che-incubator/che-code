@@ -12,10 +12,14 @@
 
 import { localize } from '../../../../nls.js';
 import { ConfigurationScope } from '../../../configuration/common/configurationRegistry.js';
+import { IConfigurationService } from '../../../configuration/common/configuration.js';
+import { ILogService } from '../../../log/common/log.js';
+import { BlockInstallFromVSIXCommandExtensionsInstallationConfigKey } from '../extensionManagement.js';
 
 export type BlockInstallConfigKeys = {
 	BlockDefaultExtensionsInstallationConfigKey: string;
 	BlockCliExtensionsInstallationConfigKey: string;
+	BlockInstallFromVSIXCommandExtensionsInstallationConfigKey: string;
 };
 
 export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Record<string, any> {
@@ -41,6 +45,34 @@ export function getCheConfigurationProperties(keys: BlockInstallConfigKeys): Rec
 				minimumVersion: '1.104.3',
 				description: localize('extensions.blockCliExtensionsInstallation.policy', "When enabled, blocks installation of extensions via CLI."),
 			},
+		},
+		[keys.BlockInstallFromVSIXCommandExtensionsInstallationConfigKey]: {
+			type: 'boolean',
+			markdownDescription: localize('extensions.blockInstallFromVSIXCommandExtensionsInstallation', "When enabled, blocks installation of extensions via the workbench.extensions.command.installFromVSIX command."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			policy: {
+				name: 'BlockInstallFromVSIXCommandExtensionsInstallation',
+				minimumVersion: '1.104.3',
+				description: localize('extensions.blockInstallFromVSIXCommandExtensionsInstallation.policy', "When enabled, blocks installation of extensions via the workbench.extensions.command.installFromVSIX command."),
+			},
 		}
 	};
 }
+
+
+/**
+ * Throws when installing from VSIX via command is blocked by admin policy.
+ */
+export function assertInstallFromVSIXCommandAllowed(
+	configurationService: IConfigurationService,
+	logService: ILogService
+): void {
+	const blockInstallFromVSIXCommand = configurationService.getValue<boolean>(BlockInstallFromVSIXCommandExtensionsInstallationConfigKey);
+	logService.info('ExtensionsWorkbenchService: BlockInstallFromVSIXCommandExtensionsInstallation ', blockInstallFromVSIXCommand);
+	if (blockInstallFromVSIXCommand) {
+		logService.info('ExtensionsWorkbenchService: Installation from VSIX files has been blocked by an administrator.');
+		throw new Error(localize('installFromVSIX command blocked', "Installation from VSIX files has been blocked by an administrator."));
+	}
+}
+
