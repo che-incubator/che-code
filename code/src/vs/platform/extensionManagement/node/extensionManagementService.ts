@@ -57,6 +57,7 @@ import { IUserDataProfilesService } from '../../userDataProfile/common/userDataP
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { isLinux } from '../../../base/common/platform.js';
 import { IExtensionGalleryManifestService } from '../common/extensionGalleryManifest.js';
+import { assertVSIXInstallAllowed } from './che/extensionManagement.js';
 
 export const INativeServerExtensionManagementService = refineServiceDecorator<IExtensionManagementService, INativeServerExtensionManagementService>(IExtensionManagementService);
 export interface INativeServerExtensionManagementService extends IExtensionManagementService {
@@ -156,7 +157,9 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 			}
 
 			const allowedToInstall = this.allowedExtensionsService.isAllowed({ id: extensionId, version: manifest.version, publisherDisplayName: undefined });
+			assertVSIXInstallAllowed(this.configurationService, this.logService, options); 
 			if (allowedToInstall !== true) {
+				this.logService.info(`ExtensionManagementService: Installation of the extension ${extensionId} is not allowed: ${allowedToInstall.value}.`);
 				throw new Error(nls.localize('notAllowed', "This extension cannot be installed because {0}", allowedToInstall.value));
 			}
 
