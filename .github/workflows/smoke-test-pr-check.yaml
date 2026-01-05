@@ -145,8 +145,8 @@ jobs:
             -v ${LOCAL_TEST_DIR}/tests/e2e/video:/tmp/ffmpeg_report:Z \
             -e USERSTORY=SmokeTest \
             -e TS_SELENIUM_VALUE_OPENSHIFT_OAUTH=false \
-            -e TEST_REPO=https://github.com/che-incubator/quarkus-api-example?df=smoke-test.devfile.yaml \
-            quay.io/mmusiien/che-e2e:smoke-test
+            -e TS_SELENIUM_FACTORY_GIT_REPO_URL=https://github.com/che-incubator/quarkus-api-example?df=smoke-test.devfile.yaml \
+            quay.io/eclipse/che-e2e:next
 
       - name: Bump logs
         if: always()
