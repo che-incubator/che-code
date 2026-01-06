@@ -135,6 +135,7 @@ jobs:
             --shm-size=2048m \
             -p 5920:5920 \
             --network="host" \
+            -e TS_PLATFORM=kubernetes \
             -e TS_SELENIUM_LOAD_PAGE_TIMEOUT=60000 \
             -e TS_SELENIUM_USERNAME=che@eclipse.org \
             -e TS_SELENIUM_PASSWORD=admin \
