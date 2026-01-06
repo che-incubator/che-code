@@ -132,8 +132,9 @@ jobs:
             --network="host" \
             -e TS_PLATFORM=kubernetes \
             -e TS_SELENIUM_LOAD_PAGE_TIMEOUT=60000 \
-            -e TS_SELENIUM_USERNAME=che@eclipse.org \
-            -e TS_SELENIUM_PASSWORD=admin \
+            -e TS_API_TEST_KUBERNETES_COMMAND_LINE_TOOL=kubectl \
+            -e TS_SELENIUM_K8S_USERNAME=che@eclipse.org \
+            -e TS_SELENIUM_K8S_PASSWORD=admin \
             -e TS_SELENIUM_BASE_URL=https://$(kubectl get ingress che -n eclipse-che -o jsonpath='{.spec.rules[0].host}') \
             -e DELETE_WORKSPACE_ON_FAILED_TEST=true \
             -e TS_SELENIUM_START_WORKSPACE_TIMEOUT=120000 \
