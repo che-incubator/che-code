@@ -2406,6 +2406,12 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		}
 
 		if (extension.gallery) {
+			// Check if extension is allowed first (before checking platform compatibility or signing)
+			const allowedResult = this.allowedExtensionsService.isAllowed({ id: extension.gallery.identifier.id, publisherDisplayName: extension.gallery.publisherDisplayName });
+			if (allowedResult !== true) {
+				return new MarkdownString(nls.localize('extension not allowed to install', "This extension cannot be installed because it is not in the allowed list."));
+			}
+
 			if (!extension.gallery.isSigned && shouldRequireRepositorySignatureFor(extension.private, await this.extensionGalleryManifestService.getExtensionGalleryManifest())) {
 				return new MarkdownString().appendText(nls.localize('not signed', "This extension is not signed."));
 			}
