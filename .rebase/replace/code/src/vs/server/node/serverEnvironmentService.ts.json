@@ -1,0 +1,10 @@
+[
+	{
+		"from": "import { join } from '../../base/common/path.js';",
+		"by": "import { join } from '../../base/common/path.js';\\\nimport { getPolicyFile } from './che/serverServices.js';"
+	},
+	{
+		"from": "override get args(): ServerParsedArgs { return super.args as ServerParsedArgs; }",
+		"by": "override get args(): ServerParsedArgs { return super.args as ServerParsedArgs; }\\\n\\\t@memoize\\\n\\\toverride get policyFile(): URI \\| undefined {\\\n\\\t\\\treturn getPolicyFile() \\|\\| super.policyFile;\\\n\\\t}"
+	}
+]
