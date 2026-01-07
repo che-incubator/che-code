@@ -472,6 +472,12 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/web.main.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/server/node/serverServices.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/server/node/serverEnvironmentService.ts" ]]; then
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
@@ -495,6 +501,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts" ]]; then
+      apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
