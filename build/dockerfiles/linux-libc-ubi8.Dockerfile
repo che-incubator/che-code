@@ -78,7 +78,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
+    && VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
     # cache shared libs from this image to provide them to a user's container
     && mkdir -p /checode/ld_libs \
