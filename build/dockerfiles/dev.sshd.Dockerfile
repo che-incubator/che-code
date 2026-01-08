@@ -6,12 +6,12 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM quay.io/devfile/base-developer-image:latest
+FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.6
 
 USER 0
 
-RUN dnf -y install libsecret openssh-server nss_wrapper-libs nodejs && \
-    dnf -y clean all --enablerepo='*'
+RUN microdnf -y install libsecret openssh-server nss_wrapper-libs && \
+    microdnf -y clean all --enablerepo='*'
 
 # sshd_config is root:root 600
 RUN chmod 644 /etc/ssh/sshd_config
