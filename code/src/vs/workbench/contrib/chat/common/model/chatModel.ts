@@ -1743,11 +1743,6 @@ export class ChatModel extends Disposable implements IChatModel {
 		return this._inputType;
 	}
 
-	private readonly _initialLocation: ChatAgentLocation;
-	get initialLocation(): ChatAgentLocation {
-		return this._initialLocation;
-	}
-
 	constructor(
 		initialData: ISerializableChatData | IExportableChatData | undefined,
 		initialModelProps: { initialLocation: ChatAgentLocation; canUseTools: boolean; inputState?: ISerializableChatModelInputState; resource?: URI; sessionId?: string; disableBackgroundKeepAlive?: boolean },

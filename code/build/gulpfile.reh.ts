@@ -33,7 +33,9 @@ import log from 'fancy-log';
 import buildfile from './buildfile.ts';
 import { fetchUrls, fetchGithub } from './lib/fetch.ts';
 import jsonEditor from 'gulp-json-editor';
-
+// CLG_REBASE
+import workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };
+// CLG_REBASE
 
 const REPO_ROOT = path.dirname(import.meta.dirname);
 const commit = getVersion(REPO_ROOT);
