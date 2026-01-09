@@ -8,7 +8,7 @@
 
 # https://registry.access.redhat.com/ubi9/nodejs-20
 # FROM registry.access.redhat.com/ubi9/nodejs-22:9.6-1760386551 as linux-libc-ubi9-builder
-FROM nexus.clg.lab:5002/dev-spaces/vscode-builder:latest as linux-libc-ubi9-builder
+FROM quay.io/cgruver0/che/vscode-builder:latest as linux-libc-ubi9-builder
 
 USER root
 
