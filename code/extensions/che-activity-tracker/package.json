@@ -26,18 +26,16 @@
     "compile": "gulp compile-extension:che-activity-tracker",
     "watch": "gulp watch-extension:che-activity-tracker",
     "vscode:prepublish": "npm run compile",
-    "test": "jest",
+    "test": "echo \"No tests for che-activity-tracker\"",
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
     "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
-    "@types/jest": "^27.4.1",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "22.x",
     "add": "^2.0.6",
-    "jest": "27.3.1",
-    "ts-jest": "^27.1.4"
+    "eslint": "^8.0.0"
   },
   "overrides": {
     "jsdom": {
