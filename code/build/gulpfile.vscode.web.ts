@@ -22,9 +22,9 @@ import * as extensions from './lib/extensions.ts';
 import VinylFile from 'vinyl';
 import jsonEditor from 'gulp-json-editor';
 import buildfile from './buildfile.ts';
-// CLG_REBASE
+// GLG-REBASE
 import workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };
-// CLG_REBASE
+// GLG-REBASE
 
 const REPO_ROOT = path.dirname(import.meta.dirname);
 const BUILD_ROOT = path.dirname(REPO_ROOT);
@@ -92,9 +92,9 @@ const vscodeWebEntryPoints = [
  * @param extensionsRoot The location where extension will be read from
  * @param product The parsed product.json file contents
  */
-// CLG_REBASE
+// GLG-REBASE
 export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product: typeof import('../product.json'), workbenchConfig: typeof import('../src/vs/code/browser/workbench/che/workbench-config.json')) => {
-// CLG_REBASE
+// GLG-REBASE
 	return (path: string): ((content: string) => string) | undefined => {
 		if (path.endsWith('vs/platform/product/common/product.js')) {
 			return content => {
