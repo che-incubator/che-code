@@ -4,7 +4,7 @@
         "by": "import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';\\\nimport { loadFromFileSystem } from 'vs/platform/product/common/che/product';"
     },
     {
-        "from": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as any;",
-        "by": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as any;\\\n\\\tproduct = loadFromFileSystem();"
+        "from": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as unknown as IProductConfiguration;",
+        "by": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as unknown as IProductConfiguration;\\\n\\\tproduct = loadFromFileSystem();"
     }
 ]

@@ -34,6 +34,14 @@ export class VSCodeLauncher {
 
     const params = ['out/server-main.js', '--host', host, '--port', '3100', '--without-connection-token'];
 
+    //
+    // CLG-REBASE
+    // Add Log Param for debugging
+    if (env.VSCODE_LOG_LEVEL) {
+      params.push('--log', env.VSCODE_LOG_LEVEL);
+    }
+    // CLG-REBASE
+
     if (workspaceFile) {
       params.push('--default-workspace', workspaceFile);
     } else {

@@ -15,7 +15,7 @@ import { loadFromFileSystem } from './che/product.js';
 let product: IProductConfiguration;
 
 // Native sandbox environment
-const vscodeGlobal = (globalThis as any).vscode;
+const vscodeGlobal = (globalThis as { vscode?: { context?: { configuration(): ISandboxConfiguration | undefined } } }).vscode;
 if (typeof vscodeGlobal !== 'undefined' && typeof vscodeGlobal.context !== 'undefined') {
 	const configuration: ISandboxConfiguration | undefined = vscodeGlobal.context.configuration();
 	if (configuration) {
@@ -55,8 +55,12 @@ else if (globalThis._VSCODE_PRODUCT_JSON && globalThis._VSCODE_PACKAGE_JSON) {
 else {
 
 	// Built time configuration (do NOT modify)
-	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as any;
+	// eslint-disable-next-line local/code-no-dangerous-type-assertions
+	// CLG-REBASE
+	// Check this against the rebase script files
+	product = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as unknown as IProductConfiguration;
 	product = loadFromFileSystem();
+	// CLG-REBASE
 
 	// Running out of sources
 	if (Object.keys(product).length === 0) {

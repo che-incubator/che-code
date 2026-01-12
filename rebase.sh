@@ -15,6 +15,13 @@ set -u
 
 # update $1 json file
 # $2 is the formatting option
+
+###
+# CLG-REBASE
+#
+# Need to add the proposed apis in product.json to the rebase scripts
+###
+
 override_json_file() {
   
   local filename=$1
