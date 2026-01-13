@@ -74,6 +74,7 @@ import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlCon
 import { ExtensionGalleryResourceType, getExtensionGalleryManifestResourceUri, IExtensionGalleryManifestService } from '../../../../platform/extensionManagement/common/extensionGalleryManifest.js';
 import { fromNow } from '../../../../base/common/date.js';
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { assertInstallFromVSIXCommandAllowed } from '../../../../platform/extensionManagement/common/che/extensionManagement.js';
 
 interface IExtensionStateProvider<T> {
 	(extension: Extension): T;
@@ -2570,6 +2571,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 				}
 			}
 			if (installable instanceof URI) {
+				assertInstallFromVSIXCommandAllowed(this.configurationService, this.logService);
 				extension = await this.doInstall(undefined, () => this.installFromVSIX(installable, installOptions), progressLocation);
 			} else if (extension) {
 				if (extension.resourceExtension) {
