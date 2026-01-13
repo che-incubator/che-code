@@ -82,38 +82,6 @@ jobs:
         run: |
           docker image rm che-code-amd64 || true
           docker system prune -af
-
-      - name: Load che-code-arm64 image
-        run: |
-          docker load -i che-code-arm64.tgz
-
-      - name: Push che-code-arm64 docker image
-        run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
-          docker tag che-code-arm64 ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-
-      - name: Remove che-code-arm64 and prune
-        run: |
-          docker image rm che-code-arm64 || true
-          docker system prune -af
-
-      - name: Load che-dev image
-        run: |
-          docker load -i che-dev.tgz
-
-      - name: Push che-dev docker image
-        run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
-          docker tag che-dev ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
-
-      - name: Remove che-dev and prune
-        run: |
-          docker image rm che-dev || true
-          docker system prune -af
           
       - name: 'Comment PR'
         uses: actions/github-script@v7
