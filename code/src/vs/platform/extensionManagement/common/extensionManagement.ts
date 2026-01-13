@@ -17,6 +17,7 @@ import { FileOperationError, FileOperationResult, IFileService, IFileStat } from
 import { createDecorator } from '../../instantiation/common/instantiation.js';
 import { Registry } from '../../registry/common/platform.js';
 import { IExtensionGalleryManifest } from './extensionGalleryManifest.js';
+import { getCheConfigurationProperties } from './che/extensionManagement.js';
 
 export const EXTENSION_IDENTIFIER_PATTERN = '^([a-z0-9A-Z][a-z0-9-A-Z]*)\\.([a-z0-9A-Z][a-z0-9-A-Z]*)$';
 export const EXTENSION_IDENTIFIER_REGEX = new RegExp(EXTENSION_IDENTIFIER_PATTERN);
@@ -575,6 +576,7 @@ export type InstallOptions = {
 	productVersion?: IProductVersion;
 	keepExisting?: boolean;
 	downloadExtensionsLocally?: boolean;
+	isDefault?: boolean; // Indicates that this extension is from DEFAULT_EXTENSIONS env variable
 	/**
 	 * Context passed through to InstallExtensionResult
 	 */
@@ -718,6 +720,7 @@ Registry.as<IConfigurationRegistry>(Extensions.Configuration)
 		title: localize('extensionsConfigurationTitle', "Extensions"),
 		type: 'object',
 		properties: {
+			...getCheConfigurationProperties(),
 			[AllowedExtensionsConfigKey]: {
 				// Note: Type is set only to object because to support policies generation during build time, where single type is expected.
 				type: 'object',

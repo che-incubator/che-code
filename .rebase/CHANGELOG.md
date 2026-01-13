@@ -3,6 +3,15 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/617
+
+- code/src/vs/platform/extensionManagement/common/extensionManagement.ts
+- code/src/vs/platform/extensionManagement/node/extensionManagementService.ts
+- code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts
+- code/src/vs/server/node/serverServices.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/605
 
 - code/src/vs/workbench/browser/web.main.ts
