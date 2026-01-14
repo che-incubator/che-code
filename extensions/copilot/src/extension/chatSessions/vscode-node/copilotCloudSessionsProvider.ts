@@ -948,7 +948,7 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 		}
 		let repoOwner: string;
 		let repoName: string;
-		if (repository) {
+		if (repository && repository !== DEFAULT_REPOSITORY_ID) {
 			const [owner, name] = repository.split('/');
 			repoOwner = owner;
 			repoName = name;
@@ -1115,9 +1115,9 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 		const repoId = repoIds?.[0];
 		let repoOwner = repoId?.org;
 		let repoName = repoId?.repo;
-		const [selectedRepoOwner, selectedRepoName] = selectedRepository?.split('/') || [];
+		const [selectedRepoOwner, selectedRepoName] = (selectedRepository && selectedRepository !== DEFAULT_REPOSITORY_ID) ? selectedRepository.split('/') : [];
 		if (!base_ref || repoOwner !== selectedRepoOwner || repoName !== selectedRepoName) {
-			if (selectedRepository) {
+			if (selectedRepoOwner && selectedRepoName) {
 				repoOwner = selectedRepoOwner;
 				repoName = selectedRepoName;
 			} else {
@@ -1316,7 +1316,7 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 
 			// In multiroot workspaces, use the selected repository if provided
 			let repoId = repoIds[0];
-			if (selectedRepository) {
+			if (selectedRepository && selectedRepository !== DEFAULT_REPOSITORY_ID) {
 				const [selectedOrg, selectedRepo] = selectedRepository.split('/');
 				repoId = {
 					org: selectedOrg,
@@ -1932,7 +1932,7 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 
 		let repoOwner: string;
 		let repoName: string;
-		if (selectedRepository) {
+		if (selectedRepository && selectedRepository !== DEFAULT_REPOSITORY_ID) {
 			const [owner, repo] = selectedRepository.split('/');
 			repoOwner = owner;
 			repoName = repo;
