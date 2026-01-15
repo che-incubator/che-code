@@ -28,6 +28,13 @@ https://github.com/che-incubator/che-code/pull/613
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/611
+
+- code/package.json
+- code/build/npm/gyp/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/607
 
 - code/extensions/vscode-api-tests/package.json
