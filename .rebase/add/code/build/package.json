@@ -2,6 +2,9 @@
     "overrides": {
         "prebuild-install": {
             "tar-fs": "2.1.4"
+        },
+        "jsonwebtoken": {
+            "jws": "^3.2.3"
         }
     }
 }
