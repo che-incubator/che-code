@@ -21,6 +21,13 @@ https://github.com/che-incubator/che-code/pull/605
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/613
+
+- code/build/package.json
+- code/extensions/microsoft-authentication/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/621
 
 - code/build/package.json
