@@ -238,9 +238,19 @@ export class InlineEditTriggerer extends Disposable {
 			logger.trace('Return: no last edit timestamp');
 			return false;
 		}
-		const timeSinceLastEdit = Date.now() - this.lastEditTimestamp;
-		if (timeSinceLastEdit > triggerAfterSeconds * 1000) {
+		const now = Date.now();
+		const triggerThresholdMs = triggerAfterSeconds * 1000;
+		const timeSinceLastEdit = now - this.lastEditTimestamp;
+		if (timeSinceLastEdit > triggerThresholdMs) {
 			logger.trace('Return: too long since last edit');
+			return false;
+		}
+
+		// Require a recent NES trigger before triggering on document switch.
+		// lastTriggerTime === 0 means NES was never triggered in this session.
+		const timeSinceLastTrigger = now - this.nextEditProvider.lastTriggerTime;
+		if (this.nextEditProvider.lastTriggerTime === 0 || timeSinceLastTrigger > triggerThresholdMs) {
+			logger.trace('Return: no recent NES trigger');
 			return false;
 		}
 
