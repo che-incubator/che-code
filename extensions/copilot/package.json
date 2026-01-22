@@ -140,7 +140,8 @@
 		"devDeviceId",
 		"contribEditorContentMenu",
 		"chatPromptFiles",
-		"mcpServerDefinitions"
+		"mcpServerDefinitions",
+		"tabInputMultiDiff"
 	],
 	"contributes": {
 		"languageModelTools": [
