@@ -109,20 +109,22 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		const rawCommandLine = execBlock.commandLine;
 		if (rawCommandLine === undefined || rawCommandLine === null) return null;
 
-		let commandLine = '';
+		let lines: string[] = [];
+
 		if (Array.isArray(rawCommandLine)) {
-			commandLine = rawCommandLine.map((s: any) => (s ?? '').toString()).join('\n');
+			lines = rawCommandLine.map((v) => (v ?? '').toString());
 		} else {
-			commandLine = rawCommandLine.toString();
+			lines = rawCommandLine.toString().split(/\r?\n/);
 		}
 
-		commandLine = commandLine.trim();
-		if (commandLine.length === 0) return null;
+		lines = lines
+			.map((l) => l.trim())
+			.filter((l) => l.length > 0)
+			.map((l) => l.replace(/(?:\s*&&\s*)+$/, '').trim()); // remove trailing &&
 
-		commandLine = commandLine.replace(/\r?\n/g, ' && ');
-		commandLine = commandLine.replace(/(?:\s*&&\s*)+$/, '');
-		commandLine = commandLine.trim();
-		if (commandLine.length === 0) return null;
+		if (lines.length === 0) return null;
+
+		const commandLine = lines.join(' && ');
 
 		const workingDir = (execBlock.workingDir ?? '${PROJECT_SOURCE}').toString();
 		const component = execBlock.component ? execBlock.component.toString() : undefined;
