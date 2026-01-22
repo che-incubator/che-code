@@ -12,7 +12,7 @@ import { IEnvService } from '../../../../platform/env/common/envService';
 import { NullNativeEnvService } from '../../../../platform/env/common/nullEnvService';
 import { IVSCodeExtensionContext } from '../../../../platform/extContext/common/extensionContext';
 import { MockFileSystemService } from '../../../../platform/filesystem/node/test/mockFileSystemService';
-import { IGitService } from '../../../../platform/git/common/gitService';
+import { IGitService, RepoContext } from '../../../../platform/git/common/gitService';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { PromptsServiceImpl } from '../../../../platform/promptFiles/common/promptsServiceImpl';
 import { NullRequestLogger } from '../../../../platform/requestLogger/node/nullRequestLogger';
@@ -22,7 +22,7 @@ import { IWorkspaceService, NullWorkspaceService } from '../../../../platform/wo
 import { mock } from '../../../../util/common/test/simpleMock';
 import { CancellationTokenSource } from '../../../../util/vs/base/common/cancellation';
 import { DisposableStore } from '../../../../util/vs/base/common/lifecycle';
-import { ISettableObservable, observableValue } from '../../../../util/vs/base/common/observableInternal';
+import { IObservable, ISettableObservable, observableValue } from '../../../../util/vs/base/common/observableInternal';
 import { sep } from '../../../../util/vs/base/common/path';
 import { URI } from '../../../../util/vs/base/common/uri';
 import { IInstantiationService, ServicesAccessor } from '../../../../util/vs/platform/instantiation/common/instantiation';
@@ -63,18 +63,38 @@ vi.mock('../copilotCLITerminalIntegration', () => {
 
 class FakeChatSessionWorktreeService extends mock<IChatSessionWorktreeService>() {
 	override readonly isWorktreeSupportedObs: ISettableObservable<boolean>;
+	override readonly activeRepository: IObservable<RepoContext | undefined>;
+	private _activeRepository: ISettableObservable<RepoContext | undefined>;
+	private _selectedRepository: RepoContext | undefined;
 	constructor(_isSupported: boolean = false) {
 		super();
 		this.isWorktreeSupportedObs = observableValue(this, _isSupported);
+		this._activeRepository = observableValue(this, undefined);
+		this.activeRepository = this._activeRepository;
 	}
 	setSupported(supported: boolean) {
 		this.isWorktreeSupportedObs.set(supported, undefined);
+	}
+	setActiveRepository(repo: RepoContext | undefined) {
+		this._activeRepository.set(repo, undefined);
+	}
+	setSelectedRepository(repo: RepoContext | undefined) {
+		this._selectedRepository = repo;
 	}
 	override createWorktree = vi.fn(async () => undefined) as unknown as IChatSessionWorktreeService['createWorktree'];
 	override getWorktreeProperties = vi.fn((_id: string) => undefined);
 	override setWorktreeProperties = vi.fn(async () => { });
 	override getWorktreePath = vi.fn((_id: string) => undefined);
 	override handleRequestCompleted = vi.fn(async () => { });
+	override trackSessionRepository(sessionId: string, repositoryPath: string): Promise<void> {
+		return Promise.resolve();
+	}
+	override getSelectedRepository(sessionId: string): RepoContext | undefined {
+		return this._selectedRepository;
+	}
+	override getWorktreeRepository(sessionId: string): Promise<RepoContext | undefined> {
+		return Promise.resolve(undefined);
+	}
 }
 
 class FakeModels implements ICopilotCLIModels {
@@ -88,6 +108,7 @@ class FakeModels implements ICopilotCLIModels {
 
 class FakeGitService extends mock<IGitService>() {
 	override activeRepository = { get: () => undefined } as unknown as IGitService['activeRepository'];
+	override repositories: RepoContext[] = [];
 }
 
 // Cloud provider fake for delegate scenario
@@ -362,6 +383,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 		const parts: vscode.ExtendedChatResponsePart[] = [];
 		const stream = new MockChatResponseStream((part) => parts.push(part));
 		const token = disposables.add(new CancellationTokenSource()).token;
+		worktree.setActiveRepository((git.activeRepository.get() as RepoContext));
 
 		await participant.createHandler()(request, context, stream, token);
 
@@ -502,6 +524,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 		const parts: vscode.ExtendedChatResponsePart[] = [];
 		const stream = new MockChatResponseStream((part) => parts.push(part));
 		const token = disposables.add(new CancellationTokenSource()).token;
+		worktree.setSelectedRepository((git.activeRepository.get() as RepoContext));
 
 		await participant.createHandler()(request, context, stream, token);
 
@@ -583,6 +606,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 		}];
 		const stream = new MockChatResponseStream();
 		const token = disposables.add(new CancellationTokenSource()).token;
+		worktree.setSelectedRepository((git.activeRepository.get() as RepoContext));
 
 		await participant.createHandler()(request, context, stream, token);
 
@@ -670,6 +694,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 		const parts1: vscode.ExtendedChatResponsePart[] = [];
 		const stream1 = new MockChatResponseStream((part) => parts1.push(part));
 		const token1 = disposables.add(new CancellationTokenSource()).token;
+		worktree.setSelectedRepository((git.activeRepository.get() as RepoContext));
 
 		await participant.createHandler()(request1, context1, stream1, token1);
 

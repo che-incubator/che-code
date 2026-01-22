@@ -6,10 +6,10 @@
 import { Attachment, SweCustomAgent } from '@github/copilot/sdk';
 import * as l10n from '@vscode/l10n';
 import * as vscode from 'vscode';
-import { ChatExtendedRequestHandler, Uri } from 'vscode';
+import { ChatExtendedRequestHandler, ChatSessionProviderOptionItem, Uri } from 'vscode';
 import { IRunCommandExecutionService } from '../../../platform/commands/common/runCommandExecutionService';
 import { IFileSystemService } from '../../../platform/filesystem/common/fileSystemService';
-import { IGitService } from '../../../platform/git/common/gitService';
+import { IGitService, RepoContext } from '../../../platform/git/common/gitService';
 import { toGitUri } from '../../../platform/git/common/utils';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IPromptsService, ParsedPromptFile } from '../../../platform/promptFiles/common/promptsService';
@@ -40,6 +40,7 @@ import { CopilotCloudSessionsProvider } from './copilotCloudSessionsProvider';
 
 const AGENTS_OPTION_ID = 'agent';
 const MODELS_OPTION_ID = 'model';
+const REPOSITORY_OPTION_ID = 'repository';
 
 const UncommittedChangesStep = 'uncommitted-changes';
 type ConfirmationResult = { step: string; accepted: boolean; metadata?: CLIConfirmationMetadata };
@@ -210,6 +211,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		@IPromptsService private readonly promptsService: IPromptsService,
 		@IWorkspaceService private readonly workspaceService: IWorkspaceService,
 		@IFileSystemService private readonly fileSystem: IFileSystemService,
+		@IGitService private readonly gitService: IGitService
 	) {
 		super();
 
@@ -255,6 +257,30 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			options[MODELS_OPTION_ID] = model;
 		}
 
+		const repositories = this.getRepositoryOptionItems();
+		if (repositories.length > 1) {
+			const repository = await this.copilotCLIWorktreeManagerService.getWorktreeRepository(copilotcliSessionId);
+
+			if (repository) {
+				options[REPOSITORY_OPTION_ID] = {
+					...toRepositoryOptionItem(repository),
+					locked: true
+				};
+			} else if (isUntitledSessionId(copilotcliSessionId)) {
+				options[REPOSITORY_OPTION_ID] = repositories[0].id;
+				await this.copilotCLIWorktreeManagerService.trackSessionRepository(copilotcliSessionId, repositories[0].id);
+			} else {
+				// This is an existing session without a worktree, display current workspace folder.
+				options[REPOSITORY_OPTION_ID] = {
+					id: '',
+					name: this.workspaceService.getWorkspaceFolders().length === 1 ? this.workspaceService.getWorkspaceFolderName(this.workspaceService.getWorkspaceFolders()[0]) : l10n.t('Current Workspace'),
+					icon: new vscode.ThemeIcon('repo'),
+					locked: true
+				};
+
+			}
+		}
+
 		const history = existingSession?.object?.getChatHistory() || [];
 		existingSession?.dispose();
 		// Always keep track of this in memory.
@@ -297,6 +323,17 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 				}
 			]
 		};
+
+		const repositories = this.getRepositoryOptionItems();
+		if (repositories.length > 1) {
+			options.optionGroups.push({
+				id: REPOSITORY_OPTION_ID,
+				name: l10n.t('Repository'),
+				description: l10n.t('Pick Repository'),
+				items: repositories
+			});
+		}
+
 		if (hasAgents) {
 			options.optionGroups.unshift({
 				id: AGENTS_OPTION_ID,
@@ -306,6 +343,14 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			});
 		}
 		return options;
+	}
+
+	private getRepositoryOptionItems() {
+		// Exclude worktrees from the repository list
+		return this.gitService.repositories
+			.filter(repository => repository.kind !== 'worktree')
+			.map(repository => toRepositoryOptionItem(repository))
+			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
 	// Handle option changes for a session (store current state in a map)
@@ -322,6 +367,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 				if (agent?.name) {
 					await this.selectAgentModel(resource, agent, token);
 				}
+			} else if (update.optionId === REPOSITORY_OPTION_ID && typeof update.value === 'string') {
+				await this.copilotCLIWorktreeManagerService.trackSessionRepository(sessionId, update.value);
 			}
 		}
 	}
@@ -376,6 +423,18 @@ async function checkFileExists(filePath: Uri, fileSystem: IFileSystemService): P
 	} catch (error) {
 		return false;
 	}
+}
+
+function toRepositoryOptionItem(repository: RepoContext): ChatSessionProviderOptionItem {
+	const repositoryName = repository.rootUri.path.split('/').pop() ?? repository.rootUri.toString();
+
+	return {
+		id: repository.rootUri.fsPath,
+		name: repositoryName,
+		icon: repository.kind === 'repository'
+			? new vscode.ThemeIcon('repo')
+			: new vscode.ThemeIcon('archive'),
+	} satisfies vscode.ChatSessionProviderOptionItem;
 }
 
 const WAIT_FOR_NEW_SESSION_TO_GET_USED = 5 * 60 * 1000; // 5 minutes
@@ -434,16 +493,24 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			});
 
 			const confirmationResults = this.getAcceptedRejectedConfirmationData(request);
-			const currentRepository = this.gitService.activeRepository?.get();
-			const hasUncommittedChanges = (this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get() && currentRepository?.changes)
-				? (currentRepository.changes.indexChanges.length > 0 || currentRepository.changes.workingTree.length > 0)
+			let selectedRepository: RepoContext | undefined;
+			if (chatSessionContext?.chatSessionItem) {
+				if (chatSessionContext.isUntitled) {
+					selectedRepository = await this.copilotCLIWorktreeManagerService.getSelectedRepository(SessionIdForCLI.parse(chatSessionContext.chatSessionItem.resource));
+				} else {
+					// Existing session, get worktree repository, and no need to migrate changes.
+				}
+			} else {
+				selectedRepository = this.copilotCLIWorktreeManagerService.activeRepository.get();
+			}
+			const hasUncommittedChanges = (this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get() && selectedRepository?.changes)
+				? (selectedRepository.changes.indexChanges.length > 0 || selectedRepository.changes.workingTree.length > 0)
 				: false;
 
 			if (!chatSessionContext) {
 				// Delegating from another chat session
 				return await this.handleDelegationFromAnotherChat(request, context, confirmationResults, hasUncommittedChanges, stream, token);
 			}
-
 
 			const { resource } = chatSessionContext.chatSessionItem;
 			const id = SessionIdForCLI.parse(resource);
@@ -467,7 +534,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				this.getAgent(id, request, token),
 			]);
 			if (isUntitled && (modelId || agent)) {
-				const promptFile = request ? await this.getPromptInfoFromRequest(request, token) : undefined;
+				const promptFile = await this.getPromptInfoFromRequest(request, token);
 				if (promptFile) {
 					const changes: { optionId: string; value: string }[] = [];
 					if (agent) {
@@ -481,6 +548,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 					}
 				}
 			}
+
 			const session = await this.getOrCreateSession(request, chatSessionContext, modelId, agent, uncommittedChangesAction !== 'cancel' ? uncommittedChangesAction : undefined, stream, disposables, token);
 			if (!session || token.isCancellationRequested) {
 				return {};
@@ -679,9 +747,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		const prompt = request.prompt.substring('/delegate'.length).trim();
 
 		const prInfo = await this.cloudSessionProvider.delegate(request, stream, context, token, { prompt, chatContext: context });
-		if (prInfo) {
-			await this.recordPushToSession(session, request.prompt, prInfo);
-		}
+		await this.recordPushToSession(session, request.prompt, prInfo);
 
 	}
 
@@ -753,10 +819,10 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		isUntitled: boolean,
 	): vscode.ChatResult | void {
 		const message = isUntitled ?
-			l10n.t('This workspace has uncommitted changes. Should these changes be included in the new worktree?') :
+			l10n.t('The selected repository has uncommitted changes. Should these changes be included in the new worktree?') :
 			l10n.t('Background Agent will work in an isolated worktree to implement your requested changes.')
 			+ '\n\n'
-			+ l10n.t('This workspace has uncommitted changes. Should these changes be included in the new worktree?');
+			+ l10n.t('The selected repository has uncommitted changes. Should these changes be included in the new worktree?');
 
 		const buttons = [
 			CLI_COPY_CHANGES,
@@ -815,13 +881,13 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		worktreeProperties: ChatSessionWorktreeProperties | undefined;
 	}> {
 		const defaultWorkingDirectory = this.copilotCLISDK.getDefaultWorkingDirectory();
-		const createWorkingTreeIfRequired = async (create: boolean) => {
+		const createWorkingTreeIfRequired = async (create: boolean, sessionId: string | undefined) => {
 			if (!create) {
 				const workingDirectory = await defaultWorkingDirectory;
 				return { workingDirectory, worktreeProperties: undefined };
 			}
 
-			const worktreeProperties = await this.copilotCLIWorktreeManagerService.createWorktree(stream);
+			const worktreeProperties = await this.copilotCLIWorktreeManagerService.createWorktree(sessionId, stream);
 			if (worktreeProperties) {
 				return { workingDirectory: Uri.file(worktreeProperties.worktreePath), worktreeProperties };
 			} else {
@@ -842,7 +908,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			isolationEnabled = this.isolationManager.getIsolationPreference(id);
 
 			if (isNewSession) {
-				({ workingDirectory, worktreeProperties } = await createWorkingTreeIfRequired(isolationEnabled));
+				({ workingDirectory, worktreeProperties } = await createWorkingTreeIfRequired(isolationEnabled, id));
 				// Means we failed to create worktree
 				if (!worktreeProperties) {
 					isolationEnabled = false;
@@ -853,7 +919,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		} else {
 			// This happens when we're delegating from a non-Background session to a new Background session
 			isolationEnabled = this.copilotCLIWorktreeManagerService.isWorktreeSupportedObs.get();
-			({ workingDirectory, worktreeProperties } = await createWorkingTreeIfRequired(isolationEnabled));
+			({ workingDirectory, worktreeProperties } = await createWorkingTreeIfRequired(isolationEnabled, undefined));
 			// Means we failed to create worktree
 			if (!worktreeProperties) {
 				isolationEnabled = false;
