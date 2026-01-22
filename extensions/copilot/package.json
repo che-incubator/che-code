@@ -84,7 +84,8 @@
 		"onUri",
 		"onFileSystem:ccreq",
 		"onFileSystem:ccsettings",
-		"onCustomAgentProvider"
+		"onCustomAgentProvider",
+		"onInstructionsProvider"
 	],
 	"main": "./dist/extension",
 	"l10n": "./l10n",
@@ -2761,6 +2762,16 @@
 						"default": true,
 						"description": "%github.copilot.config.customInstructionsInSystemMessage%"
 					},
+					"github.copilot.chat.organizationCustomAgents.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "%github.copilot.config.organizationCustomAgents.enabled%"
+					},
+					"github.copilot.chat.organizationInstructions.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "%github.copilot.config.organizationInstructions.enabled%"
+					},
 					"github.copilot.chat.agent.currentEditorContext.enabled": {
 						"type": "boolean",
 						"default": true,
@@ -3557,14 +3568,6 @@
 						"enum": [
 							"electron-fetch",
 							"node-fetch"
-						]
-					},
-					"github.copilot.chat.customAgents.showOrganizationAndEnterpriseAgents": {
-						"type": "boolean",
-						"default": false,
-						"description": "%github.copilot.config.customAgents.showOrganizationAndEnterpriseAgents%",
-						"tags": [
-							"experimental"
 						]
 					}
 				}
