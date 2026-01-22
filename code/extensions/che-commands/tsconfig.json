@@ -4,8 +4,10 @@
 		"outDir": "./out",
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
+		"declaration": true,
 		"types": [
 			"node",
+			"jest",
 			"reflect-metadata"
 		]
 	},

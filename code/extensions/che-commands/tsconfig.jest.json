@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "esModuleInterop": true,
+    "strict": true,
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "tests"
+  ]
+}
