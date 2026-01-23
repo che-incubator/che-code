@@ -124,7 +124,26 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 		if (lines.length === 0) return null;
 
-		const commandLine = lines.join(' && ');
+		// Detection rules
+		const hasLineContinuation = lines.some((l) => l.endsWith('\\'));
+		const hasSemicolon = lines.some((l) => l.trim().endsWith(';'));
+		const hasOrOperator = lines.some((l) => l.includes('||'));
+		const hasPipe = lines.some((l) => l.includes('|'));
+		const hasHereDoc = lines.some((l) => l.includes('<<'));
+
+		/*
+		We only auto-join using && if it is a simple command chain.
+		If any advanced shell syntax is present, we join with space
+		to preserve original shell semantics.
+		*/
+		const shouldJoinWithAnd =
+			!hasLineContinuation &&
+			!hasSemicolon &&
+			!hasOrOperator &&
+			!hasPipe &&
+			!hasHereDoc;
+
+    	const commandLine = shouldJoinWithAnd ? lines.join(' && ') : lines.join(' ');
 
 		const workingDir = (execBlock.workingDir ?? '${PROJECT_SOURCE}').toString();
 		const component = execBlock.component ? execBlock.component.toString() : undefined;
