@@ -14,7 +14,7 @@ import { DevfileTaskProvider } from "../src/taskProvider";
 import { MockCheAPI, MockTerminalAPI } from "./mocks";
 import * as vscode from "vscode";
 
-describe("Regression: eclipse-che/che#23709 (broken && handling)", () => {
+describe("Trailing with '&'", () => {
 	test("removes trailing && from exec command", async () => {
 		const devfile = {
 			commands: [{ id: "build", exec: { commandLine: "npm run build &&" } }],
@@ -60,7 +60,7 @@ describe("Regression: eclipse-che/che#23709 (broken && handling)", () => {
 	});
 });
 
-describe("Regression: che-incubator/che-code PR #601 (command normalization & composites)", () => {
+describe("Command normalization & composites)", () => {
 	test("composite joins subcommands without broken &&", async () => {
 		const devfile = {
 			commands: [
