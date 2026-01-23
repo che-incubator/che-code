@@ -78,7 +78,7 @@ describe("Regression: che-incubator/che-code PR #601 (command normalization & co
 		);
 
 		const tasks = await provider.provideTasks();
-		const composite = (tasks || []).find((t) => t.name === "all")!;
+		const composite = (tasks || []).find((t: { name: string }) => t.name === "all")!;
 		const exec = composite.execution as any;
 		await exec.callback();
 
@@ -105,7 +105,7 @@ describe("Regression: che-incubator/che-code PR #601 (command normalization & co
 		);
 
 		const exec = ((await provider.provideTasks()) || []).find(
-			(t) => t.name === "p"
+			(t: { name: string }) => t.name === "p"
 		)!.execution as any;
 
 		await exec.callback();
