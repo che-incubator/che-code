@@ -14,6 +14,13 @@ const os = require('os');
 const hostname = '127.0.0.1';
 const port = 3400;
 
+let username = "UNKNOWN";
+try {
+  username = fs.readFileSync(`/sshd/username`, 'utf8');
+} catch (error) {
+  // continue
+}
+
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
     res.statusCode = 200;
@@ -30,7 +37,7 @@ const server = http.createServer((req, res) => {
 
     let genKey = "PRIVATE KEY NOT FOUND";
     try {
-      genKey = fs.readFileSync(`${process.env["HOME"]}/.ssh/ssh_client_ed25519_key`, 'utf8');
+      genKey = fs.readFileSync(`/sshd/ssh_client_ed25519_key`, 'utf8');
     } catch (err) {
      // continue
     }
@@ -55,7 +62,7 @@ const server = http.createServer((req, res) => {
             <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
           </svg></a>. This establishes a connection to the workspace.</p></li>
         <li>
-        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${os.userInfo().username}</code> ${hasUserPrefSSHKey ? `. The SSH key, corresponding to the following public key, configured in the "SSH Keys" tab of "User Preferences" has been authorized to connect :` : `and the following identity file :`}
+        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${username}</code> ${hasUserPrefSSHKey ? `. The SSH key, corresponding to the following public key, configured in the "SSH Keys" tab of "User Preferences" has been authorized to connect :` : `and the following identity file :`}
         <div class="parent">
         <div>
         <pre id="key">${keyMessage}</pre>
@@ -77,7 +84,7 @@ const server = http.createServer((req, res) => {
         <div>
 <pre id="config" class="path">Host localhost
   HostName 127.0.0.1
-  User ${os.userInfo().username}
+  User ${username}
   Port 2022
   IdentityFile $HOME/.ssh/ssh_client_ed25519_key
   UserKnownHostsFile /dev/null</pre>
@@ -145,13 +152,9 @@ function getHostURL () {
       return undefined;
     }
     let i = 0;
-    while (i < consoleURL.length || i < devspacesURL.length) {
-      if (consoleURL.substring(consoleURL.length - 1 - i) != devspacesURL.substring(devspacesURL.length - 1 - i)) {
-        if (i != 0) {
-          break;
-        }
-      }
+    while (i < consoleURL.length && i < devspacesURL.length
+        && consoleURL.substring(consoleURL.length - 1 - i) === devspacesURL.substring(devspacesURL.length - 1 - i)) {
       i++;
-   }
+    }
     return consoleURL.substring(consoleURL.length - i);
 }
