@@ -3563,6 +3563,27 @@
 							"electron-fetch",
 							"node-fetch"
 						]
+					},
+					"github.copilot.chat.planAgent.additionalTools": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"scope": "resource",
+						"markdownDescription": "%github.copilot.config.planAgent.additionalTools%",
+						"tags": [
+							"experimental"
+						]
+					},
+					"github.copilot.chat.planAgent.model": {
+						"type": "string",
+						"default": "",
+						"scope": "resource",
+						"markdownDescription": "%github.copilot.config.planAgent.model%",
+						"tags": [
+							"experimental"
+						]
 					}
 				}
 			},
@@ -5275,13 +5296,7 @@
 				}
 			}
 		],
-		"chatAgents": [
-			{
-				"name": "Plan",
-				"path": "./assets/agents/Plan.agent.md",
-				"description": "Researches a task to create multi-step plans"
-			}
-		],
+		"chatAgents": [],
 		"chatPromptFiles": [
 			{
 				"name": "savePrompt",

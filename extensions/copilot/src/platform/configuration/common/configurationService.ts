@@ -935,6 +935,11 @@ export namespace ConfigKey {
 	export const BackgroundAgentEnabled = defineSetting<boolean>('chat.backgroundAgent.enabled', ConfigType.Simple, true);
 	export const CloudAgentEnabled = defineSetting<boolean>('chat.cloudAgent.enabled', ConfigType.Simple, true);
 	export const AskQuestionsEnabled = defineSetting<boolean>('chat.askQuestions.enabled', ConfigType.Simple, true);
+
+	/** Additional tools to enable for the Plan agent (additive to base tools) */
+	export const PlanAgentAdditionalTools = defineSetting<string[]>('chat.planAgent.additionalTools', ConfigType.Simple, []);
+	/** Model override for Plan agent (empty = use default) */
+	export const PlanAgentModel = defineSetting<string>('chat.planAgent.model', ConfigType.Simple, '');
 }
 
 export function getAllConfigKeys(): string[] {
