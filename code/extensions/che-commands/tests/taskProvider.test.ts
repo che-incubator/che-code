@@ -162,7 +162,10 @@ dlv \\
 		await exec.callback();
 
 		expect(terminal.lastCommand).toBe(
-			"dlv \\ --listen=127.0.0.1:1234 \\ --only-same-user=false \\ debug main.go",
+			`dlv \\
+--listen=127.0.0.1:1234 \\
+--only-same-user=false \\
+debug main.go`
 		);
 	});
 
@@ -192,7 +195,9 @@ echo end
 		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
 		await exec.callback();
 
-		expect(terminal.lastCommand).toBe("echo start; echo middle; echo end");
+		expect(terminal.lastCommand).toBe(`echo start;
+echo middle;
+echo end`);
 	});
 
 	test("does not inject && when || operator is used", async () => {
@@ -276,7 +281,12 @@ EOF
 		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
 		await exec.callback();
 
-		expect(terminal.lastCommand).toBe("cat <<EOF > file.txt hello world EOF");
+		expect(terminal.lastCommand).toBe(
+			`cat <<EOF > file.txt
+hello
+world
+EOF`
+		);
 	});
 
 	test("does not break docker multiline commands", async () => {
@@ -306,7 +316,9 @@ docker run \\
 		await exec.callback();
 
 		expect(terminal.lastCommand).toBe(
-			"docker run \\ -v /tmp:/app \\ node:18 npm test",
+			`docker run \\
+-v /tmp:/app \\
+node:18 npm test`
 		);
 	});
 
@@ -335,7 +347,10 @@ echo done
 		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
 		await exec.callback();
 
-		expect(terminal.lastCommand).toBe("echo hello | grep h; echo done");
+		expect(terminal.lastCommand).toBe(
+			`echo hello | grep h;
+echo done`
+		);
 	});
 
 	test("single line command remains unchanged", async () => {
@@ -361,5 +376,36 @@ echo done
 		await exec.callback();
 
 		expect(terminal.lastCommand).toBe("npm run build");
+	});
+
+	test("simple multiline commands get && injected", async () => {
+		const devfile = {
+			commands: [
+				{
+					id: "simple-chain",
+					exec: {
+						commandLine: `
+npm install
+npm test
+npm build
+`,
+					},
+				},
+			],
+		};
+
+		const terminal = new MockTerminalAPI();
+		const provider = new DevfileTaskProvider(
+			vscode.window.createOutputChannel("test"),
+			new MockCheAPI(devfile),
+			terminal,
+		);
+
+		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
+		await exec.callback();
+
+		expect(terminal.lastCommand).toBe(
+			"npm install && npm test && npm build"
+		);
 	});
 });
