@@ -25,6 +25,7 @@
   "scripts": {
     "compile": "gulp compile-extension:che-commands",
     "watch": "gulp watch-extension:che-commands",
+    "test": "jest",
     "vscode:prepublish": "npm run compile",
     "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
     "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
@@ -39,8 +40,11 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
+    "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "22.x"
+    "@types/node": "22.x",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6"
   },
   "repository": {
     "type": "git",
