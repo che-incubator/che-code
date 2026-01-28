@@ -434,6 +434,8 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package-lock.json" ]]; then
@@ -448,6 +450,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package-lock.json" ]]; then
       apply_code_extensions_vscode_api_tests_package_lock_changes
+    elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
       apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
@@ -472,6 +476,12 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/web.main.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/server/node/serverServices.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/server/node/serverEnvironmentService.ts" ]]; then
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
@@ -495,6 +505,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts" ]]; then
+      apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"

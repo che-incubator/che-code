@@ -1,4 +1,7 @@
 {
+    "overrides": {
+        "jws": "^3.2.3"
+    },
     "workspaces": [
         "packageMocks/keytar"
     ]

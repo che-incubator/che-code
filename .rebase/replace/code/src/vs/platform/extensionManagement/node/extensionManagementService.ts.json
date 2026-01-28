@@ -2,5 +2,17 @@
 	{
     "from": "&& !(isLinux && this.productService.quality === 'stable')",
     "by": "\\&\\& !isLinux"
+  },
+  {
+    "from": "import { IExtensionGalleryManifestService } from '../common/extensionGalleryManifest.js';",
+    "by": "import { IExtensionGalleryManifestService } from '../common/extensionGalleryManifest.js';\\\nimport { assertVSIXInstallAllowed } from './che/extensionManagement.js';"
+  },
+  {
+    "from": "const allowedToInstall = this.allowedExtensionsService.isAllowed({ id: extensionId, version: manifest.version, publisherDisplayName: undefined });",
+    "by": "const allowedToInstall = this.allowedExtensionsService.isAllowed({ id: extensionId, version: manifest.version, publisherDisplayName: undefined });\\\n\\\t\\\t\\\tassertVSIXInstallAllowed(this.configurationService, this.logService, options);"
+  },
+  {
+    "from": "if (allowedToInstall !== true) {",
+    "by": "if (allowedToInstall !== true) {\\\n\\\t\\\t\\\t\\\tthis.logService.info(`ExtensionManagementService: Installation of the extension ${extensionId} is not allowed: ${allowedToInstall.value}.`);"
   }
 ]
