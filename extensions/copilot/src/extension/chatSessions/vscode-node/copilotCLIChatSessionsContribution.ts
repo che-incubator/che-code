@@ -1181,7 +1181,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		stream: vscode.ChatResponseStream,
 		token: vscode.CancellationToken
 	): Promise<vscode.ChatResult | void> {
-		// Migrate changes from repository to worktree
+		// Migrate changes from active repository to worktree
 		const activeRepository = await this.gitService.getRepository(repositoryPath);
 		if (!activeRepository) {
 			return;
@@ -1334,6 +1334,7 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.delete', async (sessionItem?: vscode.ChatSessionItem) => {
 		if (sessionItem?.resource) {
 			const id = SessionIdForCLI.parse(sessionItem.resource);
+			const worktree = copilotCLIWorktreeManagerService.getWorktreeProperties(id);
 			const worktreePath = copilotCLIWorktreeManagerService.getWorktreePath(id);
 
 			const confirmMessage = worktreePath
@@ -1353,7 +1354,7 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 
 				if (worktreePath) {
 					try {
-						const repository = gitService.activeRepository.get();
+						const repository = worktree ? await gitService.getRepository(vscode.Uri.file(worktree.repositoryPath), true) : undefined;
 						if (!repository) {
 							throw new Error(l10n.t('No active repository found to delete worktree.'));
 						}
