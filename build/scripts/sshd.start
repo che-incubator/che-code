@@ -40,7 +40,7 @@ fi
 
 # Common tools needed to set up service
 mkdir -p $HOME/bin
-cp /sshd/tar /sshd/gzip $HOME/bin/
+cp /sshd/tar /sshd/gzip /sshd/which $HOME/bin/
 echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
