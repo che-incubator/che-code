@@ -943,6 +943,11 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 					change.added ?? 0,
 					change.removed ?? 0));
 
+				const metadata = {
+					name: pr.repository?.name,
+					owner: pr.repository?.owner?.login
+				} satisfies { readonly [key: string]: unknown };
+
 				const session = {
 					resource: vscode.Uri.from({ scheme: CopilotCloudSessionsProvider.TYPE, path: '/' + pr.number }),
 					label: pr.title,
@@ -957,12 +962,9 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 						}
 					} : {}),
 					changes,
+					metadata,
 					fullDatabaseId: pr.fullDatabaseId.toString(),
-					pullRequestDetails: pr,
-					repository: {
-						owner: pr.repository?.owner?.login ?? '',
-						name: pr.repository?.name ?? ''
-					}
+					pullRequestDetails: pr
 				} satisfies vscode.ChatSessionItem & {
 					fullDatabaseId: string;
 					pullRequestDetails: PullRequestSearchItem;
