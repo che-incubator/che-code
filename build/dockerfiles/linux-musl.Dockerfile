@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Red Hat, Inc.
+# Copyright (c) 2021-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,9 @@ RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-m
 
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
+
+# Run tests for che-commands extension
+RUN npm --prefix extensions/che-commands test
 
 # Rebuild platform specific dependencies
 RUN npm rebuild
