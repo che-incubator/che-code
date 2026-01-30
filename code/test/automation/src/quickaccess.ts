@@ -20,10 +20,9 @@ export class QuickAccess {
 
 	async openFileQuickAccessAndWait(searchValue: string, expectedFirstElementNameOrExpectedResultCount: string | number): Promise<void> {
 
-		// Removing this logic just for this release... after this release, all versions should have the `workbench.action.clearEditorHistoryWithoutConfirm` command.
 		// make sure the file quick access is not "polluted"
 		// with entries from the editor history when opening
-		await this.runCommand('workbench.action.clearEditorHistory');
+		await this.runCommand('workbench.action.clearEditorHistoryWithoutConfirm');
 
 		const PollingStrategy = {
 			Stop: true,
@@ -243,5 +242,23 @@ export class QuickAccess {
 				continue;
 			}
 		}
+	}
+
+	async getVisibleCommandNames(searchValue: string): Promise<string[]> {
+
+		// open commands picker
+		await this.openQuickAccessWithRetry(QuickAccessKind.Commands, `>${searchValue}`);
+
+		// wait for quick input elements to be available
+		let commandNames: string[] = [];
+		await this.quickInput.waitForQuickInputElements(elementNames => {
+			commandNames = elementNames;
+			return true;
+		});
+
+		// close the quick input
+		await this.quickInput.closeQuickInput();
+
+		return commandNames;
 	}
 }
