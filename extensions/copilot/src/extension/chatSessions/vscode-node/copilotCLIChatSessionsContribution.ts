@@ -222,7 +222,15 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		const id = SessionIdForCLI.parse(sessionItem.resource);
 		const terminalName = sessionItem.label || id;
 		const cliArgs = ['--resume', id];
-		await this.terminalIntegration.openTerminal(terminalName, cliArgs);
+		const worktreeProperties = this.worktreeManager.getWorktreeProperties(id);
+		const workspaceFolder = this.workspaceFolderService.getSessionWorkspaceFolder(id);
+		const token = new vscode.CancellationTokenSource();
+		try {
+			const cwd = worktreeProperties?.worktreePath ?? workspaceFolder?.fsPath ?? (await this.copilotcliSessionService.getSessionWorkingDirectory(id, token.token))?.fsPath;
+			await this.terminalIntegration.openTerminal(terminalName, cliArgs, cwd);
+		} finally {
+			token.dispose();
+		}
 	}
 }
 
@@ -1194,6 +1202,12 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 					workingDirectory = sessionWorkspaceFolder;
 					isWorkspaceFolderWithoutRepo = true;
 					isolationEnabled = false;
+				}
+				// If we dont' have the information, possible this is a session started using terminal.
+				// Try to get the working directory from the session service (using metadata for session in CLI).
+				if (!workingDirectory && !sessionWorkspaceFolder) {
+					workingDirectory = await this.sessionService.getSessionWorkingDirectory(id, token);
+					isolationEnabled = false; // We didn't start this session with isolation, so disable it.
 				}
 			}
 		} else {

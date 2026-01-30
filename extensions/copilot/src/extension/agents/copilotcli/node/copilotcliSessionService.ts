@@ -43,6 +43,8 @@ export interface ICopilotCLISessionService {
 
 	onDidChangeSessions: Event<void>;
 
+	getSessionWorkingDirectory(sessionId: string, token: CancellationToken): Promise<Uri | undefined>;
+
 	// Session metadata querying
 	getAllSessions(filter: (sessionId: string) => boolean | undefined, token: CancellationToken): Promise<readonly ICopilotCLISessionItem[]>;
 
@@ -90,6 +92,23 @@ export class CopilotCLISessionService extends Disposable implements ICopilotCLIS
 			return new internal.LocalSessionManager({});
 		});
 		this._sessionTracker = this.instantiationService.createInstance(CopilotCLISessionWorkspaceTracker);
+	}
+
+	async getSessionWorkingDirectory(sessionId: string, token: CancellationToken): Promise<Uri | undefined> {
+		const sessionManager = await raceCancellationError(this.getSessionManager(), token);
+		if (token.isCancellationRequested) {
+			return;
+		}
+		const sessionMetadataList = await raceCancellationError(sessionManager.listSessions(), token);
+		const metadata = sessionMetadataList.find(s => s.sessionId === sessionId);
+		const cwd = metadata?.context?.gitRoot ?? metadata?.context?.cwd;
+		// Give preference to the git root if available.
+		// Found while testing that cwd can be users root directory in some cases.
+		if (!cwd || !(await checkPathExists(URI.file(cwd), this.fileSystem))) {
+			return;
+		}
+
+		return URI.file(cwd);
 	}
 
 	protected monitorSessionFiles() {
@@ -479,5 +498,14 @@ export class RefCountedSession extends RefCountedDisposable implements IReferenc
 	}
 	dispose(): void {
 		this.release();
+	}
+}
+
+async function checkPathExists(filePath: Uri, fileSystem: IFileSystemService): Promise<boolean> {
+	try {
+		await fileSystem.stat(filePath);
+		return true;
+	} catch (error) {
+		return false;
 	}
 }
