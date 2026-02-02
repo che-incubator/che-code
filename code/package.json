@@ -253,7 +253,8 @@
     },
     "@azure/core-http": {
       "form-data": "4.0.4"
-    }
+    },
+    "lodash": "^4.17.23"
   },
   "repository": {
     "type": "git",
