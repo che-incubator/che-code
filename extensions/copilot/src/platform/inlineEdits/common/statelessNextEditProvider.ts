@@ -58,6 +58,7 @@ export interface IStatelessNextEditProvider {
 	provideNextEdit(request: StatelessNextEditRequest, logger: ILogger, logContext: InlineEditRequestLogContext, cancellationToken: CancellationToken): EditStreamingWithTelemetry;
 	handleAcceptance?(): void;
 	handleRejection?(): void;
+	handleIgnored?(): void;
 }
 
 export class StatelessNextEditRequest<TFirstEdit = any> {

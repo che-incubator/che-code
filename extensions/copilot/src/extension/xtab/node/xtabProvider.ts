@@ -101,7 +101,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 		@ILanguageDiagnosticsService private readonly langDiagService: ILanguageDiagnosticsService,
 		@IIgnoreService private readonly ignoreService: IIgnoreService,
 	) {
-		this.userInteractionMonitor = new UserInteractionMonitor(this.configService, this.expService);
+		this.userInteractionMonitor = this.instaService.createInstance(UserInteractionMonitor);
 		this.nextCursorPredictor = this.instaService.createInstance(XtabNextCursorPredictor, XtabProvider.computeTokens);
 	}
 
@@ -111,6 +111,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 
 	public handleRejection(): void {
 		this.userInteractionMonitor.handleRejection();
+	}
+
+	public handleIgnored(): void {
+		this.userInteractionMonitor.handleIgnored();
 	}
 
 	public async *provideNextEdit(request: StatelessNextEditRequest, logger: ILogger, logContext: InlineEditRequestLogContext, cancellationToken: CancellationToken): EditStreamingWithTelemetry {
@@ -348,6 +352,8 @@ export class XtabProvider implements IStatelessNextEditProvider {
 				shouldRemoveCursorTagFromResponse,
 				responseFormat,
 				retryState,
+				aggressivenessLevel,
+				userHappinessScore,
 			},
 			delaySession,
 			tracer,
@@ -486,6 +492,8 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			responseFormat: xtabPromptOptions.ResponseFormat;
 			shouldRemoveCursorTagFromResponse: boolean;
 			retryState: RetryState.t;
+			aggressivenessLevel: xtabPromptOptions.AggressivenessLevel;
+			userHappinessScore: number | undefined;
 		},
 		delaySession: DelaySession,
 		parentTracer: ILogger,
@@ -556,6 +564,8 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			responseFormat: xtabPromptOptions.ResponseFormat;
 			shouldRemoveCursorTagFromResponse: boolean;
 			retryState: RetryState.t;
+			aggressivenessLevel: xtabPromptOptions.AggressivenessLevel;
+			userHappinessScore: number | undefined;
 		},
 		delaySession: DelaySession,
 		parentTracer: ILogger,
@@ -613,6 +623,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 					requestId: request.id,
 				},
 				useFetcher,
+				customMetadata: {
+					aggressivenessLevel: opts.aggressivenessLevel,
+					userHappinessScore: opts.userHappinessScore,
+				},
 			},
 			cancellationToken,
 		);
