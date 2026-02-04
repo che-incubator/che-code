@@ -8,11 +8,30 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://github.com/sclorg/s2i-nodejs-container/blob/master/22/root/opt/app-root/etc/generate_container_user
 USER_ID=$(id -u)
 
-export LD_PRELOAD=/sshd/libeconf.so.0:/sshd/libpam.so.0:/sshd/libcrypt.so.2
+sshd_libdir=
+. /etc/os-release
+case $VERSION_ID in
+  "8"*)
+  sshd_libdir=/sshd/ubi8
+  export LD_PRELOAD=$sshd_libdir/libpam.so.0
+  ;;
+  "9"*)
+  sshd_libdir=/sshd/ubi9
+  export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  ;;
+  "10"*)
+  sshd_libdir=/sshd/ubi9
+  export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  ;;
+  *)
+  sshd_libdir=/sshd/ubi9
+  export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  ;;
+esac
 
+# https://github.com/sclorg/s2i-nodejs-container/blob/master/22/root/opt/app-root/etc/generate_container_user
 # Configure passwd/group files for SSHD
 # Random user must have a login shell and appropriate home folder
 if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
@@ -35,7 +54,7 @@ if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
 
   export NSS_WRAPPER_PASSWD
   export NSS_WRAPPER_GROUP
-  export LD_PRELOAD=$LD_PRELOAD:/sshd/libnss_wrapper.so
+  export LD_PRELOAD=$LD_PRELOAD:$sshd_libdir/libnss_wrapper.so
 fi
 
 if [ $HOME = "/" ] || [ -z $USER_NAME ]; then
@@ -45,7 +64,7 @@ fi
 
 # Common tools needed to set up service
 mkdir -p $HOME/bin
-cp /sshd/tar /sshd/gzip /sshd/which $HOME/bin/
+cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
 echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
@@ -58,10 +77,10 @@ mkdir /var/tmp/ssh
 chmod 755 /var/tmp/ssh
 
 # Generate SSH Host keys
-/sshd/ssh-keygen -q -N "" -t dsa -f /var/tmp/ssh/ssh_host_dsa_key && \
-/sshd/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key && \
-/sshd/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key && \
-/sshd/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key
+$sshd_libdir/ssh-keygen -q -N "" -t dsa -f /var/tmp/ssh/ssh_host_dsa_key && \
+$sshd_libdir/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key && \
+$sshd_libdir/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key && \
+$sshd_libdir/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key
 
 # Ensure appropriate permissions
 chmod 600 /var/tmp/ssh/ssh_host_* /sshd/sshd_config
@@ -86,7 +105,7 @@ mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
   cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  /sshd/ssh-keygen -q -N '' -t ed25519 -f /sshd/ssh_client_ed25519_key
+  $sshd_libdir/ssh-keygen -q -N '' -t ed25519 -f /sshd/ssh_client_ed25519_key
   cp /sshd/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
 fi
 
@@ -96,5 +115,5 @@ cp /sshd/sshd_config /var/tmp/ssh/
 echo -n "$(whoami)" > /sshd/username
 
 # start SSHD
-exec /sshd/sshd -D -f /var/tmp/ssh/sshd_config -E /tmp/sshd.log
+exec $sshd_libdir/sshd -D -f /var/tmp/ssh/sshd_config -E /tmp/sshd.log
 
