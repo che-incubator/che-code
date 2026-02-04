@@ -30,10 +30,5 @@
     "cpx2": "3.0.0",
     "nodemon": "^3.1.9",
     "npm-run-all2": "^8.0.4"
-  },
-  "overrides": {
-    "npm-run-all": {
-      "cross-spawn": "7.0.6"
-    }
   }
 }
