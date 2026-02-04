@@ -254,6 +254,7 @@
     "@azure/core-http": {
       "form-data": "4.0.4"
     },
+    "tar": "^7.5.7",
     "lodash": "^4.17.23"
   },
   "repository": {
