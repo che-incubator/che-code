@@ -566,3 +566,132 @@ describe("Check exec has its own component", () => {
 		expect(terminal.calls[0].command).toBe("echo A && echo B");
 	});
 });
+
+describe("ubi8-ubi9 composite", () => {
+	function baseCommands() {
+		return [
+			{
+				id: "ubi8-tools-version",
+				exec: {
+					label: "ubi8 version",
+					component: "ubi8",
+					commandLine: "echo ubi8",
+				},
+			},
+			{
+				id: "ubi9-tools-version",
+				exec: {
+					label: "ubi9 version",
+					component: "ubi9",
+					commandLine: "echo ubi9",
+				},
+			},
+		];
+	}
+
+	test("sequential composite executes both components", async () => {
+		const devfile = {
+			commands: [
+				...baseCommands(),
+				{
+					id: "parallel-ubi8-ubi9",
+					composite: {
+						label: "Parallel: Check echo ubi8-ubi9",
+						parallel: false,
+						commands: ["ubi8-tools-version", "ubi9-tools-version"],
+					},
+				},
+			],
+		};
+
+		const terminal = new MockTerminalAPI();
+		const provider = new DevfileTaskProvider(
+			vscode.window.createOutputChannel("test"),
+			new MockCheAPI(devfile),
+			terminal,
+		);
+
+		const tasks = await provider.provideTasks();
+
+		// label should be used instead of id
+		const task = tasks!.find(
+			(t) => t.name === "Parallel: Check echo ubi8-ubi9",
+		)!;
+
+		await (task.execution as any).callback();
+
+		// ubi8 + ubi9 + completion echo
+		expect(terminal.calls.length).toBe(3);
+
+		expect(terminal.calls[0].component).toBe("ubi8");
+		expect(terminal.calls[1].component).toBe("ubi9");
+	});
+
+	test("parallel composite executes both components", async () => {
+		const devfile = {
+			commands: [
+				...baseCommands(),
+				{
+					id: "parallel-ubi8-ubi9",
+					composite: {
+						label: "Parallel: Check echo ubi8-ubi9",
+						parallel: true,
+						commands: ["ubi8-tools-version", "ubi9-tools-version"],
+					},
+				},
+			],
+		};
+
+		const terminal = new MockTerminalAPI();
+		const provider = new DevfileTaskProvider(
+			vscode.window.createOutputChannel("test"),
+			new MockCheAPI(devfile),
+			terminal,
+		);
+
+		const tasks = await provider.provideTasks();
+
+		const task = tasks!.find(
+			(t) => t.name === "Parallel: Check echo ubi8-ubi9",
+		)!;
+
+		await (task.execution as any).callback();
+
+		// multi-component parallel → still 2 exec + completion
+		expect(terminal.calls.length).toBe(3);
+
+		const components = terminal.calls
+			.slice(0, 2)
+			.map((c) => c.component)
+			.sort();
+
+		expect(components).toEqual(["ubi8", "ubi9"]);
+	});
+
+	test("composite label is used as task name", async () => {
+		const devfile = {
+			commands: [
+				...baseCommands(),
+				{
+					id: "parallel-ubi8-ubi9",
+					composite: {
+						label: "Parallel: Check echo ubi8-ubi9",
+						commands: ["ubi8-tools-version", "ubi9-tools-version"],
+					},
+				},
+			],
+		};
+
+		const provider = new DevfileTaskProvider(
+			vscode.window.createOutputChannel("test"),
+			new MockCheAPI(devfile),
+			new MockTerminalAPI(),
+		);
+
+		const tasks = await provider.provideTasks();
+
+		expect(
+			tasks!.some((t) => t.name === "Parallel: Check echo ubi8-ubi9"),
+		).toBe(true);
+	});
+});
