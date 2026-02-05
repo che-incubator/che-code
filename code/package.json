@@ -233,9 +233,6 @@
     "@gulp-sourcemaps/identity-map": {
       "postcss": "8.4.33"
     },
-    "postcss": {
-      "nanoid": "3.3.8"
-    },
     "kerberos@2.1.1": {
       "node-addon-api": "7.1.0"
     },

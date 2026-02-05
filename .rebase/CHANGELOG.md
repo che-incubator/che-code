@@ -195,12 +195,6 @@ https://github.com/che-incubator/che-code/pull/476
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/478
-
-- code/package.json
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/463
 
 - code/package.json
