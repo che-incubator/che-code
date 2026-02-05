@@ -10,28 +10,46 @@
 
 /* eslint-disable header/header */
 
+type MockTerminalOptions = {
+  debug?: boolean;
+};
+
+
 export class MockTerminalAPI {
-	public calls: Array<{ component?: string; command: string; cwd: string }> =
-		[];
-	public output: string[] = [];
+	private debug: boolean;
+
+	public calls: Array<{
+		component?: string;
+		command: string;
+		cwd: string;
+		output: string;
+	}> = [];
+
+	constructor(opts?: MockTerminalOptions) {
+		this.debug = !!opts?.debug;
+	}
 
 	async getMachineExecPTY(
 		component: string | undefined,
 		command: string,
 		cwd: string,
 	) {
-		this.calls.push({ component, command, cwd });
+		// simulate output from echo commands
+		const output = this.simulateOutput(command);
 
-		// simulate VS Code task console banner
-		this.output.push(`Executing task: devfile: ${component ?? "workspace"}`);
+		const record = { component, command, cwd, output };
+		this.calls.push(record);
 
-		const echoes = command.match(/echo\s+(.+)/g) || [];
-		for (const e of echoes) {
-			this.output.push(e.replace(/^echo\s+/, ""));
+		// ✅ print during test run
+		if (this.debug) {
+			console.log("\n[PTY]");
+			console.log(" component:", component ?? "default");
+			console.log(" cwd:", cwd);
+			console.log(" command:", command);
+			if (output) {
+				console.log(" output:", output);
+			}
 		}
-
-		this.output.push("Terminal will be reused by tasks...");
-
 		return {
 			open: () => {},
 			close: () => {},
@@ -39,6 +57,14 @@ export class MockTerminalAPI {
 			onDidClose: () => {},
 			handleInput: () => {},
 		};
+	}
+
+	private simulateOutput(command: string): string {
+		// simple echo simulation
+		const m = command.match(/echo\s+(.+)/);
+		if (!m) return "";
+
+		return m[1].replace(/^"|"$/g, "");
 	}
 }
 

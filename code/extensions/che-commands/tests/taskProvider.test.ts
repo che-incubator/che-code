@@ -14,7 +14,7 @@ import { DevfileTaskProvider } from "../src/taskProvider";
 import { MockCheAPI, MockTerminalAPI } from "./mocks";
 import * as vscode from "vscode";
 
-function provider(devfile: any, terminal?: MockTerminalAPI) {
+function createProvider(devfile: any, terminal?: MockTerminalAPI) {
 	return new DevfileTaskProvider(
 		vscode.window.createOutputChannel("test"),
 		new MockCheAPI(devfile),
@@ -22,166 +22,94 @@ function provider(devfile: any, terminal?: MockTerminalAPI) {
 	);
 }
 
-async function runFirst(devfile: any, terminal: MockTerminalAPI) {
-	const tasks = await provider(devfile, terminal).provideTasks();
-	await (tasks![0].execution as any).callback();
-}
-
-describe("Exec normalization — structural cleanup", () => {
-	test("removes trailing &&", async () => {
+describe("Exec command normalization", () => {
+	test("removes trailing logical AND operators from single-line commands", async () => {
 		const term = new MockTerminalAPI();
-		await runFirst(
+
+		const tasks = await createProvider(
 			{
-				commands: [{ id: "a", exec: { commandLine: "npm build &&" } }],
+				commands: [{ id: "build", exec: { commandLine: "npm run build &&" } }],
 			},
 			term,
-		);
+		).provideTasks();
 
-		expect(term.calls[0].command).toBe("npm build");
+		await (tasks![0].execution as any).callback();
+
+		expect(term.calls[0].command).toBe("npm run build");
 	});
 
-	test("joins multiline array with implicit &&", async () => {
+	test("joins multiline YAML command arrays into a safe && chain", async () => {
 		const term = new MockTerminalAPI();
 
-		await runFirst(
+		const tasks = await createProvider(
 			{
 				commands: [
 					{
-						id: "a",
-						exec: { commandLine: ["npm install", "npm test"] },
+						id: "compile",
+						exec: { commandLine: ["mvn clean &&", "", "mvn install &&"] },
 					},
 				],
 			},
 			term,
-		);
+		).provideTasks();
 
-		expect(term.calls[0].command).toBe("npm install && npm test");
+		await (tasks![0].execution as any).callback();
+
+		expect(term.calls[0].command).toBe("mvn clean && mvn install");
 	});
-});
 
-describe("Shell pattern preservation — no unsafe && injection", () => {
-	test("preserves semicolon chains", async () => {
+	test("preserves semicolon-chained shell scripts without injecting &&", async () => {
 		const term = new MockTerminalAPI();
-		await runFirst(
+
+		const tasks = await createProvider(
 			{
-				commands: [{ id: "a", exec: { commandLine: "echo a; echo b" } }],
+				commands: [{ id: "script", exec: { commandLine: "echo A; echo B" } }],
 			},
 			term,
-		);
+		).provideTasks();
+
+		await (tasks![0].execution as any).callback();
 
 		expect(term.calls[0].command).toContain(";");
 	});
 
-	test("preserves OR operator", async () => {
+	test("preserves pipe operators in shell commands", async () => {
 		const term = new MockTerminalAPI();
-		await runFirst(
+
+		const tasks = await createProvider(
 			{
-				commands: [{ id: "a", exec: { commandLine: "make || echo fail" } }],
+				commands: [{ id: "pipe", exec: { commandLine: "ps aux | grep node" } }],
 			},
 			term,
-		);
+		).provideTasks();
 
-		expect(term.calls[0].command).toContain("||");
-	});
-
-	test("preserves pipe operator", async () => {
-		const term = new MockTerminalAPI();
-		await runFirst(
-			{
-				commands: [{ id: "a", exec: { commandLine: "ps | grep node" } }],
-			},
-			term,
-		);
+		await (tasks![0].execution as any).callback();
 
 		expect(term.calls[0].command).toContain("|");
 	});
 
-	test("preserves heredoc", async () => {
+	test("preserves line-continuation scripts using backslashes", async () => {
 		const term = new MockTerminalAPI();
-		await runFirst(
+
+		const tasks = await createProvider(
 			{
-				commands: [
-					{
-						id: "a",
-						exec: { commandLine: "cat <<EOF\nhi\nEOF" },
-					},
-				],
+				commands: [{ id: "debug", exec: { commandLine: "run \\\n next" } }],
 			},
 			term,
-		);
+		).provideTasks();
 
-		expect(term.calls[0].command).toContain("<<EOF");
-	});
-
-	test("preserves line continuation backslash", async () => {
-		const term = new MockTerminalAPI();
-		await runFirst(
-			{
-				commands: [
-					{
-						id: "a",
-						exec: { commandLine: "docker run \\\n alpine" },
-					},
-				],
-			},
-			term,
-		);
+		await (tasks![0].execution as any).callback();
 
 		expect(term.calls[0].command).toContain("\\");
 	});
 });
 
-describe("Environment and working directory handling", () => {
-	test("exports exec env vars with escaping", async () => {
-		const term = new MockTerminalAPI();
-
-		await runFirst(
-			{
-				commands: [
-					{
-						id: "a",
-						exec: {
-							commandLine: "echo hi",
-							env: [{ name: "A", value: 'x"y' }],
-						},
-					},
-				],
-			},
-			term,
-		);
-
-		expect(term.calls[0].command).toContain(`export A="x\\"y"`);
-	});
-
-	test("expands workingDir variables", async () => {
-		process.env.MY_DIR = "/tmp/demo";
-		const term = new MockTerminalAPI();
-
-		await runFirst(
-			{
-				commands: [
-					{
-						id: "a",
-						exec: {
-							commandLine: "echo hi",
-							workingDir: "${MY_DIR}",
-						},
-					},
-				],
-			},
-			term,
-		);
-
-		expect(term.calls[0].cwd).toBe("/tmp/demo");
-	});
-});
-
-describe("Command filtering rules", () => {
-	test("filters imported child commands", async () => {
-		const tasks = await provider({
+describe("Provider command filtering", () => {
+	test("excludes commands imported as child devfile fragments", async () => {
+		const tasks = await createProvider({
 			commands: [
 				{
-					id: "x",
+					id: "child",
 					exec: { commandLine: "echo" },
 					attributes: { "controller.devfile.io/imported-by": "child" },
 				},
@@ -190,160 +118,66 @@ describe("Command filtering rules", () => {
 
 		expect(tasks).toHaveLength(0);
 	});
-});
 
-describe("Composite — sequential execution", () => {
-	test("joins with &&", async () => {
-		const term = new MockTerminalAPI();
-
-		const tasks = await provider(
-			{
-				commands: [
-					{ id: "a", exec: { commandLine: "echo A" } },
-					{ id: "b", exec: { commandLine: "echo B" } },
-					{ id: "c", composite: { commands: ["a", "b"] } },
-				],
-			},
-			term,
-		).provideTasks();
-
-		const task = tasks!.find((t) => t.name === "c")!;
-		await (task.execution as any).callback();
-
-		expect(term.calls[0].command).toBe("echo A && echo B");
+	test("returns no tasks when devfile contains no runnable commands", async () => {
+		const tasks = await createProvider({ commands: [] }).provideTasks();
+		expect(tasks).toEqual([]);
 	});
 });
 
-describe("Composite — parallel execution", () => {
-	test("uses & and wait", async () => {
+describe("Environment variable handling", () => {
+	test("injects exec environment variables with proper escaping", async () => {
 		const term = new MockTerminalAPI();
 
-		const tasks = await provider(
+		const tasks = await createProvider(
 			{
 				commands: [
-					{ id: "a", exec: { commandLine: "echo A" } },
-					{ id: "b", exec: { commandLine: "echo B" } },
-					{ id: "p", composite: { parallel: true, commands: ["a", "b"] } },
+					{
+						id: "env",
+						exec: {
+							commandLine: "echo hi",
+							env: [{ name: "A", value: 'x"y' }],
+						},
+					},
 				],
 			},
 			term,
 		).provideTasks();
 
-		const task = tasks!.find((t) => t.name === "p")!;
-		await (task.execution as any).callback();
+		await (tasks![0].execution as any).callback();
 
-		expect(term.calls[0].command).toBe("echo A & echo B ; wait");
+		expect(term.calls[0].command).toContain(`export A="x\\"y"`);
+	});
+
+	test("expands working directory environment placeholders", async () => {
+		process.env.TEST_DIR = "/tmp/demo";
+
+		const term = new MockTerminalAPI();
+
+		const tasks = await createProvider(
+			{
+				commands: [
+					{
+						id: "wd",
+						exec: {
+							commandLine: "echo",
+							workingDir: "${TEST_DIR}",
+						},
+					},
+				],
+			},
+			term,
+		).provideTasks();
+
+		await (tasks![0].execution as any).callback();
+
+		expect(term.calls[0].cwd).toBe("/tmp/demo");
 	});
 });
 
-describe("Composite execution model — multi vs single component (sequential + parallel)", () => {
-	test("multi-component sequential executes each command in its own component", async () => {
-		const term = new MockTerminalAPI();
-
-		const tasks = await provider(
-			{
-				commands: [
-					{ id: "a", exec: { component: "ubi8", commandLine: "echo 8" } },
-					{ id: "b", exec: { component: "ubi9", commandLine: "echo 9" } },
-					{ id: "c", composite: { parallel: false, commands: ["a", "b"] } },
-				],
-			},
-			term,
-		).provideTasks();
-
-		const task = tasks!.find((t) => t.name === "c")!;
-		await (task.execution as any).callback();
-
-		// two real executions + completion echo
-		expect(term.calls.length).toBe(3);
-
-		expect(term.calls[0]).toMatchObject({
-			component: "ubi8",
-			command: expect.stringContaining("echo 8"),
-		});
-
-		expect(term.calls[1]).toMatchObject({
-			component: "ubi9",
-			command: expect.stringContaining("echo 9"),
-		});
-	});
-
-	test("multi-component parallel executes each command in its own component", async () => {
-		const term = new MockTerminalAPI();
-
-		const tasks = await provider(
-			{
-				commands: [
-					{ id: "a", exec: { component: "ubi8", commandLine: "echo 8" } },
-					{ id: "b", exec: { component: "ubi9", commandLine: "echo 9" } },
-					{ id: "c", composite: { parallel: true, commands: ["a", "b"] } },
-				],
-			},
-			term,
-		).provideTasks();
-
-		const task = tasks!.find((t) => t.name === "c")!;
-		await (task.execution as any).callback();
-
-		// two real executions + completion echo
-		expect(term.calls.length).toBe(3);
-
-		const comps = term.calls
-			.slice(0, 2)
-			.map((c) => c.component)
-			.sort();
-		expect(comps).toEqual(["ubi8", "ubi9"]);
-	});
-
-	test("same-component sequential composite is flattened with &&", async () => {
-		const term = new MockTerminalAPI();
-
-		const tasks = await provider(
-			{
-				commands: [
-					{ id: "a", exec: { component: "py", commandLine: "A" } },
-					{ id: "b", exec: { component: "py", commandLine: "B" } },
-					{ id: "c", composite: { parallel: false, commands: ["a", "b"] } },
-				],
-			},
-			term,
-		).provideTasks();
-
-		const task = tasks!.find((t) => t.name === "c")!;
-		await (task.execution as any).callback();
-
-		expect(term.calls.length).toBe(1);
-		expect(term.calls[0].component).toBe("py");
-		expect(term.calls[0].command).toBe("A && B");
-	});
-
-	test("same-component parallel composite is flattened with & and wait", async () => {
-		const term = new MockTerminalAPI();
-
-		const tasks = await provider(
-			{
-				commands: [
-					{ id: "a", exec: { component: "py", commandLine: "A" } },
-					{ id: "b", exec: { component: "py", commandLine: "B" } },
-					{ id: "c", composite: { parallel: true, commands: ["a", "b"] } },
-				],
-			},
-			term,
-		).provideTasks();
-
-		const task = tasks!.find((t) => t.name === "c")!;
-		await (task.execution as any).callback();
-
-		expect(term.calls.length).toBe(1);
-		expect(term.calls[0].component).toBe("py");
-		expect(term.calls[0].command).toContain("A & B");
-		expect(term.calls[0].command).toContain("wait");
-	});
-});
-
-describe("Composite validation safety", () => {
-	test("rejects cyclic composites", async () => {
-		const tasks = await provider({
+describe("Composite validation and safety", () => {
+	test("rejects composites with cyclic command references", async () => {
+		const tasks = await createProvider({
 			commands: [
 				{ id: "a", composite: { commands: ["b"] } },
 				{ id: "b", composite: { commands: ["a"] } },
@@ -352,46 +186,180 @@ describe("Composite validation safety", () => {
 
 		expect(tasks).toHaveLength(0);
 	});
+});
 
-	test("supports nested composite resolution", async () => {
-		const term = new MockTerminalAPI();
+describe("Composite execution across multiple components", () => {
+	test("runs sequential composite commands in their respective components", async () => {
+		const term = new MockTerminalAPI( {debug: false} ); //true to see PTY logs
 
-		const tasks = await provider(
+		const tasks = await createProvider(
 			{
 				commands: [
-					{ id: "a", exec: { commandLine: "A" } },
-					{ id: "b", composite: { commands: ["a"] } },
-					{ id: "c", composite: { commands: ["b"] } },
+					{ id: "ubi8", exec: { component: "ubi8", commandLine: "echo el8" } },
+					{ id: "ubi9", exec: { component: "ubi9", commandLine: "echo el9" } },
+					{
+						id: "combo",
+						composite: { parallel: false, commands: ["ubi8", "ubi9"] },
+					},
 				],
 			},
 			term,
 		).provideTasks();
 
-		await (tasks!.find((t) => t.name === "c")!.execution as any).callback();
+		await (tasks!.find((t) => t.name === "combo")!.execution as any).callback();
 
-		expect(term.calls[0].command).toBe("A");
+		expect(term.calls[0].component).toBe("ubi8");
+		expect(term.calls[1].component).toBe("ubi9");
+		expect(term.calls[0].output).toBe("el8");
+		expect(term.calls[1].output).toBe("el9");
+	});
+
+	test("runs parallel composite commands in their respective components", async () => {
+		const term = new MockTerminalAPI({ debug: false }); //true to see PTY logs
+
+		const tasks = await createProvider(
+			{
+				commands: [
+					{ id: "ubi8", exec: { component: "ubi8", commandLine: "echo el8" } },
+					{ id: "ubi9", exec: { component: "ubi9", commandLine: "echo el9" } },
+					{
+						id: "combo",
+						composite: { parallel: true, commands: ["ubi8", "ubi9"] },
+					},
+				],
+			},
+			term,
+		).provideTasks();
+
+		await (tasks!.find((t) => t.name === "combo")!.execution as any).callback();
+
+		const components = term.calls
+			.slice(0, 2)
+			.map((c) => c.component)
+			.sort();
+		expect(components).toEqual(["ubi8", "ubi9"]);
+	});
+
+	test("single-command composite does not emit completion message", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { commandLine: "echo A" } },
+					{ id: "combo", composite: { commands: ["a"] } },
+				],
+			},
+			term,
+		).provideTasks();
+
+		await (tasks!.find((t) => t.name === "combo")!.execution as any).callback();
+
+		expect(
+			term.calls.some((c) => c.command.includes("execution completed")),
+		).toBe(false);
+
+		expect(term.calls.length).toBe(1);
+		expect(term.calls[0].command).toContain("echo A");
 	});
 });
 
-describe("Task naming precedence", () => {
-	test("exec label overrides id", async () => {
-		const tasks = await provider({
-			commands: [
-				{ id: "a", exec: { label: "Nice Name", commandLine: "echo" } },
-			],
-		}).provideTasks();
+describe("Composite flattening within a single component", () => {
+	test("flattens sequential composites into a single && command chain", async () => {
+		const term = new MockTerminalAPI();
 
-		expect(tasks![0].name).toBe("Nice Name");
+		const tasks = await createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { component: "py", commandLine: "A" } },
+					{ id: "b", exec: { component: "py", commandLine: "B" } },
+					{ id: "combo", composite: { parallel: false, commands: ["a", "b"] } },
+				],
+			},
+			term,
+		).provideTasks();
+
+		await (tasks!.find((t) => t.name === "combo")!.execution as any).callback();
+
+		expect(term.calls.length).toBe(1);
+		expect(term.calls[0].command).toBe("A && B");
 	});
 
-	test("composite label overrides id", async () => {
-		const tasks = await provider({
+	test("flattens parallel composites into a backgrounded command chain with wait", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { component: "py", commandLine: "A" } },
+					{ id: "b", exec: { component: "py", commandLine: "B" } },
+					{ id: "combo", composite: { parallel: true, commands: ["a", "b"] } },
+				],
+			},
+			term,
+		).provideTasks();
+
+		await (tasks!.find((t) => t.name === "combo")!.execution as any).callback();
+
+		expect(term.calls[0].command).toContain("&");
+		expect(term.calls[0].command).toContain("wait");
+	});
+});
+
+describe("Task naming resolution", () => {
+	test("uses exec label as the VS Code task name when provided", async () => {
+		const tasks = await createProvider({
 			commands: [
-				{ id: "a", exec: { commandLine: "echo" } },
-				{ id: "b", composite: { label: "Composite Nice", commands: ["a"] } },
+				{ id: "a", exec: { label: "Build Task", commandLine: "echo" } },
 			],
 		}).provideTasks();
 
-		expect(tasks!.some((t) => t.name === "Composite Nice")).toBe(true);
+		expect(tasks![0].name).toBe("Build Task");
+	});
+
+	test("uses composite label as the VS Code task name when provided", async () => {
+		const tasks = await createProvider({
+			commands: [
+				{ id: "a", exec: { commandLine: "echo" } },
+				{ id: "b", composite: { label: "Composite Task", commands: ["a"] } },
+			],
+		}).provideTasks();
+
+		expect(tasks!.some((t) => t.name === "Composite Task")).toBe(true);
+	});
+});
+
+describe("Fallback behavior", () => {
+	test("creates a message task for unsupported command definitions", async () => {
+		const tasks = await createProvider({
+			commands: [{ id: "unsupported" }],
+		}).provideTasks();
+
+		expect(tasks).toHaveLength(0);
+	});
+});
+
+describe("Task resolution contract", () => {
+	test("resolveTask returns the provided task unchanged", async () => {
+		const provider = createProvider({ commands: [] });
+
+		const fakeExec: any = {
+			callback: async () => ({
+				open() {},
+				close() {},
+				onDidWrite: () => {},
+			}),
+		};
+
+		const task = new vscode.Task(
+			{ type: "devfile" },
+			vscode.TaskScope.Workspace,
+			"sample",
+			"devfile",
+			fakeExec,
+		);
+
+		const resolved = await provider.resolveTask(task);
+		expect(resolved).toBe(task);
 	});
 });

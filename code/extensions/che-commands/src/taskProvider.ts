@@ -382,24 +382,42 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 						{ type: "devfile", command: "[multi-component composite]" },
 						label,
 						new vscode.CustomExecution(async () => {
-							const runExec = (e: ResolvedExec) =>
-								this.terminalExtAPI.getMachineExecPTY(
-									e.component,
-									this.buildInitialVariables(e.env) + e.commandLine,
-									this.expandEnvVariables(e.workingDir),
+							const runExec = async (e: ResolvedExec) => {
+								const cmd = this.buildInitialVariables(e.env) + e.commandLine;
+
+								this.channel.appendLine(
+									`[composite:${label}] → component=${e.component ?? "default"} cmd=${cmd}`,
 								);
 
+								return this.terminalExtAPI.getMachineExecPTY(
+									e.component,
+									cmd,
+									this.expandEnvVariables(e.workingDir),
+								);
+							};
+
 							if (parallel) {
+								this.channel.appendLine(
+									`Composite ${label} running in PARALLEL mode`,
+								);
+
+								// run in parallel across components
 								await Promise.all(execs.map(runExec));
 							} else {
+								this.channel.appendLine(
+									`Composite ${label} running in SEQUENTIAL mode`,
+								);
+
+								// run sequentially across components
 								for (const e of execs) {
 									await runExec(e);
 								}
 							}
 
+							// final completion message PTY (shown in VS Code task terminal)
 							return this.terminalExtAPI.getMachineExecPTY(
 								undefined,
-								`echo "Composite ${label} execution completed"`,
+								`echo "Composite ${label} execution completed (${parallel ? "parallel" : "sequential"})"`,
 								this.expandEnvVariables("${PROJECT_SOURCE}"),
 							);
 						}),
