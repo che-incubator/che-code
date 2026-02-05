@@ -195,10 +195,12 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 	): boolean {
 		if (!command?.composite?.commands) return true;
 
+		const label = command.composite?.label || command.id;
+
 		if (command.id) {
 			if (visited.has(command.id)) {
 				this.channel.appendLine(
-					`Skipping composite ${command.id}: cyclic reference detected`,
+					`Skipping composite ${label}: cyclic reference detected`,
 				);
 				return false;
 			}
@@ -211,7 +213,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 			if (!sub) {
 				this.channel.appendLine(
-					`Composite ${command.id} references missing command`,
+					`Composite ${label} references missing command`,
 				);
 				return false;
 			}
@@ -340,6 +342,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 				const initialVars = this.buildInitialVariables(command.exec.env);
 				const fullCommand = initialVars + exec.commandLine;
+				const label = command.exec.label || command.id;
 
 				return this.createTask(
 					{
@@ -348,7 +351,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 						workdir: exec.workingDir,
 						component: exec.component,
 					},
-					command.exec.label || command.id,
+					label,
 					this.createPTYExecution(exec.component, fullCommand, exec.workingDir),
 				);
 			}
@@ -360,10 +363,12 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				}
 
 				const execs = this.resolveExecsFromComposite(command, allCommands);
+				const label = command.composite.label || command.id;
+
 				if (!execs.length) {
 					return this.createMessageTask(
-						`Composite ${command.id} resolved to empty`,
-						command.id,
+						`Composite ${label} resolved to empty`,
+						label,
 					);
 				}
 
@@ -375,18 +380,32 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 				if (isMultiComponent) {
 					return this.createTask(
 						{ type: "devfile", command: "[multi-component composite]" },
-						command.id,
+						label,
 						new vscode.CustomExecution(async () => {
-							for (const e of execs) {
-								await this.terminalExtAPI.getMachineExecPTY(
+							const runExec = (e: ResolvedExec) =>
+								this.terminalExtAPI.getMachineExecPTY(
 									e.component,
-									e.commandLine,
+									this.buildInitialVariables(e.env) + e.commandLine,
 									this.expandEnvVariables(e.workingDir),
 								);
+
+							if (parallel) {
+								this.channel.appendLine(
+									`Composite ${label} (${command.id}) running in PARALLEL mode`,
+								);
+								await Promise.all(execs.map(runExec));
+							} else {
+								this.channel.appendLine(
+									`Composite ${label} (${command.id}) running in SEQUENTIAL mode`,
+								);
+								for (const e of execs) {
+									await runExec(e);
+								}
 							}
+
 							return this.terminalExtAPI.getMachineExecPTY(
 								undefined,
-								'echo "Composite multi-component execution completed"',
+								`echo "Composite ${label} execution completed (${parallel ? "parallel" : "sequential"})"`,
 								this.expandEnvVariables("${PROJECT_SOURCE}"),
 							);
 						}),
@@ -407,7 +426,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 						workdir: primary.workingDir,
 						component: primary.component,
 					},
-					command.id,
+					label,
 					this.createPTYExecution(
 						primary.component,
 						compositeCmd,
@@ -418,12 +437,19 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 			// ------------------ UNSUPPORTED ------------------
 			return this.createMessageTask(
-				`Unsupported command type for ${command?.id ?? "<unknown>"}`,
-				command?.id ?? "unsupported",
+				`Unsupported command type for ${
+					command?.exec?.label || command?.composite?.label || command?.id
+				}`,
+				command?.exec?.label ||
+					command?.composite?.label ||
+					command?.id ||
+					"unsupported",
 			);
 		} catch (err: any) {
 			this.channel.appendLine(
-				`Error creating task for ${command?.id}: ${err?.message ?? String(err)}`,
+				`Error creating task for ${
+					command?.exec?.label || command?.composite?.label || command?.id
+				}: ${err?.message ?? String(err)}`,
 			);
 			return;
 		}
