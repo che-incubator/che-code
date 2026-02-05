@@ -22,18 +22,23 @@ if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
   # Some images (eg. UDI) may contain duplicate users with different IDs
   USER_NAME=$(grep ":$USER_ID:" /etc/passwd | cut -d: -f1)
 
-  cat /etc/passwd | sed \
-  -e "/$USER_ID/ s|/sbin/nologin|/bin/bash|" \
-  -e "/$USER_ID/ s|:/:|:/var/tmp/user:|" \
-  -e "/$USER_NAME:/{/:$USER_ID:/!d;}" \
-  > $NSS_WRAPPER_PASSWD
+  if [ -z $USER_NAME ]; then
+    cp /etc/passwd $NSS_WRAPPER_PASSWD
+    echo "$USER_ID:x:$USER_ID:$USER_ID::/var/tmp/user:/bin/bash" >> $NSS_WRAPPER_PASSWD
+  else
+    cat /etc/passwd | sed \
+    -e "/$USER_ID/ s|/sbin/nologin|/bin/bash|" \
+    -e "/$USER_ID/ s|:/:|:/var/tmp/user:|" \
+    -e "/$USER_NAME:/{/:$USER_ID:/!d;}" \
+    > $NSS_WRAPPER_PASSWD
+  fi
 
   export NSS_WRAPPER_PASSWD
   export NSS_WRAPPER_GROUP
   export LD_PRELOAD=$LD_PRELOAD:/sshd/libnss_wrapper.so
 fi
 
-if [ $HOME = "/" ]; then
+if [ $HOME = "/" ] || [ -z $USER_NAME ]; then
   export HOME=/var/tmp/user
   mkdir -p /var/tmp/user
 fi
