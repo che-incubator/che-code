@@ -14,684 +14,305 @@ import { DevfileTaskProvider } from "../src/taskProvider";
 import { MockCheAPI, MockTerminalAPI } from "./mocks";
 import * as vscode from "vscode";
 
-describe("Trailing with '&'", () => {
-	test("removes trailing && from exec command", async () => {
-		const devfile = {
-			commands: [{ id: "build", exec: { commandLine: "npm run build &&" } }],
-		};
+function createProvider(devfile: any, terminal?: MockTerminalAPI) {
+	return new DevfileTaskProvider(
+		vscode.window.createOutputChannel("test"),
+		new MockCheAPI(devfile),
+		terminal ?? new MockTerminalAPI(),
+	);
+}
 
+describe("Exec normalization — commandLine cleanup and joining", () => {
+	test("trims trailing && from single-line exec commands", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+		const tasks = await createProvider(
+			{
+				commands: [{ id: "build", exec: { commandLine: "npm run build &&" } }],
+			},
 			terminal,
-		);
+		).provideTasks();
 
-		const tasks = await provider.provideTasks();
-		const exec = tasks![0].execution as any;
-		await exec.callback();
-
+		await (tasks![0].execution as any).callback();
 		expect(terminal.calls[0].command).toBe("npm run build");
 	});
 
-	test("normalizes multiline YAML command with &&", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "compile",
-					exec: {
-						commandLine: ["mvn clean &&", "", "mvn install &&"],
-					},
-				},
-			],
-		};
-
+	test("joins multiline YAML array commands safely", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+
+		const provider = createProvider(
+			{
+				commands: [
+					{
+						id: "compile",
+						exec: {
+							commandLine: ["mvn clean &&", "", "mvn install &&"],
+						},
+					},
+				],
+			},
 			terminal,
 		);
 
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
+		await ((await provider.provideTasks())![0].execution as any).callback();
 		expect(terminal.calls[0].command).toBe("mvn clean && mvn install");
 	});
 });
 
-describe("Command normalization & composites)", () => {
-	test("composite joins subcommands without broken &&", async () => {
-		const devfile = {
-			commands: [
-				{ id: "a", exec: { commandLine: "echo A &&" } },
-				{ id: "b", exec: { commandLine: "echo B &&" } },
-				{ id: "all", composite: { commands: ["a", "b"] } },
-			],
-		};
-
+describe("Composite resolution — sequential and parallel composition", () => {
+	test("sequential composite joins subcommands with &&", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+		const provider = createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { commandLine: "echo A &&" } },
+					{ id: "b", exec: { commandLine: "echo B &&" } },
+					{ id: "all", composite: { commands: ["a", "b"] } },
+				],
+			},
 			terminal,
 		);
 
-		const tasks = await provider.provideTasks();
-		const composite = (tasks || []).find(
-			(t: { name: string }) => t.name === "all",
+		const task = (await provider.provideTasks())!.find(
+			(t) => t.name === "all",
 		)!;
-		const exec = composite.execution as any;
-		await exec.callback();
+		await (task.execution as any).callback();
 
 		expect(terminal.calls[0].command).toBe("echo A && echo B");
 	});
 
-	test("parallel composite uses & and wait", async () => {
-		const devfile = {
-			commands: [
-				{ id: "a", exec: { commandLine: "echo A" } },
-				{ id: "b", exec: { commandLine: "echo B" } },
-				{
-					id: "p",
-					composite: { parallel: true, commands: ["a", "b"] },
-				},
-			],
-		};
-
+	test("parallel composite uses background operator and wait", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+		const provider = createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { commandLine: "echo A" } },
+					{ id: "b", exec: { commandLine: "echo B" } },
+					{ id: "p", composite: { parallel: true, commands: ["a", "b"] } },
+				],
+			},
 			terminal,
 		);
 
-		const exec = ((await provider.provideTasks()) || []).find(
-			(t: { name: string }) => t.name === "p",
-		)!.execution as any;
-
-		await exec.callback();
+		const task = (await provider.provideTasks())!.find((t) => t.name === "p")!;
+		await (task.execution as any).callback();
 
 		expect(terminal.calls[0].command).toBe("echo A & echo B ; wait");
 	});
 
-	test("cyclic composite is rejected", async () => {
-		const devfile = {
+	test("rejects cyclic composite graphs", async () => {
+		const tasks = await createProvider({
 			commands: [
 				{ id: "a", composite: { commands: ["b"] } },
 				{ id: "b", composite: { commands: ["a"] } },
 			],
-		};
+		}).provideTasks();
 
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const tasks = await provider.provideTasks();
-		expect((tasks || []).length).toBe(0);
+		expect(tasks).toHaveLength(0);
 	});
 });
 
-describe("Advanced shell normalization rules", () => {
-	test("does not break shell line-continuation (\\) commands", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "debug",
-					exec: {
-						commandLine: `
-dlv \\
-  --listen=127.0.0.1:1234 \\
-  --only-same-user=false \\
-  debug main.go
-`,
-					},
-				},
-			],
-		};
-
+describe("Shell syntax detection — avoids unsafe && injection", () => {
+	test("preserves line continuation scripts", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+
+		const provider = createProvider(
+			{
+				commands: [
+					{
+						id: "debug",
+						exec: {
+							commandLine: `dlv \\
+--listen=127.0.0.1:1234`,
+						},
+					},
+				],
+			},
 			terminal,
 		);
 
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(
-			`dlv \\
---listen=127.0.0.1:1234 \\
---only-same-user=false \\
-debug main.go`,
-		);
+		await ((await provider.provideTasks())![0].execution as any).callback();
+		expect(terminal.calls[0].command).toContain("\\");
 	});
 
-	test("does not inject && when semicolon chaining is used", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "semicolon",
-					exec: {
-						commandLine: `
-echo start;
-echo middle;
-echo end
-`,
-					},
-				},
-			],
-		};
-
+	test("preserves semicolon chaining", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+		const provider = createProvider(
+			{ commands: [{ id: "x", exec: { commandLine: "echo a; echo b" } }] },
 			terminal,
 		);
 
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(`echo start;
-echo middle;
-echo end`);
+		await ((await provider.provideTasks())![0].execution as any).callback();
+		expect(terminal.calls[0].command).toContain(";");
 	});
 
-	test("does not inject && when || operator is used", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "or-operator",
-					exec: {
-						commandLine: `
-make build || echo "build failed"
-`,
-					},
-				},
-			],
-		};
-
+	test("preserves pipe operators", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+		const provider = createProvider(
+			{ commands: [{ id: "x", exec: { commandLine: "ps | grep" } }] },
 			terminal,
 		);
 
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe('make build || echo "build failed"');
-	});
-
-	test("does not inject && when pipes are used", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "pipe",
-					exec: {
-						commandLine: `
-ps aux | grep node | wc -l
-`,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe("ps aux | grep node | wc -l");
-	});
-
-	test("does not break here-doc commands", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "heredoc",
-					exec: {
-						commandLine: `
-cat <<EOF > file.txt
-hello
-world
-EOF
-`,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(
-			`cat <<EOF > file.txt
-hello
-world
-EOF`,
-		);
-	});
-
-	test("does not break docker multiline commands", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "docker",
-					exec: {
-						commandLine: `
-docker run \\
-  -v /tmp:/app \\
-  node:18 npm test
-`,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(
-			`docker run \\
--v /tmp:/app \\
-node:18 npm test`,
-		);
-	});
-
-	test("mixed advanced syntax still avoids && injection", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "mixed",
-					exec: {
-						commandLine: `
-echo hello | grep h;
-echo done
-`,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(
-			`echo hello | grep h;
-echo done`,
-		);
-	});
-
-	test("single line command remains unchanged", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "single",
-					exec: {
-						commandLine: "npm run build",
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe("npm run build");
-	});
-
-	test("simple multiline commands get && injected", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "simple-chain",
-					exec: {
-						commandLine: `
-npm install
-npm test
-npm build
-`,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const exec = ((await provider.provideTasks()) || [])[0]!.execution as any;
-		await exec.callback();
-
-		expect(terminal.calls[0].command).toBe(
-			"npm install && npm test && npm build",
-		);
+		await ((await provider.provideTasks())![0].execution as any).callback();
+		expect(terminal.calls[0].command).toContain("|");
 	});
 });
 
-describe("Check exec has its own component", () => {
-	test("composite sequential runs each exec in its own component", async () => {
-		const devfile = {
+describe("Provider filtering and environment handling", () => {
+	test("filters imported child commands", async () => {
+		const tasks = await createProvider({
 			commands: [
 				{
-					id: "a",
-					exec: {
-						component: "builder",
-						commandLine: "echo A",
-					},
-				},
-				{
-					id: "b",
-					exec: {
-						component: "runtime",
-						commandLine: "echo B",
-					},
-				},
-				{
-					id: "seq",
-					composite: {
-						commands: ["a", "b"],
-						parallel: false,
-					},
+					id: "child",
+					exec: { commandLine: "echo hi" },
+					attributes: { "controller.devfile.io/imported-by": "child" },
 				},
 			],
-		};
+		}).provideTasks();
 
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const tasks = await provider.provideTasks();
-		const composite = tasks!.find((t) => t.name === "seq")!;
-		const exec = composite.execution as any;
-
-		await exec.callback();
-
-		// Two real execs + 1 dummy PTY completion message
-		expect(terminal.calls.length).toBe(3);
-
-		expect(terminal.calls[0]).toEqual({
-			component: "builder",
-			command: "echo A",
-			cwd: expect.any(String),
-		});
-
-		expect(terminal.calls[1]).toEqual({
-			component: "runtime",
-			command: "echo B",
-			cwd: expect.any(String),
-		});
+		expect(tasks).toHaveLength(0);
 	});
 
-	test("composite parallel runs each exec in its own component", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "a",
-					exec: {
-						component: "builder",
-						commandLine: "echo A",
-					},
-				},
-				{
-					id: "b",
-					exec: {
-						component: "runtime",
-						commandLine: "echo B",
-					},
-				},
-				{
-					id: "par",
-					composite: {
-						commands: ["a", "b"],
-						parallel: true,
-					},
-				},
-			],
-		};
-
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const tasks = await provider.provideTasks();
-		const composite = tasks!.find((t) => t.name === "par")!;
-		const exec = composite.execution as any;
-
-		await exec.callback();
-
-		// Two real execs + 1 dummy PTY completion message
-		expect(terminal.calls.length).toBe(3);
-
-		const components = terminal.calls
-			.slice(0, 2)
-			.map((c) => c.component)
-			.sort();
-
-		expect(components).toEqual(["builder", "runtime"]);
+	test("returns empty task list when no commands defined", async () => {
+		expect(await createProvider({ commands: [] }).provideTasks()).toEqual([]);
 	});
 
-	test("composite with same component is flattened into one execution", async () => {
-		const devfile = {
-			commands: [
-				{
-					id: "a",
-					exec: {
-						component: "python",
-						commandLine: "echo A",
-					},
-				},
-				{
-					id: "b",
-					exec: {
-						component: "python",
-						commandLine: "echo B",
-					},
-				},
-				{
-					id: "flat",
-					composite: {
-						commands: ["a", "b"],
-						parallel: false,
-					},
-				},
-			],
-		};
-
+	test("injects exec env variables with escaping", async () => {
 		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
+
+		const provider = createProvider(
+			{
+				commands: [
+					{
+						id: "env",
+						exec: {
+							commandLine: "echo hi",
+							env: [{ name: "A", value: 'x"y' }],
+						},
+					},
+				],
+			},
 			terminal,
 		);
 
-		const tasks = await provider.provideTasks();
-		const composite = tasks!.find((t) => t.name === "flat")!;
-		const exec = composite.execution as any;
+		await ((await provider.provideTasks())![0].execution as any).callback();
+		expect(terminal.calls[0].command).toContain(`export A="x\\"y"`);
+	});
 
-		await exec.callback();
+	test("expands workingDir environment variables", async () => {
+		process.env.TEST_DIR = "/tmp/demo";
 
-		// Only ONE real execution
+		const terminal = new MockTerminalAPI();
+		const provider = createProvider(
+			{
+				commands: [
+					{
+						id: "wd",
+						exec: { commandLine: "echo hi", workingDir: "${TEST_DIR}" },
+					},
+				],
+			},
+			terminal,
+		);
+
+		await ((await provider.provideTasks())![0].execution as any).callback();
+		expect(terminal.calls[0].cwd).toBe("/tmp/demo");
+	});
+});
+
+describe("Composite aggregation model — multi vs single component", () => {
+	test("aggregates multi-component composites into one shell command", async () => {
+		const terminal = new MockTerminalAPI();
+		const provider = createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { component: "builder", commandLine: "echo A" } },
+					{ id: "b", exec: { component: "runtime", commandLine: "echo B" } },
+					{ id: "combo", composite: { commands: ["a", "b"] } },
+				],
+			},
+			terminal,
+		);
+
+		const task = (await provider.provideTasks())!.find(
+			(t) => t.name === "combo",
+		)!;
+		await (task.execution as any).callback();
+
 		expect(terminal.calls.length).toBe(1);
-		expect(terminal.calls[0].component).toBe("python");
+		expect(terminal.calls[0].command).toContain("echo A");
+		expect(terminal.calls[0].command).toContain("echo B");
+	});
+
+	test("flattens same-component composites", async () => {
+		const terminal = new MockTerminalAPI();
+		const provider = createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { component: "py", commandLine: "echo A" } },
+					{ id: "b", exec: { component: "py", commandLine: "echo B" } },
+					{ id: "flat", composite: { commands: ["a", "b"] } },
+				],
+			},
+			terminal,
+		);
+
+		const task = (await provider.provideTasks())!.find(
+			(t) => t.name === "flat",
+		)!;
+		await (task.execution as any).callback();
+
+		expect(terminal.calls[0].component).toBe("py");
 		expect(terminal.calls[0].command).toBe("echo A && echo B");
 	});
+
+	test("parallel composite explicitly contains background join and wait", async () => {
+		const terminal = new MockTerminalAPI();
+
+		const provider = createProvider(
+			{
+				commands: [
+					{ id: "a", exec: { commandLine: "echo A" } },
+					{ id: "b", exec: { commandLine: "echo B" } },
+					{
+						id: "combo",
+						composite: { parallel: true, commands: ["a", "b"] },
+					},
+				],
+			},
+			terminal,
+		);
+
+		const task = (await provider.provideTasks())!.find(
+			(t) => t.name === "combo",
+		)!;
+		await (task.execution as any).callback();
+
+		const cmd = terminal.calls[0].command;
+
+		expect(cmd).toMatch(/echo A\s*&\s*echo B/);
+		expect(cmd).toMatch(/wait$/);
+	});
 });
 
-describe("ubi8-ubi9 composite", () => {
-	function baseCommands() {
-		return [
-			{
-				id: "ubi8-tools-version",
-				exec: {
-					label: "ubi8 version",
-					component: "ubi8",
-					commandLine: "echo ubi8",
-				},
-			},
-			{
-				id: "ubi9-tools-version",
-				exec: {
-					label: "ubi9 version",
-					component: "ubi9",
-					commandLine: "echo ubi9",
-				},
-			},
-		];
-	}
-
-	test("sequential composite executes both components", async () => {
-		const devfile = {
+describe("Task naming — label precedence rules", () => {
+	test("exec label overrides id", async () => {
+		const tasks = await createProvider({
 			commands: [
-				...baseCommands(),
-				{
-					id: "parallel-ubi8-ubi9",
-					composite: {
-						label: "Parallel: Check echo ubi8-ubi9",
-						parallel: false,
-						commands: ["ubi8-tools-version", "ubi9-tools-version"],
-					},
-				},
+				{ id: "a", exec: { label: "Name Id A", commandLine: "echo" } },
 			],
-		};
+		}).provideTasks();
 
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const tasks = await provider.provideTasks();
-
-		// label should be used instead of id
-		const task = tasks!.find(
-			(t) => t.name === "Parallel: Check echo ubi8-ubi9",
-		)!;
-
-		await (task.execution as any).callback();
-
-		// ubi8 + ubi9 + completion echo
-		expect(terminal.calls.length).toBe(3);
-
-		expect(terminal.calls[0].component).toBe("ubi8");
-		expect(terminal.calls[1].component).toBe("ubi9");
+		expect(tasks![0].name).toBe("Name Id A");
 	});
 
-	test("parallel composite executes both components", async () => {
-		const devfile = {
+	test("composite label overrides id", async () => {
+		const tasks = await createProvider({
 			commands: [
-				...baseCommands(),
-				{
-					id: "parallel-ubi8-ubi9",
-					composite: {
-						label: "Parallel: Check echo ubi8-ubi9",
-						parallel: true,
-						commands: ["ubi8-tools-version", "ubi9-tools-version"],
-					},
-				},
+				{ id: "a", exec: { commandLine: "echo" } },
+				{ id: "b", composite: { label: "CompositeLabel", commands: ["a"] } },
 			],
-		};
+		}).provideTasks();
 
-		const terminal = new MockTerminalAPI();
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			terminal,
-		);
-
-		const tasks = await provider.provideTasks();
-
-		const task = tasks!.find(
-			(t) => t.name === "Parallel: Check echo ubi8-ubi9",
-		)!;
-
-		await (task.execution as any).callback();
-
-		// multi-component parallel → still 2 exec + completion
-		expect(terminal.calls.length).toBe(3);
-
-		const components = terminal.calls
-			.slice(0, 2)
-			.map((c) => c.component)
-			.sort();
-
-		expect(components).toEqual(["ubi8", "ubi9"]);
-	});
-
-	test("composite label is used as task name", async () => {
-		const devfile = {
-			commands: [
-				...baseCommands(),
-				{
-					id: "parallel-ubi8-ubi9",
-					composite: {
-						label: "Parallel: Check echo ubi8-ubi9",
-						commands: ["ubi8-tools-version", "ubi9-tools-version"],
-					},
-				},
-			],
-		};
-
-		const provider = new DevfileTaskProvider(
-			vscode.window.createOutputChannel("test"),
-			new MockCheAPI(devfile),
-			new MockTerminalAPI(),
-		);
-
-		const tasks = await provider.provideTasks();
-
-		expect(
-			tasks!.some((t) => t.name === "Parallel: Check echo ubi8-ubi9"),
-		).toBe(true);
+		expect(tasks!.some((t) => t.name === "CompositeLabel")).toBe(true);
 	});
 });

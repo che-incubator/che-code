@@ -11,20 +11,36 @@
 /* eslint-disable header/header */
 
 export class MockTerminalAPI {
-  public calls: Array<{ component?: string; command: string; cwd: string }> = [];
+	public calls: Array<{ component?: string; command: string; cwd: string }> =
+		[];
+	public output: string[] = [];
 
-  async getMachineExecPTY(component: string | undefined, command: string, cwd: string) {
-    this.calls.push({ component, command, cwd });
-    return {
-      open: () => {},
-      close: () => {},
-      onDidWrite: () => {},
-      onDidClose: () => {},
-      handleInput: () => {}
-    };
-  }
+	async getMachineExecPTY(
+		component: string | undefined,
+		command: string,
+		cwd: string,
+	) {
+		this.calls.push({ component, command, cwd });
+
+		// simulate VS Code task console banner
+		this.output.push(`Executing task: devfile: ${component ?? "workspace"}`);
+
+		const echoes = command.match(/echo\s+(.+)/g) || [];
+		for (const e of echoes) {
+			this.output.push(e.replace(/^echo\s+/, ""));
+		}
+
+		this.output.push("Terminal will be reused by tasks...");
+
+		return {
+			open: () => {},
+			close: () => {},
+			onDidWrite: () => {},
+			onDidClose: () => {},
+			handleInput: () => {},
+		};
+	}
 }
-
 
 class MockDevfileService {
 	constructor(private devfile: any) {}

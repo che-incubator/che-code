@@ -14,8 +14,8 @@ import {
 	V1alpha2DevWorkspaceSpecTemplate,
 	V1alpha2DevWorkspaceSpecTemplateCommands,
 	V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv,
-} from '@devfile/api';
-import * as vscode from 'vscode';
+} from "@devfile/api";
+import * as vscode from "vscode";
 
 /**
  * Defines the structure of a Devfile task definition.
@@ -378,37 +378,30 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 				// Multi-component → sequential execution of commands
 				if (isMultiComponent) {
+					const joiner = parallel ? " & " : " && ";
+
+					let compositeCmd = execs
+						.map((e) => this.buildInitialVariables(e.env) + e.commandLine)
+						.join(joiner);
+
+					if (parallel) compositeCmd += " ; wait";
+
+					this.channel.appendLine(
+						`Composite ${label} (${command.id}) running in ${parallel ? "PARALLEL" : "SEQUENTIAL"} mode`,
+					);
+
 					return this.createTask(
-						{ type: "devfile", command: "[multi-component composite]" },
+						{
+							type: "devfile",
+							command: compositeCmd,
+							workdir: execs[0].workingDir,
+						},
 						label,
-						new vscode.CustomExecution(async () => {
-							const runExec = (e: ResolvedExec) =>
-								this.terminalExtAPI.getMachineExecPTY(
-									e.component,
-									this.buildInitialVariables(e.env) + e.commandLine,
-									this.expandEnvVariables(e.workingDir),
-								);
-
-							if (parallel) {
-								this.channel.appendLine(
-									`Composite ${label} (${command.id}) running in PARALLEL mode`,
-								);
-								await Promise.all(execs.map(runExec));
-							} else {
-								this.channel.appendLine(
-									`Composite ${label} (${command.id}) running in SEQUENTIAL mode`,
-								);
-								for (const e of execs) {
-									await runExec(e);
-								}
-							}
-
-							return this.terminalExtAPI.getMachineExecPTY(
-								undefined,
-								`echo "Composite ${label} execution completed (${parallel ? "parallel" : "sequential"})"`,
-								this.expandEnvVariables("${PROJECT_SOURCE}"),
-							);
-						}),
+						this.createPTYExecution(
+							undefined,
+							compositeCmd,
+							execs[0].workingDir,
+						),
 					);
 				}
 
