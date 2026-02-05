@@ -378,30 +378,31 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 
 				// Multi-component → sequential execution of commands
 				if (isMultiComponent) {
-					const joiner = parallel ? " & " : " && ";
-
-					let compositeCmd = execs
-						.map((e) => this.buildInitialVariables(e.env) + e.commandLine)
-						.join(joiner);
-
-					if (parallel) compositeCmd += " ; wait";
-
-					this.channel.appendLine(
-						`Composite ${label} (${command.id}) running in ${parallel ? "PARALLEL" : "SEQUENTIAL"} mode`,
-					);
-
 					return this.createTask(
-						{
-							type: "devfile",
-							command: compositeCmd,
-							workdir: execs[0].workingDir,
-						},
+						{ type: "devfile", command: "[multi-component composite]" },
 						label,
-						this.createPTYExecution(
-							undefined,
-							compositeCmd,
-							execs[0].workingDir,
-						),
+						new vscode.CustomExecution(async () => {
+							const runExec = (e: ResolvedExec) =>
+								this.terminalExtAPI.getMachineExecPTY(
+									e.component,
+									this.buildInitialVariables(e.env) + e.commandLine,
+									this.expandEnvVariables(e.workingDir),
+								);
+
+							if (parallel) {
+								await Promise.all(execs.map(runExec));
+							} else {
+								for (const e of execs) {
+									await runExec(e);
+								}
+							}
+
+							return this.terminalExtAPI.getMachineExecPTY(
+								undefined,
+								`echo "Composite ${label} execution completed"`,
+								this.expandEnvVariables("${PROJECT_SOURCE}"),
+							);
+						}),
 					);
 				}
 
