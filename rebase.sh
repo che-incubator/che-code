@@ -233,20 +233,6 @@ apply_code_product_changes() {
   git add code/product.json > /dev/null 2>&1
 }
 
-# Apply changes on code/build/lib/mangle/index.js file
-apply_mangle_index_js_changes() {
-  
-  echo "  ⚙️ reworking code/build/lib/mangle/index.js..."
-  # reset the file from what is upstream
-  git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
-
-  # the actual changes are in the code/build/lib/mangle/index.ts file  
-  npm run compile --prefix code/build
-
-  # resolve the change
-  git add code/build/lib/mangle/index.js > /dev/null 2>&1
-}
-
 # Apply changes on code/build/lib/mangle/index.ts file
 apply_mangle_index_ts_changes() {
   
@@ -424,8 +410,6 @@ resolve_conflicts() {
       apply_code_extensions_microsoft_authentication_package_lock_changes
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
-      apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
