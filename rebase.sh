@@ -203,30 +203,6 @@ apply_code_extensions_microsoft_authentication_package_lock_changes() {
   git add code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
 }
 
-# Apply changes on code/extensions/vscode-api-tests/package-lock.json file
-apply_code_extensions_vscode_api_tests_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/extensions/vscode-api-tests/package-lock.json..."
-  
-  conflicted_files=$(git diff --name-only --diff-filter=U)
-
-  # Check if code/extensions/vscode-api-tests/package.json is in the list
-  if echo "$conflicted_files" | grep -q "^code/extensions/vscode-api-tests/package.json$"; then
-      echo "Conflict for the code/extensions/vscode-api-tests/package.json should be fixed first!"
-      apply_package_changes_by_path "code/extensions/vscode-api-tests/package.json"
-  fi
-  
-  # reset the file from what is upstream
-  git checkout --ours code/extensions/vscode-api-tests/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions/vscode-api-tests
-
-  # resolve the change
-  git add code/extensions/vscode-api-tests/package-lock.json > /dev/null 2>&1
-}
-
-
 # Apply changes on code/remote/package-lock.json file
 apply_code_remote_package_lock_changes() {
 
@@ -446,10 +422,6 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
       apply_code_extensions_microsoft_authentication_package_lock_changes
-    elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package-lock.json" ]]; then
-      apply_code_extensions_vscode_api_tests_package_lock_changes
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
