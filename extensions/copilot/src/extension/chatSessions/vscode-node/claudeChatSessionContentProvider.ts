@@ -330,7 +330,7 @@ export class ClaudeChatSessionContentProvider extends Disposable implements vsco
 			return;
 		}
 
-		return new ChatRequestTurn2(combinedText, undefined, [], '', [], undefined);
+		return new ChatRequestTurn2(combinedText, undefined, [], '', [], undefined, undefined);
 	}
 
 	/**
