@@ -299,7 +299,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			return new NoNextEditReason.GotCancelled('afterLanguageContextAwait');
 		}
 
-		const lintErrors = promptOptions.lintOptions ? new LintErrors(promptOptions.lintOptions, activeDocument.id, currentDocument, this.langDiagService) : undefined;
+		const lintErrors = new LintErrors(activeDocument.id, currentDocument, this.langDiagService);
 
 		const promptPieces = new PromptPieces(
 			currentDocument,
@@ -340,6 +340,13 @@ export class XtabProvider implements IStatelessNextEditProvider {
 		if (cancellationToken.isCancellationRequested) {
 			return new NoNextEditReason.GotCancelled('afterDebounce');
 		}
+
+		// Fire-and-forget: collect lint errors for telemetry in background to avoid blocking the main path
+		Promise.resolve().then(() => {
+			const lintErrorsData = lintErrors.getData();
+			telemetryBuilder.setLintErrors(lintErrorsData);
+			logContext.setDiagnosticsData(lintErrorsData);
+		});
 
 		request.fetchIssued = true;
 
@@ -392,7 +399,6 @@ export class XtabProvider implements IStatelessNextEditProvider {
 
 		// if recording, add diagnostics for the file to the recording and hook up the language context promise to write to the recording
 		if (recordingEnabled) {
-			logContext.setFileDiagnostics(this.langDiagService.getAllDiagnostics());
 			langCtxPromise.then(langCtxs => {
 				if (langCtxs) {
 					logContext.setLanguageContext(langCtxs);
