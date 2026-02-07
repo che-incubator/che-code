@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// version: 1
+// version: 2
 
 declare module 'vscode' {
 
@@ -314,6 +314,12 @@ declare module 'vscode' {
 		toolSpecificData?: ChatTerminalToolInvocationData | ChatMcpToolInvocationData | ChatTodoToolInvocationData | ChatToolResourcesInvocationData | ChatSimpleToolResultData;
 		subAgentInvocationId?: string;
 		presentation?: 'hidden' | 'hiddenAfterComplete' | undefined;
+
+		/**
+		 * If this flag is set, this will be treated as an update to any previous tool call with the same id.
+		 * TODO@roblourens remove this and make it the default
+		 */
+		enablePartialUpdate?: boolean;
 
 		constructor(toolName: string, toolCallId: string, isError?: boolean);
 	}

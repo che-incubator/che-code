@@ -178,9 +178,13 @@ function completeGenericInvocation(
  */
 export function createFormattedToolInvocation(
 	toolUse: Anthropic.ToolUseBlock,
+	complete?: boolean
 ): ChatToolInvocationPart | undefined {
 	const invocation = new ChatToolInvocationPart(toolUse.name, toolUse.id, false);
-	invocation.isConfirmed = true;
+	if (complete !== undefined) {
+		invocation.isConfirmed = complete;
+		invocation.isComplete = complete;
+	}
 
 	switch (toolUse.name as ClaudeToolNames) {
 		case ClaudeToolNames.Bash:
