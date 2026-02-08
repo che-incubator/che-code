@@ -48,6 +48,24 @@ To test your changes in Eclipse Che run the following VS Code tasks:
 3. `run` to run the VS Code server
 4. Follow the suggested URL to test your changes.
 
+## Using Roo Code with Google Gemini
+
+Roo Code is a powerful extension that brings AI-powered features to your Che-Code environment. To get started, connect it to Google Gemini for access to advanced language models.
+
+### Extension Installation
+The "Roo Code" extension is included in the list of recommended extensions for this repository and should install automatically when you start your workspace. If it is not installed automatically, you can find it on the [Open VSX Registry](https://open-vsx.org/).
+
+### Obtaining a Google Gemini API Key
+If you do not already have one, visit the Google Gemini website to create an API key.
+
+### Configuring Google Gemini
+1.  **Open Roo Code**: Launch the Roo Code extension from the Activity Bar in Che-Code.
+2.  **Access Settings**: The first time you launch the extension, a welcome screen will appear with an option to create a Roo account or proceed without one. The settings will open automatically after you make a selection. Alternatively, you can access the settings by clicking the gear icon (⚙️) in the top-right corner of the Roo Code panel.
+3.  **Configure the API Provider**:
+    *   **API Provider**: Select "Google Gemini" from the dropdown menu.
+    *   **API Key**: Paste your Gemini API key into the corresponding field.
+    *   **Model**: Choose your desired Gemini model, such as "gemini-2.5-pro," from the list of available options.
+
 ## Updates and branches
 
 This repository has a main branch being rebased on the main remote branch of `Code-OSS`.

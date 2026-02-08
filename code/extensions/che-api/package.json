@@ -46,6 +46,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/node": "22.x",
     "jest": "29.7.0",
+    "typescript": "^5.9.2",
     "ts-jest": "29.4.5",
     "webpack-node-externals": "^3.0.0"
   },

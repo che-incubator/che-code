@@ -43,6 +43,7 @@
     "@types/node": "22.x",
     "add": "^2.0.6",
     "jest": "29.7.0",
+    "typescript": "^5.9.2",
     "ts-jest": "29.4.5"
   },
   "repository": {
