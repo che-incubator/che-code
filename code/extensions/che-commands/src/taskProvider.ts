@@ -246,9 +246,11 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 							this.expandEnvVariables(e.workingDir),
 						);
 
-						if ((pty as any)?.output) {
-							writeEmitter.fire((pty as any).output + "\r\n");
-						}
+						pty.onDidWrite?.((data: string) => {
+							writeEmitter.fire(data);
+						});
+
+						pty.open?.();
 					};
 
 					try {
