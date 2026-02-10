@@ -15,6 +15,7 @@
 export const preset = 'ts-jest';
 export const testEnvironment = 'node';
 export const roots = ['<rootDir>/tests'];
+export const collectCoverage = true;
 export const globals = {
     'ts-jest': {
         tsconfig: '<rootDir>/tsconfig.jest.json'
@@ -23,3 +24,8 @@ export const globals = {
 export const moduleNameMapper = {
     '^vscode$': '<rootDir>/tests/__mocks__/vscode.ts'
 };
+export const collectCoverageFrom = [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!tests/**",
+]

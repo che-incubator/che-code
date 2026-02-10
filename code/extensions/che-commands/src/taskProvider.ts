@@ -71,10 +71,14 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		const commands = await this.fetchDevfileCommands();
 
 		return commands
-			.filter(this.isRunnableCommand)
-			.filter(this.isNotImportedChild)
-			.filter((c) => !/^init-ssh-agent-command-\d+$/.test(c.id))
-			.map((c) => this.createCheTask(c, commands))
+			.filter((cmd) => this.isRunnable(cmd))
+			.filter((cmd) => this.isRootCommand(cmd))
+			.filter((cmd) => !/^init-ssh-agent-command-\d+$/.test(cmd.id))
+			.map((cmd) =>
+				cmd.composite?.commands?.length
+					? this.handleCompositeCommand(cmd, commands)
+					: this.createExecTaskV1(cmd),
+			)
 			.filter((t): t is vscode.Task => !!t);
 	}
 
@@ -89,203 +93,63 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		const devfile: V1alpha2DevWorkspaceSpecTemplate =
 			await devfileService.get();
 
-		const cmds = devfile.commands ?? [];
-		if (cmds.length) {
+		if (devfile.commands?.length) {
 			this.channel.appendLine(
-				`Detected ${cmds.length} Command(s) in the flattened Devfile.`,
+				`Detected ${devfile.commands.length} Command(s) in the flattened Devfile.`,
 			);
+			return devfile.commands;
 		}
-		return cmds;
+		return [];
 	}
 
 	/**
-	 * Checks if a Devfile command is runnable.
-	 * @param command The command to check.
-	 * @returns True if the command is runnable, false otherwise.
+	 * Normalizes the command line by joining multiple commands with '&&' and sanitizing each command.
+	 * @param cmd The command line to normalize, which can be a string or an array of strings.
+	 * @returns A normalized command line string where multiple commands are joined with '&&', and each command is sanitized.
 	 */
-	private isRunnableCommand(command: any): boolean {
-		return (
-			!!command.exec?.commandLine ||
-			(command.composite &&
-				Array.isArray(command.composite.commands) &&
-				command.composite.commands.length > 0)
-		);
-	}
+	private normalizeExecCommandLine(cmd: string | string[]): string {
+		const parts = Array.isArray(cmd) ? cmd : [cmd];
 
-	/**
-	 * Checks if a Devfile command is an imported child.
-	 * @param command The command to check.
-	 * @returns True if the command is an imported child, false otherwise.
-	 */
-	private isNotImportedChild(command: any): boolean {
-		const importedBy = (command.attributes as any)?.[
-			"controller.devfile.io/imported-by"
-		];
-		return (
-			!command.attributes || importedBy === undefined || importedBy === "parent"
-		);
-	}
-
-	/**
-	 * Normalizes the execution block.
-	 * @param execBlock The execution block to normalize.
-	 * @returns The normalized execution or null if invalid.
-	 */
-	private normalizeExec(execBlock: any): ResolvedExec | null {
-		if (!execBlock?.commandLine) return null;
-
-		let lines: string[] = Array.isArray(execBlock.commandLine)
-			? execBlock.commandLine.map(String)
-			: execBlock.commandLine.toString().split(/\r?\n/);
-
-		lines = lines
-			.map((line) => line.replace(/\\\\\s*$/, " \\"))
-			.map((line) => line.trim())
+		return parts
+			.map((s) => this.sanitizeCommand(String(s)))
 			.filter(Boolean)
-			.map((line) => line.replace(/(?:\s*&&\s*)+$/, "").trim());
-
-		if (!lines.length) return null;
-
-		const isShellScript = lines.some(
-			(line) =>
-				line.endsWith("\\") ||
-				line.endsWith(";") ||
-				line.includes("||") ||
-				line.includes("|") ||
-				line.includes("<<"),
-		);
-
-		return {
-			commandLine: isShellScript ? lines.join("\n") : lines.join(" && "),
-			workingDir: (execBlock.workingDir ?? "${PROJECT_SOURCE}").toString(),
-			component: execBlock.component?.toString(),
-			env: Array.isArray(execBlock.env) ? execBlock.env : undefined,
-		};
+			.filter((s) => !this.isOperatorOnlyFragment(s))
+			.join(" && ");
 	}
 
 	/**
-	 * Builds the initial environment variable exports.
-	 * @param env The environment variables to build.
-	 * @returns A string containing the initial environment variable exports.
-	 */
-	private buildInitialVariables(
-		env?: Array<V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv>,
-	): string {
-		if (!env?.length) return "";
-		return env
-			.filter((e) => e?.name)
-			.map(
-				(e) =>
-					`export ${e.name}="${(e.value ?? "").toString().replace(/"/g, '\\"')}"; `,
-			)
-			.join("");
-	}
-
-	/**
-	 * Validates composite commands strictly to avoid cyclic references.
-	 * @param command The command to check.
-	 * @param all All available commands.
-	 * @param visited A set of visited command IDs.
-	 * @returns True if the command is valid, false otherwise.
-	 */
-	private validateCompositeStrict(
-		command: any,
-		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
-		visited = new Set<string>(),
-	): boolean {
-		if (!command?.composite?.commands) return true;
-
-		const label = command.composite?.label || command.id;
-
-		if (command.id) {
-			if (visited.has(command.id)) {
-				this.channel.appendLine(
-					`Skipping composite ${label}: cyclic reference detected`,
-				);
-				return false;
-			}
-			visited.add(command.id);
-		}
-
-		for (const entry of command.composite.commands) {
-			const sub =
-				typeof entry === "string" ? all.find((c) => c.id === entry) : entry;
-
-			if (!sub) {
-				this.channel.appendLine(
-					`Composite ${label} references missing command`,
-				);
-				return false;
-			}
-
-			if (!this.validateCompositeStrict(sub, all, visited)) return false;
-		}
-
-		if (command.id) visited.delete(command.id);
-		return true;
-	}
-
-	/**
-	 * Resolves all exec commands from a composite command.
-	 * @param command The composite command to resolve.
-	 * @param all All available commands.
-	 * @returns An array of resolved exec commands.
-	 */
-	private resolveExecsFromComposite(
-		command: any,
-		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
-	): ResolvedExec[] {
-		const result: ResolvedExec[] = [];
-
-		const walk = (cmd: any) => {
-			if (cmd.exec) {
-				const norm = this.normalizeExec(cmd.exec);
-				if (norm) result.push(norm);
-			}
-			for (const e of cmd.composite?.commands ?? []) {
-				const sub = typeof e === "string" ? all.find((c) => c.id === e) : e;
-				if (sub) walk(sub);
-			}
-		};
-
-		walk(command);
-		return result;
-	}
-
-	/**
-	 * Creates a PTY execution for a task.
-	 * @param component The component to execute the command in.
-	 * @param command The command to execute.
-	 * @param workingDir The working directory for the command.
-	 * @returns A CustomExecution instance for the PTY execution.
-	 */
-	private createPTYExecution(
-		component: string | undefined,
-		command: string,
-		workingDir: string,
-	): vscode.CustomExecution {
-		return new vscode.CustomExecution(async () => {
-			const resolvedWd = this.expandEnvVariables(workingDir);
-			return this.terminalExtAPI.getMachineExecPTY(
-				component,
-				command,
-				resolvedWd,
-			);
-		});
-	}
-
-	/**
-	 * Creates a VS Code task.
-	 * @param kind The kind of the task.
-	 * @param label The label of the task.
-	 * @param execution The execution of the task.
+	 * Creates a VS Code task for a Devfile exec command (Version-1).
+	 * @param command The Devfile command to create a task for.
 	 * @returns The created VS Code task.
 	 */
-	private createTask(
-		kind: DevfileTaskDefinition,
-		label: string,
-		execution: vscode.CustomExecution,
-	): vscode.Task {
+	private createExecTaskV1(command: any): vscode.Task {
+		const label = this.getLabel(command);
+
+		const kind: DevfileTaskDefinition = {
+			type: "devfile",
+			command: command.exec.commandLine,
+			workdir: command.exec.workingDir || "${PROJECT_SOURCE}",
+			component: command.exec.component,
+		};
+
+		const execution = new vscode.CustomExecution(
+			async (): Promise<vscode.Pseudoterminal> => {
+				const initialVariables = this.buildEnvPrefix(command.exec.env);
+
+				const normalizedCmd = this.normalizeExecCommandLine(
+					command.exec.commandLine,
+				);
+
+				const finalCmd = this.sanitizeCommand(initialVariables + normalizedCmd);
+
+				return this.terminalExtAPI.getMachineExecPTY(
+					command.exec.component,
+					finalCmd,
+					this.expandEnvVariables(kind.workdir!),
+				);
+			},
+		);
+
 		return new vscode.Task(
 			kind,
 			vscode.TaskScope.Workspace,
@@ -297,173 +161,303 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 	}
 
 	/**
-	 * Creates a message task that echoes a message.
-	 * @param message The message to echo.
-	 * @param label The label of the task.
-	 * @returns The created message task.
+	 * Handles a composite command by creating a VS Code task for it.
+	 * @param command The composite command to handle.
+	 * @param all The list of all Devfile commands.
+	 * @returns The created VS Code task, or undefined if the command is invalid.
 	 */
-	private createMessageTask(message: string, label: string): vscode.Task {
-		return this.createTask(
-			{ type: "devfile", command: "", workdir: "${PROJECT_SOURCE}" },
+	private handleCompositeCommand(
+		command: any,
+		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
+	): vscode.Task | undefined {
+		const label = this.getLabel(command);
+
+		if (!this.validateComposite(command, all)) {
+			this.channel.appendLine(`Skipping composite ${label}: invalid graph`);
+			return undefined;
+		}
+
+		const execs = this.flattenCompositeExecs(command, all);
+		if (!execs.length) {
+			return this.createEchoTask(`Composite ${label} resolved empty`, label);
+		}
+
+		const parallel = !!command.composite.parallel;
+
+		const components = new Set(execs.map((e) => e.component ?? "__default__"));
+
+		if (components.size === 1) {
+			const joiner = parallel ? " & " : " && ";
+
+			let script = execs
+				.map((e) =>
+					this.sanitizeCommand(this.buildEnvPrefix(e.env) + e.commandLine),
+				)
+				.join(joiner);
+
+			script = this.sanitizeCommand(script);
+			if (parallel) script += " ; wait";
+
+			const primary = execs[0];
+
+			const kind: DevfileTaskDefinition = {
+				type: "devfile",
+				command: script,
+				workdir: primary.workingDir,
+				component: primary.component,
+			};
+
+			return new vscode.Task(
+				kind,
+				vscode.TaskScope.Workspace,
+				label,
+				"devfile",
+				this.createPTY(primary.component, script, primary.workingDir),
+				[],
+			);
+		}
+
+		const execution = new vscode.CustomExecution(async () => {
+			let lastPty: vscode.Pseudoterminal | undefined;
+
+			const runExec = async (e: ResolvedExec) => {
+				const cmd = this.sanitizeCommand(
+					this.buildEnvPrefix(e.env) + e.commandLine,
+				);
+
+				lastPty = await this.terminalExtAPI.getMachineExecPTY(
+					e.component,
+					cmd,
+					this.expandEnvVariables(e.workingDir),
+				);
+
+				return lastPty;
+			};
+
+			if (parallel) {
+				const ptys = await Promise.all(execs.map(runExec));
+				lastPty = ptys[ptys.length - 1];
+			} else {
+				for (const e of execs) {
+					lastPty = await runExec(e);
+				}
+			}
+
+			return lastPty!;
+		});
+
+		const first = execs[0];
+
+		const kind: DevfileTaskDefinition = {
+			type: "devfile",
+			command: "[composite]",
+			workdir: first.workingDir,
+			component: first.component,
+		};
+
+		return new vscode.Task(
+			kind,
+			vscode.TaskScope.Workspace,
 			label,
-			this.createPTYExecution(
-				undefined,
-				`echo "${message.replace(/"/g, '\\"')}"`,
-				"${PROJECT_SOURCE}",
+			"devfile",
+			execution,
+			[],
+		);
+	}
+
+	/**
+	 * Validates a composite command by checking for cycles and ensuring all references are resolvable.
+	 * @param command The composite command to validate.
+	 * @param all The list of all Devfile commands.
+	 * @param visited A set of visited command IDs to detect cycles.
+	 * @returns True if the composite command is valid (no cycles, all references resolvable), false otherwise.
+	 */
+	private validateComposite(
+		command: any,
+		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
+		visited = new Set<string>(),
+	): boolean {
+		if (!command.composite?.commands) return true;
+
+		if (command.id) {
+			if (visited.has(command.id)) return false;
+			visited.add(command.id);
+		}
+
+		for (const ref of command.composite.commands) {
+			const sub = typeof ref === "string" ? all.find((c) => c.id === ref) : ref;
+
+			if (!sub) return false;
+			if (!this.validateComposite(sub, all, visited)) return false;
+		}
+
+		if (command.id) visited.delete(command.id);
+		return true;
+	}
+
+	/**
+	 * Flattens a composite command into its individual executable commands.
+	 * @param command The composite command to flatten.
+	 * @param all The list of all Devfile commands.
+	 * @param visited A set of visited command IDs to avoid processing the same command multiple times.
+	 * @returns An array of resolved executable commands.
+	 */
+	private flattenCompositeExecs(
+		command: any,
+		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
+		visited = new Set<string>(),
+	): ResolvedExec[] {
+		const result: ResolvedExec[] = [];
+
+		const walk = (cmd: any) => {
+			if (!cmd || visited.has(cmd.id)) return;
+			if (cmd.id) visited.add(cmd.id);
+
+			if (cmd.exec?.commandLine) {
+				result.push({
+					commandLine: cmd.exec.commandLine.toString(),
+					workingDir: cmd.exec.workingDir || "${PROJECT_SOURCE}",
+					component: cmd.exec.component,
+					env: cmd.exec.env,
+				});
+			}
+
+			for (const ref of cmd.composite?.commands ?? []) {
+				const sub =
+					typeof ref === "string" ? all.find((c) => c.id === ref) : ref;
+				if (sub) walk(sub);
+			}
+		};
+
+		walk(command);
+		return result;
+	}
+
+	/**
+	 * Retrieves the label for a given command, prioritizing exec label, then composite label,
+	 * and finally falling back to the command ID.
+	 * @param cmd The command object to retrieve the label from.
+	 * @returns The label for the command, based on the defined priority.
+	 */
+	private getLabel(cmd: any): string {
+		// che#23726 — label priority
+		return cmd.exec?.label || cmd.composite?.label || cmd.id;
+	}
+
+	/**
+	 * Sanitizes a command string by removing trailing shell operators and trimming whitespace.
+	 * @param cmd The command string to sanitize by removing trailing shell operators and trimming whitespace.
+	 * @returns The sanitized command string.
+	 */
+	private sanitizeCommand(cmd: string): string {
+		return cmd.replace(/(?:\s*(?:&&|\|\||[|;&]))+\s*$/, "").trim();
+	}
+
+	/**
+	 * Checks if a command fragment consists solely of shell operators (&&, ||, &, ;, |) and whitespace.
+	 * @param fragment The command fragment to check.
+	 * @returns True if the fragment is operator-only, false otherwise.
+	 */
+	private isOperatorOnlyFragment(fragment: string): boolean {
+		return /^(?:&&|\|\||[&;|])+$/.test(fragment.trim());
+	}
+
+	/**
+	 * Validates if an environment variable entry is valid by checking if it has a non-empty name that matches the allowed pattern.
+	 * @param entry The environment variable entry to validate, which should have a 'name' property and an optional 'value' property.
+	 * @returns True if the environment variable entry is valid, false otherwise.
+	 */
+	private isValidEnvEntry(
+		entry: any,
+	): entry is { name: string; value?: string } {
+		return (
+			typeof entry?.name === "string" &&
+			entry.name.trim().length > 0 &&
+			/^[A-Za-z_][A-Za-z0-9_]*$/.test(entry.name)
+		);
+	}
+
+	/**
+	 * Builds a prefix string for environment variable exports based on the provided environment variable definitions.
+	 * @param env The array of environment variable definitions.
+	 * @returns The prefix string for environment variable exports.
+	 */
+	private buildEnvPrefix(
+		env?: Array<V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv>,
+	): string {
+		if (!env?.length) return "";
+		return env
+			.filter((e) => this.isValidEnvEntry(e))
+			.map(
+				(e) => `export ${e.name}="${(e.value ?? "").replace(/"/g, '\\"')}"; `,
+			)
+			.join("");
+	}
+
+	/**
+	 * Expands environment variable placeholders in the input string.
+	 * @param line The input string that may contain environment variable placeholders in the format ${VAR_NAME}.
+	 * @returns The input string with environment variable placeholders replaced by their values.
+	 */
+	private expandEnvVariables(line: string): string {
+		return line.replace(/\${([A-Za-z0-9_]+)}/g, (_, k) => process.env[k] ?? "");
+	}
+
+	/**
+	 * Creates a pseudo-terminal (PTY) for the specified command.
+	 * @param component The component to execute the command in.
+	 * @param cmd The command to execute.
+	 * @param wd The working directory for the command.
+	 * @returns A CustomExecution instance for the PTY.
+	 */
+	private createPTY(component: string | undefined, cmd: string, wd: string) {
+		return new vscode.CustomExecution(async () =>
+			this.terminalExtAPI.getMachineExecPTY(
+				component,
+				cmd,
+				this.expandEnvVariables(wd),
 			),
 		);
 	}
 
 	/**
-	 * Expands environment variables in a string.
-	 * @param line The line to expand.
-	 * @returns The expanded line.
+	 * Creates a simple echo task that outputs a message to the terminal,
+	 * used for cases where a composite command resolves to an empty set of executable commands.
+	 * @param message The message to output.
+	 * @param label The label for the task.
+	 * @returns A vscode.Task instance for the echo task.
 	 */
-	private expandEnvVariables(line: string): string {
-		return line.replace(/\${([A-Z0-9_]+)}/gi, (_, k) => process.env[k] ?? "");
+	private createEchoTask(message: string, label: string): vscode.Task {
+		return new vscode.Task(
+			{ type: "devfile", command: "echo", workdir: "${PROJECT_SOURCE}" },
+			vscode.TaskScope.Workspace,
+			label,
+			"devfile",
+			this.createPTY(undefined, `echo "${message}"`, "${PROJECT_SOURCE}"),
+			[],
+		);
 	}
 
 	/**
-	 * Creates a Che task from a command.
-	 * @param command The command to create the task from.
-	 * @param allCommands All available commands.
-	 * @returns The created Che task.
+	 * Checks if a command is runnable.
+	 * @param cmd The command to check.
+	 * @returns True if the command is runnable, false otherwise.
 	 */
-	private createCheTask(
-		command: any,
-		allCommands: V1alpha2DevWorkspaceSpecTemplateCommands[],
-	): vscode.Task | undefined {
-		try {
+	private isRunnable(cmd: any): boolean {
+		return !!cmd.exec?.commandLine || cmd.composite?.commands?.length;
+	}
 
-			// ------------------ EXEC ------------------
-			if (command.exec) {
-				const exec = this.normalizeExec(command.exec);
-				if (!exec) return;
-
-				const initialVars = this.buildInitialVariables(command.exec.env);
-				const fullCommand = initialVars + exec.commandLine;
-				const label = command.exec.label || command.id;
-
-				return this.createTask(
-					{
-						type: "devfile",
-						command: fullCommand,
-						workdir: exec.workingDir,
-						component: exec.component,
-					},
-					label,
-					this.createPTYExecution(exec.component, fullCommand, exec.workingDir),
-				);
-			}
-
-			// ------------------ COMPOSITE ------------------
-			if (command.composite?.commands?.length) {
-				if (!this.validateCompositeStrict(command, allCommands)) {
-					return;
-				}
-
-				const execs = this.resolveExecsFromComposite(command, allCommands);
-				const label = command.composite.label || command.id;
-
-				if (!execs.length) {
-					return this.createMessageTask(
-						`Composite ${label} resolved to empty`,
-						label,
-					);
-				}
-
-				const components = new Set(execs.map((e) => e.component ?? ""));
-				const isMultiComponent = components.size > 1;
-				const parallel = !!command.composite.parallel;
-
-				// Multi-component → sequential execution of commands
-				if (isMultiComponent) {
-					return this.createTask(
-						{ type: "devfile", command: "[multi-component composite]" },
-						label,
-						new vscode.CustomExecution(async () => {
-							const runExec = async (e: ResolvedExec) => {
-								const cmd = this.buildInitialVariables(e.env) + e.commandLine;
-
-								this.channel.appendLine(
-									`[composite:${label}] → component=${e.component ?? "default"} cmd=${cmd}`,
-								);
-
-								return this.terminalExtAPI.getMachineExecPTY(
-									e.component,
-									cmd,
-									this.expandEnvVariables(e.workingDir),
-								);
-							};
-
-							if (parallel) {
-								this.channel.appendLine(
-									`Composite ${label} running in PARALLEL mode`,
-								);
-
-								// run in parallel across components
-								await Promise.all(execs.map(runExec));
-							} else {
-								this.channel.appendLine(
-									`Composite ${label} running in SEQUENTIAL mode`,
-								);
-
-								// run sequentially across components
-								for (const e of execs) {
-									await runExec(e);
-								}
-							}
-
-							// final completion message PTY (shown in VS Code task terminal)
-							return this.terminalExtAPI.getMachineExecPTY(
-								undefined,
-								`echo "Composite ${label} execution completed (${parallel ? "parallel" : "sequential"})"`,
-								this.expandEnvVariables("${PROJECT_SOURCE}"),
-							);
-						}),
-					);
-				}
-
-				// Single-component → join commands
-				const joiner = parallel ? " & " : " && ";
-				let compositeCmd = execs.map((e) => e.commandLine).join(joiner);
-				if (parallel) compositeCmd += " ; wait";
-
-				const primary = execs[0];
-
-				return this.createTask(
-					{
-						type: "devfile",
-						command: compositeCmd,
-						workdir: primary.workingDir,
-						component: primary.component,
-					},
-					label,
-					this.createPTYExecution(
-						primary.component,
-						compositeCmd,
-						primary.workingDir,
-					),
-				);
-			}
-
-			// ------------------ UNSUPPORTED ------------------
-			return this.createMessageTask(
-				`Unsupported command type for ${
-					command?.exec?.label || command?.composite?.label || command?.id
-				}`,
-				command?.exec?.label ||
-					command?.composite?.label ||
-					command?.id ||
-					"unsupported",
-			);
-		} catch (err: any) {
-			this.channel.appendLine(
-				`Error creating task for ${
-					command?.exec?.label || command?.composite?.label || command?.id
-				}: ${err?.message ?? String(err)}`,
-			);
-			return;
-		}
+	/**
+	 * Checks if a command is a root command, meaning it is not imported from another Devfile or is imported with "parent" scope.
+	 * @param cmd The command to check.
+	 * @returns True if the command is a root command, false otherwise.
+	 */
+	private isRootCommand(cmd: any): boolean {
+		const importedBy = (cmd.attributes as any)?.[
+			"controller.devfile.io/imported-by"
+		];
+		return (
+			!cmd.attributes || importedBy === undefined || importedBy === "parent"
+		);
 	}
 }
