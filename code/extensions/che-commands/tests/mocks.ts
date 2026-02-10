@@ -11,9 +11,42 @@
 /* eslint-disable header/header */
 
 type MockTerminalOptions = {
-  debug?: boolean;
+	debug?: boolean;
 };
 
+type WriteListener = (data: string) => void;
+type CloseListener = (code?: number) => void;
+
+class MockPty {
+	private writeListeners: WriteListener[] = [];
+	private closeListeners: CloseListener[] = [];
+
+	constructor(private output: string) {}
+
+	onDidWrite(listener: WriteListener) {
+		this.writeListeners.push(listener);
+	}
+
+	onDidClose(listener: CloseListener) {
+		this.closeListeners.push(listener);
+	}
+
+	open() {
+		if (this.output) {
+			for (const l of this.writeListeners) {
+				l(this.output + "\r\n");
+			}
+		}
+	}
+
+	close() {
+		for (const l of this.closeListeners) {
+			l(0);
+		}
+	}
+
+	handleInput() {}
+}
 
 export class MockTerminalAPI {
 	private debug: boolean;
@@ -34,37 +67,40 @@ export class MockTerminalAPI {
 		command: string,
 		cwd: string,
 	) {
-		// simulate output from echo commands
-		const output = this.simulateOutput(command);
+		const output = this.simulateOutput(component, command);
 
 		const record = { component, command, cwd, output };
 		this.calls.push(record);
 
-		// ✅ print during test run
 		if (this.debug) {
 			console.log("\n[PTY]");
 			console.log(" component:", component ?? "default");
 			console.log(" cwd:", cwd);
 			console.log(" command:", command);
-			if (output) {
-				console.log(" output:", output);
-			}
+			if (output) console.log(" output:", output);
 		}
-		return {
-			open: () => {},
-			close: () => {},
-			onDidWrite: () => {},
-			onDidClose: () => {},
-			handleInput: () => {},
-		};
+
+		return new MockPty(output);
 	}
 
-	private simulateOutput(command: string): string {
-		// simple echo simulation
+	private simulateOutput(
+		component: string | undefined,
+		command: string,
+	): string {
 		const m = command.match(/echo\s+(.+)/);
-		if (!m) return "";
+		if (m) return m[1].replace(/^"|"$/g, "");
 
-		return m[1].replace(/^"|"$/g, "");
+		// devfile platform example simulation
+		if (command.includes("PLATFORM_ID")) {
+			if (component === "ubi8-tools" || component === "backend") {
+				return "platform:el8";
+			}
+			if (component === "ubi9-tools" || component === "frontend") {
+				return "platform:el9";
+			}
+		}
+
+		return "";
 	}
 }
 

@@ -10,15 +10,25 @@
 
 /* eslint-disable header/header */
 
-export enum TaskScope {
-	Workspace = 1,
+export class EventEmitter<T> {
+	private listeners: Array<(e: T) => any> = [];
+
+	event = (listener: (e: T) => any) => {
+		this.listeners.push(listener);
+		return { dispose: () => {} };
+	};
+
+	fire(data: T) {
+		for (const l of this.listeners) l(data);
+	}
+
+	dispose() {
+		this.listeners = [];
+	}
 }
 
 export class CustomExecution {
-	callback: () => Promise<any>;
-	constructor(cb: () => Promise<any>) {
-		this.callback = cb;
-	}
+	constructor(public callback: any) {}
 }
 
 export class Task {
@@ -28,12 +38,18 @@ export class Task {
 		public name: string,
 		public source: string,
 		public execution: any,
-		public problemMatchers: any[]
+		public problemMatchers?: any[],
 	) {}
 }
 
+export const TaskScope = {
+	Workspace: 1,
+};
+
 export const window = {
-	createOutputChannel: jest.fn(() => ({
-		appendLine: jest.fn(),
-	})),
+	createOutputChannel: () => ({
+		appendLine: () => {},
+		append: () => {},
+		show: () => {},
+	}),
 };

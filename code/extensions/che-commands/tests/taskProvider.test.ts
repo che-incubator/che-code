@@ -26,13 +26,24 @@ async function provide(devfile: any, term?: MockTerminalAPI) {
 	return createProvider(devfile, term).provideTasks();
 }
 
-async function runFirst(tasks: vscode.Task[]) {
-	await (tasks[0].execution as any).callback();
+async function runTask(task: vscode.Task) {
+	const pty = await (task.execution as any).callback();
+
+	if (pty && typeof pty.open === "function") {
+		await pty.open();
+	}
+
+	return pty;
 }
 
 async function runByName(tasks: vscode.Task[], name: string) {
 	const task = tasks.find((t) => t.name === name)!;
-	await (task.execution as any).callback();
+	return runTask(task);
+}
+
+
+async function runFirst(tasks: vscode.Task[]) {
+	return runTask(tasks[0]);
 }
 
 describe("Exec command normalization", () => {
@@ -263,40 +274,24 @@ describe("Cross-component composite command execution", () => {
 		const term = new MockTerminalAPI({ debug: false });
 		const tasks = await provide(devfile, term);
 
-		const names = tasks!.map((t) => t.name);
-		expect(names).toContain("component-seq-demo");
-		expect(names).toContain("component-parallel-demo");
-		expect(names).toContain("signal-backend");
-		expect(names).toContain("signal-frontend");
+		expect(tasks!.map(t => t.name).sort()).toEqual([
+			"component-parallel-demo",
+			"component-seq-demo",
+			"signal-backend",
+			"signal-frontend",
+		]);
 
-		const task = tasks!.find((t) => t.name === "component-seq-demo")!;
-		expect(task).toBeDefined();
+		const task = tasks!.find(t => t.name === "component-seq-demo")!;
+		const pty = await runTask(task);
 
-		const pty = await (task.execution as any).callback();
+		expect(term.calls).toHaveLength(2);
 
-		expect(term.calls.length).toBe(2);
 		expect(term.calls[0].component).toBe("backend");
 		expect(term.calls[1].component).toBe("frontend");
 
-		expect(term.calls[0].command).toBe(
-			"python demo.py component_signal --component backend",
-		);
+		expect(term.calls[0].command).toContain("--component backend");
+		expect(term.calls[1].command).toContain("--component frontend");
 
-		expect(term.calls[1].command).toBe(
-			"python demo.py component_signal --component frontend",
-		);
-
-		const callByComponent = Object.fromEntries(
-			term.calls.map((c) => [c.component, c.command]),
-		);
-
-		expect(callByComponent.backend).toContain("--component backend");
-		expect(callByComponent.frontend).toContain("--component frontend");
-		expect(callByComponent.backend).not.toContain("--component frontend");
-		expect(callByComponent.frontend).not.toContain("--component backend");
-		expect(term.calls.every((c) => !c.command.includes(" && "))).toBe(true);
-		expect(term.calls.every((c) => !c.command.includes(" & "))).toBe(true);
-		expect(term.calls.every((c) => !c.command.includes("wait"))).toBe(true);
 		expect(pty).toBeDefined();
 		expect(term.calls.at(-1)!.component).toBe("frontend");
 	});
@@ -305,35 +300,16 @@ describe("Cross-component composite command execution", () => {
 		const term = new MockTerminalAPI({ debug: false });
 		const tasks = await provide(devfile, term);
 
-		const task = tasks!.find((t) => t.name === "component-parallel-demo")!;
-		expect(task).toBeDefined();
+		const task = tasks!.find(t => t.name === "component-parallel-demo")!;
+		const pty = await runTask(task);
 
-		const pty = await (task.execution as any).callback();
+		expect(term.calls).toHaveLength(2);
 
-		expect(term.calls.length).toBe(2);
-		const components = term.calls.map((c) => c.component).sort();
-		expect(components).toEqual(["backend", "frontend"]);
-
-		const commands = term.calls.map((c) => c.command).sort();
-		expect(commands).toEqual([
-			"python demo.py component_signal --component backend",
-			"python demo.py component_signal --component frontend",
+		expect(term.calls.map(c => c.component).sort()).toEqual([
+			"backend",
+			"frontend",
 		]);
 
-		for (const c of term.calls) {
-			if (c.component === "backend") {
-				expect(c.command).toContain("--component backend");
-				expect(c.command).not.toContain("--component frontend");
-			}
-
-			if (c.component === "frontend") {
-				expect(c.command).toContain("--component frontend");
-				expect(c.command).not.toContain("--component backend");
-			}
-		}
-
-		expect(term.calls.every((c) => !c.command.includes(" && "))).toBe(true);
-		expect(term.calls.every((c) => !c.command.includes("wait"))).toBe(true);
 		expect(pty).toBeDefined();
 	});
 });

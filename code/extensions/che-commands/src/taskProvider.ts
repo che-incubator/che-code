@@ -218,32 +218,61 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		}
 
 		const execution = new vscode.CustomExecution(async () => {
-			let lastPty: vscode.Pseudoterminal | undefined;
+			const writeEmitter = new vscode.EventEmitter<string>();
+			const closeEmitter = new vscode.EventEmitter<number>();
 
-			const runExec = async (e: ResolvedExec) => {
-				const cmd = this.sanitizeCommand(
-					this.buildEnvPrefix(e.env) + e.commandLine,
-				);
+			let started = false;
 
-				lastPty = await this.terminalExtAPI.getMachineExecPTY(
-					e.component,
-					cmd,
-					this.expandEnvVariables(e.workingDir),
-				);
+			const aggregator: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+				onDidClose: closeEmitter.event,
 
-				return lastPty;
+				open: async () => {
+					if (started) return;
+					started = true;
+
+					const runExec = async (e: ResolvedExec) => {
+						const cmd = this.sanitizeCommand(
+							this.buildEnvPrefix(e.env) + e.commandLine,
+						);
+
+						this.channel.appendLine(
+							`[composite:${label}] → ${e.component ?? "default"} → ${cmd}`,
+						);
+
+						const pty = await this.terminalExtAPI.getMachineExecPTY(
+							e.component,
+							cmd,
+							this.expandEnvVariables(e.workingDir),
+						);
+
+						if ((pty as any)?.output) {
+							writeEmitter.fire((pty as any).output + "\r\n");
+						}
+					};
+
+					try {
+						if (parallel) {
+							await Promise.all(execs.map(runExec));
+						} else {
+							for (const e of execs) {
+								await runExec(e);
+							}
+						}
+
+						closeEmitter.fire(0);
+					} catch (err) {
+						this.channel.appendLine(
+							`Composite ${label} failed: ${String(err)}`,
+						);
+						closeEmitter.fire(1);
+					}
+				},
+
+				close: () => {},
+				handleInput: () => {},
 			};
-
-			if (parallel) {
-				const ptys = await Promise.all(execs.map(runExec));
-				lastPty = ptys[ptys.length - 1];
-			} else {
-				for (const e of execs) {
-					lastPty = await runExec(e);
-				}
-			}
-
-			return lastPty!;
+			return aggregator;
 		});
 
 		const first = execs[0];
