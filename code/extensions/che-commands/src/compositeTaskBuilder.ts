@@ -155,46 +155,51 @@ export class CompositeTaskBuilder {
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
-					const run = async (e: ResolvedExec) => {
-						this.channel.appendLine(
-							`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
-						);
+					const run = (e: ResolvedExec) => {
+						return new Promise<void>(async (resolve) => {
+							this.channel.appendLine(
+								`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
+							);
 
-						const pty = await this.terminalExtAPI.getMachineExecPTY(
-							e.component,
-							e.command,
-							e.workdir,
-						);
+							const pty = await this.terminalExtAPI.getMachineExecPTY(
+								e.component,
+								e.command,
+								e.workdir,
+							);
 
-						let buffer = "";
+							let buffer = "";
 
-						pty.onDidWrite?.((data: string) => {
-							if (data && data.trim()) {
-								buffer += data;
+							if (pty.onDidWrite) {
+								pty.onDidWrite((data: string) => {
+									if (data && data.trim()) {
+										buffer += data;
+									}
+								});
 							}
-						});
 
-						pty.onDidClose?.(() => {
-							const text = buffer.trim();
-							if (text) {
-								this.channel.appendLine(
-									`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
-								);
-								writeEmitter.fire(text + "\r\n");
+							if (pty.onDidClose) {
+								pty.onDidClose(() => {
+									const text = buffer.trim();
+									if (text) {
+										this.channel.appendLine(
+											`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
+										);
+										writeEmitter.fire(text + "\r\n");
+									}
+									resolve();
+								});
+							} else {
+								resolve();
 							}
-						});
 
-						if (typeof pty.open === "function") {
-							pty.open();
-						}
-
-						await new Promise<void>((resolve) => {
-							pty.onDidClose?.(() => resolve());
+							if (typeof pty.open === "function") {
+								pty.open();
+							}
 						});
 					};
 
 					if (parallel) {
-						await Promise.all(execs.map(run));
+						await Promise.all(execs.map((e) => run(e)));
 					} else {
 						for (const e of execs) {
 							await run(e);
