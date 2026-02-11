@@ -27,13 +27,6 @@ jobs:
           rm -rf /opt/hostedtoolcache
           df -h
 
-      - name: Login to Quay.io
-        uses: docker/login-action@v3
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
-          password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
-
       - name: Download Pull Request Number artifact
         uses: actions/download-artifact@v4
         with:
@@ -71,48 +64,23 @@ jobs:
         run: |
           docker load -i che-code-amd64.tgz
 
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
       - name: Push che-code-amd64 docker image
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-amd64
+          export IMAGE=quay.io/${{ secrets.QUAY_USERNAME }}/che-code:pr-${{env._PR_NUMBER}}-amd64
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
+
       - name: Remove che-code-amd64 and prune
         run: |
           docker image rm che-code-amd64 || true
-          docker system prune -af
-
-      - name: Load che-code-arm64 image
-        run: |
-          docker load -i che-code-arm64.tgz
-
-      - name: Push che-code-arm64 docker image
-        run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
-          docker tag che-code-arm64 ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
-      - name: Remove che-code-arm64 and prune
-        run: |
-          docker image rm che-code-arm64 || true
-          docker system prune -af
-
-      - name: Load che-dev image
-        run: |
-          docker load -i che-dev.tgz
-
-      - name: Push che-dev docker image
-        run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
-          docker tag che-dev ${IMAGE}
-          docker push ${IMAGE}
-          echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
-      - name: Remove che-dev and prune
-        run: |
-          docker image rm che-dev || true
           docker system prune -af
           
       - name: 'Comment PR'
@@ -124,5 +92,5 @@ jobs:
               issue_number: process.env._PR_NUMBER,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](https://${process.env._CHE_CODE_ARM64_IMAGE})\nDev image: [${process.env._CHE_DEV_IMAGE}](https://${process.env._CHE_DEV_IMAGE})`
+              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})`
             })

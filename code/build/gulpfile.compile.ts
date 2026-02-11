@@ -23,5 +23,5 @@ export const compileBuildWithoutManglingTask = task.define('compile-build-withou
 gulp.task(compileBuildWithoutManglingTask);
 
 // CI compile, including nls and inline sources in sourcemaps, mangling, minification, for build
-export const compileBuildWithManglingTask = task.define('compile-build-with-mangling', makeCompileBuildTask(false));
+export const compileBuildWithManglingTask = task.define('compile-build-with-mangling', makeCompileBuildTask(true));
 gulp.task(compileBuildWithManglingTask);

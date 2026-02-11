@@ -1,0 +1,131 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(actions)"
+
+  - package-ecosystem: "docker"
+    directory: "/build/dockerfiles"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(docker)"
+
+  - package-ecosystem: "npm"
+    directory: "/code"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/remote"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/build"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-activity-tracker"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-commands"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-github-authentication"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-port"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-remote"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-resource-monitor"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-telemetry"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/code/extensions/che-terminal"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+
+  - package-ecosystem: "npm"
+    directory: "/launcher"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(npm)"
+  
+  
