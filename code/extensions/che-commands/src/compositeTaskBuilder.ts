@@ -169,14 +169,34 @@ export class CompositeTaskBuilder {
 							e.workdir,
 						);
 
-						pty.onDidWrite?.((d: string) => writeEmitter.fire(d));
-						pty.open?.();
+						if (pty.onDidWrite) {
+							pty.onDidWrite((data: string) => {
+								this.channel.appendLine(
+									`[Composite child output --> ${e.component}::] ${data}`,
+								);
+								writeEmitter.fire(data);
+							});
+						}
+
+						if (pty.onDidClose) {
+							pty.onDidClose((code: number) => {
+								this.channel.appendLine(
+									`[Composite child closed --> ${e.component} code=${code}]`,
+								);
+							});
+						}
+
+						if (typeof pty.open === "function") {
+							pty.open();
+						}
 					};
 
 					if (parallel) {
 						await Promise.all(execs.map(run));
 					} else {
-						for (const e of execs) await run(e);
+						for (const e of execs) {
+							await run(e);
+						}
 					}
 
 					closeEmitter.fire(0);
