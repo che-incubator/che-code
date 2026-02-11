@@ -36,6 +36,9 @@ export class CompositeTaskBuilder {
 		command: any,
 		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
 	): vscode.Task | undefined {
+		this.channel.appendLine(
+			`entered composite build ${command.id} with ${command.composite.commands.length} subcommands`,
+		);
 		if (!this.validate(command, all)) {
 			this.channel.appendLine(
 				`Skipping composite ${command.id}: invalid graph`,
@@ -44,11 +47,18 @@ export class CompositeTaskBuilder {
 		}
 
 		const execs = this.flatten(command, all);
+		this.channel.appendLine(
+			`[DEBUG flatten] ${command.id} → ${execs.map((e) => e.component).join(", ")}`,
+		);
 		if (!execs.length) {
 			return this.echoTask(`Composite ${command.id} resolved empty`);
 		}
 
 		const parallel = !!command.composite.parallel;
+		this.channel.appendLine(
+			`is parallel: ${parallel}, commands: ${execs.map((e) => e.command).join(", ")}, 
+			components: ${execs.map((e) => e.component ?? "default").join(", ")}, size: ${execs.length}`,
+		);
 		const components = new Set(execs.map((e) => e.component ?? "__default__"));
 
 		if (components.size === 1) {
@@ -58,35 +68,33 @@ export class CompositeTaskBuilder {
 		return this.buildCrossComponentTask(command, execs, parallel);
 	}
 
-	private flatten(
-		command: any,
-		all: any[],
-		visited = new Set<string>(),
-	): ResolvedExec[] {
-		const out: ResolvedExec[] = [];
+	private flatten(command: any, all: any[]): ResolvedExec[] {
+		const result: ResolvedExec[] = [];
 
-		const walk = (cmd: any) => {
-			if (!cmd || visited.has(cmd.id)) return;
-			if (cmd.id) visited.add(cmd.id);
+		const visit = (cmd: any, stack = new Set<string>()) => {
+			if (!cmd || stack.has(cmd.id)) return;
+			stack.add(cmd.id);
 
 			if (cmd.exec?.commandLine) {
-				out.push({
+				result.push({
 					command: cmd.exec.commandLine,
 					workdir: cmd.exec.workingDir || "${PROJECT_SOURCE}",
 					component: cmd.exec.component,
 					env: cmd.exec.env,
 				});
+				return;
 			}
 
 			for (const ref of cmd.composite?.commands ?? []) {
 				const sub =
 					typeof ref === "string" ? all.find((c) => c.id === ref) : ref;
-				if (sub) walk(sub);
+
+				if (sub) visit(sub, new Set(stack));
 			}
 		};
 
-		walk(command);
-		return out;
+		visit(command);
+		return result;
 	}
 
 	private buildSameComponentTask(
@@ -134,6 +142,9 @@ export class CompositeTaskBuilder {
 		execs: ResolvedExec[],
 		parallel: boolean,
 	) {
+		this.channel.appendLine(
+			`[composite:${command.id}] cross-component → components: ${[...new Set(execs.map((e) => e.component ?? "default"))].join(", ")}`,
+		);
 		const execution = new vscode.CustomExecution(async () => {
 			const writeEmitter = new vscode.EventEmitter<string>();
 			const closeEmitter = new vscode.EventEmitter<number>();
