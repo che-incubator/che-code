@@ -143,7 +143,8 @@ export class CompositeTaskBuilder {
 		parallel: boolean,
 	) {
 		this.channel.appendLine(
-			`[composite:${command.id}] cross-component → components: ${[...new Set(execs.map((e) => e.component ?? "default"))].join(", ")}`,
+			`[composite:${command.id}] cross-component → components: ${[...new Set(execs.map((e) => e.component ?? "default"))].join(", ")}
+			parallel: ${parallel}, commands: ${execs.map((e) => e.command).join(", ")}`,
 		);
 		const execution = new vscode.CustomExecution(async () => {
 			const writeEmitter = new vscode.EventEmitter<string>();
@@ -156,11 +157,7 @@ export class CompositeTaskBuilder {
 				open: async () => {
 					const run = async (e: ResolvedExec) => {
 						this.channel.appendLine(
-							[
-								`[Composite Task] ${command.id}`,
-								`  component: ${e.component ?? "default"}`,
-								`  command: ${e.command}`,
-							].join("\n"),
+							`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
 						);
 
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
@@ -169,26 +166,31 @@ export class CompositeTaskBuilder {
 							e.workdir,
 						);
 
-						if (pty.onDidWrite) {
-							pty.onDidWrite((data: string) => {
-								this.channel.appendLine(
-									`[Composite child output --> ${e.component}::] ${data}`,
-								);
-								writeEmitter.fire(data);
-							});
-						}
+						let buffer = "";
 
-						if (pty.onDidClose) {
-							pty.onDidClose((code: number) => {
+						pty.onDidWrite?.((data: string) => {
+							if (data && data.trim()) {
+								buffer += data;
+							}
+						});
+
+						pty.onDidClose?.(() => {
+							const text = buffer.trim();
+							if (text) {
 								this.channel.appendLine(
-									`[Composite child closed --> ${e.component} code=${code}]`,
+									`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
 								);
-							});
-						}
+								writeEmitter.fire(text + "\r\n");
+							}
+						});
 
 						if (typeof pty.open === "function") {
 							pty.open();
 						}
+
+						await new Promise<void>((resolve) => {
+							pty.onDidClose?.(() => resolve());
+						});
 					};
 
 					if (parallel) {
@@ -214,7 +216,7 @@ export class CompositeTaskBuilder {
 		return new vscode.Task(
 			{
 				type: "devfile",
-				command: "[composite]",
+				command: `[composite:${command.id}:${parallel ? "parallel" : "sequential"}]`,
 				workdir: first.workdir,
 				component: first.component,
 			},
