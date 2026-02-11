@@ -324,7 +324,9 @@ export function isProposedApiEnabled(extension: IExtensionDescription, proposal:
 	if (!extension.enabledApiProposals) {
 		return false;
 	}
-	return extension.enabledApiProposals.includes(proposal);
+	const enabled = extension.enabledApiProposals.includes(proposal);
+	console.log('+++ isProposedApiEnabled', extension.displayName, proposal, enabled, 'entries:', extension.enabledApiProposals);
+	return enabled;
 }
 
 export function checkProposedApiEnabled(extension: IExtensionDescription, proposal: ApiProposalName): void {
