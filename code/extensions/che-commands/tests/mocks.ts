@@ -18,31 +18,35 @@ type WriteListener = (data: string) => void;
 type CloseListener = (code?: number) => void;
 
 class MockPty {
-	private writeListeners: WriteListener[] = [];
-	private closeListeners: CloseListener[] = [];
+	private writeListeners: Array<(s: string) => void> = [];
+	private closeListeners: Array<(c?: number) => void> = [];
 
 	constructor(private output: string) {}
 
-	onDidWrite(listener: WriteListener) {
+	onDidWrite(listener: (s: string) => void) {
 		this.writeListeners.push(listener);
 	}
 
-	onDidClose(listener: CloseListener) {
+	onDidClose(listener: (c?: number) => void) {
 		this.closeListeners.push(listener);
 	}
 
 	open() {
-		if (this.output) {
-			for (const l of this.writeListeners) {
-				l(this.output + "\r\n");
+		setTimeout(() => {
+			if (this.output) {
+				for (const l of this.writeListeners) {
+					l(this.output + "\r\n");
+				}
 			}
-		}
+
+			for (const l of this.closeListeners) {
+				l(0);
+			}
+		}, 0);
 	}
 
 	close() {
-		for (const l of this.closeListeners) {
-			l(0);
-		}
+		for (const l of this.closeListeners) l(0);
 	}
 
 	handleInput() {}
