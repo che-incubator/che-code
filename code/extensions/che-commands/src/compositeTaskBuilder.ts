@@ -155,63 +155,54 @@ export class CompositeTaskBuilder {
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
-					try {
-						const runners = execs.map((e: ResolvedExec, index: number) => {
-							return new Promise<{ index: number; text: string }>(
-								async (resolve) => {
+					const run = async (e: ResolvedExec, index: number) => {
+						this.channel.appendLine(
+							`[Composite RUN #${index}] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
+						);
+
+						const pty = await this.terminalExtAPI.getMachineExecPTY(
+							e.component,
+							e.command,
+							e.workdir,
+						);
+
+						let buffer = "";
+
+						return new Promise<{ index: number; text: string }>((resolve) => {
+							pty.onDidWrite?.((data: string) => {
+								if (data?.trim()) buffer += data;
+							});
+
+							pty.onDidClose?.(() => {
+								const text = buffer.trim();
+
+								if (text) {
 									this.channel.appendLine(
-										`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
+										`[Composite OUTPUT #${index}] ${command.id} -> ${e.component ?? "default"} -> ${text}`,
 									);
+								}
 
-									const pty = await this.terminalExtAPI.getMachineExecPTY(
-										e.component,
-										e.command,
-										e.workdir,
-									);
+								resolve({ index, text });
+							});
 
-									let buffer = "";
-
-									pty.onDidWrite?.((data: string) => {
-										if (data && data.trim()) {
-											buffer += data;
-										}
-									});
-
-									pty.onDidClose?.(() => {
-										resolve({
-											index,
-											text: buffer.trim(),
-										});
-									});
-
-									if (typeof pty.open === "function") {
-										pty.open();
-									}
-								},
-							);
+							if (typeof pty.open === "function") {
+								pty.open();
+							}
 						});
+					};
 
+					try {
 						if (parallel) {
-							const results = await Promise.all(runners);
+							const results = await Promise.all(execs.map((exec, i) => run(exec, i)));
 							results
 								.sort((a, b) => a.index - b.index)
-								.forEach((r) => {
-									if (r.text) {
-										this.channel.appendLine(
-											`[Composite OUTPUT] ${command.id} -> ${r.text}`,
-										);
-										writeEmitter.fire(r.text + "\r\n");
-									}
+								.forEach((result) => {
+									if (result.text) writeEmitter.fire(result.text + "\r\n");
 								});
 						} else {
-							for (const runner of runners) {
-								const out = await runner;
-								if (out.text) {
-									this.channel.appendLine(
-										`[Composite OUTPUT] ${command.id} -> ${out.text}`,
-									);
-									writeEmitter.fire(out.text + "\r\n");
-								}
+							for (let i = 0; i < execs.length; i++) {
+								const result = await run(execs[i], i);
+								if (result.text) writeEmitter.fire(result.text + "\r\n");
 							}
 						}
 
