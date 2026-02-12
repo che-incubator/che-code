@@ -155,56 +155,73 @@ export class CompositeTaskBuilder {
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
-					const waiters: Promise<void>[] = [];
-
-					for (const e of execs) {
-						this.channel.appendLine(
-							`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
-						);
-
-						const pty = await this.terminalExtAPI.getMachineExecPTY(
-							e.component,
-							e.command,
-							e.workdir,
-						);
-
-						let buffer = "";
-
-						const done = new Promise<void>((resolve) => {
-							pty.onDidWrite?.((data: string) => {
-								if (data && data.trim()) {
-									buffer += data;
-								}
-							});
-
-							pty.onDidClose?.(() => {
-								const text = buffer.trim();
-								if (text) {
+					try {
+						const runners = execs.map((e: ResolvedExec, index: number) => {
+							return new Promise<{ index: number; text: string }>(
+								async (resolve) => {
 									this.channel.appendLine(
-										`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
+										`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
 									);
-									writeEmitter.fire(text + "\r\n");
-								}
-								resolve();
-							});
+
+									const pty = await this.terminalExtAPI.getMachineExecPTY(
+										e.component,
+										e.command,
+										e.workdir,
+									);
+
+									let buffer = "";
+
+									pty.onDidWrite?.((data: string) => {
+										if (data && data.trim()) {
+											buffer += data;
+										}
+									});
+
+									pty.onDidClose?.(() => {
+										resolve({
+											index,
+											text: buffer.trim(),
+										});
+									});
+
+									if (typeof pty.open === "function") {
+										pty.open();
+									}
+								},
+							);
 						});
 
-						waiters.push(done);
-
-						if (typeof pty.open === "function") {
-							pty.open();
+						if (parallel) {
+							const results = await Promise.all(runners);
+							results
+								.sort((a, b) => a.index - b.index)
+								.forEach((r) => {
+									if (r.text) {
+										this.channel.appendLine(
+											`[Composite OUTPUT] ${command.id} -> ${r.text}`,
+										);
+										writeEmitter.fire(r.text + "\r\n");
+									}
+								});
+						} else {
+							for (const runner of runners) {
+								const out = await runner;
+								if (out.text) {
+									this.channel.appendLine(
+										`[Composite OUTPUT] ${command.id} -> ${out.text}`,
+									);
+									writeEmitter.fire(out.text + "\r\n");
+								}
+							}
 						}
 
-						if (!parallel) {
-							await done;
-						}
+						closeEmitter.fire(0);
+					} catch (err) {
+						this.channel.appendLine(
+							`Composite ${command.id} failed: ${String(err)}`,
+						);
+						closeEmitter.fire(1);
 					}
-
-					if (parallel) {
-						await Promise.all(waiters);
-					}
-
-					closeEmitter.fire(0);
 				},
 
 				close: () => {},
