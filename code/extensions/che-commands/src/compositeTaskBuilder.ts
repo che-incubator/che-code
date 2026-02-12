@@ -36,9 +36,6 @@ export class CompositeTaskBuilder {
 		command: any,
 		all: V1alpha2DevWorkspaceSpecTemplateCommands[],
 	): vscode.Task | undefined {
-		this.channel.appendLine(
-			`entered composite build ${command.id} with ${command.composite.commands.length} subcommands`,
-		);
 		if (!this.validate(command, all)) {
 			this.channel.appendLine(
 				`Skipping composite ${command.id}: invalid graph`,
@@ -47,20 +44,13 @@ export class CompositeTaskBuilder {
 		}
 
 		const execs = this.flatten(command, all);
-		this.channel.appendLine(
-			`[DEBUG flatten] ${command.id} → ${execs.map((e) => e.component).join(", ")}`,
-		);
 		if (!execs.length) {
 			return this.echoTask(`Composite ${command.id} resolved empty`);
 		}
 
 		const parallel = !!command.composite.parallel;
-		this.channel.appendLine(
-			`is parallel: ${parallel}, commands: ${execs.map((e) => e.command).join(", ")}, 
-			components: ${execs.map((e) => e.component ?? "default").join(", ")}, size: ${execs.length}`,
-		);
-		const components = new Set(execs.map((e) => e.component ?? "__default__"));
 
+		const components = new Set(execs.map((e) => e.component ?? "__default__"));
 		if (components.size === 1) {
 			return this.buildSameComponentTask(command, execs, parallel);
 		}
@@ -155,9 +145,9 @@ export class CompositeTaskBuilder {
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
-					const run = async (e: ResolvedExec, index: number) => {
+					const run = async (e: ResolvedExec) => {
 						this.channel.appendLine(
-							`[Composite RUN #${index}] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
+							`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
 						);
 
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
@@ -168,51 +158,40 @@ export class CompositeTaskBuilder {
 
 						let buffer = "";
 
-						return new Promise<{ index: number; text: string }>((resolve) => {
-							pty.onDidWrite?.((data: string) => {
-								if (data?.trim()) buffer += data;
-							});
-
-							pty.onDidClose?.(() => {
-								const text = buffer.trim();
-
-								if (text) {
-									this.channel.appendLine(
-										`[Composite OUTPUT #${index}] ${command.id} -> ${e.component ?? "default"} -> ${text}`,
-									);
-								}
-
-								resolve({ index, text });
-							});
-
-							if (typeof pty.open === "function") {
-								pty.open();
+						pty.onDidWrite?.((data: string) => {
+							if (data && data.trim()) {
+								buffer += data;
 							}
+						});
+
+						pty.onDidClose?.(() => {
+							const text = buffer.trim();
+							if (text) {
+								this.channel.appendLine(
+									`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
+								);
+								writeEmitter.fire(text + "\r\n");
+							}
+						});
+
+						if (typeof pty.open === "function") {
+							pty.open();
+						}
+
+						await new Promise<void>((resolve) => {
+							pty.onDidClose?.(() => resolve());
 						});
 					};
 
-					try {
-						if (parallel) {
-							const results = await Promise.all(execs.map((exec, i) => run(exec, i)));
-							results
-								.sort((a, b) => a.index - b.index)
-								.forEach((result) => {
-									if (result.text) writeEmitter.fire(result.text + "\r\n");
-								});
-						} else {
-							for (let i = 0; i < execs.length; i++) {
-								const result = await run(execs[i], i);
-								if (result.text) writeEmitter.fire(result.text + "\r\n");
-							}
+					if (parallel) {
+						await Promise.all(execs.map(run));
+					} else {
+						for (const e of execs) {
+							await run(e);
 						}
-
-						closeEmitter.fire(0);
-					} catch (err) {
-						this.channel.appendLine(
-							`Composite ${command.id} failed: ${String(err)}`,
-						);
-						closeEmitter.fire(1);
 					}
+
+					closeEmitter.fire(0);
 				},
 
 				close: () => {},
