@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Red Hat, Inc.
+# Copyright (c) 2024-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.6-1760386551 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1770021428 as linux-libc-ubi9-builder
 
 USER root
 
