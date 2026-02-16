@@ -381,6 +381,7 @@ export class NextEditProvider extends Disposable implements INextEditProvider<Ne
 	private determineNesConfigs(telemetryBuilder: LlmNESTelemetryBuilder, logContext: InlineEditRequestLogContext): INesConfigs {
 		const nesConfigs: INesConfigs = {
 			isAsyncCompletions: this._configService.getExperimentBasedConfig(ConfigKey.TeamInternal.InlineEditsAsyncCompletions, this._expService),
+			isEagerBackupRequest: this._configService.getExperimentBasedConfig(ConfigKey.TeamInternal.InlineEditsEagerBackupRequest, this._expService),
 		};
 
 		telemetryBuilder.setNESConfigs({ ...nesConfigs });
@@ -457,16 +458,58 @@ export class NextEditProvider extends Disposable implements INextEditProvider<Ne
 				this._speculativePendingRequest = null;
 			}
 
-			const nextEditResult = await this._joinNextEditRequest(requestToReuse, telemetryBuilder, logContext, cancellationToken);
-
 			const requestStillCurrent = speculativeRequest
 				? speculativeRequestMatches // For speculative, we already checked it matches
 				: pendingRequestStillCurrent;
 
 			if (requestStillCurrent) {
+				const nextEditResult = await this._joinNextEditRequest(requestToReuse, telemetryBuilder, logContext, cancellationToken);
 				telemetryBuilder.setStatelessNextEditTelemetry(nextEditResult.telemetry);
 				return nextEditResult.nextEdit.isError() ? nextEditResult.nextEdit : requestToReuse.firstEdit.p;
+			} else if (nesConfigs.isEagerBackupRequest) {
+				// The pending request is stale (document diverged). Start a backup request
+				// in parallel so that if rebase fails, we already have a head start.
+				logger.trace('starting eager backup request in parallel with rebase attempt');
+
+				// _executeNewNextEditRequest cancels the current _pendingStatelessNextEditRequest,
+				// but we're still trying to join+rebase requestToReuse. Temporarily clear the
+				// pending field so the stale request isn't cancelled prematurely.
+				this._pendingStatelessNextEditRequest = null;
+				const backupPromise = this._executeNewNextEditRequest(req, doc, historyContext, nesConfigs, shouldExpandEditWindow, logger, telemetryBuilder, cancellationToken);
+				const cancelBackupRequest = () => {
+					void backupPromise
+						.then(r => r.nextEditRequest.cancellationTokenSource.cancel())
+						.catch(() => undefined);
+				};
+
+				// Simultaneously attempt to join + rebase the stale request
+				const nextEditResult = await this._joinNextEditRequest(requestToReuse, telemetryBuilder, logContext, cancellationToken);
+				const cacheResult = await requestToReuse.firstEdit.p;
+				if (cacheResult.isOk() && cacheResult.val.edit) {
+					const rebasedCachedEdit = this._nextEditCache.tryRebaseCacheEntry(cacheResult.val, documentAtInvocationTime, selectionAtInvocationTime);
+					if (rebasedCachedEdit) {
+						logger.trace('rebase succeeded, cancelling eager backup request');
+						cancelBackupRequest();
+						telemetryBuilder.setStatelessNextEditTelemetry(nextEditResult.telemetry);
+						return Result.ok(rebasedCachedEdit);
+					}
+				}
+
+				if (cancellationToken.isCancellationRequested) {
+					logger.trace('cancelled after rebase failed (eager backup path)');
+					cancelBackupRequest();
+					telemetryBuilder.setStatelessNextEditTelemetry(nextEditResult.telemetry);
+					return Result.error(new NoNextEditReason.GotCancelled('afterFailedRebase'));
+				}
+
+				// Rebase failed — use the backup request that's already been running in parallel
+				logger.trace('rebase failed, using eager backup request');
+				const backupRes = await backupPromise;
+				telemetryBuilder.setStatelessNextEditTelemetry(backupRes.nextEditResult.telemetry);
+				return backupRes.nextEditResult.nextEdit.isError() ? backupRes.nextEditResult.nextEdit : backupRes.nextEditRequest.firstEdit.p;
 			} else {
+				const nextEditResult = await this._joinNextEditRequest(requestToReuse, telemetryBuilder, logContext, cancellationToken);
+
 				// Needs rebasing.
 				const cacheResult = await requestToReuse.firstEdit.p;
 				if (cacheResult.isOk() && cacheResult.val.edit) {
