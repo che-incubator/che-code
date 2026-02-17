@@ -162,7 +162,7 @@ export class CompositeTaskBuilder {
 							pty.onDidWrite?.((data: string) => {
 								if (!data) return;
 								const tagged = `[${tag}] ${data}`;
-								writeEmitter.fire(tagged);
+								writeEmitter.fire(data);
 								this.channel.append(tagged);
 							});
 
