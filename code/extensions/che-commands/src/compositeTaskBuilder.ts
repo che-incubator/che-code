@@ -146,8 +146,10 @@ export class CompositeTaskBuilder {
 
 				open: async () => {
 					const run = async (e: ResolvedExec) => {
+						const tag = `${command.id}:${e.component ?? "default"}`;
+
 						this.channel.appendLine(
-							`[Composite RUN] ${command.id} -> component: ${e.component ?? "default"} -> command: ${e.command}`,
+							`[Composite RUN] ${tag} -> command: ${e.command}`,
 						);
 
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
@@ -156,30 +158,22 @@ export class CompositeTaskBuilder {
 							e.workdir,
 						);
 
-						let buffer = "";
-
-						pty.onDidWrite?.((data: string) => {
-							if (data && data.trim()) {
-								buffer += data;
-							}
-						});
-
-						pty.onDidClose?.(() => {
-							const text = buffer.trim();
-							if (text) {
-								this.channel.appendLine(
-									`[Composite OUTPUT] ${command.id} -> component: ${e.component ?? "default"} -> output: ${text}`,
-								);
-								writeEmitter.fire(text + "\r\n");
-							}
-						});
-
-						if (typeof pty.open === "function") {
-							pty.open();
-						}
-
 						await new Promise<void>((resolve) => {
-							pty.onDidClose?.(() => resolve());
+							pty.onDidWrite?.((data: string) => {
+								if (!data) return;
+								const tagged = `[${tag}] ${data}`;
+								writeEmitter.fire(tagged);
+								this.channel.append(tagged);
+							});
+
+							pty.onDidClose?.(() => {
+								this.channel.appendLine(`[Composite DONE] ${tag}`);
+								resolve();
+							});
+
+							if (typeof pty.open === "function") {
+								pty.open();
+							}
 						});
 					};
 
