@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Red Hat, Inc.
+# Copyright (c) 2021-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -12,6 +12,7 @@ FROM docker.io/node:22-alpine3.22 as linux-musl-builder
 RUN apk add --update --no-cache \
     # Download some files
     curl \
+    patch \
     # compile some javascript native stuff (node-gyp)
     make gcc g++ python3 py3-pip \
     # git 
