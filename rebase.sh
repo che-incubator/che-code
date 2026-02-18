@@ -452,6 +452,8 @@ resolve_conflicts() {
       apply_code_extensions_vscode_api_tests_package_lock_changes
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
       apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
