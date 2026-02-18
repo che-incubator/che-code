@@ -141,28 +141,18 @@ jobs:
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
           if [[ ${{env.BRANCH_NAME}} == main ]]; then         
             docker manifest create quay.io/che-incubator/che-code:next --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
-            docker manifest annotate quay.io/che-incubator/che-code:next quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
-            docker manifest annotate quay.io/che-incubator/che-code:next quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
             docker manifest push quay.io/che-incubator/che-code:next          
           
             docker manifest create quay.io/che-incubator/che-code:insiders --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
-            docker manifest annotate quay.io/che-incubator/che-code:insiders quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
-            docker manifest annotate quay.io/che-incubator/che-code:insiders quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
             docker manifest push quay.io/che-incubator/che-code:insiders          
           
             docker manifest create quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
-            docker manifest annotate quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
-            docker manifest annotate quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
             docker manifest push quay.io/che-incubator/che-code:insiders-${SHORT_SHA1}          
           elif [[ ${{env.BRANCH_NAME}} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then         
             docker manifest create quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
-            docker manifest annotate quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
-            docker manifest annotate quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
             docker manifest push quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}     
           
             docker manifest create quay.io/che-incubator/che-code:latest --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
-            docker manifest annotate quay.io/che-incubator/che-code:latest quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
-            docker manifest annotate quay.io/che-incubator/che-code:latest quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
             docker manifest push quay.io/che-incubator/che-code:latest     
           fi          
 
