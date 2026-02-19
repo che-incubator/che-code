@@ -698,9 +698,13 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 				void this.copilotCLIAgents.setDefaultAgent(update.value);
 				void this.copilotCLIAgents.trackSessionAgent(sessionId, update.value);
 			} else if (update.optionId === REPOSITORY_OPTION_ID && typeof update.value === 'string' && isUntitledSessionId(sessionId)) {
+				const folder = vscode.Uri.file(update.value);
+				if (isEqual(folder, this._selectedRepoForBranches?.repoUri)) {
+					continue;
+				}
+
 				_sessionBranch.delete(sessionId);
 
-				const folder = vscode.Uri.file(update.value);
 				if ((await checkPathExists(folder, this.fileSystem))) {
 					this.folderRepositoryManager.setUntitledSessionFolder(sessionId, folder);
 
@@ -710,10 +714,10 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 						? { repoUri: repoInfo.repository, headBranchName: repoInfo.headBranchName }
 						: undefined;
 
-					if (this._selectedRepoForBranches) {
-						// When switching to a new repository, we need to update the branch selection for the session. Push an
-						// update to the session to select the first branch in the new repo and then we will fire an event so
-						// that the branches from the new repository are loaded in the dropdown.
+					// When switching to a new repository, we need to update the branch selection for the session. Push an
+					// update to the session to select the first branch in the new repo and then we will fire an event so
+					// that the branches from the new repository are loaded in the dropdown.
+					if (this._selectedRepoForBranches && updates.length === 1) {
 						const sessionChanges: { optionId: string; value: string | vscode.ChatSessionProviderOptionItem }[] = [];
 
 						const branchItems = await this.getBranchOptionItems();
@@ -734,10 +738,10 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 						if (sessionChanges.length > 0) {
 							this.notifySessionOptionsChange(resource, sessionChanges);
 						}
-					}
 
-					// Update options
-					triggerProviderOptionsChange = true;
+						// Update all options
+						triggerProviderOptionsChange = true;
+					}
 				} else {
 					await this.folderRepositoryManager.deleteMRUEntry(folder);
 					const message = l10n.t('The path \'{0}\' does not exist on this computer.', folder.fsPath);
@@ -749,12 +753,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 						changes.push({ optionId: REPOSITORY_OPTION_ID, value: defaultRepo.fsPath });
 						this.notifySessionOptionsChange(resource, changes);
 					}
-
-					_sessionBranch.delete(sessionId);
-					this._selectedRepoForBranches = undefined;
-
-					// Update options
 					triggerProviderOptionsChange = true;
+					this._selectedRepoForBranches = undefined;
 				}
 			} else if (update.optionId === BRANCH_OPTION_ID) {
 				_sessionBranch.set(sessionId, update.value);
@@ -793,6 +793,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			this.notifyProviderOptionsChange();
 		}
 	}
+
 }
 
 function toRepositoryOptionItem(repository: RepoContext | Uri, isDefault: boolean = false): ChatSessionProviderOptionItem {
