@@ -136,6 +136,10 @@ export class CompositeTaskBuilder {
 			`[composite:${command.id}] cross-component → components: ${[...new Set(execs.map((e) => e.component ?? "default"))].join(", ")}
 			parallel: ${parallel}, commands: ${execs.map((e) => e.command).join(", ")}`,
 		);
+
+		let activePtys = new Set<vscode.Pseudoterminal>();
+		let isCancelled = false;
+
 		const execution = new vscode.CustomExecution(async () => {
 			const writeEmitter = new vscode.EventEmitter<string>();
 			const closeEmitter = new vscode.EventEmitter<number>();
@@ -146,6 +150,7 @@ export class CompositeTaskBuilder {
 
 				open: async () => {
 					const run = async (e: ResolvedExec) => {
+						if (isCancelled) return;
 						const tag = `${command.id}:${e.component ?? "default"}`;
 
 						this.channel.appendLine(
@@ -158,6 +163,8 @@ export class CompositeTaskBuilder {
 							e.workdir,
 						);
 
+						activePtys.add(pty);
+
 						await new Promise<void>((resolve) => {
 							pty.onDidWrite?.((data: string) => {
 								if (!data) return;
@@ -168,6 +175,7 @@ export class CompositeTaskBuilder {
 
 							pty.onDidClose?.(() => {
 								this.channel.appendLine(`[Composite DONE] ${tag}`);
+								activePtys.delete(pty);
 								resolve();
 							});
 
@@ -181,6 +189,7 @@ export class CompositeTaskBuilder {
 						await Promise.all(execs.map(run));
 					} else {
 						for (const e of execs) {
+							if (isCancelled) break;
 							await run(e);
 						}
 					}
@@ -188,8 +197,39 @@ export class CompositeTaskBuilder {
 					closeEmitter.fire(0);
 				},
 
-				close: () => {},
-				handleInput: () => {},
+				close: () => {
+					this.channel.appendLine("[Composite] Terminal closed by user");
+
+					isCancelled = true;
+
+					for (const p of activePtys) {
+						try {
+							p.handleInput?.("\x03");
+							p.close?.();
+						} catch {}
+					}
+
+					activePtys.clear();
+					closeEmitter.fire(130);
+				},
+
+				handleInput: (data: string) => {
+					if (data === "\x03") {
+						this.channel.appendLine(
+							"[Composite] Ctrl+C received — terminating",
+						);
+
+						isCancelled = true;
+
+						for (const p of activePtys) {
+							p.handleInput?.("\x03");
+							p.close?.();
+						}
+
+						activePtys.clear();
+						closeEmitter.fire(130);
+					}
+				},
 			};
 
 			return aggregator;
