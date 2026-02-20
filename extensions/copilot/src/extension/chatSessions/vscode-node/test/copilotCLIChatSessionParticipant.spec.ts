@@ -35,6 +35,7 @@ import { CopilotCLISessionService, CopilotCLISessionWorkspaceTracker, ICopilotCL
 import { CustomSessionTitleService } from '../../../agents/copilotcli/node/customSessionTitleServiceImpl';
 import { ICopilotCLIMCPHandler } from '../../../agents/copilotcli/node/mcpHandler';
 import { MockCliSdkSession, MockCliSdkSessionManager, NullCopilotCLIAgents, NullICopilotCLIImageSupport } from '../../../agents/copilotcli/node/test/copilotCliSessionService.spec';
+import { IUserQuestionHandler, UserInputRequest, UserInputResponse } from '../../../agents/copilotcli/node/userInputHelpers';
 import { ChatSummarizerProvider } from '../../../prompt/node/summarizer';
 import { createExtensionUnitTestingServices } from '../../../test/node/services';
 import { MockChatResponseStream, TestChatRequest } from '../../../test/node/testHelpers';
@@ -277,6 +278,13 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 			}
 		}();
 		const fileSystem = new MockFileSystemService();
+		class FakeUserQuestionHandler implements IUserQuestionHandler {
+			_serviceBrand: undefined;
+			async askUserQuestion(question: UserInputRequest, stream: vscode.ChatResponseStream, toolInvocationToken: vscode.ChatParticipantToolToken, token: vscode.CancellationToken): Promise<UserInputResponse | undefined> {
+				return undefined;
+			}
+		}
+
 		instantiationService = {
 			invokeFunction<R, TS extends any[] = []>(fn: (accessor: ServicesAccessor, ...args: TS) => R, ...args: TS): R {
 				return fn(accessor, ...args);
@@ -293,7 +301,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 						}
 					}();
 				}
-				const session = new TestCopilotCLISession(options, sdkSession, logService, workspaceService, sdk, instantiationService, delegationService, new NullRequestLogger(), new NullICopilotCLIImageSupport(), new FakeToolsService());
+				const session = new TestCopilotCLISession(options, sdkSession, logService, workspaceService, sdk, instantiationService, delegationService, new NullRequestLogger(), new NullICopilotCLIImageSupport(), new FakeToolsService(), new FakeUserQuestionHandler());
 				cliSessions.push(session);
 				return disposables.add(session);
 			}
