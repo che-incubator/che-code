@@ -445,7 +445,8 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 		manager.sessions.set(sessionId, sdkSession);
 
 		git.activeRepository = { get: () => ({ changes: { indexChanges: [{ path: 'file.ts' }] } }) } as unknown as IGitService['activeRepository'];
-		const request = new TestChatRequest('/delegate Build feature');
+		const request = new TestChatRequest('Build feature');
+		request.command = 'delegate';
 		const context = createChatContext(sessionId, false);
 		const stream = new MockChatResponseStream();
 		const token = disposables.add(new CancellationTokenSource()).token;
@@ -505,7 +506,8 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 	it('handles /delegate command for new session without uncommitted changes', async () => {
 		expect(manager.sessions.size).toBe(0);
 		git.activeRepository = { get: () => ({ changes: { indexChanges: [], workingTree: [] } }) } as unknown as IGitService['activeRepository'];
-		const request = new TestChatRequest('/delegate Build feature');
+		const request = new TestChatRequest('Build feature');
+		request.command = 'delegate';
 		const context = createChatContext('existing-delegate', true);
 		const stream = new MockChatResponseStream();
 		const token = disposables.add(new CancellationTokenSource()).token;
