@@ -55,7 +55,11 @@ export class CompositeTaskBuilder {
 			return this.buildSameComponentTask(command, execs, parallel);
 		}
 
-		return this.buildCrossComponentTask(command, execs, parallel);
+		if (parallel) {
+			return this.buildParallelCrossComponent(command, execs);
+		}
+
+		return this.buildSeqCrossComponent(command, execs);
 	}
 
 	private flatten(command: any, all: any[]): ResolvedExec[] {
@@ -127,14 +131,10 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildCrossComponentTask(
-		command: any,
-		execs: ResolvedExec[],
-		parallel: boolean,
-	) {
+	private buildSeqCrossComponent(command: any, execs: ResolvedExec[]) {
 		this.channel.appendLine(
-			`[composite:${command.id}] cross-component → components: ${[...new Set(execs.map((e) => e.component ?? "default"))].join(", ")}
-			parallel: ${parallel}, commands: ${execs.map((e) => e.command).join(", ")}`,
+			`[Composite Seq:${command.id}] cross-component → components: ${this.getComponentList(execs)}
+			commands: ${execs.map((e) => e.command).join(", ")}`,
 		);
 
 		let activePtys = new Set<vscode.Pseudoterminal>();
@@ -154,7 +154,7 @@ export class CompositeTaskBuilder {
 						const tag = `${command.id}:${e.component ?? "default"}`;
 
 						this.channel.appendLine(
-							`[Composite RUN] ${tag} -> command: ${e.command}`,
+							`[Composite Seq RUN] ${tag} -> command: ${e.command}`,
 						);
 
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
@@ -174,7 +174,7 @@ export class CompositeTaskBuilder {
 							});
 
 							pty.onDidClose?.(() => {
-								this.channel.appendLine(`[Composite DONE] ${tag}`);
+								this.channel.appendLine(`[Composite Seq DONE] ${tag}`);
 								activePtys.delete(pty);
 								resolve();
 							});
@@ -185,20 +185,16 @@ export class CompositeTaskBuilder {
 						});
 					};
 
-					if (parallel) {
-						await Promise.all(execs.map(run));
-					} else {
-						for (const e of execs) {
-							if (isCancelled) break;
-							await run(e);
-						}
+					for (const e of execs) {
+						if (isCancelled) break;
+						await run(e);
 					}
 
 					closeEmitter.fire(0);
 				},
 
 				close: () => {
-					this.channel.appendLine("[Composite] Terminal closed by user");
+					this.channel.appendLine("[Composite Seq] Terminal closed by user");
 
 					isCancelled = true;
 
@@ -240,7 +236,7 @@ export class CompositeTaskBuilder {
 		return new vscode.Task(
 			{
 				type: "devfile",
-				command: `[composite:${command.id}:${parallel ? "parallel" : "sequential"}]`,
+				command: `[composite:${command.id}:"sequential"]`,
 				workdir: first.workdir,
 				component: first.component,
 			},
@@ -249,6 +245,138 @@ export class CompositeTaskBuilder {
 			"devfile",
 			execution,
 		);
+	}
+
+	private buildParallelCrossComponent(
+		command: any,
+		execs: ResolvedExec[],
+	): vscode.Task {
+		this.channel.appendLine(
+			`[Composite Parallel:${command.id}] cross-component → components: ${this.getComponentList(execs)}
+			commands: ${execs.map((e) => e.command).join(", ")}`,
+		);
+
+		const execution = new vscode.CustomExecution(async () => {
+			const writeEmitter = new vscode.EventEmitter<string>();
+			const closeEmitter = new vscode.EventEmitter<number>();
+
+			const running = new Set<vscode.TaskExecution>();
+			let cancelled = false;
+			let exitCode = 0;
+
+			const endListener = vscode.tasks.onDidEndTaskProcess((e) => {
+				if (!running.has(e.execution)) return;
+
+				running.delete(e.execution);
+
+				if (e.exitCode && e.exitCode !== 0) {
+					exitCode = e.exitCode;
+				}
+
+				if (!cancelled && running.size === 0) {
+					cleanup();
+					closeEmitter.fire(exitCode);
+				}
+			});
+
+			const cleanup = () => {
+				endListener.dispose();
+				running.clear();
+			};
+
+			const terminateAll = () => {
+				cancelled = true;
+
+				for (const exec of running) {
+					try {
+						exec.terminate();
+					} catch {}
+				}
+
+				cleanup();
+				closeEmitter.fire(130);
+			};
+
+			const pty: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+				onDidClose: closeEmitter.event,
+
+				open: async () => {
+					for (const e of execs) {
+						const childTask = this.buildHiddenExecTask(command.id, e);
+
+						const exec = await vscode.tasks.executeTask(childTask);
+
+						running.add(exec);
+
+						writeEmitter.fire(`[${e.component}] started\n`);
+					}
+				},
+
+				close: () => {
+					this.channel.appendLine("[Composite Parallel] Terminal closed");
+					terminateAll();
+				},
+
+				handleInput: (data: string) => {
+					if (data === "\x03") {
+						this.channel.appendLine("[Composite Parallel] Ctrl+C received");
+						terminateAll();
+					}
+				},
+			};
+
+			return pty;
+		});
+
+		return new vscode.Task(
+			{
+				type: "devfile",
+				command: `[composite:${command.id}:parallel]`,
+			},
+			vscode.TaskScope.Workspace,
+			command.composite.label || command.id,
+			"devfile",
+			execution,
+		);
+	}
+
+	private buildHiddenExecTask(
+		compositeId: string,
+		e: ResolvedExec,
+	): vscode.Task {
+		const definition = {
+			type: "devfile",
+			command: e.command,
+			workdir: e.workdir,
+			component: e.component,
+		};
+
+		const task = new vscode.Task(
+			definition,
+			vscode.TaskScope.Workspace,
+			`${compositeId}:${e.component}`,
+			"devfile",
+			new vscode.CustomExecution(() =>
+				this.terminalExtAPI.getMachineExecPTY(
+					e.component,
+					e.command,
+					e.workdir,
+				),
+			),
+		);
+
+		task.presentationOptions = {
+			reveal: vscode.TaskRevealKind.Never ?? 0,
+			panel: vscode.TaskPanelKind.Dedicated ?? 1,
+			clear: false,
+		};
+
+		return task;
+	}
+
+	private getComponentList(execs: ResolvedExec[]): string {
+		return [...new Set(execs.map((e) => e.component ?? "default"))].join(", ");
 	}
 
 	private sanitize(cmd: string) {
