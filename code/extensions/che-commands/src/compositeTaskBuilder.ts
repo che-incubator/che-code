@@ -261,23 +261,8 @@ export class CompositeTaskBuilder {
 			const closeEmitter = new vscode.EventEmitter<number>();
 
 			const running = new Set<vscode.TaskExecution>();
-			let cancelled = false;
 			let exitCode = 0;
-
-			const endListener = vscode.tasks.onDidEndTaskProcess((e) => {
-				if (!running.has(e.execution)) return;
-
-				running.delete(e.execution);
-
-				if (e.exitCode && e.exitCode !== 0) {
-					exitCode = e.exitCode;
-				}
-
-				if (!cancelled && running.size === 0) {
-					cleanup();
-					closeEmitter.fire(exitCode);
-				}
-			});
+			let cancelled = false;
 
 			const cleanup = () => {
 				endListener.dispose();
@@ -297,30 +282,54 @@ export class CompositeTaskBuilder {
 				closeEmitter.fire(130);
 			};
 
+			const endListener = vscode.tasks.onDidEndTaskProcess((e) => {
+				if (!running.has(e.execution)) return;
+
+				running.delete(e.execution);
+
+				if (e.exitCode && e.exitCode !== 0) {
+					exitCode = e.exitCode;
+				}
+
+				if (!cancelled && running.size === 0) {
+					cleanup();
+					closeEmitter.fire(exitCode);
+				}
+			});
+
 			const pty: vscode.Pseudoterminal = {
 				onDidWrite: writeEmitter.event,
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
 					for (const e of execs) {
-						const childTask = this.buildHiddenExecTask(command.id, e);
+						const childTask = this.buildStreamingExecTask(
+							command.id,
+							e,
+							writeEmitter,
+						);
 
 						const exec = await vscode.tasks.executeTask(childTask);
 
 						running.add(exec);
-
-						writeEmitter.fire(`[${e.component}] started\n`);
+						this.channel.appendLine(
+							`[Composite Parallel:${command.id}] Started task for component: ${e.component ?? "default"}`,
+						);
 					}
 				},
 
 				close: () => {
-					this.channel.appendLine("[Composite Parallel] Terminal closed");
+					this.channel.appendLine(
+						`[Composite Parallel:${command.id}] terminal closed`,
+					);
 					terminateAll();
 				},
 
 				handleInput: (data: string) => {
 					if (data === "\x03") {
-						this.channel.appendLine("[Composite Parallel] Ctrl+C received");
+						this.channel.appendLine(
+							`[Composite Parallel:${command.id}] Ctrl+C received`,
+						);
 						terminateAll();
 					}
 				},
@@ -341,34 +350,90 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildHiddenExecTask(
+	private buildStreamingExecTask(
 		compositeId: string,
 		e: ResolvedExec,
+		parentEmitter: vscode.EventEmitter<string>,
 	): vscode.Task {
-		const definition = {
-			type: "devfile",
-			command: e.command,
-			workdir: e.workdir,
-			component: e.component,
-		};
+		const execution = new vscode.CustomExecution(async () => {
+			const writeEmitter = new vscode.EventEmitter<string>();
+			const closeEmitter = new vscode.EventEmitter<number>();
+
+			let child: vscode.Pseudoterminal | null = null;
+			let cancelled = false;
+
+			const terminateChild = () => {
+				cancelled = true;
+
+				if (child) {
+					try {
+						child.handleInput?.("\x03");
+						child.close?.();
+					} catch {}
+				}
+
+				closeEmitter.fire(130);
+			};
+
+			const pty: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+				onDidClose: closeEmitter.event,
+
+				open: async () => {
+					const created = await this.terminalExtAPI.getMachineExecPTY(
+						e.component,
+						e.command,
+						e.workdir,
+					);
+
+					child = created;
+
+					created.onDidWrite?.((data: string) => {
+						if (!data) return;
+
+						const tagged = `[${e.component ?? "default"}] ${data}`;
+
+						parentEmitter.fire(data);
+						writeEmitter.fire(tagged);
+					});
+
+					created.onDidClose?.((code?: number) => {
+						if (!cancelled) {
+							closeEmitter.fire(code ?? 0);
+						}
+					});
+
+					created.open?.();
+				},
+
+				close: terminateChild,
+
+				handleInput: (data: string) => {
+					if (data === "\x03") {
+						terminateChild();
+					}
+				},
+			};
+
+			return pty;
+		});
 
 		const task = new vscode.Task(
-			definition,
+			{
+				type: "devfile",
+				command: e.command,
+				workdir: e.workdir,
+				component: e.component,
+			},
 			vscode.TaskScope.Workspace,
 			`${compositeId}:${e.component}`,
 			"devfile",
-			new vscode.CustomExecution(() =>
-				this.terminalExtAPI.getMachineExecPTY(
-					e.component,
-					e.command,
-					e.workdir,
-				),
-			),
+			execution,
 		);
 
 		task.presentationOptions = {
-			reveal: vscode.TaskRevealKind.Never ?? 0,
-			panel: vscode.TaskPanelKind.Dedicated ?? 1,
+			reveal: vscode.TaskRevealKind?.Never ?? 0,
+			panel: vscode.TaskPanelKind?.Dedicated ?? 1,
 			clear: false,
 		};
 
