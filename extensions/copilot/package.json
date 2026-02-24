@@ -23,7 +23,7 @@
 	"icon": "assets/copilot.png",
 	"pricing": "Trial",
 	"engines": {
-		"vscode": "^1.110.0",
+		"vscode": "^1.110.0-20260223",
 		"npm": ">=9.0.0",
 		"node": ">=22.14.0"
 	},
@@ -144,7 +144,8 @@
 		"mcpServerDefinitions",
 		"tabInputMultiDiff",
 		"workspaceTrust",
-		"environmentPower"
+		"environmentPower",
+		"terminalTitle"
 	],
 	"contributes": {
 		"languageModelTools": [
@@ -5748,7 +5749,8 @@
 				{
 					"icon": "copilot",
 					"id": "copilot-cli",
-					"title": "GitHub Copilot CLI"
+					"title": "GitHub Copilot CLI",
+					"titleTemplate": "${sequence}"
 				}
 			]
 		}
