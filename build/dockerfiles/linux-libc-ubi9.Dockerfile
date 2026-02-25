@@ -80,10 +80,12 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
     # cache shared libs from this image to provide them to a user's container
-    && mkdir -p /checode/ld_libs \
-    && find /usr/lib64 -name 'libbrotli*' 2>/dev/null | xargs -I {} cp -t /checode/ld_libs {} \
-    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
-    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/ {} +
+    && mkdir -p /checode/ld_libs/core /checode/ld_libs/openssl \
+    && find /usr/lib64 -name 'libbrotli*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libssl.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} + \
+    && find /usr/lib64 -name 'libcrypto.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} +
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
