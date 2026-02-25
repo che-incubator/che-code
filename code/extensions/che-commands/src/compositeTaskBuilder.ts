@@ -158,9 +158,7 @@ export class CompositeTaskBuilder {
 						await new Promise<void>((resolve) => {
 							pty.onDidWrite?.((data: string) => {
 								if (!data) return;
-								const tagged = `[${tag}] ${data}`;
 								writeEmitter.fire(data);
-								this.channel.append(tagged);
 							});
 
 							pty.onDidClose?.(() => {
