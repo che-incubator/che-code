@@ -24,6 +24,7 @@ type ResolvedExec = {
 	workdir: string;
 	component?: string;
 	env?: any[];
+	label?: string;
 };
 
 export class CompositeTaskBuilder {
@@ -75,6 +76,7 @@ export class CompositeTaskBuilder {
 					workdir: cmd.exec.workingDir || "${PROJECT_SOURCE}",
 					component: cmd.exec.component,
 					env: cmd.exec.env,
+					label: cmd.exec.label,
 				});
 				return;
 			}
@@ -105,10 +107,6 @@ export class CompositeTaskBuilder {
 
 		const first = execs[0];
 
-		this.channel.appendLine(
-			`[composite:${command.id}] same-component → ${first.component ?? "default"} → ${script}`,
-		);
-
 		const kind: DevfileTaskDefinition = {
 			type: "devfile",
 			command: script,
@@ -132,11 +130,6 @@ export class CompositeTaskBuilder {
 	}
 
 	private buildSeqCrossComponent(command: any, execs: ResolvedExec[]) {
-		this.channel.appendLine(
-			`[Composite Seq:${command.id}] cross-component → components: ${this.getComponentList(execs)}
-			commands: ${execs.map((e) => e.command).join(", ")}`,
-		);
-
 		let activePtys = new Set<vscode.Pseudoterminal>();
 		let isCancelled = false;
 
@@ -152,10 +145,6 @@ export class CompositeTaskBuilder {
 					const run = async (e: ResolvedExec) => {
 						if (isCancelled) return;
 						const tag = `${command.id}:${e.component ?? "default"}`;
-
-						this.channel.appendLine(
-							`[Composite Seq RUN] ${tag} -> command: ${e.command}`,
-						);
 
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
 							e.component,
@@ -174,7 +163,6 @@ export class CompositeTaskBuilder {
 							});
 
 							pty.onDidClose?.(() => {
-								this.channel.appendLine(`[Composite Seq DONE] ${tag}`);
 								activePtys.delete(pty);
 								resolve();
 							});
@@ -194,8 +182,6 @@ export class CompositeTaskBuilder {
 				},
 
 				close: () => {
-					this.channel.appendLine("[Composite Seq] Terminal closed by user");
-
 					isCancelled = true;
 
 					for (const p of activePtys) {
@@ -211,10 +197,6 @@ export class CompositeTaskBuilder {
 
 				handleInput: (data: string) => {
 					if (data === "\x03") {
-						this.channel.appendLine(
-							"[Composite] Ctrl+C received — terminating",
-						);
-
 						isCancelled = true;
 
 						for (const p of activePtys) {
@@ -236,7 +218,7 @@ export class CompositeTaskBuilder {
 		return new vscode.Task(
 			{
 				type: "devfile",
-				command: `[composite:${command.id}:"sequential"]`,
+				command: command.id,
 				workdir: first.workdir,
 				component: first.component,
 			},
@@ -251,85 +233,42 @@ export class CompositeTaskBuilder {
 		command: any,
 		execs: ResolvedExec[],
 	): vscode.Task {
-		this.channel.appendLine(
-			`[Composite Parallel:${command.id}] cross-component → components: ${this.getComponentList(execs)}
-			commands: ${execs.map((e) => e.command).join(", ")}`,
-		);
-
 		const execution = new vscode.CustomExecution(async () => {
-			const writeEmitter = new vscode.EventEmitter<string>();
-			const closeEmitter = new vscode.EventEmitter<number>();
-
 			const running = new Set<vscode.TaskExecution>();
-			let exitCode = 0;
-			let cancelled = false;
 
-			const cleanup = () => {
-				endListener.dispose();
-				running.clear();
+			const launchAll = async () => {
+				for (const e of execs) {
+					const childTask = this.buildStreamingExecTask(e);
+
+					const exec = await vscode.tasks.executeTask(childTask);
+
+					running.add(exec);
+				}
 			};
 
 			const terminateAll = () => {
-				cancelled = true;
-
 				for (const exec of running) {
 					try {
 						exec.terminate();
 					} catch {}
 				}
-
-				cleanup();
-				closeEmitter.fire(130);
+				running.clear();
 			};
 
-			const endListener = vscode.tasks.onDidEndTaskProcess((e) => {
-				if (!running.has(e.execution)) return;
-
-				running.delete(e.execution);
-
-				if (e.exitCode && e.exitCode !== 0) {
-					exitCode = e.exitCode;
-				}
-
-				if (!cancelled && running.size === 0) {
-					cleanup();
-					closeEmitter.fire(exitCode);
-				}
-			});
-
 			const pty: vscode.Pseudoterminal = {
-				onDidWrite: writeEmitter.event,
-				onDidClose: closeEmitter.event,
+				onDidWrite: () => ({ dispose() {} }),
+				onDidClose: () => ({ dispose() {} }),
 
 				open: async () => {
-					for (const e of execs) {
-						const childTask = this.buildStreamingExecTask(
-							command.id,
-							e,
-							writeEmitter,
-						);
-
-						const exec = await vscode.tasks.executeTask(childTask);
-
-						running.add(exec);
-						this.channel.appendLine(
-							`[Composite Parallel:${command.id}] Started task for component: ${e.component ?? "default"}`,
-						);
-					}
+					await launchAll();
 				},
 
 				close: () => {
-					this.channel.appendLine(
-						`[Composite Parallel:${command.id}] terminal closed`,
-					);
 					terminateAll();
 				},
 
 				handleInput: (data: string) => {
 					if (data === "\x03") {
-						this.channel.appendLine(
-							`[Composite Parallel:${command.id}] Ctrl+C received`,
-						);
 						terminateAll();
 					}
 				},
@@ -341,7 +280,7 @@ export class CompositeTaskBuilder {
 		return new vscode.Task(
 			{
 				type: "devfile",
-				command: `[composite:${command.id}:parallel]`,
+				command: command.id,
 			},
 			vscode.TaskScope.Workspace,
 			command.composite.label || command.id,
@@ -350,70 +289,13 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildStreamingExecTask(
-		compositeId: string,
-		e: ResolvedExec,
-		parentEmitter: vscode.EventEmitter<string>,
-	): vscode.Task {
+	private buildStreamingExecTask(e: ResolvedExec): vscode.Task {
 		const execution = new vscode.CustomExecution(async () => {
-			const writeEmitter = new vscode.EventEmitter<string>();
-			const closeEmitter = new vscode.EventEmitter<number>();
-
-			let child: vscode.Pseudoterminal | null = null;
-			let cancelled = false;
-
-			const terminateChild = () => {
-				cancelled = true;
-
-				if (child) {
-					try {
-						child.handleInput?.("\x03");
-						child.close?.();
-					} catch {}
-				}
-
-				closeEmitter.fire(130);
-			};
-
-			const pty: vscode.Pseudoterminal = {
-				onDidWrite: writeEmitter.event,
-				onDidClose: closeEmitter.event,
-
-				open: async () => {
-					const created = await this.terminalExtAPI.getMachineExecPTY(
-						e.component,
-						e.command,
-						e.workdir,
-					);
-
-					child = created;
-
-					created.onDidWrite?.((data: string) => {
-						if (!data) return;
-
-						const tagged = `[${e.component ?? "default"}] ${data}`;
-
-						parentEmitter.fire(data);
-						writeEmitter.fire(tagged);
-					});
-
-					created.onDidClose?.((code?: number) => {
-						if (!cancelled) {
-							closeEmitter.fire(code ?? 0);
-						}
-					});
-
-					created.open?.();
-				},
-
-				close: terminateChild,
-
-				handleInput: (data: string) => {
-					if (data === "\x03") {
-						terminateChild();
-					}
-				},
-			};
+			const pty = await this.terminalExtAPI.getMachineExecPTY(
+				e.component,
+				e.command,
+				e.workdir,
+			);
 
 			return pty;
 		});
@@ -426,22 +308,12 @@ export class CompositeTaskBuilder {
 				component: e.component,
 			},
 			vscode.TaskScope.Workspace,
-			`${compositeId}:${e.component}`,
+			e.label || e.component || e.command,
 			"devfile",
 			execution,
 		);
 
-		task.presentationOptions = {
-			reveal: vscode.TaskRevealKind?.Never ?? 0,
-			panel: vscode.TaskPanelKind?.Dedicated ?? 1,
-			clear: false,
-		};
-
 		return task;
-	}
-
-	private getComponentList(execs: ResolvedExec[]): string {
-		return [...new Set(execs.map((e) => e.component ?? "default"))].join(", ");
 	}
 
 	private sanitize(cmd: string) {
