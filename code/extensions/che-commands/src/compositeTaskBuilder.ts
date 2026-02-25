@@ -57,7 +57,15 @@ export class CompositeTaskBuilder {
 		}
 
 		if (parallel) {
-			return this.buildParallelCrossComponent(command, execs);
+			queueMicrotask(() => {
+				execs.forEach((e, index) => {
+					const childTask = this.buildExecTask(e, index === 0);
+
+					vscode.tasks.executeTask(childTask);
+				});
+			});
+
+			return undefined;
 		}
 
 		return this.buildSeqCrossComponent(command, execs);
@@ -231,86 +239,36 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildParallelCrossComponent(
-		command: any,
-		execs: ResolvedExec[],
-	): vscode.Task {
-		return new vscode.Task(
+	private buildExecTask(e: ResolvedExec, focus: boolean): vscode.Task {
+		const task = new vscode.Task(
 			{
 				type: "devfile",
-				command: command.id,
+				command: e.command,
+				workdir: e.workdir,
+				component: e.component,
 			},
 			vscode.TaskScope.Workspace,
-			command.composite.label || command.id,
+			e.label || e.component || e.command,
 			"devfile",
-			new vscode.CustomExecution(async () => {
-				const running = new Set<vscode.TaskExecution>();
-
-				const terminateAll = () => {
-					for (const exec of running) {
-						try {
-							exec.terminate();
-						} catch {}
-					}
-					running.clear();
-				};
-
-				const pty: vscode.Pseudoterminal = {
-					onDidWrite: () => ({ dispose() {} }),
-
-					onDidClose: () => ({ dispose() {} }),
-
-					open: async () => {
-						for (const [index, e] of execs.entries()) {
-							const childTask = new vscode.Task(
-								{
-									type: "devfile",
-									command: e.command,
-									workdir: e.workdir,
-									component: e.component,
-								},
-								vscode.TaskScope.Workspace,
-								e.label || e.component || e.command,
-								"devfile",
-								new vscode.CustomExecution(() =>
-									this.terminalExtAPI.getMachineExecPTY(
-										e.component,
-										e.command,
-										e.workdir,
-									),
-								),
-								[]
-							);
-
-							childTask.presentationOptions = {
-								reveal:
-									index === 0
-										? vscode.TaskRevealKind.Always
-										: vscode.TaskRevealKind.Silent,
-								panel: vscode.TaskPanelKind.Dedicated ?? 2,
-								clear: false,
-							};
-							const execHandle = await vscode.tasks.executeTask(childTask);
-
-							running.add(execHandle);
-						}
-					},
-
-					close: () => {
-						terminateAll();
-					},
-
-					handleInput: (data: string) => {
-						if (data === "\x03") {
-							terminateAll();
-						}
-					},
-				};
-
-				return pty;
-			}),
+			new vscode.CustomExecution(() =>
+				this.terminalExtAPI.getMachineExecPTY(
+					e.component,
+					e.command,
+					e.workdir,
+				),
+			),
 			[],
 		);
+
+		task.presentationOptions = {
+			reveal: focus
+				? vscode.TaskRevealKind.Always
+				: vscode.TaskRevealKind.Silent,
+			panel: vscode.TaskPanelKind.Dedicated,
+			clear: false,
+		};
+
+		return task;
 	}
 
 	private sanitize(cmd: string) {
