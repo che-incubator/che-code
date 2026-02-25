@@ -504,3 +504,22 @@ export enum SpeculativeRequestsEnablement {
 export namespace SpeculativeRequestsEnablement {
 	export const VALIDATOR = vEnum(SpeculativeRequestsEnablement.On, SpeculativeRequestsEnablement.Off);
 }
+
+export enum SpeculativeRequestsCursorPlacement {
+	AfterEditApplied = 'afterEditApplied',
+	AfterEditWindow = 'afterEditWindow',
+}
+
+export namespace SpeculativeRequestsCursorPlacement {
+	export const VALIDATOR = vEnum(SpeculativeRequestsCursorPlacement.AfterEditApplied, SpeculativeRequestsCursorPlacement.AfterEditWindow);
+}
+
+export enum SpeculativeRequestsAutoExpandEditWindowLines {
+	Off = 'off',
+	Smart = 'smart',
+	Always = 'always',
+}
+
+export namespace SpeculativeRequestsAutoExpandEditWindowLines {
+	export const VALIDATOR = vEnum(SpeculativeRequestsAutoExpandEditWindowLines.Off, SpeculativeRequestsAutoExpandEditWindowLines.Smart, SpeculativeRequestsAutoExpandEditWindowLines.Always);
+}
