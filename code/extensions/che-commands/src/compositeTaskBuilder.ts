@@ -281,8 +281,10 @@ export class CompositeTaskBuilder {
 
 		task.presentationOptions = {
 			reveal: vscode.TaskRevealKind?.Never ?? 0,
-			panel: vscode.TaskPanelKind?.Dedicated ?? 1,
-			clear: false,
+			panel: vscode.TaskPanelKind?.New ?? 3,
+			close: true,
+			clear: true,
+			focus: false,
 			showReuseMessage: false,
 		};
 
