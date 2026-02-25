@@ -57,15 +57,7 @@ export class CompositeTaskBuilder {
 		}
 
 		if (parallel) {
-			queueMicrotask(() => {
-				execs.forEach((e, index) => {
-					const childTask = this.buildExecTask(e, index === 0);
-
-					vscode.tasks.executeTask(childTask);
-				});
-			});
-
-			return undefined;
+			return this.buildParallelCrossComponent(command, execs);
 		}
 
 		return this.buildSeqCrossComponent(command, execs);
@@ -239,6 +231,64 @@ export class CompositeTaskBuilder {
 		);
 	}
 
+	private buildParallelCrossComponent(
+		command: any,
+		execs: ResolvedExec[],
+	): vscode.Task {
+		const execution = new vscode.CustomExecution(async () => {
+			const writeEmitter = new vscode.EventEmitter<string>();
+			const closeEmitter = new vscode.EventEmitter<number>();
+
+			const pty: vscode.Pseudoterminal = {
+				onDidWrite: writeEmitter.event,
+
+				onDidClose: closeEmitter.event,
+
+				open: () => {
+					execs.forEach((e, index) => {
+						const childTask = this.buildExecTask(e, index === 0);
+
+						vscode.tasks.executeTask(childTask);
+					});
+					closeEmitter.fire(0);
+				},
+
+				close: () => {
+					closeEmitter.fire(0);
+				},
+
+				handleInput: () => {},
+			};
+
+			return pty;
+		});
+
+		const first = execs[0];
+
+		const task = new vscode.Task(
+			{
+				type: "devfile",
+				command: command.id,
+				workdir: first.workdir,
+				component: first.component,
+			},
+			vscode.TaskScope.Workspace,
+			command.composite.label || command.id,
+			"devfile",
+			execution,
+			[],
+		);
+
+		task.presentationOptions = {
+			reveal: vscode.TaskRevealKind?.Never ?? 0,
+			panel: vscode.TaskPanelKind?.Dedicated ?? 1,
+			clear: false,
+			showReuseMessage: false,
+		};
+
+		return task;
+	}
+
 	private buildExecTask(e: ResolvedExec, focus: boolean): vscode.Task {
 		const task = new vscode.Task(
 			{
@@ -262,9 +312,9 @@ export class CompositeTaskBuilder {
 
 		task.presentationOptions = {
 			reveal: focus
-				? vscode.TaskRevealKind.Always
-				: vscode.TaskRevealKind.Silent,
-			panel: vscode.TaskPanelKind.Dedicated,
+				? (vscode.TaskRevealKind.Always ?? 1)
+				: (vscode.TaskRevealKind.Silent ?? 2),
+			panel: vscode.TaskPanelKind.Dedicated ?? 1,
 			clear: false,
 		};
 

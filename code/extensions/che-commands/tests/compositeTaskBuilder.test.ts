@@ -114,14 +114,12 @@ describe("Composite — cross component execution", () => {
 		expect(term.calls.map((c) => c.component)).toEqual(["backend", "frontend"]);
 	});
 
-	test("parallel composite executes all components", async () => {
-		const term = new MockTerminalAPI();
+	test("parallel composite executes all components and opens only child terminals", async () => {
 		let executedTasks: vscode.Task[] = [];
 
-		const listeners: any[] = [];
-
 		(vscode as any).TaskRevealKind = {
-			Never: 0,
+			Always: 1,
+			Silent: 2,
 		};
 
 		(vscode as any).TaskPanelKind = {
@@ -131,33 +129,11 @@ describe("Composite — cross component execution", () => {
 		(vscode as any).tasks = {
 			executeTask: async (task: vscode.Task) => {
 				executedTasks.push(task);
-
-				const exec = task.execution as any;
-				if (exec?.callback) {
-					const pty = await exec.callback();
-					if (pty?.open) {
-						await pty.open();
-					}
-				}
-
-				const fakeExecution = {
-					terminate: () => {},
-				};
-
-				setTimeout(() => {
-					listeners.forEach((l) =>
-						l({ execution: fakeExecution, exitCode: 0 }),
-					);
-				}, 0);
-
-				return fakeExecution;
-			},
-
-			onDidEndTaskProcess: (listener: any) => {
-				listeners.push(listener);
-				return { dispose: () => {} };
+				return { terminate() {} };
 			},
 		};
+
+		const term = new MockTerminalAPI();
 
 		const tasks = await provide(devfile, term);
 
@@ -170,6 +146,9 @@ describe("Composite — cross component execution", () => {
 			.sort();
 
 		expect(comps).toEqual(["backend", "frontend"]);
+		expect(
+			executedTasks.some((t) => (t.definition as any).command === "par"),
+		).toBe(false);
 	});
 });
 
