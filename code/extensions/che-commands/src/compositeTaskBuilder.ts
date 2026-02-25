@@ -126,6 +126,7 @@ export class CompositeTaskBuilder {
 					first.workdir,
 				),
 			),
+			[],
 		);
 	}
 
@@ -226,6 +227,7 @@ export class CompositeTaskBuilder {
 			command.composite.label || command.id,
 			"devfile",
 			execution,
+			[],
 		);
 	}
 
@@ -233,50 +235,6 @@ export class CompositeTaskBuilder {
 		command: any,
 		execs: ResolvedExec[],
 	): vscode.Task {
-		const execution = new vscode.CustomExecution(async () => {
-			const running = new Set<vscode.TaskExecution>();
-
-			const launchAll = async () => {
-				for (const e of execs) {
-					const childTask = this.buildStreamingExecTask(e);
-
-					const exec = await vscode.tasks.executeTask(childTask);
-
-					running.add(exec);
-				}
-			};
-
-			const terminateAll = () => {
-				for (const exec of running) {
-					try {
-						exec.terminate();
-					} catch {}
-				}
-				running.clear();
-			};
-
-			const pty: vscode.Pseudoterminal = {
-				onDidWrite: () => ({ dispose() {} }),
-				onDidClose: () => ({ dispose() {} }),
-
-				open: async () => {
-					await launchAll();
-				},
-
-				close: () => {
-					terminateAll();
-				},
-
-				handleInput: (data: string) => {
-					if (data === "\x03") {
-						terminateAll();
-					}
-				},
-			};
-
-			return pty;
-		});
-
 		return new vscode.Task(
 			{
 				type: "devfile",
@@ -285,35 +243,74 @@ export class CompositeTaskBuilder {
 			vscode.TaskScope.Workspace,
 			command.composite.label || command.id,
 			"devfile",
-			execution,
+			new vscode.CustomExecution(async () => {
+				const running = new Set<vscode.TaskExecution>();
+
+				const terminateAll = () => {
+					for (const exec of running) {
+						try {
+							exec.terminate();
+						} catch {}
+					}
+					running.clear();
+				};
+
+				const pty: vscode.Pseudoterminal = {
+					onDidWrite: () => ({ dispose() {} }),
+
+					onDidClose: () => ({ dispose() {} }),
+
+					open: async () => {
+						for (const [index, e] of execs.entries()) {
+							const childTask = new vscode.Task(
+								{
+									type: "devfile",
+									command: e.command,
+									workdir: e.workdir,
+									component: e.component,
+								},
+								vscode.TaskScope.Workspace,
+								e.label || e.component || e.command,
+								"devfile",
+								new vscode.CustomExecution(() =>
+									this.terminalExtAPI.getMachineExecPTY(
+										e.component,
+										e.command,
+										e.workdir,
+									),
+								),
+								[]
+							);
+
+							childTask.presentationOptions = {
+								reveal:
+									index === 0
+										? vscode.TaskRevealKind.Always
+										: vscode.TaskRevealKind.Silent,
+								panel: vscode.TaskPanelKind.Dedicated ?? 2,
+								clear: false,
+							};
+							const execHandle = await vscode.tasks.executeTask(childTask);
+
+							running.add(execHandle);
+						}
+					},
+
+					close: () => {
+						terminateAll();
+					},
+
+					handleInput: (data: string) => {
+						if (data === "\x03") {
+							terminateAll();
+						}
+					},
+				};
+
+				return pty;
+			}),
+			[],
 		);
-	}
-
-	private buildStreamingExecTask(e: ResolvedExec): vscode.Task {
-		const execution = new vscode.CustomExecution(async () => {
-			const pty = await this.terminalExtAPI.getMachineExecPTY(
-				e.component,
-				e.command,
-				e.workdir,
-			);
-
-			return pty;
-		});
-
-		const task = new vscode.Task(
-			{
-				type: "devfile",
-				command: e.command,
-				workdir: e.workdir,
-				component: e.component,
-			},
-			vscode.TaskScope.Workspace,
-			e.label || e.component || e.command,
-			"devfile",
-			execution,
-		);
-
-		return task;
 	}
 
 	private sanitize(cmd: string) {
