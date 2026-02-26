@@ -145,8 +145,6 @@ export class CompositeTaskBuilder {
 				open: async () => {
 					const run = async (e: ResolvedExec) => {
 						if (isCancelled) return;
-						const tag = `${command.id}:${e.component ?? "default"}`;
-
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
 							e.component,
 							e.command,
