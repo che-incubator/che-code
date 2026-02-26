@@ -5,6 +5,7 @@ The file to keep a list of changed files which will potentionaly help to resolve
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/654
 
+- code/test/mcp/package.json
 - code/package.json
 ---
 
