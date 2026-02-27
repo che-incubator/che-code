@@ -14,14 +14,11 @@ type MockTerminalOptions = {
 	debug?: boolean;
 };
 
-type WriteListener = (data: string) => void;
-type CloseListener = (code?: number) => void;
-
 class MockPty {
 	private writeListeners: Array<(s: string) => void> = [];
 	private closeListeners: Array<(c?: number) => void> = [];
 
-	constructor(private output: string) {}
+	constructor(private output: string, private exitCode: number) {}
 
 	onDidWrite(listener: (s: string) => void) {
 		this.writeListeners.push(listener);
@@ -40,7 +37,7 @@ class MockPty {
 			}
 
 			for (const l of this.closeListeners) {
-				l(0);
+				l(this.exitCode);
 			}
 		}, 0);
 	}
@@ -54,6 +51,7 @@ class MockPty {
 
 export class MockTerminalAPI {
 	private debug: boolean;
+	public exitCodes: Record<string, number> = {};
 
 	public calls: Array<{
 		component?: string;
@@ -84,7 +82,12 @@ export class MockTerminalAPI {
 			if (output) console.log(" output:", output);
 		}
 
-		return new MockPty(output);
+		const exitCode =
+			component && this.exitCodes[component] !== undefined
+				? this.exitCodes[component]
+				: 0;
+
+		return new MockPty(output, exitCode);
 	}
 
 	private simulateOutput(

@@ -152,6 +152,83 @@ describe("Composite — cross component execution", () => {
 	});
 });
 
+describe("Composite — sequential failure behavior", () => {
+
+	test("sequential composite stops when first command fails", async () => {
+
+		const term = new MockTerminalAPI();
+
+		// first fails, second must not run
+		term.exitCodes = {
+			backend: 1,
+			frontend: 0,
+		};
+
+		const devfile = {
+			commands: [
+				{
+					id: "backend",
+					exec: { component: "backend", commandLine: "echo backend" },
+				},
+				{
+					id: "frontend",
+					exec: { component: "frontend", commandLine: "echo frontend" },
+				},
+				{
+					id: "seq",
+					composite: { commands: ["backend", "frontend"] },
+				},
+			],
+		};
+
+		const tasks = await provide(devfile, term);
+
+		await runByName(tasks!, "seq");
+
+		expect(term.calls).toHaveLength(1);
+
+		expect(term.calls[0].component).toBe("backend");
+	});
+
+
+	test("sequential composite continues when commands succeed", async () => {
+
+		const term = new MockTerminalAPI();
+
+		term.exitCodes = {
+			backend: 0,
+			frontend: 0,
+		};
+
+		const devfile = {
+			commands: [
+				{
+					id: "backend",
+					exec: { component: "backend", commandLine: "echo backend" },
+				},
+				{
+					id: "frontend",
+					exec: { component: "frontend", commandLine: "echo frontend" },
+				},
+				{
+					id: "seq",
+					composite: { commands: ["backend", "frontend"] },
+				},
+			],
+		};
+
+		const tasks = await provide(devfile, term);
+
+		await runByName(tasks!, "seq");
+
+		expect(term.calls).toHaveLength(2);
+
+		expect(term.calls.map(c => c.component))
+			.toEqual(["backend","frontend"]);
+	});
+
+});
+
 describe("Composite — nested graphs", () => {
 	test("nested composites flatten correctly", async () => {
 		const term = new MockTerminalAPI();

@@ -143,8 +143,8 @@ export class CompositeTaskBuilder {
 				onDidClose: closeEmitter.event,
 
 				open: async () => {
-					const run = async (e: ResolvedExec) => {
-						if (isCancelled) return;
+					const run = async (e: ResolvedExec): Promise<number> => {
+						if (isCancelled) return 130;
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
 							e.component,
 							e.command,
@@ -153,28 +153,34 @@ export class CompositeTaskBuilder {
 
 						activePtys.add(pty);
 
-						await new Promise<void>((resolve) => {
+						const result = await new Promise<number>((resolve) => {
 							pty.onDidWrite?.((data: string) => {
 								if (!data) return;
 								writeEmitter.fire(data);
 							});
 
-							pty.onDidClose?.(() => {
+							pty.onDidClose?.((exitCode?: number) => {
 								activePtys.delete(pty);
-								resolve();
+								const code = exitCode ?? 1;
+								resolve(code);
 							});
 
 							if (typeof pty.open === "function") {
 								pty.open();
 							}
 						});
+						return result;
 					};
 
 					for (const e of execs) {
 						if (isCancelled) break;
-						await run(e);
+						const exitCode: number = await run(e);
+						if(exitCode !== 0) {
+							isCancelled = true;
+							closeEmitter.fire(exitCode);
+							return;
+						}
 					}
-
 					closeEmitter.fire(0);
 				},
 
