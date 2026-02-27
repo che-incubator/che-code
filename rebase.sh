@@ -484,7 +484,11 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/serverEnvironmentService.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/shell/node/shellEnv.ts" ]]; then
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteTerminalChannel.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
       apply_changes "$conflictingFile"
