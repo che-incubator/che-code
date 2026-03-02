@@ -123,6 +123,9 @@ apply_code_package_changes() {
   
   # now apply again the changes
   override_json_file code/package.json
+
+  # apply the replace
+  apply_replace code/package.json
   
   # resolve the change
   git add code/package.json > /dev/null 2>&1
@@ -510,6 +513,10 @@ resolve_conflicts() {
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.js" ]]; then
+      apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.js" ]]; then
+      apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1
