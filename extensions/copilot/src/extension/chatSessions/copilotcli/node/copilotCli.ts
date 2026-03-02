@@ -141,7 +141,7 @@ export interface CopilotCLIModelInfo {
 	readonly maxInputTokens?: number;
 	readonly maxOutputTokens?: number;
 	readonly maxContextWindowTokens: number;
-	readonly supportsVision: boolean;
+	readonly supportsVision?: boolean;
 }
 
 export interface ICopilotCLIModels {
