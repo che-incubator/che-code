@@ -440,16 +440,19 @@ export class CopilotLanguageModelWrapper extends Disposable {
 		super();
 	}
 
-	private async _provideLanguageModelResponse(_endpoint: IChatEndpoint, _messages: Array<vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2>, _options: vscode.ProvideLanguageModelChatResponseOptions, extensionId: string, callback: FinishedCallback, token: vscode.CancellationToken): Promise<void> {
+	private async _provideLanguageModelResponse(_endpoint: IChatEndpoint, _messages: Array<vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2>, _options: vscode.ProvideLanguageModelChatResponseOptions, extensionId: string | undefined, callback: FinishedCallback, token: vscode.CancellationToken): Promise<void> {
+		if (extensionId === 'core') {
+			extensionId = undefined;
+		}
 
-		const extensionInfo = extensionId === 'core' ? { packageJSON: { version: this._envService.vscodeVersion } } : vscode.extensions.getExtension(extensionId, true);
+		const extensionInfo = !extensionId ? { packageJSON: { version: this._envService.vscodeVersion } } : vscode.extensions.getExtension(extensionId, true);
 		if (!extensionInfo || typeof extensionInfo.packageJSON.version !== 'string') {
 			throw new Error('Invalid extension information');
 		}
 		const extensionVersion = <string>extensionInfo.packageJSON.version;
 
 		const blockedExtensionMessage = vscode.l10n.t('The extension has been temporarily blocked due to making too many requests. Please try again later.');
-		if (this._blockedExtensionService.isExtensionBlocked(extensionId)) {
+		if (extensionId && this._blockedExtensionService.isExtensionBlocked(extensionId)) {
 			throw vscode.LanguageModelError.Blocked(blockedExtensionMessage);
 		}
 
@@ -505,7 +508,7 @@ export class CopilotLanguageModelWrapper extends Disposable {
 				if (prop === 'getExtraHeaders') {
 					return function () {
 						const extraHeaders = target.getExtraHeaders?.() ?? {};
-						if (extensionId === 'core') {
+						if (!extensionId) {
 							return extraHeaders;
 						}
 						return {
@@ -553,7 +556,7 @@ export class CopilotLanguageModelWrapper extends Disposable {
 		// This links the wrapper's chat span back to the original invoke_agent trace.
 		const parentTraceContext = (_options as { modelOptions?: OTelModelOptions }).modelOptions?._otelTraceContext ?? undefined;
 
-		const makeRequest = () => endpoint.makeChatRequest('copilotLanguageModelWrapper', messages, callback, token, ChatLocation.Other, { extensionId }, options, extensionId !== 'core', telemetryProperties);
+		const makeRequest = () => endpoint.makeChatRequest('copilotLanguageModelWrapper', messages, callback, token, ChatLocation.Other, { extensionId }, options, !!extensionId, telemetryProperties);
 
 		// Run request within the parent OTel context (no extra span) so chat spans in chatMLFetcher inherit the agent trace
 		const wrappedRequest = parentTraceContext
@@ -570,7 +573,10 @@ export class CopilotLanguageModelWrapper extends Disposable {
 
 		if (result.type !== ChatFetchResponseType.Success) {
 			if (result.type === ChatFetchResponseType.ExtensionBlocked) {
-				this._blockedExtensionService.reportBlockedExtension(extensionId, result.retryAfter);
+				if (extensionId) {
+					this._blockedExtensionService.reportBlockedExtension(extensionId, result.retryAfter);
+				}
+
 				throw vscode.LanguageModelError.Blocked(blockedExtensionMessage);
 			} else if (result.type === ChatFetchResponseType.QuotaExceeded) {
 				const details = getErrorDetailsFromChatFetchError(result, (await this._authenticationService.getCopilotToken()).copilotPlan);
@@ -602,7 +608,7 @@ export class CopilotLanguageModelWrapper extends Disposable {
 		);
 	}
 
-	async provideLanguageModelResponse(endpoint: IChatEndpoint, messages: Array<vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2>, options: vscode.ProvideLanguageModelChatResponseOptions, extensionId: string, progress: vscode.Progress<LMResponsePart>, token: vscode.CancellationToken): Promise<void> {
+	async provideLanguageModelResponse(endpoint: IChatEndpoint, messages: Array<vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2>, options: vscode.ProvideLanguageModelChatResponseOptions, extensionId: string | undefined, progress: vscode.Progress<LMResponsePart>, token: vscode.CancellationToken): Promise<void> {
 		let thinkingActive = false;
 		const finishCallback: FinishedCallback = async (_text, index, delta): Promise<undefined> => {
 			if (delta.thinking) {
