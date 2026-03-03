@@ -5696,7 +5696,8 @@
 					"supportsSymbolAttachments": true,
 					"supportsSearchResultAttachments": true,
 					"supportsSourceControlAttachments": true,
-					"supportsPromptAttachments": true
+					"supportsPromptAttachments": true,
+					"supportsHandOffs": true
 				},
 				"commands": [
 					{
