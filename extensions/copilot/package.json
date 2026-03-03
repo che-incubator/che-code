@@ -5712,6 +5712,10 @@
 					{
 						"name": "compact",
 						"description": "%github.copilot.command.cli.compact.description%"
+					},
+					{
+						"name": "mcp",
+						"description": "%github.copilot.command.cli.mcp.description%"
 					}
 				],
 				"customAgentTarget": "github-copilot",
