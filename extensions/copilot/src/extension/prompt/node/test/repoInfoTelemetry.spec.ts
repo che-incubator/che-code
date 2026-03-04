@@ -97,6 +97,9 @@ suite('RepoInfoTelemetry', () => {
 			deleteWorktree: vi.fn(),
 			migrateChanges: vi.fn(),
 			applyPatch: vi.fn(),
+			checkout: vi.fn(),
+			merge: vi.fn(),
+			rebase: vi.fn(),
 			commit: vi.fn(),
 			getRefs: vi.fn(),
 			dispose: vi.fn()
