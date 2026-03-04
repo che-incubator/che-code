@@ -18,6 +18,7 @@ import { ILogService } from '../../log/common/log.js';
 import { Promises } from '../../../base/common/async.js';
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { clamp } from '../../../base/common/numbers.js';
+import { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForShellEnv } from '../../che/utils.js';
 
 let unixShellEnvPromise: Promise<typeof process.env> | undefined = undefined;
 
@@ -109,7 +110,7 @@ async function doResolveUnixShellEnv(logService: ILogService, token: Cancellatio
 	const mark = generateUuid().replace(/-/g, '').substr(0, 12);
 	const regex = new RegExp(mark + '({.*})' + mark);
 
-	const env = {
+	const env: NodeJS.ProcessEnv = {
 		...process.env,
 		ELECTRON_RUN_AS_NODE: '1',
 		ELECTRON_NO_ATTACH_CONSOLE: '1',
@@ -207,6 +208,9 @@ async function doResolveUnixShellEnv(logService: ILogService, token: Cancellatio
 				}
 
 				delete env['VSCODE_RESOLVING_ENVIRONMENT'];
+				if (shouldStripLdLibraryPathForShellEnv()) {
+					sanitizeLdLibraryPathInEnvironment(env, message => logService.trace(message), 'shellEnv');
+				}
 
 				// https://github.com/microsoft/vscode/issues/22593#issuecomment-336050758
 				delete env['XDG_RUNTIME_DIR'];

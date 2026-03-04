@@ -1,7 +1,7 @@
 [
     {
-        "from": "import { getNLSConfiguration } from 'vs/server/node/remoteLanguagePacks';",
-        "by": "import { getNLSConfiguration } from 'vs/server/node/remoteLanguagePacks';\\\nimport { getResolvedPathEnvVar } from 'vs/server/node/che/utils';"
+        "from": "import { getNLSConfiguration } from './remoteLanguagePacks.js';",
+        "by": "import { getNLSConfiguration } from './remoteLanguagePacks.js';\\\nimport { getResolvedPathEnvVar } from '../../platform/che/utils.js';"
     },
     {
         "from": "setCaseInsensitive(env, 'PATH', PATH);",
