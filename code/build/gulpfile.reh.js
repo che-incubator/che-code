@@ -189,7 +189,7 @@ if (defaultNodeTask) {
 
 function nodejs(platform, arch) {
 	const { fetchUrls, fetchGithub } = require('./lib/fetch');
-	const untar = require('gulp-untar');
+	const untar = require('gulp-decompress');
 
 	if (arch === 'armhf') {
 		arch = 'armv7l';
@@ -237,14 +237,14 @@ function nodejs(platform, arch) {
 			return (product.nodejsRepository !== 'https://nodejs.org' ?
 				fetchGithub(product.nodejsRepository, { version: `${nodeVersion}-${internalNodeVersion}`, name: expectedName, checksumSha256 }) :
 				fetchUrls(`/dist/v${nodeVersion}/node-v${nodeVersion}-${platform}-${arch}.tar.gz`, { base: 'https://nodejs.org', checksumSha256 })
-			).pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))
+			).pipe(decompress())
 				.pipe(filter('**/node'))
 				.pipe(util.setExecutableBit('**'))
 				.pipe(rename('node'));
 		case 'alpine':
 			return product.nodejsRepository !== 'https://nodejs.org' ?
 				fetchGithub(product.nodejsRepository, { version: `${nodeVersion}-${internalNodeVersion}`, name: expectedName, checksumSha256 })
-					.pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))
+					.pipe(decompress())
 					.pipe(filter('**/node'))
 					.pipe(util.setExecutableBit('**'))
 					.pipe(rename('node'))
