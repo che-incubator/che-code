@@ -222,8 +222,21 @@ export abstract class AbstractConfigurationService extends Disposable implements
 			return this._isTeamMember ? key.defaultValue.teamDefaultValue : key.defaultValue.defaultValue;
 		}
 
-		const override = this.getDefaultValueForConfig(key);
-		return override !== undefined ? override : key.defaultValue;
+		const defaultValueFromConfig = this.getDefaultValueForConfig(key);
+
+		// Preserve legacy behavior for settings whose code default is undefined.
+		// VS Code may return type-default sentinels (false/0/''/null/undefined) from inspect().defaultValue,
+		// which should not override an intentional undefined default in code.
+		const isTypeDefaultSentinel = defaultValueFromConfig === undefined || defaultValueFromConfig === null || defaultValueFromConfig === false || defaultValueFromConfig === 0 || defaultValueFromConfig === '';
+		if (key.defaultValue === undefined && isTypeDefaultSentinel) {
+			return key.defaultValue;
+		}
+
+		if (defaultValueFromConfig !== undefined) {
+			return defaultValueFromConfig;
+		}
+
+		return key.defaultValue;
 	}
 
 	protected _setUserInfo(userInfo: { isInternal: boolean; isTeamMember: boolean; teamMemberUsername?: string }): void {
