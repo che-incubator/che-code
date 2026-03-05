@@ -161,7 +161,7 @@
     "debounce": "^1.0.0",
     "deemon": "^1.13.6",
     "electron": "37.3.1",
-    "eslint": "^9.11.1",
+    "eslint": "^9.39.3",
     "eslint-formatter-compact": "^8.40.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-jsdoc": "^50.3.1",
@@ -254,7 +254,14 @@
     "@azure/core-http": {
       "form-data": "4.0.4"
     },
-    "lodash": "^4.17.23"
+    "lodash": "^4.17.23",
+    "ajv": "6.14.0",
+    "ajv-formats": {
+      "ajv": "^8.18.0"
+    },
+    "schema-utils": {
+      "ajv": "^8.18.0"
+    }
   },
   "repository": {
     "type": "git",
