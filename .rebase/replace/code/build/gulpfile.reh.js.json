@@ -1,0 +1,10 @@
+[
+    {
+        "from": "const untar = require('gulp-untar');",
+        "by": "const untar = require('gulp-decompress');"
+    },
+    {
+        "from": "flatmap(stream => stream.pipe(gunzip()).pipe(untar()))",
+        "by": "decompress()"
+    }
+]
