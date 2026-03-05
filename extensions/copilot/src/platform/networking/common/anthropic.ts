@@ -103,6 +103,7 @@ export const nonDeferredToolNames = new Set([
 	'ask_questions',
 	'switch_agent',
 	'memory',
+	'task_complete',
 	// Custom tool search (must always be available so the model can search for deferred tools)
 	CUSTOM_TOOL_SEARCH_NAME,
 ]);
