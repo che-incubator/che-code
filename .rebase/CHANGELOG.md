@@ -11,6 +11,13 @@ https://github.com/che-incubator/che-code/pull/655
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/654
+
+- code/test/mcp/package.json
+- code/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/648
 
 - code/package.json
