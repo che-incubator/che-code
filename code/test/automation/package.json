@@ -34,6 +34,7 @@
   "overrides": {
     "npm-run-all": {
       "cross-spawn": "7.0.6"
-    }
+    },
+    "minimatch": "^3.1.5"
   }
 }
