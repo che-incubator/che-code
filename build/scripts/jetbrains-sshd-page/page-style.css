@@ -1,0 +1,79 @@
+/**
+ * Copyright (c) 2026 Red Hat, Inc.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   Red Hat, Inc. - initial API and implementation
+ */
+
+body {
+  padding-top: 300px;
+  background-color: #d8d8d8;
+  color: #444;
+  font-family: sans-serif;
+}
+h1 {
+  font-weight: bold;
+  text-align: center;
+}
+a {
+  color: #0465d7;
+}  
+.center {
+  text-align: center;
+}
+.border {
+  border-style: solid;
+  padding: 5px;
+  margin: auto;
+  width: fit-content;
+}
+
+
+
+/* Container for code block & clipboard icon */
+.parent {
+  background-color: #f6f8fa;
+  display: table;
+  width: 100%;
+}
+
+/* Container for clipboard icon of code block */
+.clipboard {
+  background-color: #f6f8fa;
+  display: table-cell;
+  width: 2%;
+}
+
+.clipboard-img-pre {
+    width: 15px;
+    height: 15px;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 3px;
+}
+
+.clipboard-img-code {
+    background-color: #e3e6e8;
+    width: 10px;
+    height: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 3px;
+    vertical-align: bottom;
+}
+
+
+/* Colour change for clipboard icon hover */
+.clipboard-img-pre:hover {
+    background:#e3e6e8;
+}
+
+.clipboard-img-code:hover {
+    background-color: #f6f8fa;
+}
+
