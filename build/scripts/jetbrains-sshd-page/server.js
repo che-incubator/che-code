@@ -78,7 +78,7 @@ const server = http.createServer((req, res) => {
     </div>
 
     <h4 class="center">Can't open the workspace?</h4>
-    <p class="center">If your browser doesn't ask you to open Toolbox, make sure the prerequisites mentioned in <a href="https://docs.redhat.com/en/documentation/red_hat_openshift_dev_spaces/latest/html/user_guide/ides-in-workspaces#idea-ultimate" target="_blank">the documentation</a> are met.</p>
+    <p class="center">If your browser doesn't ask you to open Toolbox, make sure the prerequisites mentioned in <a href="https://docs.redhat.com/en/documentation/red_hat_openshift_dev_spaces/latest/html/user_guide/ides-in-workspaces#toolbox" target="_blank">the documentation</a> are met.</p>
 
     <!-- Provide an alternative way to open IDE, in case the browser can't show a pop-up -->
     <p class="center"><a href="javascript:;" onclick="openToolbox()"><b>Open the workspace over Toolbox</b></a></p>
