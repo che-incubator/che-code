@@ -36,8 +36,10 @@ RUN cp /etc/ssh/sshd_config /sshd-staging/
 # Add script to start and stop the service
 COPY --chown=0:0 /build/scripts/sshd.init /build/scripts/sshd.start /sshd-staging/
 
-RUN mkdir /opt/www
-COPY /build/scripts/code-sshd-page/* /opt/www/
+RUN mkdir -p /opt/www/code /opt/www/jetbrains
+
+COPY /build/scripts/code-sshd-page/* /opt/www/code
+COPY /build/scripts/jetbrains-sshd-page/* /opt/www/jetbrains
 
 # Lock down /etc/passwd until fixed in UDI
 RUN chmod 644 /etc/passwd

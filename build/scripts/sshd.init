@@ -17,6 +17,11 @@ while [ ! -e /sshd/username ]; do
 done
 
 # start the landing page
-pushd /opt/www/
-exec node /opt/www/server.js
+ide_provider="$1"
+if [ "$ide_provider" = "jetbrains" ]; then
+  pushd /opt/www/jetbrains
+else # default to landing page for Code
+  pushd /opt/www/code
+fi
 
+exec node server.js
