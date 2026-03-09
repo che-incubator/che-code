@@ -11,6 +11,22 @@ https://github.com/che-incubator/che-code/pull/655
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/654
+
+- code/test/mcp/package.json
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/648
+
+- code/package.json
+- code/build/npm/gyp/package.json
+- code/build/gulpfile.cli.js
+- code/build/gulpfile.reh.js
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/647
 
 - code/test/monaco/package.json

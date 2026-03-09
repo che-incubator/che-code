@@ -123,6 +123,9 @@ apply_code_package_changes() {
   
   # now apply again the changes
   override_json_file code/package.json
+
+  # apply the replace
+  apply_replace code/package.json
   
   # resolve the change
   git add code/package.json > /dev/null 2>&1
@@ -421,6 +424,26 @@ apply_changes() {
   git add "$filePath" > /dev/null 2>&1
 }
 
+# Apply changes for the given file, using multi line replace
+apply_changes_multi_line() {
+  local filePath="$1"
+  
+  if [ -z "$filePath" ]; then
+     echo "Can not apply changes - the path was not passed"
+     exit 1;
+  fi
+  
+  echo "  ⚙️ reworking $filePath..."
+  # reset the file from what is upstream
+  git checkout --theirs "$filePath" > /dev/null 2>&1
+  
+  # now apply again the changes
+  apply_multi_line_replace "$filePath"
+  
+  # resolve the change
+  git add "$filePath" > /dev/null 2>&1
+}
+
 # Will try to identify the conflicting files and for some of them it's easy to re-apply changes
 resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
@@ -514,6 +537,10 @@ resolve_conflicts() {
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.js" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.js" ]]; then
+      apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1

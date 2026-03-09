@@ -80,8 +80,7 @@ const compileFromSources = (callback) => {
 };
 
 const acquireBuiltOpenSSL = (callback) => {
-	const untar = require('gulp-untar');
-	const gunzip = require('gulp-gunzip');
+	const untar = require('gulp-decompress');
 	const dir = path.join(tmpdir(), 'vscode-openssl-download');
 	mkdirSync(dir, { recursive: true });
 
@@ -92,8 +91,7 @@ const acquireBuiltOpenSSL = (callback) => {
 	);
 
 	gulp.src('*.tgz', { cwd: dir })
-		.pipe(gunzip())
-		.pipe(untar())
+		.pipe(decompress())
 		.pipe(gulp.dest(`${root}/openssl`))
 		.on('error', callback)
 		.on('end', () => {
