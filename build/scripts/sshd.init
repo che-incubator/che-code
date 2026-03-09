@@ -19,9 +19,9 @@ done
 # start the landing page
 ide_provider="$1"
 if [ "$ide_provider" = "jetbrains" ]; then
-    pushd /opt/www/jetbrains
-  else # default to landing page for Code
-    pushd /opt/www/code
+  pushd /opt/www/jetbrains
+else # default to landing page for Code
+  pushd /opt/www/code
 fi
 
 exec node server.js
