@@ -43,20 +43,25 @@
         "tar": "^7.5.11",
         "undici": "^7.24.0",
         "svgo": "^2.8.1",
-        "mocha": {
-            "minimatch": "^5.1.9"
-        },
         "@vscode/test-cli": {
             "minimatch": "^9.0.9"
         },
         "@ts-morph/common": {
             "minimatch": "^7.4.9"
         },
-        "glob": {
+        "@vscode/l10n-dev": {
             "minimatch": "^5.1.9"
+        },
+        "tsec": {
+            "minimatch": "^3.1.5"
         },
         "@typescript-eslint/typescript-estree": {
             "minimatch": "^9.0.9"
+        },
+        "mocha": {
+            "glob": {
+                "minimatch": "^5.1.9"
+            }
         }
     }
 }
