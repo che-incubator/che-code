@@ -5,7 +5,7 @@
 import * as l10n from '@vscode/l10n';
 import { BasePromptElementProps, PromptElement, PromptElementProps, PromptReference } from '@vscode/prompt-tsx';
 import type * as vscode from 'vscode';
-import { IRunCommandExecutionService } from '../../../platform/commands/common/runCommandExecutionService';
+import { IChatDebugFileLoggerService } from '../../../platform/chat/common/chatDebugFileLoggerService';
 import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { ObjectJsonSchema } from '../../../platform/configuration/common/jsonSchema';
 import { ICustomInstructionsService } from '../../../platform/customInstructions/common/customInstructionsService';
@@ -148,7 +148,7 @@ export class ReadFileTool implements ICopilotTool<ReadFileParams> {
 		@IExperimentationService private readonly experimentationService: IExperimentationService,
 		@ICustomInstructionsService private readonly customInstructionsService: ICustomInstructionsService,
 		@IFileSystemService private readonly fileSystemService: IFileSystemService,
-		@IRunCommandExecutionService private readonly runCommandExecutionService: IRunCommandExecutionService,
+		@IChatDebugFileLoggerService private readonly chatDebugFileLoggerService: IChatDebugFileLoggerService,
 	) { }
 
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<ReadFileParams>, token: vscode.CancellationToken) {
@@ -323,13 +323,6 @@ export class ReadFileTool implements ICopilotTool<ReadFileParams> {
 			await this.customInstructionsService.refreshExtensionPromptFiles();
 		}
 
-		// When the built-in troubleshoot skill is read, enable debug tools for this session.
-		// Uses a dedicated VS Code command that sets the context key AND flushes tool updates
-		// synchronously, so the tools are available on the next getAvailableTools() call.
-		if (uri.scheme === 'vscode-chat-internal' && uri.path.includes('/skills/troubleshoot/')) {
-			void this.runCommandExecutionService.executeCommand('chat.enableDebugTools');
-		}
-
 		const skillInfo = this.customInstructionsService.getSkillInfo(uri);
 
 		if (start === 1 && end === documentSnapshot.lineCount) {
@@ -386,9 +379,27 @@ export class ReadFileTool implements ICopilotTool<ReadFileParams> {
 	}
 
 	private async getSnapshot(uri: URI) {
-		return this.notebookService.hasSupportedNotebooks(uri) ?
-			await this.workspaceService.openNotebookDocumentAndSnapshot(uri, this.alternativeNotebookContent.getFormat(this._promptContext?.request?.model)) :
-			TextDocumentSnapshot.create(await this.workspaceService.openTextDocument(uri));
+		if (this.notebookService.hasSupportedNotebooks(uri)) {
+			return this.workspaceService.openNotebookDocumentAndSnapshot(uri, this.alternativeNotebookContent.getFormat(this._promptContext?.request?.model));
+		}
+
+		const snapshot = TextDocumentSnapshot.create(await this.workspaceService.openTextDocument(uri));
+
+		// For the troubleshoot skill, replace the session log placeholder with the actual path
+		if (uri.scheme === 'copilot-skill' && uri.path.includes('/troubleshoot/')) {
+			const sessionId = this._promptContext?.request?.sessionId;
+			if (sessionId) {
+				const logPath = this.chatDebugFileLoggerService.getLogPath(sessionId);
+				if (logPath) {
+					return TextDocumentSnapshot.fromNewText(
+						snapshot.getText().replace('{{CURRENT_SESSION_LOG}}', logPath.fsPath),
+						snapshot,
+					);
+				}
+			}
+		}
+
+		return snapshot;
 	}
 
 	private async sendReadFileTelemetry(outcome: string, options: Pick<vscode.LanguageModelToolInvocationOptions<ReadFileParams>, 'model' | 'chatRequestId' | 'input'>, { start, end, truncated }: IParamRanges, uri: URI | undefined) {
