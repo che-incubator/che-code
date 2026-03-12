@@ -6,8 +6,8 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { IConfigurationService } from '../../../../platform/configuration/common/configurationService';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
 import { IVSCodeExtensionContext } from '../../../../platform/extContext/common/extensionContext';
 import { IFileSystemService } from '../../../../platform/filesystem/common/fileSystemService';
 import { ILogService } from '../../../../platform/log/common/logService';
@@ -15,7 +15,7 @@ import { CopilotChatAttr, GenAiAttr, GenAiOperationName } from '../../../../plat
 import { ICompletedSpanData, IOTelService, SpanStatusCode } from '../../../../platform/otel/common/otelService';
 import { IExperimentationService, NullExperimentationService } from '../../../../platform/telemetry/common/nullExperimentationService';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry';
-import { Emitter } from '../../../../util/vs/base/common/event';
+import { Emitter, Event } from '../../../../util/vs/base/common/event';
 import { DisposableStore } from '../../../../util/vs/base/common/lifecycle';
 import { URI } from '../../../../util/vs/base/common/uri';
 import { ChatDebugFileLoggerService } from '../chatDebugFileLoggerService';
@@ -139,7 +139,9 @@ class TestLogService {
 
 class TestConfigurationService {
 	declare readonly _serviceBrand: undefined;
-	getExperimentBasedConfig() { return true; }
+	getConfig(key: { defaultValue: unknown }) { return key.defaultValue; }
+	getExperimentBasedConfig(key: { defaultValue: unknown }) { return key.defaultValue; }
+	onDidChangeConfiguration = Event.None;
 }
 
 class TestTelemetryService {
@@ -327,5 +329,50 @@ describe('ChatDebugFileLoggerService', () => {
 		const childEntries = await readLogEntries('title-child-id');
 		expect(childEntries).toHaveLength(1);
 		expect(childEntries[0].type).toBe('llm_request');
+	});
+
+	it('restarts flush timer when flushIntervalMs config changes at runtime', async () => {
+		let configuredInterval = 4000;
+		const configChangeEmitter = new Emitter<{ affectsConfiguration: (key: string) => boolean }>();
+
+		const configService = {
+			_serviceBrand: undefined as undefined,
+			getConfig: () => configuredInterval,
+			getExperimentBasedConfig: () => true,
+			onDidChangeConfiguration: configChangeEmitter.event,
+		};
+
+		const svc = new ChatDebugFileLoggerService(
+			otelService as unknown as IOTelService,
+			new TestFileSystemService() as unknown as IFileSystemService,
+			new TestExtensionContext(tmpDir) as unknown as IVSCodeExtensionContext,
+			new TestLogService() as unknown as ILogService,
+			configService as unknown as IConfigurationService,
+			new NullExperimentationService() as unknown as IExperimentationService,
+			new TestTelemetryService() as unknown as ITelemetryService,
+		);
+		disposables.add(svc);
+		disposables.add(configChangeEmitter);
+
+		// Start a session so the flush timer is running
+		const span = makeToolCallSpan('interval-test', 'read_file');
+		otelService.fireSpan(span);
+		expect(svc.getActiveSessionIds()).toContain('interval-test');
+
+		// Spy on clearInterval/setInterval to verify timer restart
+		const clearSpy = vi.spyOn(globalThis, 'clearInterval');
+		const setSpy = vi.spyOn(globalThis, 'setInterval');
+
+		// Change the configured interval and fire the config change event
+		configuredInterval = 8000;
+		configChangeEmitter.fire({
+			affectsConfiguration: key => key === ConfigKey.Advanced.ChatDebugFileLoggingFlushInterval.fullyQualifiedId,
+		});
+
+		expect(clearSpy).toHaveBeenCalled();
+		expect(setSpy).toHaveBeenCalledWith(expect.any(Function), 8000);
+
+		clearSpy.mockRestore();
+		setSpy.mockRestore();
 	});
 });
