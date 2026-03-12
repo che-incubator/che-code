@@ -81,6 +81,13 @@ vi.mock('vscode', async (importOriginal) => {
 	const actual = await import('../../../../vscodeTypes');
 	return {
 		...actual,
+		env: {
+			appName: 'VS Code'
+		},
+		version: 'test-vscode-version',
+		extensions: {
+			getExtension: vi.fn(() => ({ packageJSON: { version: 'test-version' } }))
+		},
 		commands: {
 			executeCommand: mockExecuteCommand
 		}
@@ -595,7 +602,11 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 
 		await invalidParticipant.createHandler()(request, context, stream, requestToken);
 
-		expect(stream.output.join('\n')).toContain('Failed to load session. Unknown event type: custom.unknown.');
+		const output = stream.output.join('\n');
+		expect(output).toContain('Failed loading this session');
+		expect(output).toContain('report an issue');
+		// The error message is appended via MarkdownString.appendText which encodes spaces as &nbsp;
+		expect(output).toContain('Failed&nbsp;to&nbsp;load&nbsp;session');
 		expect(invalidSessionService.getSession).not.toHaveBeenCalled();
 		expect(invalidSessionService.createSession).not.toHaveBeenCalled();
 	});
