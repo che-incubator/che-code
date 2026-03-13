@@ -39,6 +39,7 @@ import { isUntitledSessionId } from '../common/utils';
 import { emptyWorkspaceInfo, getWorkingDirectory, isIsolationEnabled, IWorkspaceInfo } from '../common/workspaceInfo';
 import { ICustomSessionTitleService } from '../copilotcli/common/customSessionTitleService';
 import { IChatDelegationSummaryService } from '../copilotcli/common/delegationSummaryService';
+import { getCopilotCLISessionDir } from '../copilotcli/node/cliHelpers';
 import { ICopilotCLIAgents, ICopilotCLIModels, ICopilotCLISDK } from '../copilotcli/node/copilotCli';
 import { CopilotCLIPromptResolver } from '../copilotcli/node/copilotcliPromptResolver';
 import { builtinSlashSCommands, CopilotCLICommand, copilotCLICommands, ICopilotCLISession } from '../copilotcli/node/copilotcliSession';
@@ -144,6 +145,14 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 	) {
 		super();
 		this._register(this.terminalIntegration);
+
+		// Resolve session dirs for terminal links.
+		// New sessions get their session ID later via MCP, so return candidate
+		// directories and let _resolvePath probe each one.
+		this.terminalIntegration.setSessionDirResolver(async _terminal => {
+			const activeIds = this.sessionTracker.getSessionIds();
+			return activeIds.map(id => Uri.file(getCopilotCLISessionDir(id)));
+		});
 
 		this.useController = configurationService.getConfig(ConfigKey.Advanced.CLISessionController);
 		if (this.useController) {
@@ -380,6 +389,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 			const terminal = await this.terminalIntegration.openTerminal(terminalName, cliArgs, cwd?.fsPath);
 			if (terminal) {
 				this.sessionTracker.setSessionTerminal(id, terminal);
+				this.terminalIntegration.setTerminalSessionDir(terminal, Uri.file(getCopilotCLISessionDir(id)));
 			}
 		} finally {
 			token.dispose();
