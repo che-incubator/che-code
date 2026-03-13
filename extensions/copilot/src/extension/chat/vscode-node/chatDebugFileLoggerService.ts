@@ -25,6 +25,9 @@ const DEFAULT_FLUSH_INTERVAL_MS = 4_000;
 const MIN_FLUSH_INTERVAL_MS = 2_000;
 const MAX_ATTR_VALUE_LENGTH = 5_000;
 const MAX_PENDING_CORE_EVENTS = 100;
+const MAX_SESSION_LOG_BYTES = 100 * 1024 * 1024; // 100MB
+const TRUNCATION_RETAIN_BYTES = 60 * 1024 * 1024; // 60 MB
+
 
 interface IActiveLogSession {
 	readonly uri: URI;
@@ -589,8 +592,69 @@ export class ChatDebugFileLoggerService extends Disposable implements IChatDebug
 			}
 			await fs.promises.appendFile(session.uri.fsPath, content, 'utf-8');
 			session.bytesWritten += Buffer.byteLength(content, 'utf-8');
+			if (session.bytesWritten > MAX_SESSION_LOG_BYTES) {
+				await this._truncateLogFile(session);
+			}
 		} catch (err) {
 			this._logService.error('[ChatDebugFileLogger] Failed to write debug log entries', err);
+		}
+	}
+
+	/**
+	 * Truncate a log file to retain the newest ~80MB using a streaming
+	 * approach via a temp file to avoid loading the entire tail into memory.
+	 */
+	private async _truncateLogFile(session: IActiveLogSession): Promise<void> {
+		try {
+			const filePath = session.uri.fsPath;
+			const stat = await fs.promises.stat(filePath);
+			if (stat.size <= MAX_SESSION_LOG_BYTES) {
+				return;
+			}
+
+			const skipBytes = stat.size - TRUNCATION_RETAIN_BYTES;
+			const fd = await fs.promises.open(filePath, 'r');
+			try {
+				// Read a small probe around the cut point to find the next newline
+				const probe = Buffer.alloc(4096);
+				const { bytesRead } = await fd.read(probe, 0, probe.length, skipBytes);
+				const newlineIdx = probe.indexOf(0x0A, 0); // '\n'
+				const cutOffset = skipBytes + (newlineIdx >= 0 && newlineIdx < bytesRead ? newlineIdx + 1 : 0);
+
+				const tailSize = stat.size - cutOffset;
+				if (tailSize <= 0) {
+					await fd.close();
+					return;
+				}
+				await fd.close();
+
+				// Stream the tail to a temp file, then rename over the original.
+				const tmpPath = filePath + '.tmp';
+				await new Promise<void>((resolve, reject) => {
+					const readStream = fs.createReadStream(filePath, { start: cutOffset });
+					const writeStream = fs.createWriteStream(tmpPath);
+					const onError = (err: Error) => {
+						readStream.destroy();
+						writeStream.destroy();
+						reject(err);
+					};
+					readStream.on('error', onError);
+					writeStream.on('error', onError);
+					writeStream.on('finish', resolve);
+					readStream.pipe(writeStream);
+				});
+				await fs.promises.rename(tmpPath, filePath);
+				session.bytesWritten = tailSize;
+				this._telemetryService.sendTelemetryEvent('chatDebugFileLogger.truncated', { github: false, microsoft: true }, undefined, { previousSize: stat.size, retainedSize: tailSize });
+			} catch (innerErr) {
+				await fd.close().catch(() => { });
+				// Clean up temp file if it exists
+				await fs.promises.unlink(filePath + '.tmp').catch(() => { });
+				throw innerErr;
+			}
+		} catch (err) {
+			this._logService.warn(`[ChatDebugFileLogger] Failed to truncate log file: ${err}`);
+			this._telemetryService.sendTelemetryEvent('chatDebugFileLogger.truncateFailed', { github: false, microsoft: true });
 		}
 	}
 
