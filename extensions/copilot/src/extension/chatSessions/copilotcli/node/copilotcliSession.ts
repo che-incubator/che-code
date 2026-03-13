@@ -886,6 +886,8 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 		attachments.forEach(attachment => {
 			if (attachment.type === 'github_reference') {
 				result.push(`- ${attachment.title}: (${attachment.number}, ${attachment.type}, ${attachment.referenceType})`);
+			} else if (attachment.type === 'blob') {
+				result.push(`- ${attachment.displayName ?? 'blob'} (${attachment.type}, ${attachment.mimeType})`);
 			} else {
 				result.push(`- ${attachment.displayName} (${attachment.type}, ${attachment.type === 'selection' ? attachment.filePath : attachment.path})`);
 			}
@@ -985,6 +987,8 @@ export class CopilotCLISession extends DisposableStore implements ICopilotCLISes
 		attachments.forEach(attachment => {
 			if (attachment.type === 'github_reference') {
 				result.push(`- ${attachment.title}: (${attachment.number}, ${attachment.type}, ${attachment.referenceType})`);
+			} else if (attachment.type === 'blob') {
+				result.push(`- ${attachment.displayName ?? 'blob'} (${attachment.type}, ${attachment.mimeType})`);
 			} else {
 				result.push(`- ${attachment.displayName} (${attachment.type}, ${attachment.type === 'selection' ? attachment.filePath : attachment.path})`);
 			}
