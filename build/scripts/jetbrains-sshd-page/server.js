@@ -60,7 +60,7 @@ const server = http.createServer((req, res) => {
       }())
 
       function openToolbox() {
-        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}&dwName=${process.env['DEVWORKSPACE_NAME']}&key=${encodeURIComponent(keyMessage)}&project=${process.env['PROJECT_SOURCE']}"
+        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}&dwName=${process.env['DEVWORKSPACE_NAME']}&username=${username}&key=${encodeURIComponent(keyMessage)}&project=${process.env['PROJECT_SOURCE']}"
         console.log("Opening Toolbox App...");
         window.open(tbxLink, "_self");
       }
