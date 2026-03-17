@@ -8,6 +8,13 @@ https://github.com/che-incubator/che-code/pull/662
 - code/build/package.json
 ---
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/661
+
+- code/package.json
+- code/build/npm/gyp/package.json
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/655
 
