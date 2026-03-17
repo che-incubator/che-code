@@ -189,7 +189,7 @@ if (defaultNodeTask) {
 
 function nodejs(platform, arch) {
 	const { fetchUrls, fetchGithub } = require('./lib/fetch');
-	const untar = require('gulp-decompress');
+	const decompress = require('gulp-decompress');
 
 	if (arch === 'armhf') {
 		arch = 'armv7l';
