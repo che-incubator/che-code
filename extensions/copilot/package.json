@@ -5944,7 +5944,8 @@
 					}
 				],
 				"customAgentTarget": "github-copilot",
-				"requiresCustomModels": true
+				"requiresCustomModels": true,
+				"autoAttachReferences": true
 			},
 			{
 				"type": "copilot-cloud-agent",
@@ -5963,7 +5964,8 @@
 				"when": "config.github.copilot.chat.cloudAgent.enabled",
 				"capabilities": {
 					"supportsFileAttachments": true
-				}
+				},
+				"autoAttachReferences": true
 			}
 		],
 		"debuggers": [
