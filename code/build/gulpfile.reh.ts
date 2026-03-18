@@ -194,7 +194,7 @@ if (defaultNodeTask) {
 function nodejs(platform: string, arch: string): NodeJS.ReadWriteStream | undefined {
 
 	const { fetchUrls, fetchGithub } = require('./lib/fetch');
-    const untar = require('gulp-decompress');
+    const decompress = require('gulp-decompress');
 	if (arch === 'armhf') {
 		arch = 'armv7l';
 	} else if (arch === 'alpine') {
