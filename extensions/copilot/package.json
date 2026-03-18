@@ -4480,7 +4480,7 @@
 					},
 					"github.copilot.chat.cli.mcp.enabled": {
 						"type": "boolean",
-						"default": false,
+						"default": true,
 						"markdownDescription": "%github.copilot.config.cli.mcp.enabled%",
 						"tags": [
 							"advanced",
@@ -6267,5 +6267,5 @@
 		"node-gyp": "npm:node-gyp@10.3.1",
 		"zod": "3.25.76"
 	},
-	"vscodeCommit": "6f7de9c47ab13c3d886928c04c382d527c9bf11d"
+	"vscodeCommit": "6f5263699012243ac0e0b5f8381fcd86ff503b2b"
 }
