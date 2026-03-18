@@ -3,10 +3,16 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+<<<<<<< undici_fixes
 https://github.com/che-incubator/che-code/pull/668
 
 - code/package.json
 - code/remote/package.json
+=======
+https://github.com/che-incubator/che-code/pull/662
+
+- code/build/package.json
+>>>>>>> main
 ---
 
 #### @sbouchet
