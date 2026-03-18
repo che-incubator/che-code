@@ -4511,6 +4511,15 @@
 							"advanced"
 						]
 					},
+					"github.copilot.chat.cli.checkpoints.enabled": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "%github.copilot.config.cli.checkpoints.enabled%",
+						"tags": [
+							"advanced",
+							"experimental"
+						]
+					},
 					"github.copilot.chat.cli.sessionController.enabled": {
 						"type": "boolean",
 						"default": false,

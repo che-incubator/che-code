@@ -24,15 +24,16 @@ import { DeferredPromise, disposableTimeout, IntervalTimer, SequencerByKey } fro
 import { CancellationToken } from '../../../util/vs/base/common/cancellation';
 import { isCancellationError } from '../../../util/vs/base/common/errors';
 import { Emitter, Event } from '../../../util/vs/base/common/event';
-import { Disposable, DisposableStore, IDisposable, IReference, toDisposable } from '../../../util/vs/base/common/lifecycle';
+import { Disposable, DisposableMap, DisposableStore, IDisposable, IReference, toDisposable } from '../../../util/vs/base/common/lifecycle';
 import { relative } from '../../../util/vs/base/common/path';
-import { basename, dirname, extUri, isEqual } from '../../../util/vs/base/common/resources';
+import { basename, dirname, extUri, isEqual, isEqualOrParent } from '../../../util/vs/base/common/resources';
 import { URI } from '../../../util/vs/base/common/uri';
 import { generateUuid } from '../../../util/vs/base/common/uuid';
 import { EXTENSION_ID } from '../../common/constants';
 import { ChatVariablesCollection, isPromptFile } from '../../prompt/common/chatVariablesCollection';
 import { IToolsService } from '../../tools/common/toolsService';
 import { IChatSessionWorkspaceFolderService } from '../common/chatSessionWorkspaceFolderService';
+import { IChatSessionWorktreeCheckpointService } from '../common/chatSessionWorktreeCheckpointService';
 import { IChatSessionWorktreeService } from '../common/chatSessionWorktreeService';
 import { FolderRepositoryInfo, FolderRepositoryMRUEntry, IFolderRepositoryManager, IsolationMode } from '../common/folderRepositoryManager';
 import { isUntitledSessionId } from '../common/utils';
@@ -167,6 +168,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		@ICopilotCLISessionTracker private readonly sessionTracker: ICopilotCLISessionTracker,
 		@ICopilotCLITerminalIntegration private readonly terminalIntegration: ICopilotCLITerminalIntegration,
 		@IChatSessionWorktreeService private readonly worktreeManager: IChatSessionWorktreeService,
+		@IChatSessionWorktreeCheckpointService private readonly worktreeCheckpointService: IChatSessionWorktreeCheckpointService,
 		@IRunCommandExecutionService private readonly commandExecutionService: IRunCommandExecutionService,
 		@IChatSessionWorkspaceFolderService private readonly workspaceFolderService: IChatSessionWorkspaceFolderService,
 		@IFolderRepositoryManager private readonly folderRepositoryManager: IFolderRepositoryManager,
@@ -323,17 +325,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		const changes: vscode.ChatSessionChangedFile2[] = [];
 		if (worktreeProperties?.repositoryPath && await vscode.workspace.isResourceTrusted(vscode.Uri.file(worktreeProperties.repositoryPath))) {
 			// Worktree
-			const worktreeChanges = await this.worktreeManager.getWorktreeChanges(session.id) ?? [];
-			changes.push(...worktreeChanges.map(change => new vscode.ChatSessionChangedFile2(
-				vscode.Uri.file(change.filePath),
-				change.originalFilePath
-					? toGitUri(vscode.Uri.file(change.originalFilePath), worktreeProperties.baseCommit)
-					: undefined,
-				change.modifiedFilePath
-					? toGitUri(vscode.Uri.file(change.modifiedFilePath), worktreeProperties.branchName)
-					: undefined,
-				change.statistics.additions,
-				change.statistics.deletions)));
+			changes.push(...(await this.worktreeCheckpointService.getWorktreeChanges(session.id) ?? []));
 		} else if (workingDirectory && await vscode.workspace.isResourceTrusted(workingDirectory)) {
 			// Workspace
 			const workspaceChanges = await this.workspaceFolderService.getWorkspaceChanges(workingDirectory) ?? [];
@@ -366,6 +358,9 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 				pullRequestUrl: worktreeProperties.version === 2
 					? worktreeProperties.pullRequestUrl
 					: undefined,
+				lastCheckpointRef: worktreeProperties.version === 2
+					? worktreeProperties.lastCheckpointRef
+					: undefined
 			} satisfies { readonly [key: string]: unknown }
 			: {
 				isolationMode: IsolationMode.Workspace,
@@ -1018,6 +1013,8 @@ function toWorkspaceFolderOptionItem(workspaceFolderUri: URI, name: string): Cha
 
 export class CopilotCLIChatSessionParticipant extends Disposable {
 	private useController: boolean;
+	private readonly worktreeRequestDisposables = new DisposableMap<string>();
+
 	constructor(
 		private readonly contentProvider: CopilotCLIChatSessionContentProvider,
 		private readonly promptResolver: CopilotCLIPromptResolver,
@@ -1028,6 +1025,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		@ICopilotCLIAgents private readonly copilotCLIAgents: ICopilotCLIAgents,
 		@ICopilotCLISessionService private readonly sessionService: ICopilotCLISessionService,
 		@IChatSessionWorktreeService private readonly copilotCLIWorktreeManagerService: IChatSessionWorktreeService,
+		@IChatSessionWorktreeCheckpointService private readonly copilotCLIWorktreeCheckpointService: IChatSessionWorktreeCheckpointService,
 		@IChatSessionWorkspaceFolderService private readonly workspaceFolderService: IChatSessionWorkspaceFolderService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
@@ -1255,6 +1253,17 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				}
 				return {};
 			}
+
+			// Check whether the worktree supports checkpoints. Either this is a new session and the checkpoint setting is
+			// enabled, or this is an existing session and the checkpoint setting was enabled when the session was created.
+			if (await this.copilotCLIWorktreeCheckpointService.getWorktreeCheckpointSupport(session.object.sessionId)) {
+				// Create baseline checkpoint for the session (if needed)
+				await this.copilotCLIWorktreeCheckpointService.handleRequest(session.object.sessionId);
+
+				// Track changes to the worktree folder
+				await this.trackWorktreeChanges(session.object.sessionId, token);
+			}
+
 			sdkSessionId = session.object.sessionId;
 			this.copilotCLIAgents.trackSessionAgent(session.object.sessionId, agent?.name);
 			if (isUntitled && !this.useController) {
@@ -1434,6 +1443,75 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 	}
 
+	private async trackWorktreeChanges(sessionId: string, token: vscode.CancellationToken): Promise<void> {
+		if (token.isCancellationRequested) {
+			return;
+		}
+
+		// Open the worktree repository so that we can track state changes
+		const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
+		if (!worktreeProperties) {
+			return;
+		}
+
+		const worktreePath = worktreeProperties.worktreePath;
+		const worktreeRepositoryState = await this.gitService.getRepositoryState(vscode.Uri.file(worktreePath));
+		if (!worktreeRepositoryState) {
+			return;
+		}
+
+		// Setup event listeners to track changes in the worktree repository in order to
+		// update the worktree properties (ex: changes) while the session is in progress
+		const disposables = new DisposableStore();
+
+		// Repository state changes
+		disposables.add(worktreeRepositoryState.onDidChange(async () => {
+			const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
+			if (!worktreeProperties) {
+				return;
+			}
+
+			await this.copilotCLIWorktreeManagerService.setWorktreeProperties(sessionId, {
+				...worktreeProperties,
+				changes: undefined
+			});
+
+			this.sessionItemProvider.notifySessionsChange();
+		}));
+
+		// Text document changes
+		disposables.add(vscode.workspace.onDidChangeTextDocument(async e => {
+			if (e.document.uri.scheme !== 'file') {
+				return;
+			}
+
+			const workingTreeChanges = worktreeRepositoryState.workingTreeChanges.map(change => change.uri);
+			if (workingTreeChanges.some(uri => isEqualOrParent(e.document.uri, uri, true))) {
+				const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
+				if (!worktreeProperties) {
+					return;
+				}
+
+				await this.copilotCLIWorktreeManagerService.setWorktreeProperties(sessionId, {
+					...worktreeProperties,
+					changes: undefined
+				});
+
+				this.sessionItemProvider.notifySessionsChange();
+			}
+		}));
+
+		this.worktreeRequestDisposables.set(worktreePath, disposables);
+	}
+
+	private async disposeWorktreeChangesTracking(sessionId: string): Promise<void> {
+		const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
+		if (!worktreeProperties) {
+			return;
+		}
+		this.worktreeRequestDisposables.deleteAndDispose(worktreeProperties.worktreePath);
+	}
+
 	private async commitWorktreeChangesIfNeeded(request: vscode.ChatRequest, session: ICopilotCLISession, token: vscode.CancellationToken): Promise<void> {
 		const pendingRequests = this.pendingRequestBySession.get(session.sessionId);
 		if (pendingRequests && pendingRequests.size > 1) {
@@ -1453,8 +1531,19 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				const workingDirectory = getWorkingDirectory(session.workspace);
 				if (isIsolationEnabled(session.workspace)) {
 					// When isolation is enabled and we are using a git worktree, so we commit
-					// all the changes in the worktree directory when the session is completed
+					// all the changes in the worktree directory when the session is completed.
+					// Note that if the worktree supports checkpoints, then the commit will be
+					// done in the checkpoint so that users can easily see the changes made in
+					// the worktree and also revert back if needed.
 					await this.copilotCLIWorktreeManagerService.handleRequestCompleted(session.sessionId);
+
+					// When isolation is enabled and we are using a git worktree, and the worktree supports
+					// checkpoints, we create a checkpoint for the worktree changes so that users can easily
+					// see the changes made in the worktree and also revert back if needed.
+					await this.copilotCLIWorktreeCheckpointService.handleRequestCompleted(session.sessionId);
+
+					// Dispose the event listeners tracking the worktree changes
+					await this.disposeWorktreeChangesTracking(session.sessionId);
 				} else if (workingDirectory) {
 					// When isolation is not enabled, we are operating in the workspace directly,
 					// so we stage all the changes in the workspace directory when the session is
