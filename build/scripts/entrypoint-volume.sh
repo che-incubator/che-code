@@ -50,7 +50,7 @@ get_openssl_version() {
     openssl_version=$(openssl version -v | cut -d' ' -f2 | cut -d'.' -f1)
   elif command -v rpm >/dev/null 2>&1; then
     echo "[INFO] rpm command is available"
-    openssl_version=$(rpm -qa | grep openssl-libs | cut -d'-' -f3 | cut -d'.' -f1)
+    openssl_version=$(rpm -q --qf '%{VERSION}\n' openssl-libs 2>/dev/null | cut -d'.' -f1)
   else
     echo "[INFO] openssl and rpm commands are not available, trying to detect OpenSSL version..."
     get_libssl_version
@@ -73,47 +73,58 @@ ls -la /checode/
 export MACHINE_EXEC_PORT=3333
 nohup /checode/bin/machine-exec --url "127.0.0.1:${MACHINE_EXEC_PORT}" &
 
-# Start the checode component based on musl or libc
+runtime_ld_library_path=""
 
-# detect if we're using alpine/musl
-libc=$(ldd /bin/ls | grep 'musl' | head -1 | cut -d ' ' -f1)
-if [ -n "$libc" ]; then
-  echo "[INFO] Using linux-musl assembly..."
-  cd /checode/checode-linux-musl || exit
-else
-
+# detect if we're using alpine/musl (avoid grep dependency for micro images)
+ldd_output=$(ldd /bin/ls 2>/dev/null || true)
+case "$ldd_output" in
+  *musl*)
+    echo "[INFO] Using linux-musl assembly..."
+    cd /checode/checode-linux-musl || exit
+    ;;
+  *)
+  
   get_openssl_version
   echo "[INFO] OpenSSL major version is: $openssl_version."
 
   case "${openssl_version}" in
   *"1"*)
-    export LD_LIBRARY_PATH="/checode/checode-linux-libc/ubi8/ld_libs:$LD_LIBRARY_PATH"
-    echo "[INFO] LD_LIBRARY_PATH is: $LD_LIBRARY_PATH"
-
     echo "[INFO] Using linux-libc ubi8-based assembly..."
+    runtime_ld_library_path="/checode/checode-linux-libc/ubi8/ld_libs"
     cd /checode/checode-linux-libc/ubi8 || exit
     ;;
   *"3"*)
-    export LD_LIBRARY_PATH="/checode/checode-linux-libc/ubi9/ld_libs:$LD_LIBRARY_PATH"
-    echo "[INFO] LD_LIBRARY_PATH is: $LD_LIBRARY_PATH"
-
     echo "[INFO] Using linux-libc ubi9-based assembly..."
+    runtime_ld_library_path="/checode/checode-linux-libc/ubi9/ld_libs/core"
+    if [ -d "/checode/checode-linux-libc/ubi9/ld_libs/openssl" ]; then
+      runtime_ld_library_path="/checode/checode-linux-libc/ubi9/ld_libs/openssl:${runtime_ld_library_path}"
+    fi
     cd /checode/checode-linux-libc/ubi9 || exit
     ;;
   *)
     echo "[WARNING] Unsupported OpenSSL major version, linux-libc ubi9-based assembly will be used by default..."
-
-    export LD_LIBRARY_PATH="/checode/checode-linux-libc/ubi9/ld_libs:$LD_LIBRARY_PATH"
-    echo "[INFO] LD_LIBRARY_PATH is: $LD_LIBRARY_PATH"
-
+    runtime_ld_library_path="/checode/checode-linux-libc/ubi9/ld_libs/core"
+    if [ -d "/checode/checode-linux-libc/ubi9/ld_libs/openssl" ]; then
+      runtime_ld_library_path="/checode/checode-linux-libc/ubi9/ld_libs/openssl:${runtime_ld_library_path}"
+    fi
     cd /checode/checode-linux-libc/ubi9 || exit
     ;;
   esac
+  ;;
+esac
+
+if [ -n "$runtime_ld_library_path" ]; then
+  export LD_LIBRARY_PATH="${runtime_ld_library_path}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  echo "[INFO] LD_LIBRARY_PATH is: $LD_LIBRARY_PATH"
 fi
 
 # Set the default path to the serverDataFolderName
 # into a persistent volume
 export VSCODE_AGENT_FOLDER=/checode/remote
+
+# Controls where LD_LIBRARY_PATH sanitization is applied.
+# Supported values: all | none | shellEnv | terminal
+export LD_SANITIZE_SCOPE="${LD_SANITIZE_SCOPE:-terminal}"
 
 if [ -z "$VSCODE_NODEJS_RUNTIME_DIR" ]; then
   export VSCODE_NODEJS_RUNTIME_DIR="$(pwd)"

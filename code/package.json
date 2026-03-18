@@ -164,7 +164,7 @@
     "debounce": "^1.0.0",
     "deemon": "^1.13.6",
     "electron": "39.2.7",
-    "eslint": "^9.36.0",
+    "eslint": "^9.39.3",
     "eslint-formatter-compact": "^8.40.0",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-jsdoc": "^50.3.1",
@@ -176,6 +176,7 @@
     "gulp-azure-storage": "^0.12.1",
     "gulp-bom": "^3.0.0",
     "gulp-buffer": "0.0.2",
+    "gulp-decompress": "^3.0.0",
     "gulp-filter": "^5.1.0",
     "gulp-flatmap": "^1.0.2",
     "gulp-gunzip": "^1.0.0",
@@ -186,7 +187,6 @@
     "gulp-replace": "^0.5.4",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svgmin": "^4.1.0",
-    "gulp-untar": "^0.0.7",
     "husky": "^0.13.1",
     "innosetup": "^6.4.1",
     "istanbul-lib-coverage": "^3.2.0",
@@ -246,7 +246,16 @@
     },
     "@azure/core-http": {
       "form-data": "4.0.4"
-    }
+    },
+    "ajv": "6.14.0",
+    "ajv-formats": {
+      "ajv": "^8.18.0"
+    },
+    "schema-utils": {
+      "ajv": "^8.18.0"
+    },
+    "tar": "^7.5.8",
+    "lodash": "^4.17.23"
   },
   "repository": {
     "type": "git",

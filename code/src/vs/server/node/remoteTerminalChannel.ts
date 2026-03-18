@@ -33,6 +33,7 @@ import { IConfigurationService } from '../../platform/configuration/common/confi
 import { ILogService } from '../../platform/log/common/log.js';
 import { promiseWithResolvers } from '../../base/common/async.js';
 import { shouldUseEnvironmentVariableCollection } from '../../platform/terminal/common/terminalEnvironment.js';
+import { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForTerminal } from '../../platform/che/utils.js';
 
 class CustomVariableResolver extends AbstractVariableResolverService {
 	constructor(
@@ -210,6 +211,9 @@ export class RemoteTerminalChannel extends Disposable implements IServerChannel<
 
 
 		const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, this._environmentService, this._logService, this._configurationService);
+		if (shouldStripLdLibraryPathForTerminal()) {
+			sanitizeLdLibraryPathInEnvironment(baseEnv, message => this._logService.trace(message), 'remoteTerminalChannel:baseEnv');
+		}
 		this._logService.trace('baseEnv', baseEnv);
 
 		const reviveWorkspaceFolder = (workspaceData: IWorkspaceFolderData): IWorkspaceFolder => {
@@ -242,6 +246,9 @@ export class RemoteTerminalChannel extends Disposable implements IServerChannel<
 			args.configuration['terminal.integrated.detectLocale'],
 			baseEnv
 		);
+		if (shouldStripLdLibraryPathForTerminal()) {
+			sanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:terminalEnv');
+		}
 
 		// Apply extension environment variable collections to the environment
 		if (shouldUseEnvironmentVariableCollection(shellLaunchConfig)) {
@@ -330,7 +337,11 @@ export class RemoteTerminalChannel extends Disposable implements IServerChannel<
 	}
 
 	private _getEnvironment(): platform.IProcessEnvironment {
-		return { ...process.env };
+		const env: platform.IProcessEnvironment = { ...process.env };
+		if (shouldStripLdLibraryPathForTerminal()) {
+			sanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:getEnvironment');
+		}
+		return env;
 	}
 
 	private _getWslPath(original: string, direction: 'unix-to-win' | 'win-to-unix'): Promise<string> {

@@ -3,6 +3,38 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/655
+
+- code/src/vs/platform/shell/node/shellEnv.ts
+- code/src/vs/server/node/remoteTerminalChannel.ts
+- code/src/vs/server/node/extensionHostConnection.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/654
+
+- code/test/mcp/package.json
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/648
+
+- code/package.json
+- code/build/npm/gyp/package.json
+- code/build/gulpfile.cli.js
+- code/build/gulpfile.reh.js
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/647
+
+- code/test/monaco/package.json
+- code/build/package.json
+- code/package.json
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/617
 
 - code/src/vs/platform/extensionManagement/common/extensionManagement.ts
