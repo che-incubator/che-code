@@ -7,6 +7,7 @@ import { Attachment, SessionOptions } from '@github/copilot/sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
+import { NullChatDebugFileLoggerService } from '../../../../platform/chat/common/chatDebugFileLoggerService';
 import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
 import { InMemoryConfigurationService } from '../../../../platform/configuration/test/common/inMemoryConfigurationService';
 import { NullNativeEnvService } from '../../../../platform/env/common/nullEnvService';
@@ -14,6 +15,7 @@ import { IVSCodeExtensionContext } from '../../../../platform/extContext/common/
 import { MockFileSystemService } from '../../../../platform/filesystem/node/test/mockFileSystemService';
 import { IGitService, RepoContext } from '../../../../platform/git/common/gitService';
 import { ILogService } from '../../../../platform/log/common/logService';
+import { NoopOTelService, resolveOTelConfig } from '../../../../platform/otel/common/index';
 import { PromptsServiceImpl } from '../../../../platform/promptFiles/common/promptsServiceImpl';
 import { NullRequestLogger } from '../../../../platform/requestLogger/node/nullRequestLogger';
 import { NullTelemetryService } from '../../../../platform/telemetry/common/nullTelemetryService';
@@ -227,12 +229,12 @@ function createChatContext(sessionId: string, isUntitled: boolean): vscode.ChatC
 class TestCopilotCLISession extends CopilotCLISession {
 	public requests: Array<{ input: CopilotCLISessionInput; attachments: Attachment[]; modelId: string | undefined; authInfo: NonNullable<SessionOptions['authInfo']>; token: vscode.CancellationToken }> = [];
 	public static nextHandleRequestResult: Promise<void> | undefined;
-	public static handleRequestHook: ((request: { id: string; toolInvocationToken: vscode.ChatParticipantToolToken }, input: CopilotCLISessionInput) => Promise<void>) | undefined;
+	public static handleRequestHook: ((request: { id: string; toolInvocationToken: vscode.ChatParticipantToolToken; sessionResource?: vscode.Uri }, input: CopilotCLISessionInput) => Promise<void>) | undefined;
 	public static statusOverride?: vscode.ChatSessionStatus;
 	override get status(): vscode.ChatSessionStatus | undefined {
 		return TestCopilotCLISession.statusOverride;
 	}
-	override handleRequest(request: { id: string; toolInvocationToken: vscode.ChatParticipantToolToken }, input: CopilotCLISessionInput, attachments: Attachment[], modelId: string | undefined, authInfo: NonNullable<SessionOptions['authInfo']>, token: vscode.CancellationToken): Promise<void> {
+	override handleRequest(request: { id: string; toolInvocationToken: vscode.ChatParticipantToolToken; sessionResource?: vscode.Uri }, input: CopilotCLISessionInput, attachments: Attachment[], modelId: string | undefined, authInfo: NonNullable<SessionOptions['authInfo']>, token: vscode.CancellationToken): Promise<void> {
 		this.requests.push({ input, attachments, modelId, authInfo, token });
 		if (TestCopilotCLISession.handleRequestHook) {
 			return TestCopilotCLISession.handleRequestHook(request, input);
@@ -359,7 +361,7 @@ describe('CopilotCLIChatSessionParticipant.handleRequest', () => {
 						}
 					}();
 				}
-				const session = new TestCopilotCLISession(options, sdkSession, logService, workspaceService, sdk, new MockChatSessionMetadataStore(), instantiationService, delegationService, new NullRequestLogger(), new NullICopilotCLIImageSupport(), new FakeToolsService(), new FakeUserQuestionHandler(), accessor.get(IConfigurationService));
+				const session = new TestCopilotCLISession(options, sdkSession, logService, workspaceService, sdk, new MockChatSessionMetadataStore(), instantiationService, delegationService, new NullRequestLogger(), new NullICopilotCLIImageSupport(), new FakeToolsService(), new FakeUserQuestionHandler(), accessor.get(IConfigurationService), new NoopOTelService(resolveOTelConfig({ env: {}, extensionVersion: '0.0.0', sessionId: 'test' })), new NullChatDebugFileLoggerService());
 				cliSessions.push(session);
 				return disposables.add(session);
 			}
