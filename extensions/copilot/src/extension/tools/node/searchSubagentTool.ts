@@ -121,7 +121,6 @@ class SearchSubagentTool implements ICopilotTool<ISearchSubagentParams> {
 		} else {
 			subagentResponse = `The search subagent request failed with this message:\n${loopResult.response.type}: ${loopResult.response.reason}`;
 		}
-
 		// Parse and hydrate code snippets from <final_answer> tags
 		const hydratedResponse = await this.parseFinalAnswerAndHydrate(subagentResponse, cwd, token);
 
