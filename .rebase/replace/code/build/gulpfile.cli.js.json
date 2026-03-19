@@ -1,7 +1,7 @@
 [
     {
         "from": "const untar = require('gulp-untar');\n\tconst gunzip = require('gulp-gunzip');",
-        "by": "const untar = require('gulp-decompress');"
+        "by": "const decompress = require('gulp-decompress');"
     },
     {
         "from": ".pipe(gunzip())\n\t\t.pipe(untar())",
