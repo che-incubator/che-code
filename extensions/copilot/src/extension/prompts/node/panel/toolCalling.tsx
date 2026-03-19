@@ -579,7 +579,18 @@ class McpLinkedResourceToolResult extends PromptElement<{ resourceUri: URI; mime
 			return <Tag name='resource' attrs={{ uri: this.props.resourceUri.toString() }} />;
 		}
 
-		const contents = await this.fileSystemService.readFile(this.props.resourceUri);
+		let contents: Uint8Array;
+		try {
+			contents = await this.fileSystemService.readFile(this.props.resourceUri);
+		} catch (e) {
+			const isNotFound = e instanceof Error && ('code' in e && (e.code === 'FileNotFound' || e.code === 'EntryNotFound'));
+			const message = isNotFound
+				? 'resource not found - the file may have been deleted or become inaccessible'
+				: `failed to read resource - ${toErrorMessage(e)}`;
+			return <Tag name='resource' attrs={{ uri: this.props.resourceUri.toString() }}>
+				{message}
+			</Tag>;
+		}
 		const lines = new TextDecoder().decode(contents).split(/\r?\n/g);
 		const maxLines = McpLinkedResourceToolResult.MAX_PREVIEW_LINES;
 
