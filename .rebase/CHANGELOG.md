@@ -2,8 +2,9 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/668
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/668 \
+https://github.com/che-incubator/che-code/commit/c1cb30760472ea262b0c59cacae32bb398a40cdd
 
 - code/package.json
 - code/remote/package.json
