@@ -13,11 +13,6 @@
 import * as vscode from "vscode";
 import { V1alpha2DevWorkspaceSpecTemplateCommands } from "@devfile/api";
 
-interface DevfileTaskDefinition extends vscode.TaskDefinition {
-	command: string;
-	workdir?: string;
-	component?: string;
-}
 
 type ResolvedExec = {
 	command: string;
@@ -51,16 +46,9 @@ export class CompositeTaskBuilder {
 
 		const parallel = !!command.composite.parallel;
 
-		const components = new Set(execs.map((e) => e.component ?? "__default__"));
-		if (components.size === 1) {
-			return this.buildSameComponentTask(command, execs, parallel);
-		}
-
-		if (parallel) {
-			return this.buildParallelCrossComponent(command, execs);
-		}
-
-		return this.buildSeqCrossComponent(command, execs);
+		return parallel
+			? this.buildParallelTasks(command, execs)
+			: this.buildSequentialTasks(command, execs);
 	}
 
 	private flatten(command: any, all: any[]): ResolvedExec[] {
@@ -93,44 +81,7 @@ export class CompositeTaskBuilder {
 		return result;
 	}
 
-	private buildSameComponentTask(
-		command: any,
-		execs: ResolvedExec[],
-		parallel: boolean,
-	) {
-		const joiner = parallel ? " & " : " && ";
-
-		let script = execs.map((e) => this.sanitize(e.command)).join(joiner);
-
-		script = this.sanitize(script);
-		if (parallel) script += " ; wait";
-
-		const first = execs[0];
-
-		const kind: DevfileTaskDefinition = {
-			type: "devfile",
-			command: script,
-			workdir: first.workdir,
-			component: first.component,
-		};
-
-		return new vscode.Task(
-			kind,
-			vscode.TaskScope.Workspace,
-			command.composite.label || command.id,
-			"devfile",
-			new vscode.CustomExecution(() =>
-				this.terminalExtAPI.getMachineExecPTY(
-					first.component,
-					script,
-					first.workdir,
-				),
-			),
-			[],
-		);
-	}
-
-	private buildSeqCrossComponent(command: any, execs: ResolvedExec[]) {
+	private buildSequentialTasks(command: any, execs: ResolvedExec[]) {
 		let activePtys = new Set<vscode.Pseudoterminal>();
 		let isCancelled = false;
 
@@ -147,7 +98,7 @@ export class CompositeTaskBuilder {
 						if (isCancelled) return 130;
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
 							e.component,
-							e.command,
+							this.sanitize(e.command),
 							e.workdir,
 						);
 
@@ -161,8 +112,7 @@ export class CompositeTaskBuilder {
 
 							pty.onDidClose?.((exitCode?: number) => {
 								activePtys.delete(pty);
-								const code = exitCode ?? 1;
-								resolve(code);
+								resolve(exitCode ?? 1);
 							});
 
 							if (typeof pty.open === "function") {
@@ -233,32 +183,27 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildParallelCrossComponent(
+	private buildParallelTasks(
 		command: any,
 		execs: ResolvedExec[],
 	): vscode.Task {
 		const execution = new vscode.CustomExecution(async () => {
-			const writeEmitter = new vscode.EventEmitter<string>();
 			const closeEmitter = new vscode.EventEmitter<number>();
 
 			const pty: vscode.Pseudoterminal = {
-				onDidWrite: writeEmitter.event,
-
+				onDidWrite: new vscode.EventEmitter<string>().event,
 				onDidClose: closeEmitter.event,
 
 				open: () => {
 					execs.forEach((e, index) => {
 						const childTask = this.buildExecTask(e, index === 0);
-
 						vscode.tasks.executeTask(childTask);
 					});
+
 					closeEmitter.fire(0);
 				},
 
-				close: () => {
-					closeEmitter.fire(0);
-				},
-
+				close: () => closeEmitter.fire(0),
 				handleInput: () => {},
 			};
 
@@ -326,7 +271,7 @@ export class CompositeTaskBuilder {
 	}
 
 	private sanitize(cmd: string) {
-		return cmd.replace(/(?:\s*(?:&&|\|\||[|;&]))+\s*$/, "").trim();
+		return cmd.replace(/(?:\s*(?:&&|\|\||[|;]))+\s*$/, "").trim();
 	}
 
 	private validate(cmd: any, all: any[], seen = new Set<string>()): boolean {

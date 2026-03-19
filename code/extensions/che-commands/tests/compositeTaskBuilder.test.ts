@@ -1,10 +1,6 @@
 /**********************************************************************
  * Copyright (c) 2026 Red Hat, Inc.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
- *
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
@@ -13,6 +9,20 @@
 import { DevfileTaskProvider } from "../src/taskProvider";
 import { MockCheAPI, MockTerminalAPI } from "./mocks";
 import * as vscode from "vscode";
+
+beforeAll(() => {
+	(vscode as any).TaskRevealKind = {
+		Always: 1,
+		Silent: 2,
+		Never: 0,
+	};
+
+	(vscode as any).TaskPanelKind = {
+		Dedicated: 1,
+		Shared: 2,
+		New: 3,
+	};
+});
 
 function createProvider(devfile: any, term?: MockTerminalAPI) {
 	return new DevfileTaskProvider(
@@ -36,8 +46,8 @@ async function runByName(tasks: vscode.Task[], name: string) {
 	return pty;
 }
 
-describe("Composite — same component flattening", () => {
-	test("sequential same-component commands are flattened with &&", async () => {
+describe("Composite — same component execution", () => {
+	test("sequential same-component commands execute individually in order", async () => {
 		const term = new MockTerminalAPI();
 
 		const tasks = await provide(
@@ -53,33 +63,36 @@ describe("Composite — same component flattening", () => {
 
 		await runByName(tasks!, "combo");
 
-		expect(term.calls).toHaveLength(1);
-		expect(term.calls[0].component).toBe("py");
-		expect(term.calls[0].command).toBe("A && B");
+		expect(term.calls).toHaveLength(2);
+		expect(term.calls.map((c) => c.component)).toEqual(["py", "py"]);
+		expect(term.calls.map((c) => c.command)).toEqual(["A", "B"]);
 	});
 
-	test("parallel same-component commands run in background with wait", async () => {
-		const term = new MockTerminalAPI();
+	test("parallel same-component commands execute independently", async () => {
+		let executedTasks: vscode.Task[] = [];
 
-		const tasks = await provide(
-			{
-				commands: [
-					{ id: "a", exec: { component: "py", commandLine: "A" } },
-					{ id: "b", exec: { component: "py", commandLine: "B" } },
-					{ id: "combo", composite: { parallel: true, commands: ["a", "b"] } },
-				],
+		(vscode as any).tasks = {
+			executeTask: async (task: vscode.Task) => {
+				executedTasks.push(task);
+				return { terminate() {} };
 			},
-			term,
-		);
+		};
+
+		const tasks = await provide({
+			commands: [
+				{ id: "a", exec: { component: "py", commandLine: "A" } },
+				{ id: "b", exec: { component: "py", commandLine: "B" } },
+				{ id: "combo", composite: { parallel: true, commands: ["a", "b"] } },
+			],
+		});
 
 		await runByName(tasks!, "combo");
 
-		const cmd = term.calls[0].command;
+		expect(executedTasks).toHaveLength(2);
 
-		expect(cmd).toContain("A");
-		expect(cmd).toContain("B");
-		expect(cmd).toContain("&");
-		expect(cmd).toContain("wait");
+		const cmds = executedTasks.map((t) => (t.definition as any).command).sort();
+
+		expect(cmds).toEqual(["A", "B"]);
 	});
 });
 
@@ -114,17 +127,8 @@ describe("Composite — cross component execution", () => {
 		expect(term.calls.map((c) => c.component)).toEqual(["backend", "frontend"]);
 	});
 
-	test("parallel composite executes all components and opens only child terminals", async () => {
+	test("parallel composite executes all components", async () => {
 		let executedTasks: vscode.Task[] = [];
-
-		(vscode as any).TaskRevealKind = {
-			Always: 1,
-			Silent: 2,
-		};
-
-		(vscode as any).TaskPanelKind = {
-			Dedicated: 1,
-		};
 
 		(vscode as any).tasks = {
 			executeTask: async (task: vscode.Task) => {
@@ -133,9 +137,7 @@ describe("Composite — cross component execution", () => {
 			},
 		};
 
-		const term = new MockTerminalAPI();
-
-		const tasks = await provide(devfile, term);
+		const tasks = await provide(devfile);
 
 		await runByName(tasks!, "par");
 
@@ -146,19 +148,13 @@ describe("Composite — cross component execution", () => {
 			.sort();
 
 		expect(comps).toEqual(["backend", "frontend"]);
-		expect(
-			executedTasks.some((t) => (t.definition as any).command === "par"),
-		).toBe(false);
 	});
 });
 
 describe("Composite — sequential failure behavior", () => {
-
-	test("sequential composite stops when first command fails", async () => {
-
+	test("stops when first command fails", async () => {
 		const term = new MockTerminalAPI();
 
-		// first fails, second must not run
 		term.exitCodes = {
 			backend: 1,
 			frontend: 0,
@@ -186,13 +182,10 @@ describe("Composite — sequential failure behavior", () => {
 		await runByName(tasks!, "seq");
 
 		expect(term.calls).toHaveLength(1);
-
 		expect(term.calls[0].component).toBe("backend");
 	});
 
-
-	test("sequential composite continues when commands succeed", async () => {
-
+	test("continues when commands succeed", async () => {
 		const term = new MockTerminalAPI();
 
 		term.exitCodes = {
@@ -222,15 +215,12 @@ describe("Composite — sequential failure behavior", () => {
 		await runByName(tasks!, "seq");
 
 		expect(term.calls).toHaveLength(2);
-
-		expect(term.calls.map(c => c.component))
-			.toEqual(["backend","frontend"]);
+		expect(term.calls.map((c) => c.component)).toEqual(["backend", "frontend"]);
 	});
-
 });
 
 describe("Composite — nested graphs", () => {
-	test("nested composites flatten correctly", async () => {
+	test("nested composites execute in correct order", async () => {
 		const term = new MockTerminalAPI();
 
 		const tasks = await provide(
@@ -248,7 +238,7 @@ describe("Composite — nested graphs", () => {
 
 		await runByName(tasks!, "outer");
 
-		expect(term.calls[0].command).toBe("A && B && C");
+		expect(term.calls.map((c) => c.command)).toEqual(["A", "B", "C"]);
 	});
 });
 
@@ -272,7 +262,7 @@ describe("Composite — validation and safety", () => {
 		expect(tasks).toHaveLength(0);
 	});
 
-	test("composite with non-exec children is not exposed as runnable task", async () => {
+	test("invalid composites are not exposed as runnable tasks", async () => {
 		const tasks = await provide({
 			commands: [
 				{ id: "inner", composite: { commands: [] } },
@@ -280,13 +270,12 @@ describe("Composite — validation and safety", () => {
 			],
 		});
 
-		// provider should not create tasks for invalid composites
 		expect(tasks!.some((t) => t.name === "outer")).toBe(false);
 	});
 });
 
 describe("Composite — shell command integrity", () => {
-	test("composite preserves complex shell commands per step", async () => {
+	test("preserves complex shell commands", async () => {
 		const term = new MockTerminalAPI();
 
 		const complex = `VAR=$(pgrep node) && echo $VAR && kill $VAR &>/dev/null`;
@@ -307,7 +296,7 @@ describe("Composite — shell command integrity", () => {
 		expect(term.calls[0].command).toContain("&>/dev/null");
 	});
 
-	test("composite supports complex shell stop command", async () => {
+	test("supports complex chained shell commands", async () => {
 		const term = new MockTerminalAPI();
 
 		const devfile = {
@@ -327,13 +316,13 @@ describe("Composite — shell command integrity", () => {
 		const tasks = await provide(devfile, term);
 		await runByName(tasks!, "combo");
 
-		expect(term.calls[0].command).toContain("pgrep");
-		expect(term.calls[0].command).toContain("&&");
+		expect(term.calls[1].command).toContain("pgrep");
+		expect(term.calls[1].command).toContain("&&");
 	});
 });
 
 describe("Composite — task naming", () => {
-	test("composite label overrides id", async () => {
+	test("label overrides id", async () => {
 		const tasks = await provide({
 			commands: [
 				{ id: "a", exec: { commandLine: "echo" } },

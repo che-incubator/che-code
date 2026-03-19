@@ -11,15 +11,12 @@
 /* eslint-disable header/header */
 
 //@ts-check
-
-export const preset = 'ts-jest';
 export const testEnvironment = 'node';
 export const roots = ['<rootDir>/tests'];
 export const collectCoverage = true;
-export const globals = {
-    'ts-jest': {
-        tsconfig: '<rootDir>/tsconfig.jest.json'
-    }
+export const transform = {
+  '^.+\\.tsx?$': ['ts-jest', { 
+    tsconfig: 'tsconfig.json' }],
 };
 export const moduleNameMapper = {
     '^vscode$': '<rootDir>/tests/__mocks__/vscode.ts'
