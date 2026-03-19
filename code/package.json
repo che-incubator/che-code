@@ -111,7 +111,7 @@
     "node-pty": "^1.1.0-beta43",
     "open": "^10.1.2",
     "tas-client": "0.3.1",
-    "undici": "^7.9.0",
+    "undici": "^7.24.0",
     "v8-inspect-profiler": "^0.1.1",
     "vscode-oniguruma": "1.7.0",
     "vscode-regexpp": "^3.1.0",
@@ -255,8 +255,7 @@
       "ajv": "^8.18.0"
     },
     "tar": "^7.5.11",
-    "lodash": "^4.17.23",
-    "undici": "^7.24.0"
+    "lodash": "^4.17.23"
   },
   "repository": {
     "type": "git",
