@@ -37,8 +37,9 @@ https://github.com/che-incubator/che-code/pull/654
 - code/package.json
 ---
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/648
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/648 \
+https://github.com/che-incubator/che-code/pull/646/changes/c22ae74ef707862afdb29f9a9f343be912cb05f8
 
 - code/package.json
 - code/build/npm/gyp/package.json
