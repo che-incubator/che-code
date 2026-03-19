@@ -80,7 +80,7 @@ const compileFromSources = (callback) => {
 };
 
 const acquireBuiltOpenSSL = (callback) => {
-	const untar = require('gulp-decompress');
+	const decompress = require('gulp-decompress');
 	const dir = path.join(tmpdir(), 'vscode-openssl-download');
 	mkdirSync(dir, { recursive: true });
 
