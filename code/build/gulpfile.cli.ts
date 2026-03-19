@@ -15,8 +15,7 @@ import * as task from './lib/task.ts';
 import watcher from './lib/watch/index.ts';
 import { debounce } from './lib/util.ts';
 import { createReporter } from './lib/reporter.ts';
-import untar from 'gulp-untar';
-import gunzip from 'gulp-gunzip';
+import decompress from 'gulp-decompress';
 
 const root = 'cli';
 const rootAbs = path.resolve(import.meta.dirname, '..', root);
@@ -77,7 +76,6 @@ const compileFromSources = (callback: (err?: string) => void) => {
 };
 
 const acquireBuiltOpenSSL = (callback: (err?: unknown) => void) => {
-	const decompress = require('gulp-decompress');
 	const dir = path.join(tmpdir(), 'vscode-openssl-download');
 	mkdirSync(dir, { recursive: true });
 

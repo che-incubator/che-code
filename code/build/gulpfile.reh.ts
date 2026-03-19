@@ -20,9 +20,7 @@ import { getProductionDependencies } from './lib/dependencies.ts';
 import { readISODate } from './lib/date.ts';
 import vfs from 'vinyl-fs';
 import packageJson from '../package.json' with { type: 'json' };
-import flatmap from 'gulp-flatmap';
-import gunzip from 'gulp-gunzip';
-import untar from 'gulp-untar';
+import decompress from 'gulp-decompress';
 import File from 'vinyl';
 import * as fs from 'fs';
 import glob from 'glob';
@@ -193,8 +191,6 @@ if (defaultNodeTask) {
 
 function nodejs(platform: string, arch: string): NodeJS.ReadWriteStream | undefined {
 
-	const { fetchUrls, fetchGithub } = require('./lib/fetch');
-    const decompress = require('gulp-decompress');
 	if (arch === 'armhf') {
 		arch = 'armv7l';
 	} else if (arch === 'alpine') {

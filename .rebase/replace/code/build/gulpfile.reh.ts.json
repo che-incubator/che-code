@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import flatmap from 'gulp-flatmap';\nimport gunzip from 'gulp-gunzip';\nimport untar from 'gulp-untar';",
+        "by": "import decompress from 'gulp-decompress';"
+    },
+    {
+        "from": "flatmap(stream => stream.pipe(gunzip()).pipe(untar()))",
+        "by": "decompress()"
+    }
+]

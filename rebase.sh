@@ -493,9 +493,9 @@ resolve_conflicts() {
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.js" ]]; then
+    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.js" ]]; then
+    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
