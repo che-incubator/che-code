@@ -55,6 +55,8 @@ import { CopilotCloudSessionsProvider } from './copilotCloudSessionsProvider';
 
 const AGENTS_OPTION_ID = 'agent';
 const REPOSITORY_OPTION_ID = 'repository';
+
+const _sessionWorktreeIsolationCache = new Map<string, boolean>();
 const BRANCH_OPTION_ID = 'branch';
 const ISOLATION_OPTION_ID = 'isolation';
 const LAST_USED_ISOLATION_OPTION_KEY = 'github.copilot.cli.lastUsedIsolationOption';
@@ -516,6 +518,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 
 	private _currentSessionId: string | undefined;
 	private _selectedRepoForBranches: { repoUri: URI; headBranchName: string | undefined } | undefined;
+	// private readonly useController: boolean;
+	private _displayedOptionIds = new Set<string>();
 	constructor(
 		private readonly sessionItemProvider: CopilotCLIChatSessionItemProvider,
 		@ICopilotCLIAgents private readonly copilotCLIAgents: ICopilotCLIAgents,
@@ -707,7 +711,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			};
 		}
 		const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(copilotcliSessionId);
-		if (worktreeProperties?.repositoryPath && isBranchOptionFeatureEnabled(this.configurationService)) {
+		if (worktreeProperties?.repositoryPath) {
 			const branchName = worktreeProperties.branchName;
 			const repoUri = vscode.Uri.file(worktreeProperties.repositoryPath);
 			this._selectedRepoForBranches = { repoUri, headBranchName: branchName };
@@ -729,6 +733,10 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			};
 		}
 
+		// Ensure the branch option group is shown when we have a branch value but it's not displayed.
+		if (options[BRANCH_OPTION_ID] && !this._displayedOptionIds.has(BRANCH_OPTION_ID)) {
+			this.notifyProviderOptionsChange();
+		}
 
 		return {
 			title,
@@ -838,8 +846,8 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			}
 		}
 
-		if (this._selectedRepoForBranches && isBranchOptionFeatureEnabled(this.configurationService) && this.isWorktreeIsolationSelected()) {
-			const branchItems = await this.getBranchOptionItems();
+		if (this._selectedRepoForBranches && (isBranchOptionFeatureEnabled(this.configurationService) || (await this.isWorktreeIsolationSelected()))) {
+			const branchItems = await this.getBranchOptionItems(true);
 			if (branchItems.length > 0) {
 				optionGroups.push({
 					id: BRANCH_OPTION_ID,
@@ -851,12 +859,20 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			}
 		}
 
+		this._displayedOptionIds.clear();
+		optionGroups.forEach(group => {
+			this._displayedOptionIds.add(group.id);
+		});
 		return { optionGroups };
 	}
 
 	private _branchRepositoryOptions?: { repoUri: Uri; items: Promise<vscode.ChatSessionProviderOptionItem[]> };
-	private async getBranchOptionItems(): Promise<vscode.ChatSessionProviderOptionItem[]> {
-		if (!this._selectedRepoForBranches || !isBranchOptionFeatureEnabled(this.configurationService)) {
+	private async getBranchOptionItems(overrideListBranches = false): Promise<vscode.ChatSessionProviderOptionItem[]> {
+		if (!this._selectedRepoForBranches) {
+			return [];
+		}
+
+		if (!overrideListBranches && !isBranchOptionFeatureEnabled(this.configurationService)) {
 			return [];
 		}
 
@@ -918,7 +934,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 	 * Check if the current session has worktree isolation selected.
 	 * Used to determine whether the branch picker should be shown.
 	 */
-	private isWorktreeIsolationSelected(): boolean {
+	private async isWorktreeIsolationSelected(): Promise<boolean> {
 		if (!isIsolationOptionFeatureEnabled(this.configurationService)) {
 			return true;
 		}
@@ -926,7 +942,28 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		if (!this._currentSessionId) {
 			return false;
 		}
-		return _sessionIsolation.get(this._currentSessionId) === IsolationMode.Worktree;
+
+		const sessionId = this._currentSessionId;
+		const cached = _sessionWorktreeIsolationCache.get(sessionId);
+		if (typeof cached === 'boolean') {
+			return cached;
+		}
+
+		if (isUntitledSessionId(sessionId)) {
+			const isWorktree = _sessionIsolation.get(sessionId) === IsolationMode.Worktree;
+			_sessionWorktreeIsolationCache.set(sessionId, isWorktree);
+			return isWorktree;
+		}
+
+		if (_sessionIsolation.get(sessionId) === IsolationMode.Worktree) {
+			_sessionWorktreeIsolationCache.set(sessionId, true);
+			return true;
+		}
+
+		const folderInfo = await this.folderRepositoryManager.getFolderRepository(sessionId, undefined, CancellationToken.None);
+		const isWorktree = !!folderInfo.worktreeProperties;
+		_sessionWorktreeIsolationCache.set(sessionId, isWorktree);
+		return isWorktree;
 	}
 
 	private getRepositoryOptionItems() {
