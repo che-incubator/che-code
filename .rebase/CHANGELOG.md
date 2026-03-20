@@ -31,11 +31,13 @@ https://github.com/che-incubator/che-code/pull/655
 - code/src/vs/server/node/extensionHostConnection.ts
 ---
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/654
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/654 \
+https://github.com/che-incubator/che-code/pull/646/changes/eebf4d4db208a1fc9c1ac056f613a5385471c892
 
 - code/test/mcp/package.json
 - code/package.json
+- code/build/package.json
 ---
 
 #### @sbouchet @RomanNikitenko
