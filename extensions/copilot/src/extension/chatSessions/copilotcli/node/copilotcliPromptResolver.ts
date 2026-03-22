@@ -200,11 +200,22 @@ export class CopilotCLIPromptResolver {
 				return;
 			}
 
+			// GitHub pull request reference
+			if (isGitHubPullRequestReference(ref) && URI.isUri(ref.value)) {
+				attachments.push({
+					type: 'blob',
+					mimeType: 'text/plain',
+					data: ref.value.toString(),
+				});
+				return;
+			}
+
 			const uri = ref.value;
 
 			if (!URI.isUri(uri)) {
 				return;
 			}
+
 			// Attachment of Source control items.
 			if (uri.scheme === 'scm-history-item') {
 				return;
@@ -321,4 +332,8 @@ function isWorkspaceRepoInformationItem(variable: PromptVariable): boolean {
 		(ref.modelDescription).startsWith('Information about one of the current repositories') || (ref.modelDescription).startsWith('Information about the current repository'))
 		&&
 		ref.value.startsWith('Repository name:');
+}
+
+function isGitHubPullRequestReference(ref: vscode.ChatPromptReference): boolean {
+	return ref.id === 'github-pull-request';
 }
