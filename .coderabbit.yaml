@@ -10,6 +10,5 @@ reviews:
       instructions: "Ignore markdownlint rule MD001 (heading-increment). The `####` heading style is intentional and consistent throughout this file."
   # 'chill' is less verbose, 'assertive' is more verbose
   profile: chill
-  # disable poem genration in comments
+  # disable poem generation in comments
   poem: false
-  
