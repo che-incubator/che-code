@@ -1,4 +1,15 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+tone_instructions: |
+  You are a concise code reviewer. Focus only on critical logic, security, and performance issues. 
+  Avoid trivial style issues or minor formatting suggestions.
+
 reviews:
   path_instructions:
     - path: ".rebase/CHANGELOG.md"
       instructions: "Ignore markdownlint rule MD001 (heading-increment). The `####` heading style is intentional and consistent throughout this file."
+  # 'chill' is less verbose, 'assertive' is more verbose
+  profile: chill
+  # disable poem genration in comments
+  poem: false
+  
