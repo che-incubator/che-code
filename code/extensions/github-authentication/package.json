@@ -53,6 +53,9 @@
     "@types/node": "22.x",
     "@types/node-fetch": "^2.5.7"
   },
+  "overrides": {
+    "form-data": "^3.0.4"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
