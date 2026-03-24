@@ -651,6 +651,35 @@ describe('CopilotCLISessionService', () => {
 		});
 	});
 
+	describe('CopilotCLISessionService.createNewSessionId / isNewSessionId', () => {
+		it('createNewSessionId returns a unique id that isNewSessionId recognises', () => {
+			const id = service.createNewSessionId();
+			expect(id).toBeTruthy();
+			expect(service.isNewSessionId(id)).toBe(true);
+		});
+
+		it('isNewSessionId returns false for an unknown id', () => {
+			expect(service.isNewSessionId('not-a-new-id')).toBe(false);
+		});
+
+		it('successive calls return distinct ids', () => {
+			const a = service.createNewSessionId();
+			const b = service.createNewSessionId();
+			expect(a).not.toBe(b);
+			expect(service.isNewSessionId(a)).toBe(true);
+			expect(service.isNewSessionId(b)).toBe(true);
+		});
+
+		it('createSession clears the new-session flag', async () => {
+			const id = service.createNewSessionId();
+			expect(service.isNewSessionId(id)).toBe(true);
+
+			await service.createSession({ model: 'gpt-test', sessionId: id, ...sessionOptionsFor(URI.file('/tmp')) }, CancellationToken.None);
+
+			expect(service.isNewSessionId(id)).toBe(false);
+		});
+	});
+
 	describe('CopilotCLISessionService.auto disposal timeout', () => {
 		it.skip('disposes session after completion timeout and aborts underlying sdk session', async () => {
 			vi.useFakeTimers();
