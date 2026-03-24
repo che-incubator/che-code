@@ -380,6 +380,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		// Metadata
 		const metadata = worktreeProperties
 			? {
+				autoCommit: worktreeProperties.autoCommit !== false,
 				baseCommit: worktreeProperties?.baseCommit,
 				baseBranchProtected: worktreeProperties.version === 2
 					? worktreeProperties.baseBranchProtected === true
