@@ -1546,11 +1546,21 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 	}
 
+	private static readonly _PR_DETECTION_RETRY_COUNT = 3;
+	private static readonly _PR_DETECTION_INITIAL_DELAY_MS = 2_000;
+
 	private async handlePullRequestCreated(session: ICopilotCLISession): Promise<void> {
+		const sessionId = session.sessionId;
 		let prUrl = session.createdPullRequestUrl;
 
 		if (!prUrl) {
-			prUrl = await this.detectPullRequestForSession(session.sessionId);
+			// Only attempt retry detection if the session has v2 worktree properties
+			// with branch info — v1 worktrees can't store PR URLs, and sessions
+			// without worktree properties have nothing to look up.
+			const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
+			if (worktreeProperties?.version === 2 && worktreeProperties.branchName && worktreeProperties.repositoryPath) {
+				prUrl = await this.detectPullRequestWithRetry(sessionId);
+			}
 		}
 
 		if (!prUrl) {
@@ -1558,9 +1568,9 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 
 		try {
-			const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(session.sessionId);
+			const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(sessionId);
 			if (worktreeProperties && worktreeProperties.version === 2) {
-				await this.copilotCLIWorktreeManagerService.setWorktreeProperties(session.sessionId, {
+				await this.copilotCLIWorktreeManagerService.setWorktreeProperties(sessionId, {
 					...worktreeProperties,
 					pullRequestUrl: prUrl,
 					changes: undefined,
@@ -1568,8 +1578,31 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				this.sessionItemProvider.notifySessionsChange();
 			}
 		} catch (error) {
-			this.logService.error(`Failed to persist pull request metadata: ${error instanceof Error ? error.message : String(error)}`);
+			this.logService.error(`Failed to persist pull request metadata for session ${sessionId}: ${error instanceof Error ? error.message : String(error)}`);
 		}
+	}
+
+	/**
+	 * Attempts to detect a pull request for a freshly-completed session using
+	 * exponential backoff. The GitHub API may not have indexed the PR immediately
+	 * after `gh pr create` returns, so we retry with increasing delays:
+	 * attempt 1: 2s, attempt 2: 4s, attempt 3: 8s.
+	 */
+	private async detectPullRequestWithRetry(sessionId: string): Promise<string | undefined> {
+		const maxRetries = CopilotCLIChatSessionParticipant._PR_DETECTION_RETRY_COUNT;
+		const initialDelay = CopilotCLIChatSessionParticipant._PR_DETECTION_INITIAL_DELAY_MS;
+
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			const delay = initialDelay * Math.pow(2, attempt);
+			await new Promise<void>(resolve => setTimeout(resolve, delay));
+
+			const prUrl = await this.detectPullRequestForSession(sessionId);
+			if (prUrl) {
+				return prUrl;
+			}
+		}
+
+		return undefined;
 	}
 
 	/**
