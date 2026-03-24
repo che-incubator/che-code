@@ -6,7 +6,6 @@
 import { execFile } from 'child_process';
 import { promises as fs } from 'fs';
 import { promisify } from 'util';
-import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { IGitExtensionService } from '../../../platform/git/common/gitExtensionService';
 import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
@@ -19,10 +18,6 @@ const execFileAsync = promisify(execFile);
 
 const CHECKPOINT_REF_PREFIX = 'refs/sessions/';
 
-function isAutoCommitFeatureEnabled(configurationService: IConfigurationService): boolean {
-	return configurationService.getConfig(ConfigKey.Advanced.CLIAutoCommitEnabled);
-}
-
 function getCheckpointRef(sessionId: string, turnNumber: number): string {
 	return `${CHECKPOINT_REF_PREFIX}${sessionId}/checkpoints/turn/${turnNumber}`;
 }
@@ -31,7 +26,6 @@ export class ChatSessionWorktreeCheckpointService extends Disposable implements 
 	declare _serviceBrand: undefined;
 
 	constructor(
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IGitExtensionService private readonly gitExtensionService: IGitExtensionService,
 		@IChatSessionWorktreeService private readonly worktreeService: IChatSessionWorktreeService,
 		@ILogService private readonly logService: ILogService,
@@ -111,12 +105,11 @@ export class ChatSessionWorktreeCheckpointService extends Disposable implements 
 			return false;
 		}
 
-		return worktreeProperties.version === 2 && (
-			isAutoCommitFeatureEnabled(this.configurationService) ||
-			(worktreeProperties.autoCommit === false &&
-				worktreeProperties.firstCheckpointRef !== undefined &&
-				worktreeProperties.baseCheckpointRef !== undefined &&
-				worktreeProperties.lastCheckpointRef !== undefined));
+		return worktreeProperties.version === 2 &&
+			worktreeProperties.autoCommit === false &&
+			worktreeProperties.firstCheckpointRef !== undefined &&
+			worktreeProperties.baseCheckpointRef !== undefined &&
+			worktreeProperties.lastCheckpointRef !== undefined;
 	}
 
 	private async _getLatestCheckpointRef(sessionId: string): Promise<string | undefined> {
