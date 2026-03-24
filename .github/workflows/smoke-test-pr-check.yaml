@@ -128,6 +128,10 @@ jobs:
       - name: Pull Universal Base Image
         run: |
           minikube image pull quay.io/devfile/universal-developer-image:ubi9-latest
+          
+      - name: Checkout che e2e tests                                                                                                                                                                                                        
+        run: |                                                                                                                                                                                                                              
+          git clone --depth 1 https://github.com/eclipse-che/che ${LOCAL_TEST_DIR} 
 
       - name: Run Smoke test
         run: |
@@ -148,6 +152,7 @@ jobs:
             -e TS_SELENIUM_LOG_LEVEL=TRACE \
             -e TS_WAIT_LOADER_PRESENCE_TIMEOUT=120000 \
             -e TS_COMMON_DASHBOARD_WAIT_TIMEOUT=30000 \
+            -v ${LOCAL_TEST_DIR}/tests/e2e:/tmp/e2e:Z \ 
             -v ${LOCAL_TEST_DIR}/tests/e2e/report:/tmp/e2e/report:Z \
             -v ${LOCAL_TEST_DIR}/tests/e2e/video:/tmp/ffmpeg_report:Z \
             -e USERSTORY=SmokeTest \
