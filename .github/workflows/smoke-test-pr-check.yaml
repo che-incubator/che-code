@@ -26,10 +26,6 @@ jobs:
   smoke-test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout che e2e tests                                                                                                                                                                                                        
-        run: |                                                                                                                                                                                                                              
-          git clone --depth 1 https://github.com/eclipse-che/che ${LOCAL_TEST_DIR}/che
-
       - name: Display docker images
         run: |
           docker images
@@ -98,7 +94,6 @@ jobs:
             -e TS_SELENIUM_LOG_LEVEL=TRACE \
             -e TS_WAIT_LOADER_PRESENCE_TIMEOUT=120000 \
             -e TS_COMMON_DASHBOARD_WAIT_TIMEOUT=30000 \
-            -v ${LOCAL_TEST_DIR}/che/tests/e2e:/tmp/e2e:Z \
             -v ${LOCAL_TEST_DIR}/che/tests/e2e/report:/tmp/e2e/report:Z \
             -v ${LOCAL_TEST_DIR}/che/tests/e2e/video:/tmp/ffmpeg_report:Z \
             -e USERSTORY=SmokeTest \
