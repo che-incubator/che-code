@@ -6,6 +6,23 @@ The file to keep a list of changed files which will potentionaly help to resolve
 https://github.com/che-incubator/che-code/pull/668 \
 https://github.com/che-incubator/che-code/commit/c1cb30760472ea262b0c59cacae32bb398a40cdd
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/669
+
+- code/extensions/github-authentication/package.json
+- code/extensions/notebook-renderers/package.json
+- code/test/smoke/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/670
+
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/668
+
 - code/package.json
 - code/remote/package.json
 ---

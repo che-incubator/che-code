@@ -126,7 +126,7 @@ apply_code_package_changes() {
 
   # apply the replace
   apply_replace code/package.json
-
+  
   # resolve the change
   git add code/package.json > /dev/null 2>&1
 }
@@ -389,19 +389,19 @@ apply_changes() {
 # Apply changes for the given file, using multi line replace
 apply_changes_multi_line() {
   local filePath="$1"
-
+  
   if [ -z "$filePath" ]; then
      echo "Can not apply changes - the path was not passed"
      exit 1;
   fi
-
+  
   echo "  ⚙️ reworking $filePath..."
   # reset the file from what is upstream
   git checkout --theirs "$filePath" > /dev/null 2>&1
-
+  
   # now apply again the changes
   apply_multi_line_replace "$filePath"
-
+  
   # resolve the change
   git add "$filePath" > /dev/null 2>&1
 }
@@ -431,9 +431,15 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
       apply_code_extensions_microsoft_authentication_package_lock_changes
+    elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
+          apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
+          apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
