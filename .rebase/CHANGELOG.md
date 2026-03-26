@@ -16,7 +16,6 @@ https://github.com/che-incubator/che-code/pull/659
 - code/test/mcp/package.json
 - code/test/automation/package.json
 - code/test/integration/browser/package.json
-- code/test/smoke/package.json
 ---
 
 #### @sbouchet @RomanNikitenko
