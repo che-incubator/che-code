@@ -13,7 +13,6 @@ https://github.com/che-incubator/che-code/pull/659
 - code/extensions/json-language-features/package.json
 - code/extensions/markdown-language-features/package.json
 - code/extensions/npm/package.json
-- code/test/mcp/package.json
 - code/test/automation/package.json
 - code/test/integration/browser/package.json
 ---
