@@ -20,6 +20,9 @@ https://github.com/che-incubator/che-code/pull/659
 #### @sbouchet @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/668 \
 https://github.com/che-incubator/che-code/commit/c1cb30760472ea262b0c59cacae32bb398a40cdd
+
+- code/package.json
+- code/remote/package.json
 ---
 
 #### @sbouchet
