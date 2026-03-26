@@ -1,0 +1,5 @@
+{
+    "overrides": {
+        "minimatch": "^10.2.4"
+    }
+}
