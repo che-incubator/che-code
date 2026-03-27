@@ -1910,6 +1910,17 @@ export function registerCLIChatCommands(
 			}
 		}
 	}));
+	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.setTitle', async (sessionItem?: vscode.ChatSessionItem, title?: string) => {
+		if (!sessionItem?.resource || !title) {
+			return;
+		}
+		const trimmedTitle = title.trim();
+		if (trimmedTitle) {
+			const id = SessionIdForCLI.parse(sessionItem.resource);
+			await copilotCLISessionService.renameSession(id, trimmedTitle);
+			await contentProvider.refreshSession({ reason: 'update', sessionId: id });
+		}
+	}));
 
 	const createCopilotCLITerminal = async (location: TerminalOpenLocation = 'editor', name?: string, cwd?: string): Promise<void> => {
 		// TODO@rebornix should be set by CLI

@@ -1968,6 +1968,18 @@ export function registerCLIChatCommands(
 			}
 		}
 	}));
+	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.setTitle', async (sessionItem?: vscode.ChatSessionItem, title?: string) => {
+		if (!sessionItem?.resource || !title) {
+			return;
+		}
+		const trimmedTitle = title.trim();
+		if (trimmedTitle) {
+			const id = SessionIdForCLI.parse(sessionItem.resource);
+			const sessionId = copilotcliSessionItemProvider.untitledSessionIdMapping.get(id) ?? id;
+			await copilotCLISessionService.renameSession(sessionId, trimmedTitle);
+			copilotcliSessionItemProvider.notifySessionsChange();
+		}
+	}));
 	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.newSession', async () => {
 		await copilotcliSessionItemProvider.createCopilotCLITerminal('editor', l10n.t('Copilot CLI'));
 	}));
