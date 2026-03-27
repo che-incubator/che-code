@@ -52,6 +52,7 @@ import { ICopilotCLIChatSessionItemProvider } from './copilotCLIChatSessions';
 import { convertReferenceToVariable } from './copilotCLIPromptReferences';
 import { ICopilotCLITerminalIntegration, TerminalOpenLocation } from './copilotCLITerminalIntegration';
 import { CopilotCloudSessionsProvider } from './copilotCloudSessionsProvider';
+import { buildMcpServerMappings } from '../copilotcli/node/mcpHandler';
 
 const REPOSITORY_OPTION_ID = 'repository';
 
@@ -1654,9 +1655,10 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 
 		const model = options.model;
 		const agent = options.agent;
+		const mcpServerMappings = buildMcpServerMappings(request.tools);
 		const session = isNewSession ?
-			await this.sessionService.createSession({ model, workspaceInfo, agent }, token) :
-			await this.sessionService.getSession({ sessionId: id, model, workspaceInfo, readonly: false, agent }, token);
+			await this.sessionService.createSession({ model, workspaceInfo, agent, mcpServerMappings }, token) :
+			await this.sessionService.getSession({ sessionId: id, model, workspaceInfo, readonly: false, agent, mcpServerMappings }, token);
 		this.sessionItemProvider.notifySessionsChange();
 		// TODO @DonJayamanne We need to refresh to add this new session, but we need a label.
 		// So when creating a session we need a dummy label (or an initial prompt).
@@ -1800,7 +1802,8 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		const worktreeProperties = workspaceInfo.worktreeProperties;
 		const { prompt, attachments, references } = await this.promptResolver.resolvePrompt(request, await requestPromptPromise, (otherReferences || []).concat([]), workspaceInfo, [], token);
 
-		const session = await this.sessionService.createSession({ workspaceInfo, agent, model }, token);
+		const mcpServerMappings = buildMcpServerMappings(request.tools);
+		const session = await this.sessionService.createSession({ workspaceInfo, agent, model, mcpServerMappings }, token);
 		const modeInstructions = this.createModeInstructions(request);
 		this.chatSessionMetadataStore.updateRequestDetails(session.object.sessionId, [{ vscodeRequestId: request.id, agentId: agent?.name ?? '', modeInstructions }]).catch(ex => this.logService.error(ex, 'Failed to update request details'));
 		if (summary) {
