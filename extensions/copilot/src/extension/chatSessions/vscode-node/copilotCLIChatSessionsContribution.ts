@@ -2374,7 +2374,7 @@ export function registerCLIChatCommands(
 	}));
 
 	disposableStore.add(vscode.commands.registerCommand('github.copilot.sessions.discardChanges', async (sessionResource: vscode.Uri, ref: string, ...resources: vscode.Uri[]) => {
-		if (!isUri(sessionResource) || resources.some(r => !isUri(r))) {
+		if (!isUri(sessionResource) || !ref || resources.length === 0 || resources.some(r => !isUri(r))) {
 			return;
 		}
 
@@ -2385,6 +2385,16 @@ export function registerCLIChatCommands(
 		const repositoryUri = worktreeProperties ? Uri.file(worktreeProperties.worktreePath) : workspaceFolder;
 		const repository = repositoryUri ? await gitService.getRepository(repositoryUri) : undefined;
 		if (!repository) {
+			return;
+		}
+
+		const confirmAction = l10n.t('Discard Changes');
+		const message = resources.length === 1
+			? l10n.t('Are you sure you want to discard the changes in \'{0}\'? This action cannot be undone.', basename(resources[0]))
+			: l10n.t('Are you sure you want to discard the changes in these {0} files? This action cannot be undone.', resources.length);
+
+		const choice = await vscode.window.showWarningMessage(message, { modal: true }, confirmAction);
+		if (choice !== confirmAction) {
 			return;
 		}
 
