@@ -333,9 +333,14 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 				}
 			}
 
+			const firstCheckpointRef = lastCheckpointRef
+				? `${lastCheckpointRef.slice(0, lastCheckpointRef.lastIndexOf('/'))}/0`
+				: undefined;
+
 			metadata = {
 				isolationMode: IsolationMode.Workspace,
 				workingDirectoryPath: workingDirectory?.fsPath,
+				firstCheckpointRef,
 				lastCheckpointRef
 			} satisfies { readonly [key: string]: unknown };
 		}
