@@ -31,14 +31,13 @@
   },
   "dependencies": {
     "@devfile/api": "^2.3.0-1738854228",
-    "axios": "^1.13.5",
+    "@eclipse-che/workspace-telemetry-client": "^0.0.1-1685523760",
     "@kubernetes/client-node": "^1.4.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
     "js-yaml": "^4.1.0",
     "reflect-metadata": "^0.2.2",
-    "vscode-nls": "^5.0.0",
-    "@eclipse-che/workspace-telemetry-client": "^0.0.1-1685523760"
+    "vscode-nls": "^5.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
@@ -46,8 +45,8 @@
     "@types/js-yaml": "^4.0.5",
     "@types/node": "22.x",
     "jest": "29.7.0",
-    "typescript": "^5.9.2",
     "ts-jest": "29.4.5",
+    "typescript": "^5.9.2",
     "webpack-node-externals": "^3.0.0"
   },
   "overrides": {
