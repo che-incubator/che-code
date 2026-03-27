@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type * as vscode from 'vscode';
+import { sessionResourceToId } from '../../../platform/chat/common/chatDebugFileLoggerService';
 import { URI } from '../../../util/vs/base/common/uri';
 
 export interface PromptVariable {
@@ -147,4 +148,26 @@ export function isSessionReferenceScheme(scheme: string): boolean {
  */
 export function isSessionReference(variable: PromptVariable): variable is PromptVariable & { value: vscode.Uri } {
 	return URI.isUri(variable.value) && isSessionReferenceScheme(variable.value.scheme);
+}
+
+/**
+ * Build the attributes for rendering a session reference as an `<attachment>` tag.
+ * Callers can pass the result to `<Tag name='attachment' attrs={...} />`.
+ */
+export function sessionReferenceAttachmentAttrs(variable: PromptVariable & { value: vscode.Uri }): Record<string, string> {
+	const attrs: Record<string, string> = {};
+	if (variable.uniqueName) {
+		attrs.id = `${variable.uniqueName} (${sessionResourceToId(variable.value)})`;
+	}
+	attrs.filePath = variable.value.toString();
+	return attrs;
+}
+
+/**
+ * Extract debug-target session IDs from chat prompt references.
+ * Returns `undefined` when no session references are present.
+ */
+export function extractDebugTargetSessionIds(references: readonly vscode.ChatPromptReference[]): readonly string[] | undefined {
+	const sessionRefs = references.filter(ref => URI.isUri(ref.value) && isSessionReferenceScheme(ref.value.scheme));
+	return sessionRefs.length > 0 ? sessionRefs.map(ref => sessionResourceToId(ref.value as URI)) : undefined;
 }
