@@ -155,7 +155,7 @@ export class CodeSearchChunkSearch extends Disposable {
 		this._repoTracker = this._register(instantiationService.createInstance(CodeSearchRepoTracker));
 		this._externalIngestIndex = new Lazy(() => {
 			const client = instantiationService.createInstance(ExternalIngestClient);
-			return this._register(instantiationService.createInstance(ExternalIngestIndex, client));
+			return this._register(instantiationService.createInstance(ExternalIngestIndex, client, this.getExternalIngestRoots()));
 		});
 
 		this._register(this._repoTracker.onDidAddOrUpdateRepo(info => {
@@ -243,10 +243,6 @@ export class CodeSearchChunkSearch extends Disposable {
 					// Update external ingest index with the code search repo roots (if external ingest is enabled)
 					if (this.isExternalIngestEnabled()) {
 						this.updateExternalIngestRoots();
-					}
-
-					// Initialize external ingest index if enabled
-					if (this.isExternalIngestEnabled()) {
 						this._register(this._externalIngestIndex.value.onDidChangeState(() => {
 							this._onDidChangeIndexState.fire();
 						}));
@@ -262,15 +258,14 @@ export class CodeSearchChunkSearch extends Disposable {
 		await this._initializePromise;
 	}
 
-	/**
-	 * Updates the external ingest index with the current code search repo roots.
-	 * Files under these roots will be excluded from external ingest indexing.
-	 */
-	private updateExternalIngestRoots(): void {
-		const readyRepos = Array.from(this._codeSearchRepos.values())
+	private getExternalIngestRoots(): URI[] {
+		return Array.from(this._codeSearchRepos.values())
 			.filter(entry => entry.repo.status === CodeSearchRepoStatus.Ready)
 			.map(entry => entry.repo.repoInfo.rootUri);
-		this._externalIngestIndex.rawValue?.updateCodeSearchRoots(readyRepos);
+	}
+
+	private updateExternalIngestRoots(): void {
+		this._externalIngestIndex.rawValue?.updateCodeSearchRoots(this.getExternalIngestRoots());
 	}
 
 	private isInitializing(): boolean {
