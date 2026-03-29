@@ -129,3 +129,25 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
+
+  - id: build-cli
+    exec:
+      label: Build VS Code CLI from sources
+      component: dev
+      workingDir: ${PROJECTS_ROOT}/che-code/code/cli
+      commandLine: |
+        cargo build --release && \
+        cp /projects/che-code/code/cli/target/release/code /projects/code-cli && \
+        rm -rf /projects/che-code/code/cli/target
+      group:
+        kind: build
+
+  - id: open-tunnel
+    exec:
+      label: Create a tunnel to this workspace
+      component: dev
+      workingDir: ${PROJECTS_ROOT}
+      commandLine: |
+        ./code-cli --log debug tunnel --accept-server-license-terms --name ${DEVWORKSPACE_NAME}
+      group:
+        kind: run
