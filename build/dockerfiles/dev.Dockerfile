@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Red Hat, Inc.
+# Copyright (c) 2022-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -17,6 +17,20 @@ RUN dnf -y install libsecret libX11-devel libxkbcommon \
     "https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/zsh-5.8-9.el9.x86_64.rpm" \
     util-linux-user && \
     dnf -y clean all --enablerepo='*'
+
+# Install latest stable gcloud CLI from official RHEL/CentOS repository.
+RUN printf '%s\n' \
+    '[google-cloud-cli]' \
+    'name=Google Cloud CLI' \
+    'baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64' \
+    'enabled=1' \
+    'gpgcheck=1' \
+    'repo_gpgcheck=0' \
+    'gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg' \
+    > /etc/yum.repos.d/google-cloud-sdk.repo && \
+    dnf -y install libxcrypt-compat google-cloud-cli && \
+    dnf -y clean all --enablerepo='*' && \
+    gcloud --version
 
 COPY --chmod=664 /build/conf/dev/.p10k.zsh /home/user/.p10k.zsh
 
