@@ -12,3 +12,8 @@ reviews:
   profile: chill
   # disable poem generation in comments
   poem: false
+  # only post comments when there are actual findings
+  review_status: false
+  # suppress walkthrough/summary comment when no findings
+  collapse_walkthrough: true
+  changed_files_summary: false
