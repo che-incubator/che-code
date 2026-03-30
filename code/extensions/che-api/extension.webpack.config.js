@@ -15,6 +15,7 @@
 'use strict';
 
 import withDefaults from '../shared.webpack.config.mjs';
+import path from 'node:path';
 import webpack from 'webpack';
 import { merge } from 'webpack-merge';
 
@@ -32,6 +33,10 @@ const config = withDefaults({
     },
     plugins: [
         new webpack.ContextReplacementPlugin(/keyv/), // needs to exclude the package to ignore warnings https://github.com/jaredwray/keyv/issues/45
+        new webpack.NormalModuleReplacementPlugin(
+            /\.\/oidc_auth\.js$/,
+            path.resolve(import.meta.dirname, 'src/shims/oidc-auth.ts')
+        ),
     ],
 });
 
