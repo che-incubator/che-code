@@ -439,6 +439,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		} else {
 			// Workspace
 			const sessionRequestDetails = await this.chatSessionMetadataStore.getRequestDetails(session.id);
+			const workspaceFolderEntry = await this.chatSessionMetadataStore.getSessionWorkspaceFolderEntry(session.id);
 
 			let lastCheckpointRef: string | undefined;
 			for (let i = sessionRequestDetails.length - 1; i >= 0; i--) {
@@ -455,7 +456,7 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 
 			metadata = {
 				isolationMode: IsolationMode.Workspace,
-				repositoryPath: session.repositoryDirectory?.fsPath,
+				repositoryPath: workspaceFolderEntry?.repositoryPath,
 				workingDirectoryPath: workingDirectory?.fsPath,
 				firstCheckpointRef,
 				lastCheckpointRef
@@ -1382,7 +1383,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		}
 		const sessionWorkingDirectory = getWorkingDirectory(session.object.workspace);
 		if (sessionWorkingDirectory && !isIsolationEnabled(session.object.workspace)) {
-			void this.workspaceFolderService.trackSessionWorkspaceFolder(session.object.sessionId, sessionWorkingDirectory.fsPath);
+			void this.workspaceFolderService.trackSessionWorkspaceFolder(session.object.sessionId, sessionWorkingDirectory.fsPath, session.object.workspace.repository?.fsPath);
 		}
 		disposables.add(session.object.attachStream(stream));
 		const permissionLevel = request.permissionLevel;
@@ -1538,7 +1539,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 			void this.copilotCLIWorktreeManagerService.setWorktreeProperties(session.object.sessionId, worktreeProperties);
 		}
 		if (workingDirectory && !isIsolationEnabled(workspaceInfo)) {
-			void this.workspaceFolderService.trackSessionWorkspaceFolder(session.object.sessionId, workingDirectory.fsPath);
+			void this.workspaceFolderService.trackSessionWorkspaceFolder(session.object.sessionId, workingDirectory.fsPath, workspaceInfo.repository?.fsPath);
 		}
 
 		try {
