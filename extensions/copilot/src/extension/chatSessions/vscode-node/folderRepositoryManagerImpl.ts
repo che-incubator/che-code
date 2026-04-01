@@ -260,7 +260,14 @@ export abstract class FolderRepositoryManager extends Disposable implements IFol
 		}
 
 		// Create worktree for the git repository
-		worktreeProperties = worktreeProperties ?? await this.worktreeService.createWorktree(repository, stream, branch);
+		let newBranchName: string | undefined = undefined;
+		try {
+			newBranchName = options.newBranch ? await options.newBranch : undefined;
+		} catch (ex) {
+			const error = ex instanceof Error ? ex : new Error(String(ex));
+			this.logService.error(error, 'Failed to generate a new branch name for worktree creation');
+		}
+		worktreeProperties = worktreeProperties ?? await this.worktreeService.createWorktree(repository, stream, branch, newBranchName);
 
 		if (!worktreeProperties) {
 			stream.warning(l10n.t('Failed to create worktree. Proceeding without isolation.'));
