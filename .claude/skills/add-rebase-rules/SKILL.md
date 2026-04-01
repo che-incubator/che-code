@@ -58,6 +58,8 @@ Important:
    - Add one rule per changed hunk, using stable and unique snippets.
    - Prefer the smallest safe snippet that is unlikely to change accidentally.
    - If replacement is multiline, encode using escaped newlines/tabs in JSON consistently with existing files.
+   - For multiline `from` snippets, start at the first non-whitespace token (avoid anchoring on leading indentation only).
+   - Prefer replacing the whole logical block (`if (...) { ... }`) rather than only an inner line fragment, so closing braces remain structurally correct.
 
 5. Update `rebase.sh` conflict routing
    - Ensure each file that now has a new rebasing rule is routable in `resolve_conflicts`.
@@ -76,8 +78,16 @@ Important:
      - separator `---`
 
 7. Validate before finishing
+   - Determine the upstream ref from `rebase.sh` and use that exact ref for validation (do not hardcode a release branch in the skill output).
+     - Example source of truth in `rebase.sh`: `UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)`
+     - If the script later points to `upstream-code/main` or another release branch, use that new ref instead.
    - `bash -n rebase.sh`
    - JSON validation for changed `.rebase/**/*.json` files (`jq empty <file>`)
+   - For each changed `.rebase/replace/**/*.json`, verify every `from` exists in the upstream file content before finishing.
+     - Example: `git show <upstream-ref>:<path-without-code-prefix>` and compare with the `from` snippet.
+     - `path-without-code-prefix` means the same file path but without the leading `code/` (because `upstream-code` stores VS Code sources at repo root).
+   - Dry-run the generated rule using the same replacement path as `rebase.sh` (Perl-based multiline replace), not a language-native `.replace(...)`.
+   - Include at least one test case where `from`/`by` contains `$` (for example template literals like `${key}`) and confirm replacement still succeeds.
    - Re-check exclusions:
      - no rules for `code/extensions/che-*`
      - no rules for `package-lock.json`
