@@ -1,0 +1,10 @@
+[
+  {
+    "from": "import { Mutable } from '../../../../base/common/types.js';",
+    "by": "import { Mutable } from '../../../../base/common/types.js';\nimport { normalizeAndFilterProposals } from './che/extensions.js';"
+  },
+  {
+    "from": "\t\t\textension.enabledApiProposals = extension.enabledApiProposals.filter(name => {\n\t\t\t\tconst result = Boolean(allApiProposals[<ApiProposalName>name]);\n\t\t\t\tif (!result) {\n\t\t\t\t\tthis._logService.error(`Extension '${key}' wants API proposal '${name}' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.`);\n\t\t\t\t}\n\t\t\t\treturn result;\n\t\t\t});",
+    "by": "\t\t\textension.enabledApiProposals = normalizeAndFilterProposals(this._logService, key, extension.enabledApiProposals);"
+  }
+]

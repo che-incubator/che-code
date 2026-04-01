@@ -499,6 +499,8 @@ resolve_conflicts() {
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then

@@ -2,6 +2,12 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/commit/8409a0167c3cd4ca3555c9c6fc32f2fce87923e9
+
+- code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/659
 
