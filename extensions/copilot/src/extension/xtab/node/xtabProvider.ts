@@ -373,19 +373,15 @@ export class XtabProvider implements IStatelessNextEditProvider {
 
 		request.fetchIssued = true;
 
-		const cursorLineOffset = cursorPosition.column;
-
 		return yield* this.streamEditsWithFiltering(
 			request,
 			endpoint,
 			modelServiceConfig,
 			messages,
-			currentDocument,
 			clippedTaggedCurrentDoc,
 			editWindow,
 			editWindowLines,
 			cursorOriginalLinesOffset,
-			cursorLineOffset,
 			editWindowLinesRange,
 			promptPieces,
 			prediction,
@@ -599,12 +595,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 		endpoint: IChatEndpoint,
 		modelServiceConfig: xtabPromptOptions.ModelConfiguration,
 		messages: Raw.ChatMessage[],
-		currentDocument: CurrentDocument,
 		clippedTaggedCurrentDoc: ClippedDocument,
 		editWindow: OffsetRange,
 		editWindowLines: string[],
 		cursorOriginalLinesOffset: number,
-		cursorLineOffset: number, // cursor offset within the line it's in; 1-based
 		editWindowLineRange: OffsetRange,
 		promptPieces: PromptPieces,
 		prediction: Prediction | undefined,
@@ -629,12 +623,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			endpoint,
 			modelServiceConfig,
 			messages,
-			currentDocument,
 			clippedTaggedCurrentDoc,
 			editWindow,
 			editWindowLines,
 			cursorOriginalLinesOffset,
-			cursorLineOffset,
 			editWindowLineRange,
 			promptPieces,
 			prediction,
@@ -679,12 +671,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 		endpoint: IChatEndpoint,
 		modelServiceConfig: xtabPromptOptions.ModelConfiguration,
 		messages: Raw.ChatMessage[],
-		currentDocument: CurrentDocument,
 		clippedTaggedCurrentDoc: ClippedDocument,
 		editWindow: OffsetRange,
 		editWindowLines: string[],
 		cursorOriginalLinesOffset: number,
-		cursorLineOffset: number, // cursor offset within the line it's in; 1-based
 		editWindowLineRange: OffsetRange,
 		promptPieces: PromptPieces,
 		prediction: Prediction | undefined,
@@ -853,15 +843,17 @@ export class XtabProvider implements IStatelessNextEditProvider {
 			cleanedLinesStream = remainingLinesStream;
 		} else if (opts.responseFormat === xtabPromptOptions.ResponseFormat.CustomDiffPatch) {
 			const activeDoc = request.getActiveDocument();
+			const currentDocument = promptPieces.currentDocument;
 			const lastLine = currentDocument.lines[clippedTaggedCurrentDoc.keptRange.endExclusive - 1];
 			const lastLineLength = lastLine.length;
 			const pseudoEditWindow = currentDocument.transformer.getOffsetRange(new Range(clippedTaggedCurrentDoc.keptRange.start + 1, 1, clippedTaggedCurrentDoc.keptRange.endExclusive, lastLineLength + 1));
 			return yield* XtabCustomDiffPatchResponseHandler.handleResponse(
 				linesStream,
-				request.documentBeforeEdits,
+				currentDocument,
 				activeDoc.id,
 				activeDoc.workspaceRoot,
 				pseudoEditWindow,
+				tracer,
 			);
 		} else if (opts.responseFormat === xtabPromptOptions.ResponseFormat.UnifiedWithXml) {
 			const linesIter = linesStream[Symbol.asyncIterator]();
@@ -886,9 +878,10 @@ export class XtabProvider implements IStatelessNextEditProvider {
 				if (lineWithCursorContinued.done || lineWithCursorContinued.value.includes(ResponseTags.INSERT.end)) {
 					return new NoNextEditReason.NoSuggestions(request.documentBeforeEdits, editWindow);
 				}
+				const cursorColumnOffsetZeroBased = promptPieces.currentDocument.cursorPosition.column - 1;
 				const edit = new LineReplacement(
 					new LineRange(editWindowLineRange.start + cursorOriginalLinesOffset + 1 /* 0-based to 1-based */, editWindowLineRange.start + cursorOriginalLinesOffset + 2),
-					[editWindowLines[cursorOriginalLinesOffset].slice(0, cursorLineOffset - 1) + lineWithCursorContinued.value + editWindowLines[cursorOriginalLinesOffset].slice(cursorLineOffset - 1)]
+					[editWindowLines[cursorOriginalLinesOffset].slice(0, cursorColumnOffsetZeroBased) + lineWithCursorContinued.value + editWindowLines[cursorOriginalLinesOffset].slice(cursorColumnOffsetZeroBased)]
 				);
 				yield { edit, isFromCursorJump, window: editWindow, originalWindow: originalEditWindow, targetDocument };
 
