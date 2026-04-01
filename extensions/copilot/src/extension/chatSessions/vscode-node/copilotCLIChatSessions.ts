@@ -316,6 +316,28 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			controller.items.add(item);
 		}));
 
+		// Handle worktree cleanup/recreation when archive state changes
+		if (controller.onDidChangeChatSessionItemState) {
+			this._register(controller.onDidChangeChatSessionItemState(async (item) => {
+				const sessionId = SessionIdForCLI.parse(item.resource);
+				if (item.archived) {
+					try {
+						const result = await this.copilotCLIWorktreeManagerService.cleanupWorktreeOnArchive(sessionId);
+						this.logService.trace(`[CopilotCLI] Worktree cleanup for session ${sessionId}: ${result.cleaned ? 'cleaned' : result.reason}`);
+					} catch (error) {
+						this.logService.error(`[CopilotCLI] Failed to cleanup worktree for archived session ${sessionId}:`, error);
+					}
+				} else {
+					try {
+						const result = await this.copilotCLIWorktreeManagerService.recreateWorktreeOnUnarchive(sessionId);
+						this.logService.trace(`[CopilotCLI] Worktree recreation for session ${sessionId}: ${result.recreated ? 'recreated' : result.reason}`);
+					} catch (error) {
+						this.logService.error(`[CopilotCLI] Failed to recreate worktree for unarchived session ${sessionId}:`, error);
+					}
+				}
+			}));
+		}
+
 		controller.getChatSessionInputState = async (sessionResource, context, token) => {
 			const groups = sessionResource ? await this.buildExistingSessionInputStateGroups(sessionResource, token) : await this.provideChatSessionProviderOptionGroups(context.previousInputState);
 			return controller.createChatSessionInputState(groups);
