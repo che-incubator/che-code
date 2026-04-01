@@ -100,7 +100,7 @@ apply_multi_line_replace() {
     by=$(jq -n "$replaceCommand" | jq -r '.by')
 
     cp "$filename" "$filename.bak"
-    perl -0777 -pe "s|\Q$from\E|$by|g" "$filename.bak" > "$filename"
+    REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filename.bak" > "$filename"
     if diff "$filename" "$filename.bak" &> /dev/null; then
       echo "Unable to perform the replace. Value is not present in the resulting file"
       echo "Wanted to check ${from}"
