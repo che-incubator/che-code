@@ -241,7 +241,8 @@
       "node-addon-api": "7.1.0"
     },
     "@vscode/test-web": {
-      "tar-fs": "3.1.1"
+      "tar-fs": "3.1.1",
+      "path-to-regexp": "8.4.0"
     },
     "prebuild-install": {
       "tar-fs": "2.1.4"
