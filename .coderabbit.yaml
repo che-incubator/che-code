@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
 tone_instructions: |
-  You are a concise code reviewer. Focus only on critical logic, security, and performance issues. 
+  You are a concise code reviewer. Focus only on critical logic, security, and performance issues.
   Avoid trivial style issues or minor formatting suggestions.
 
 reviews:
@@ -17,3 +17,33 @@ reviews:
   # suppress walkthrough/summary comment when no findings
   collapse_walkthrough: true
   changed_files_summary: false
+
+  # Pre-merge checks
+  pre_merge_checks:
+    title:
+      mode: error
+      requirements: >
+        Title must be concise (under 72 characters) and clearly describe the change.
+        Use imperative mood (e.g. "Fix", "Add", "Update", not "Fixed", "Added", "Updated").
+    description:
+      mode: warning
+    docstrings:
+      mode: off
+    custom_checks:
+      - name: Rebase rules for upstream changes
+        mode: error
+        instructions: >
+          If the PR modifies files under `code/` (excluding `code/extensions/che-*/**`
+          and `**/package-lock.json`), then the PR MUST also include corresponding
+          rebase rules in the `.rebase/` directory AND an entry in `.rebase/CHANGELOG.md`.
+
+          The PR template has a checklist section "Does this PR contain changes that
+          override default upstream Code-OSS behavior?" with three checkboxes. If the
+          PR touches files under `code/`, all three checkboxes should be checked.
+
+          PASS if:
+          - No files under `code/` are changed (excluding che extensions and lock files), OR
+          - Files under `code/` are changed AND `.rebase/` rules and `.rebase/CHANGELOG.md`
+            are also updated in the same PR.
+
+          FAIL if files under `code/` are changed but `.rebase/` is not updated.
