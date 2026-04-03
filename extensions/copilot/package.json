@@ -4387,10 +4387,10 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.agentHistorySummarizationCacheFriendly": {
+					"github.copilot.chat.agentHistorySummarizationInline": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.agentHistorySummarizationCacheFriendly%",
+						"markdownDescription": "%github.copilot.config.agentHistorySummarizationInline%",
 						"tags": [
 							"advanced",
 							"experimental",
