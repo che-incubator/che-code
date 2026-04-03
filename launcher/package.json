@@ -52,7 +52,8 @@
       "ajv": "^8.18.0"
     },
     "ajv": "6.14.0",
-    "minimatch": "^3.1.5"
+    "minimatch": "^3.1.5",
+    "handlebars": "4.7.9"
   },
   "jest": {
     "collectCoverage": true,
