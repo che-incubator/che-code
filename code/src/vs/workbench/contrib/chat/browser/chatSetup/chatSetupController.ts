@@ -270,6 +270,13 @@ export class ChatSetupController extends Disposable {
 	}
 
 	private async doInstall(): Promise<void> {
+		const installed = this.extensionsWorkbenchService.local.find(e =>
+			e.identifier.id.toLowerCase() === defaultChat.chatExtensionId.toLowerCase() && e.local
+		);
+		if (installed) {
+			return;
+		}
+
 		await this.extensionsWorkbenchService.install(defaultChat.chatExtensionId, {
 			enable: true,
 			isApplicationScoped: true, 	// install into all profiles

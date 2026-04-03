@@ -111,7 +111,7 @@
 	},
 	"defaultChatAgent": {
 		"extensionId": "GitHub.copilot",
-		"chatExtensionId": "GitHub.copilot-chat",
+		"chatExtensionId": "redhat.devspaces-copilot-chat-integration",
 		"documentationUrl": "https://aka.ms/github-copilot-overview",
 		"termsStatementUrl": "https://aka.ms/github-copilot-terms-statement",
 		"privacyStatementUrl": "https://aka.ms/github-copilot-privacy-statement",
@@ -171,10 +171,12 @@
 	},
 	"trustedExtensionAuthAccess": {
 		"github": [
-			"GitHub.copilot-chat"
+			"GitHub.copilot-chat",
+			"redhat.devspaces-copilot-chat-integration"
 		],
 		"github-enterprise": [
-			"GitHub.copilot-chat"
+			"GitHub.copilot-chat",
+			"redhat.devspaces-copilot-chat-integration"
 		]
 	}
 }
