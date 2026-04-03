@@ -54,7 +54,8 @@
     "jsdom": {
       "form-data": "3.0.4"
     },
-    "minimatch": "^3.1.5"
+    "minimatch": "^3.1.5",
+    "handlebars": "4.7.9"
   },
   "repository": {
     "type": "git",
