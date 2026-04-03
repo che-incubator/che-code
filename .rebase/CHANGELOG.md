@@ -2,6 +2,12 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @vitaliy-guliy
+https://github.com/che-incubator/che-code/commit/a26b43847e5afd707ebffbddef712893fb77a379
+
+- code/product.json
+---
+
 #### @RomanNikitenko
 https://github.com/RomanNikitenko/che-code/commit/199009d7def5f11925978911f4a1715797d3144e
 
