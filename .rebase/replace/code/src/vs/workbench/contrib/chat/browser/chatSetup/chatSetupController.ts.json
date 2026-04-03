@@ -1,0 +1,6 @@
+[
+  {
+    "from": "private async doInstall(): Promise<void> {\n\t\tawait this.extensionsWorkbenchService.install(defaultChat.chatExtensionId, {",
+    "by": "private async doInstall(): Promise<void> {\n\t\tconst installed = this.extensionsWorkbenchService.local.find(e =>\n\t\t\te.identifier.id.toLowerCase() === defaultChat.chatExtensionId.toLowerCase() && e.local\n\t\t);\n\t\tif (installed) {\n\t\t\treturn;\n\t\t}\n\n\t\tawait this.extensionsWorkbenchService.install(defaultChat.chatExtensionId, {"
+  }
+]

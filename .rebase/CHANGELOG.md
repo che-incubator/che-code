@@ -3,6 +3,13 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/RomanNikitenko/che-code/commit/199009d7def5f11925978911f4a1715797d3144e
+
+- code/product.json
+- code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/commit/8409a0167c3cd4ca3555c9c6fc32f2fce87923e9
 
 - code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts
