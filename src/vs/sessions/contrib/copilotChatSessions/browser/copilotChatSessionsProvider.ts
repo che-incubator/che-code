@@ -1641,16 +1641,28 @@ export class CopilotChatSessionsProvider extends Disposable implements ISessions
 				// to the safety timeout to give it a chance to arrive.
 			}
 
-			const result = await raceTimeout(commitPromise, 5_000);
-			if (!result) {
-				// Timed out — check whether this was a cancellation
-				const response = responseCreatedPromise ? await responseCreatedPromise : undefined;
-				if (response?.isCanceled) {
-					throw new CancellationError();
-				}
-				throw new Error('Timed out waiting for session commit');
+			// Race commit against a safety timeout. If a response-created
+			// promise is available, also race it so we can detect
+			// cancellation immediately instead of waiting for the timeout.
+			const candidates: Promise<{ kind: 'commit'; uri: URI } | { kind: 'timeout' } | { kind: 'cancelled' }>[] = [
+				raceTimeout(commitPromise, 5_000).then(uri => uri ? { kind: 'commit' as const, uri } : { kind: 'timeout' as const }),
+			];
+			if (responseCreatedPromise) {
+				candidates.push(responseCreatedPromise.then(r => r?.isCanceled ? { kind: 'cancelled' as const } : new Promise<never>(() => { /* never resolves */ })));
 			}
-			return result;
+			const outcome = await Promise.race(candidates);
+			if (outcome.kind === 'commit') {
+				return outcome.uri;
+			}
+			if (outcome.kind === 'cancelled') {
+				throw new CancellationError();
+			}
+			// Timed out — last-resort check for cancellation
+			const response = responseCreatedPromise ? await responseCreatedPromise : undefined;
+			if (response?.isCanceled) {
+				throw new CancellationError();
+			}
+			throw new Error('Timed out waiting for session commit');
 		} finally {
 			disposables.dispose();
 		}
