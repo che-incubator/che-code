@@ -300,14 +300,17 @@ class TerminalInitialHintWidget extends Disposable {
 					});
 					this._instance.sendText('copilot', false);
 				};
-				const copilotCliPart = $('span', undefined,
-					localize('copilotCliHintBefore', "Type "),
-				);
-				const copilotCommand = $('a', undefined, 'copilot');
-				this._toDispose.add(dom.addDisposableListener(copilotCommand, dom.EventType.CLICK, handleCopilotCliClick));
-				copilotCliPart.appendChild(copilotCommand);
-				copilotCliPart.appendChild($('span', undefined, localize('copilotCliHintAfter', " to use Copilot CLI.")));
-				hintElement.appendChild(copilotCliPart);
+				const copilotCliHint = localize({
+					key: 'copilotCliHint',
+					comment: [
+						'Preserve double-square brackets and their order',
+					]
+				}, "Type [[copilot]] to use Copilot CLI.");
+				const copilotCliHintHandler: IContentActionHandler = {
+					callback: () => handleCopilotCliClick(),
+					disposables: this._toDispose
+				};
+				hintElement.appendChild(renderFormattedText(copilotCliHint, { actionHandler: copilotCliHintHandler }));
 				ariaLabelParts.push(localize('copilotCliHintAriaLabel', "Type copilot to use Copilot CLI."));
 			} else {
 				const keybindingHint = this._keybindingService.lookupKeybinding(TerminalChatCommandId.Start);
