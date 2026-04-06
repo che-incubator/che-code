@@ -236,6 +236,9 @@
     "kerberos@2.1.1": {
       "node-addon-api": "7.1.0"
     },
+    "@vscode/test-web": {
+      "path-to-regexp": "8.4.0"
+    },
     "prebuild-install": {
       "tar-fs": "2.1.4"
     },

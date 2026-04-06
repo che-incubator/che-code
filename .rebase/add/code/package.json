@@ -12,6 +12,9 @@
         "@gulp-sourcemaps/identity-map": {
             "postcss": "8.4.33"
         },
+        "@vscode/test-web": {
+            "path-to-regexp": "8.4.0"
+        },
         "prebuild-install": {
             "tar-fs": "2.1.4"
         },

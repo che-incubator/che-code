@@ -22,6 +22,13 @@ https://github.com/che-incubator/che-code/commit/8409a0167c3cd4ca3555c9c6fc32f2f
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/677
+
+- code/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/659
 
 - code/package.json
