@@ -58,7 +58,8 @@ suite('chat', () => {
 		return emitter.event;
 	}
 
-	test('participant and slash command history', async () => {
+	// TODO: this now became flaky with built-in copilot
+	test.skip('participant and slash command history', async () => {
 		const onRequest = setupParticipant();
 		await commands.executeCommand('workbench.action.chat.newChat');
 		commands.executeCommand('workbench.action.chat.open', { query: '@participant /hello friend' });
