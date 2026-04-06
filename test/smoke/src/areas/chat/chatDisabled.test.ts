@@ -12,6 +12,7 @@ export function setup(logger: Logger) {
 		// Shared before/after handling
 		installAllHandlers(logger);
 
+		// TODO@joaomoreno: broken due to copilot built-in
 		it.skip('can disable AI features', async function () {
 			const app = this.app as Application;
 

@@ -25,6 +25,7 @@ declare module 'https' {
 		assertNoRpc();
 	});
 
+	// TODO@chrmarti: skipped because flaky
 	test.skip('custom root certificate', async () => {
 		const keys = pki.rsa.generateKeyPair(2048);
 		const cert = pki.createCertificate();

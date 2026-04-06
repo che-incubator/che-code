@@ -136,7 +136,7 @@ async function computeVersion(): Promise<{ version: string; major: number; minor
 	return { version, major, minor };
 }
 
-async function updatePackageJson(version: string, major: number, minor: number): Promise<void> {
+async function updatePackageJson(version: string): Promise<void> {
 	const packageJsonContents = await fs.readFile(COPILOT_PACKAGE_JSON_PATH, 'utf8');
 	const packageJson = JSON.parse(packageJsonContents) as ICopilotPackageJson;
 
@@ -148,8 +148,8 @@ async function updatePackageJson(version: string, major: number, minor: number):
 }
 
 async function main(): Promise<void> {
-	const { version, major, minor } = await computeVersion();
-	await updatePackageJson(version, major, minor);
+	const { version } = await computeVersion();
+	await updatePackageJson(version);
 }
 
 main().catch(err => {

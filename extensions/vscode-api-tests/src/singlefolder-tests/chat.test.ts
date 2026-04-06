@@ -59,7 +59,7 @@ suite.skip('chat', () => {
 		return emitter.event;
 	}
 
-	test.skip('participant and slash command history', async () => {
+	test('participant and slash command history', async () => {
 		const onRequest = setupParticipant();
 		await commands.executeCommand('workbench.action.chat.newChat');
 		commands.executeCommand('workbench.action.chat.open', { query: '@participant /hello friend' });
@@ -90,7 +90,7 @@ suite.skip('chat', () => {
 		await deferred.p;
 	});
 
-	test.skip('result metadata is returned to the followup provider', async () => {
+	test('result metadata is returned to the followup provider', async () => {
 		const deferred = new DeferredPromise<ChatResult>();
 		const participant = chat.createChatParticipant('api-test.participant', (_request, _context, _progress, _token) => {
 			return { metadata: { key: 'value' } };
