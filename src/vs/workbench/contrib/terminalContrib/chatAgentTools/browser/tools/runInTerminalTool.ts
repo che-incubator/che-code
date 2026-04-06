@@ -310,7 +310,7 @@ export async function createRunInTerminalToolData(
 		toolReferenceName: TOOL_REFERENCE_NAME,
 		legacyToolReferenceFullNames: LEGACY_TOOL_REFERENCE_FULL_NAMES,
 		displayName: localize('runInTerminalTool.displayName', 'Run in Terminal'),
-		modelDescription: `${modelDescription}\n\nExecution mode:\n- mode='sync': wait for completion up to timeout; if still running, return with a terminal ID.\n- mode='async': wait for an initial idle/output signal, then return with terminal output snapshot and ID.${backgroundNotifications ? `\n\nAsync terminal notifications: When a command finishes in an async terminal, you will be automatically notified on your next turn with the exit code and terminal output. You will also be notified if the terminal needs input. Use ${TerminalToolId.GetTerminalOutput} to check output before then. Do NOT poll or sleep to wait for completion.` : `\n\nUse ${TerminalToolId.GetTerminalOutput} to check on async terminal output. Do NOT poll or sleep to wait for completion.`}`,
+		modelDescription: `${modelDescription}\n\nExecution mode:\n- mode='sync': wait for completion up to timeout; if still running, return with a terminal ID.\n- mode='async': wait for an initial idle/output signal, then return with terminal output snapshot and ID. Timeout caps how long to wait for the initial idle/output signal.${backgroundNotifications ? `\n\nAsync terminal notifications: When a command finishes in an async terminal, you will be automatically notified on your next turn with the exit code and terminal output. You will also be notified if the terminal needs input. Use ${TerminalToolId.GetTerminalOutput} to check output before then. Do NOT poll or sleep to wait for completion.` : `\n\nUse ${TerminalToolId.GetTerminalOutput} to check on async terminal output. Do NOT poll or sleep to wait for completion.`}`,
 		userDescription: localize('runInTerminalTool.userDescription', 'Run commands in the terminal'),
 		source: ToolDataSource.Internal,
 		icon: Codicon.terminal,
@@ -334,10 +334,10 @@ export async function createRunInTerminalToolData(
 				},
 				timeout: {
 					type: 'number',
-					description: 'Timeout in milliseconds that determines how long to wait before returning. Required for mode=sync. Ignored for mode=async. Use 0 for no timeout.',
+					description: 'Timeout in milliseconds that determines how long to wait before returning. Use 0 for no timeout.',
 				},
 			},
-			required: ['command', 'explanation', 'goal', 'mode']
+			required: ['command', 'explanation', 'goal', 'mode', 'timeout']
 		}
 	};
 }
@@ -1078,10 +1078,10 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 		let pollingResult: IPollingResult & { pollDurationMs: number } | undefined;
 		const executeCancellation = store.add(new CancellationTokenSource(token));
 
-		// Set up timeout only for wait strategies that block on command completion.
+		// Set up timeout for both sync (completion) and async (idle) wait strategies.
 		const timeoutValue = args.timeout !== undefined ? clamp(args.timeout, 0, Number.MAX_SAFE_INTEGER) : undefined;
-		if (executionOptions.waitStrategy === 'completion' && timeoutValue !== undefined && timeoutValue > 0) {
-			const shouldEnforceTimeout = this._configurationService.getValue(TerminalChatAgentToolsSettingId.EnforceTimeoutFromModel) === true;
+		if (timeoutValue !== undefined && timeoutValue > 0) {
+			const shouldEnforceTimeout = executionOptions.waitStrategy === 'idle' || this._configurationService.getValue(TerminalChatAgentToolsSettingId.EnforceTimeoutFromModel) === true;
 			if (shouldEnforceTimeout) {
 				timeoutPromise = timeout(timeoutValue);
 				timeoutRacePromise = timeoutPromise.then(
@@ -1158,9 +1158,23 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 			if (executionOptions.waitStrategy === 'idle') {
 				this._logService.debug(`RunInTerminalTool: Starting persistent execution with idle wait strategy \`${command}\``);
 				await startMarkerPromise;
+				let idleTimedOut = false;
 				if (outputMonitor) {
-					await Event.toPromise(outputMonitor.onDidFinishCommand);
-					pollingResult = outputMonitor.pollingResult;
+					if (timeoutRacePromise) {
+						const idleRace = await Promise.race([
+							Event.toPromise(outputMonitor.onDidFinishCommand).then(() => ({ type: 'idle' as const })),
+							timeoutRacePromise
+						]);
+						if (idleRace.type === 'timeout') {
+							idleTimedOut = true;
+							this._logService.debug(`RunInTerminalTool: Timeout reached waiting for idle signal, returning output collected so far`);
+						} else {
+							pollingResult = outputMonitor.pollingResult;
+						}
+					} else {
+						await Event.toPromise(outputMonitor.onDidFinishCommand);
+						pollingResult = outputMonitor.pollingResult;
+					}
 				}
 
 				await this._commandArtifactCollector.capture(toolSpecificData, toolTerminal.instance, commandId);
@@ -1179,11 +1193,17 @@ export class RunInTerminalTool extends Disposable implements IToolImpl {
 								? `Note: The tool simplified the command to \`${command}\`, and that command is now running in terminal with ID=${termId}`
 								: `Command is running in terminal with ID=${termId}`
 				);
-				const backgroundOutput = pollingResult?.output;
+				const backgroundOutput = pollingResult?.output ?? (idleTimedOut ? execution.getOutput() : undefined);
 				const outputAnalyzerMessage = backgroundOutput
 					? await this._getOutputAnalyzerMessage(undefined, backgroundOutput, command, didSandboxWrapCommand)
 					: undefined;
-				if (pollingResult && pollingResult.state === OutputMonitorState.Idle) {
+				if (idleTimedOut) {
+					resultText += `\n Timed out waiting for the command to become idle. The command is still running, with output:\n`;
+					if (outputAnalyzerMessage) {
+						resultText += `${outputAnalyzerMessage}\n`;
+					}
+					resultText += backgroundOutput ?? '';
+				} else if (pollingResult && pollingResult.state === OutputMonitorState.Idle) {
 					resultText += `\n The command became idle with output:\n`;
 					if (outputAnalyzerMessage) {
 						resultText += `${outputAnalyzerMessage}\n`;
