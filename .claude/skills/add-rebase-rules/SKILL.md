@@ -67,7 +67,10 @@ Important:
      - add `elif` branch calling `apply_package_changes_by_path "$conflictingFile"` (or equivalent existing pattern).
    - For non-JSON replace rules:
      - use `apply_changes "$conflictingFile"` for line-based replacements.
-     - use `apply_changes_multi_line "$conflictingFile"` when multiline replacement is required.
+     - For multiline replacements, `rebase.sh` has **two** handlers — do not always default to one:
+       - `apply_changes_multi_line "$conflictingFile"` — higher-level wrapper that resets the file (`git checkout --theirs`), calls `apply_multi_line_replace`, then stages the result (`git add`).
+       - `apply_multi_line_replace "$conflictingFile"` — low-level function that performs the Perl multiline replacement directly, without git checkout/add.
+     - Before adding a routing branch, inspect the existing `resolve_conflicts` block in `rebase.sh` and look at how other files in the same area are routed. Match the handler already used for similar files. For example, if neighboring entries call `apply_multi_line_replace` directly, use that; if they use `apply_changes_multi_line`, use that instead.
    - Do not add duplicate branches.
 
 6. Update `.rebase/CHANGELOG.md`

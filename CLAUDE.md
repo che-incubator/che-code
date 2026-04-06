@@ -85,7 +85,7 @@ Replace `che-api` with any Che extension name. Generates dependency reports in `
 - **`.rebase/`** — Patch management for upstream rebasing:
   - `add/` — Files to add to upstream
   - `override/` — JSON files to merge over upstream (via jq)
-  - `replace/` — Files to wholesale replace in upstream
+  - `replace/` — Per-file JSON replacement rules keyed by file path (not full file swaps). Each entry is a JSON object with `from` and `by` strings applied to the specified file path.
 
 ### Che-Specific Extensions (in `code/extensions/`)
 
@@ -111,7 +111,7 @@ Nine extensions provide Kubernetes/Che integration:
 
 To rebase on upstream VS Code:
 1. `git remote add upstream-code https://github.com/microsoft/vscode` (if not already added)
-2. `git fetch upstream-code main`
+2. `git fetch upstream-code release/<version>` — fetch the release branch that `rebase.sh` targets (check `UPSTREAM_VERSION` in `rebase.sh` for the current ref, e.g. `upstream-code/release/1.104`)
 3. `./rebase.sh` — Pulls subtree, applies `.rebase/` patches, updates JSON overrides
 4. Fix any conflicts
 5. `./build/artifacts/generate.sh` to update `artifacts.lock.yaml`
