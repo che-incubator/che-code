@@ -449,6 +449,5 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 			ChatContextKeys.hasCanDelegateProviders,
 		),
 		excludeWhenCommandsExecuted: ['workbench.action.chat.openNewChatSessionInPlace.copilotcli'],
-		dismissWhenCommandsClicked: ['workbench.action.chat.openNewChatSessionInPlace.copilotcli'],
 	},
 ];
