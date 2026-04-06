@@ -54,7 +54,7 @@ import { ChatMessageRole, IChatMessage, ILanguageModelsService } from '../langua
 import { ILanguageModelToolsService } from '../tools/languageModelToolsService.js';
 import { ChatSessionOperationLog } from '../model/chatSessionOperationLog.js';
 import { IPromptsService } from '../promptSyntax/service/promptsService.js';
-import { AGENT_DEBUG_LOG_ENABLED_SETTING, AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING, TROUBLESHOOT_COMMAND_NAME, TROUBLESHOOT_SKILL_PATH, COPILOT_SKILL_URI_SCHEME } from '../promptSyntax/promptTypes.js';
+import { AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING, TROUBLESHOOT_COMMAND_NAME, TROUBLESHOOT_SKILL_PATH, COPILOT_SKILL_URI_SCHEME } from '../promptSyntax/promptTypes.js';
 import { ChatRequestHooks, mergeHooks } from '../promptSyntax/hookSchema.js';
 import { findLast } from '../../../../../base/common/arraysFind.js';
 import { ChatMode } from '../chatModes.js';
@@ -1072,11 +1072,11 @@ export class ChatService extends Disposable implements IChatService {
 			let detectedAgent: IChatAgentData | undefined;
 			let detectedCommand: IChatAgentCommand | undefined;
 
-			// Gate /troubleshoot and the troubleshoot skill behind the feature flags
+			// Gate /troubleshoot and the troubleshoot skill behind the file logging flag.
+			// agentDebugLog.enabled is deprecated; only fileLogging.enabled is authoritative.
 			{
-				const debugLogEnabled = this.configurationService.getValue<boolean>(AGENT_DEBUG_LOG_ENABLED_SETTING);
 				const fileLoggingEnabled = this.configurationService.getValue<boolean>(AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING);
-				if (!debugLogEnabled || !fileLoggingEnabled) {
+				if (!fileLoggingEnabled) {
 					const isTroubleshootCommand = agentSlashCommandPart?.command.name === TROUBLESHOOT_COMMAND_NAME;
 					const hasTroubleshootSkill = options?.attachedContext?.some(v => {
 						const uri = IChatRequestVariableEntry.toUri(v);
@@ -1086,30 +1086,20 @@ export class ChatService extends Disposable implements IChatService {
 						request = model.addRequest(parsedRequest, { variables: [] }, attempt, options?.modeInfo);
 						completeResponseCreated();
 
-						const missingSettings: string[] = [];
-						if (!debugLogEnabled) {
-							missingSettings.push('`' + AGENT_DEBUG_LOG_ENABLED_SETTING + '`');
-						}
-						if (!fileLoggingEnabled) {
-							missingSettings.push('`' + AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING + '`');
-						}
-
-						const settingsQuery = !debugLogEnabled && !fileLoggingEnabled
-							? AGENT_DEBUG_LOG_ENABLED_SETTING
-							: !debugLogEnabled ? '@id:' + AGENT_DEBUG_LOG_ENABLED_SETTING : '@id:' + AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING;
-						const settingsArg = encodeURIComponent(JSON.stringify(settingsQuery));
+						const settingsArg = encodeURIComponent(JSON.stringify(AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING));
 						model.acceptResponseProgress(request, {
 							kind: 'markdownContent',
 							content: new MarkdownString(localize(
 								'agentDebugLog.troubleshootDisabled',
-								"The `{0}` skill requires the following settings to be enabled: {1}. After enabling, reload the window to apply. [Enable in Settings](command:workbench.action.openSettings?{2})",
+								"The `{0}` skill requires `{1}` to be enabled. After enabling, reload the window to apply. [Enable in Settings](command:workbench.action.openSettings?{2})",
 								TROUBLESHOOT_COMMAND_NAME,
-								missingSettings.join(', '),
+								AGENT_DEBUG_LOG_FILE_LOGGING_ENABLED_SETTING,
 								settingsArg
 							), { isTrusted: { enabledCommands: ['workbench.action.openSettings'] } }),
 						});
 						model.setResponse(request, {});
 						request.response?.complete();
+						store.dispose();
 						return;
 					}
 				}
