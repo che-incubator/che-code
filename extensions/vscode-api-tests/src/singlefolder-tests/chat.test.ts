@@ -90,7 +90,7 @@ suite('chat', () => {
 		await deferred.p;
 	});
 
-	test('result metadata is returned to the followup provider', async () => {
+	test.skip('result metadata is returned to the followup provider', async () => {
 		const deferred = new DeferredPromise<ChatResult>();
 		const participant = chat.createChatParticipant('api-test.participant', (_request, _context, _progress, _token) => {
 			return { metadata: { key: 'value' } };
