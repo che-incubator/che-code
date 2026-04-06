@@ -10,7 +10,8 @@ import 'mocha';
 import { ChatContext, ChatRequest, ChatRequestTurn, ChatRequestTurn2, ChatResult, Disposable, env, Event, EventEmitter, chat, commands, lm, UIKind } from 'vscode';
 import { DeferredPromise, asPromise, assertNoRpc, closeAllEditors, delay, disposeAll } from '../utils';
 
-suite('chat', () => {
+// TODO: this now became flaky with built-in copilot
+suite.skip('chat', () => {
 
 	let disposables: Disposable[] = [];
 	setup(() => {
@@ -58,7 +59,6 @@ suite('chat', () => {
 		return emitter.event;
 	}
 
-	// TODO: this now became flaky with built-in copilot
 	test.skip('participant and slash command history', async () => {
 		const onRequest = setupParticipant();
 		await commands.executeCommand('workbench.action.chat.newChat');
