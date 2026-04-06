@@ -431,4 +431,24 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 		excludeWhenCommandsExecuted: ['workbench.action.openAgentsWindow'],
 		dismissWhenCommandsClicked: ['workbench.action.openAgentsWindow'],
 	},
+	{
+		id: 'tip.copilotCli',
+		tier: ChatTipTier.Qol,
+		buildMessage() {
+			return new MarkdownString(
+				localize(
+					'tip.copilotCli',
+					"Run agents autonomously in the background with [Copilot CLI](command:workbench.action.chat.openNewChatSessionInPlace.copilotcli?%5B%22sidebar%22%5D \"Switch to Copilot CLI\") for hands-free task completion."
+				)
+			);
+		},
+		when: ContextKeyExpr.and(
+			IsSessionsWindowContext.negate(),
+			ChatContextKeys.chatSessionType.isEqualTo(localChatSessionType),
+			ChatContextKeys.chatModeKind.isEqualTo(ChatModeKind.Agent),
+			ChatContextKeys.hasCanDelegateProviders,
+		),
+		excludeWhenCommandsExecuted: ['workbench.action.chat.openNewChatSessionInPlace.copilotcli'],
+		dismissWhenCommandsClicked: ['workbench.action.chat.openNewChatSessionInPlace.copilotcli'],
+	},
 ];
