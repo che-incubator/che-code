@@ -294,8 +294,7 @@ export class ChangesViewPane extends ViewPane {
 		// can use it in their `when` clauses. Update reactively when the active session
 		// changes.
 		this._register(bindContextKey(ChatContextKeys.agentSessionType, this.scopedContextKeyService, reader => {
-			const activeSession = this.sessionManagementService.activeSession.read(reader);
-			return activeSession?.sessionType ?? '';
+			return this.viewModel.activeSessionTypeObs.read(reader) ?? '';
 		}));
 
 		// Title actions
@@ -750,29 +749,29 @@ export class ChangesViewPane extends ViewPane {
 			return undefined;
 		}
 
-		const sampleUri = items[0].uri;
+		let name: string = '';
 		let resourceTreeRootUri = workspaceFolderUri;
 
-		if (sampleUri.scheme === GITHUB_REMOTE_FILE_SCHEME) {
-			const parts = sampleUri.path.split('/').filter(Boolean);
-			if (parts.length >= 3) {
-				resourceTreeRootUri = sampleUri.with({ path: '/' + parts.slice(0, 3).join('/'), query: '', fragment: '' });
-			}
-		} else if (sampleUri.scheme !== workspaceFolderUri.scheme || sampleUri.authority !== workspaceFolderUri.authority) {
-			resourceTreeRootUri = sampleUri.with({ path: workspaceFolderUri.path, authority: workspaceFolderUri.authority, query: '', fragment: '' });
+		if (workspaceFolderUri.scheme === GITHUB_REMOTE_FILE_SCHEME) {
+			// Cloud session
+			resourceTreeRootUri = URI.from({ scheme: 'copilot-pr', path: '/' });
+			const segments = workspaceFolderUri.path.split('/').filter(Boolean);
+			name = `${segments.slice(0, 2).join('/')} (${decodeURIComponent(segments[2])})`;
+		} else {
+			// Local session
+			const branchName = this.viewModel.activeSessionStateObs.get()?.branchName;
+			name = repository.workingDirectory
+				? `${basename(repository.uri)} (${branchName})`
+				: basename(repository.uri);
 		}
-
-		const branchName = this.viewModel.activeSessionStateObs.get()?.branchName;
 
 		return {
 			root: {
 				type: 'root',
 				uri: workspaceFolderUri,
-				name: repository.workingDirectory
-					? `${basename(repository.uri)} (${branchName})`
-					: basename(repository.uri),
+				name
 			},
-			resourceTreeRootUri,
+			resourceTreeRootUri
 		};
 	}
 
@@ -884,7 +883,9 @@ export class ChangesViewPane extends ViewPane {
 					// Pass in the tree root to be used to compute the label description
 					const activeSession = this.sessionManagementService.activeSession.get();
 					const repository = activeSession?.workspace.get()?.repositories[0];
-					return repository?.workingDirectory ?? repository?.uri;
+					return repository?.uri.scheme === GITHUB_REMOTE_FILE_SCHEME
+						? URI.from({ scheme: 'copilot-pr', path: '/' })
+						: repository?.workingDirectory ?? repository?.uri;
 				})],
 			{
 				alwaysConsumeMouseWheel: false,
