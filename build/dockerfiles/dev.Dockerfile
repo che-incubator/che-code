@@ -10,6 +10,8 @@ FROM quay.io/devfile/universal-developer-image:latest
 
 USER 0
 
+# Test build
+
 RUN dnf -y install libsecret libX11-devel libxkbcommon \
     "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm" \
     "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm" \
