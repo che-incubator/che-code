@@ -18,7 +18,9 @@ RUN dnf -y install libsecret libX11-devel libxkbcommon \
     util-linux-user && \
     dnf -y clean all --enablerepo='*'
 
-# Install latest stable gcloud CLI from official RHEL/CentOS repository.
+# Pin gcloud CLI to a tested release from the official RHEL/CentOS repository.
+# See https://cloud.google.com/sdk/docs/release-notes for recent versions.
+ARG GCLOUD_CLI_VERSION=563.0.0
 RUN printf '%s\n' \
     '[google-cloud-cli]' \
     'name=Google Cloud CLI' \
@@ -28,7 +30,14 @@ RUN printf '%s\n' \
     'repo_gpgcheck=0' \
     'gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg' \
     > /etc/yum.repos.d/google-cloud-sdk.repo && \
-    dnf -y install libxcrypt-compat google-cloud-cli && \
+    dnf makecache --repo=google-cloud-cli && \
+    dnf list --showduplicates google-cloud-cli 2>/dev/null \
+        | grep -q "${GCLOUD_CLI_VERSION}" || \
+    { echo "ERROR: google-cloud-cli version ${GCLOUD_CLI_VERSION} not found in repo."; \
+      echo "Available versions (most recent last):"; \
+      dnf list --showduplicates google-cloud-cli 2>/dev/null | tail -10; \
+      exit 1; } && \
+    dnf -y install libxcrypt-compat google-cloud-cli-${GCLOUD_CLI_VERSION} && \
     dnf -y clean all --enablerepo='*' && \
     gcloud --version
 
