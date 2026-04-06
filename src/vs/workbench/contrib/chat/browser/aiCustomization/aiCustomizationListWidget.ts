@@ -1609,6 +1609,12 @@ export class AICustomizationListWidget extends Disposable {
 						if (instrFilter && promptType === PromptsType.instructions && matchesInstructionFileFilter(item.uri.path, instrFilter)) {
 							continue;
 						}
+						// Keep agent instruction files (AGENTS.md, CLAUDE.md, copilot-instructions.md)
+						// — these live at the workspace root by design and should not be
+						// filtered out by workspace subpath restrictions.
+						if (item.groupKey === 'agent-instructions') {
+							continue;
+						}
 						items.splice(i, 1);
 					}
 				}
