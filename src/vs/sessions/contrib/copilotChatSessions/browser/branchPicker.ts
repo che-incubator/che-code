@@ -129,7 +129,7 @@ export class BranchPicker extends Disposable {
 	}
 
 	private _updateTriggerLabel(): void {
-		if (!this._triggerElement || !this._slotElement) {
+		if (!this._triggerElement) {
 			return;
 		}
 		dom.clearNode(this._triggerElement);
@@ -137,7 +137,7 @@ export class BranchPicker extends Disposable {
 		const session = this._getSession();
 		const branches = session?.branches.get() ?? [];
 		const isLoading = session?.loading.get() ?? false;
-		const isDisabled = session?.isolationMode.get() === 'workspace';
+		const isDisabled = session?.isolationMode.get() === 'workspace' || branches.length === 0;
 		const label = session?.branch.get() ?? localize('branchPicker.select', "Branch");
 
 		dom.append(this._triggerElement, renderIcon(Codicon.gitBranch));
@@ -145,11 +145,8 @@ export class BranchPicker extends Disposable {
 		labelSpan.textContent = label;
 		dom.append(this._triggerElement, renderIcon(Codicon.chevronDown));
 
-		const visible = !(isLoading || branches.length === 0);
-		dom.setVisibility(visible, this._slotElement);
-		this._slotElement.classList.toggle('disabled', isDisabled);
-		this._triggerElement.setAttribute('aria-hidden', String(!visible));
-		this._triggerElement.setAttribute('aria-disabled', String(isDisabled));
-		this._triggerElement.tabIndex = visible && !isDisabled ? 0 : -1;
+		this._slotElement?.classList.toggle('disabled', isLoading || isDisabled);
+		this._triggerElement.setAttribute('aria-disabled', String(isLoading || isDisabled));
+		this._triggerElement.tabIndex = (isLoading || isDisabled) ? -1 : 0;
 	}
 }
