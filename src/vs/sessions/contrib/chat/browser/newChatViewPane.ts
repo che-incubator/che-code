@@ -656,7 +656,12 @@ class NewChatWidget extends Disposable implements IHistoryNavigationWidget {
 	 * Handles a workspace selection from the workspace picker.
 	 * Requests folder trust if needed and creates a new session.
 	 */
-	private async _onWorkspaceSelected(selection: IWorkspaceSelection): Promise<void> {
+	private async _onWorkspaceSelected(selection: IWorkspaceSelection | undefined): Promise<void> {
+		if (!selection) {
+			this.sessionsManagementService.unsetNewSession();
+			return;
+		}
+
 		if (selection.workspace.requiresWorkspaceTrust) {
 			const workspaceUri = selection.workspace.repositories[0]?.uri;
 			if (workspaceUri && !await this._requestFolderTrust(workspaceUri)) {

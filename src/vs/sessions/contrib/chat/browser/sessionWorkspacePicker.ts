@@ -77,8 +77,8 @@ interface IWorkspacePickerItem {
  */
 export class WorkspacePicker extends Disposable {
 
-	private readonly _onDidSelectWorkspace = this._register(new Emitter<IWorkspaceSelection>());
-	readonly onDidSelectWorkspace: Event<IWorkspaceSelection> = this._onDidSelectWorkspace.event;
+	private readonly _onDidSelectWorkspace = this._register(new Emitter<IWorkspaceSelection | undefined>());
+	readonly onDidSelectWorkspace: Event<IWorkspaceSelection | undefined> = this._onDidSelectWorkspace.event;
 	private readonly _onDidChangeSelection = this._register(new Emitter<void>());
 	readonly onDidChangeSelection: Event<void> = this._onDidChangeSelection.event;
 
@@ -827,7 +827,7 @@ export class WorkspacePicker extends Disposable {
 			this.actionWidgetService.hide();
 			this._selectedWorkspace = undefined;
 			this._updateTriggerLabel();
-			this._onDidChangeSelection.fire();
+			this._onDidSelectWorkspace.fire(undefined);
 		}
 	}
 
