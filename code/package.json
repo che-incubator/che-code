@@ -194,7 +194,7 @@
     "lazy.js": "^0.4.2",
     "merge-options": "^1.0.1",
     "mime": "^1.4.1",
-    "minimatch": "^3.0.5",
+    "minimatch": "^3.1.5",
     "mocha": "^10.8.2",
     "mocha-junit-reporter": "^2.2.1",
     "mocha-multi-reporters": "^1.5.1",
@@ -241,7 +241,8 @@
       "node-addon-api": "7.1.0"
     },
     "@vscode/test-web": {
-      "tar-fs": "3.1.1"
+      "tar-fs": "3.1.1",
+      "path-to-regexp": "8.4.0"
     },
     "prebuild-install": {
       "tar-fs": "2.1.4"
@@ -262,7 +263,29 @@
       "ajv": "^8.18.0"
     },
     "tar": "^7.5.11",
-    "lodash": "^4.17.23"
+    "lodash": "^4.17.23",
+    "undici": "^7.24.0",
+    "svgo": "^2.8.1",
+    "@vscode/test-cli": {
+      "minimatch": "^9.0.9"
+    },
+    "@ts-morph/common": {
+      "minimatch": "^7.4.9"
+    },
+    "@vscode/l10n-dev": {
+      "minimatch": "^5.1.9"
+    },
+    "tsec": {
+      "minimatch": "^3.1.5"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^9.0.9"
+    },
+    "mocha": {
+      "glob": {
+        "minimatch": "^5.1.9"
+      }
+    }
   },
   "repository": {
     "type": "git",

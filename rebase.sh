@@ -473,9 +473,15 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package-lock.json" ]]; then
       apply_code_extensions_vscode_api_tests_package_lock_changes
+    elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
       apply_mangle_index_js_changes
@@ -537,6 +543,22 @@ resolve_conflicts() {
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/npm/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/integration/browser/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.cli.js" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.js" ]]; then

@@ -46,6 +46,10 @@
     "typescript": "^5.9.2",
     "ts-jest": "29.4.5"
   },
+  "overrides": {
+    "minimatch": "^3.1.5",
+    "handlebars": "4.7.9"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/che-incubator/che-code.git"

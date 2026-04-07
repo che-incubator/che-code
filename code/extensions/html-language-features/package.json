@@ -265,6 +265,9 @@
   "devDependencies": {
     "@types/node": "22.x"
   },
+  "overrides": {
+    "minimatch": "^10.2.4"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
