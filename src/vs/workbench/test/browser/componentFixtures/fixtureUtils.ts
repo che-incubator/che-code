@@ -480,6 +480,7 @@ export function createEditorServices(disposables: DisposableStore, options?: Cre
 
 	definePartialInstance(ISessionsManagementService, {
 		_serviceBrand: undefined,
+		activeSession: constObservable(undefined),
 		getSession: () => undefined,
 		getSessions: () => [],
 	});

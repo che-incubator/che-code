@@ -134,6 +134,16 @@ function createMockPromptsService(files: IFixtureFile[], agentInstructions: IAge
 			return new ParsedPromptFile(uri, header as never);
 		}
 		override async getSourceFolders() { return [] as never[]; }
+		override async getInstructionFiles() {
+			return files.filter(f => f.type === PromptsType.instructions).map(f => ({
+				uri: f.uri,
+				name: f.name ?? '',
+				description: f.description,
+				storage: f.storage,
+				pattern: f.applyTo,
+				extension: toExtensionInfo(f) as never,
+			}));
+		}
 		override async findAgentSkills(): Promise<IAgentSkill[]> {
 			return files.filter(f => f.type === PromptsType.skill).map(f => ({
 				uri: f.uri,
