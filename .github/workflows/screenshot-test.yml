@@ -83,21 +83,25 @@ jobs:
             const filePath = 'test/componentFixtures/blocks-ci-screenshots.md';
             const marker = '<!-- blocks-ci-screenshot-suggestion -->';
 
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              commit_id: context.payload.pull_request.head.sha,
-              event: 'COMMENT',
-              body: `${marker}\n### blocks-ci screenshots changed\n\nApply the suggestion below to update the committed screenshots.`,
-              comments: [{
-                path: filePath,
-                start_line: diff.startLine < diff.endLine ? diff.startLine : undefined,
-                line: diff.endLine,
-                side: 'RIGHT',
-                body: `${marker}\nScreenshots for \`blocks-ci\` fixtures have changed. Apply this suggestion to accept:\n\n\`\`\`suggestion\n${diff.replacement}\n\`\`\``,
-              }],
-            });
+            try {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                commit_id: context.payload.pull_request.head.sha,
+                event: 'COMMENT',
+                body: `${marker}\n### blocks-ci screenshots changed\n\nApply the suggestion below to update the committed screenshots.`,
+                comments: [{
+                  path: filePath,
+                  start_line: diff.startLine < diff.endLine ? diff.startLine : undefined,
+                  line: diff.endLine,
+                  side: 'RIGHT',
+                  body: `${marker}\nScreenshots for \`blocks-ci\` fixtures have changed. Apply this suggestion to accept:\n\n\`\`\`suggestion\n${diff.replacement}\n\`\`\``,
+                }],
+              });
+            } catch (err) {
+              core.warning(`Failed to post blocks-ci screenshot suggestion: ${err.message}`);
+            }
         env:
           DIFF_JSON: ${{ steps.blocks-ci.outputs.diff }}
 
