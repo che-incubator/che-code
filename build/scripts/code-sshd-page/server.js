@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
 
     res.end(`
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>${process.env["DEVWORKSPACE_NAME"]}</title>
     <link rel="stylesheet" href="page-style.css">
