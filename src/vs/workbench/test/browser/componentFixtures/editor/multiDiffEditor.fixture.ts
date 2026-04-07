@@ -5,6 +5,7 @@
 
 import { Dimension } from '../../../../../base/browser/dom.js';
 import { Event, ValueWithChangeEvent } from '../../../../../base/common/event.js';
+import { DisposableStore, toDisposable } from '../../../../../base/common/lifecycle.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { mock } from '../../../../../base/test/common/mock.js';
 import { MultiDiffEditorWidget } from '../../../../../editor/browser/widget/multiDiffEditor/multiDiffEditorWidget.js';
@@ -124,14 +125,31 @@ function renderMultiDiffEditor({ container, disposableStore, theme }: ComponentF
 		},
 	});
 
-	const original1 = disposableStore.add(createTextModel(instantiationService, ORIGINAL_CODE_1, URI.parse('inmemory://original/greet.ts'), 'typescript'));
-	const modified1 = disposableStore.add(createTextModel(instantiationService, MODIFIED_CODE_1, URI.parse('inmemory://modified/greet.ts'), 'typescript'));
+	const uiFactory = instantiationService.createInstance(FixtureWorkbenchUIElementFactory);
 
-	const original2 = disposableStore.add(createTextModel(instantiationService, ORIGINAL_CODE_2, URI.parse('inmemory://original/config.ts'), 'typescript'));
-	const modified2 = disposableStore.add(createTextModel(instantiationService, MODIFIED_CODE_2, URI.parse('inmemory://modified/config.ts'), 'typescript'));
+	const widget = disposableStore.add(instantiationService.createInstance(
+		MultiDiffEditorWidget,
+		container,
+		uiFactory,
+	));
 
-	const original3 = disposableStore.add(createTextModel(instantiationService, ORIGINAL_CODE_3, URI.parse('inmemory://original/server.ts'), 'typescript'));
-	const modified3 = disposableStore.add(createTextModel(instantiationService, MODIFIED_CODE_3, URI.parse('inmemory://modified/server.ts'), 'typescript'));
+	// Text models must be disposed after the widget releases its references.
+	// DisposableStore disposes in insertion order, so we add a cleanup disposable
+	// after the widget that first clears the view model, then disposes text models.
+	const textModels = new DisposableStore();
+	disposableStore.add(toDisposable(() => {
+		widget.setViewModel(undefined);
+		textModels.dispose();
+	}));
+
+	const original1 = textModels.add(createTextModel(instantiationService, ORIGINAL_CODE_1, URI.parse('inmemory://original/greet.ts'), 'typescript'));
+	const modified1 = textModels.add(createTextModel(instantiationService, MODIFIED_CODE_1, URI.parse('inmemory://modified/greet.ts'), 'typescript'));
+
+	const original2 = textModels.add(createTextModel(instantiationService, ORIGINAL_CODE_2, URI.parse('inmemory://original/config.ts'), 'typescript'));
+	const modified2 = textModels.add(createTextModel(instantiationService, MODIFIED_CODE_2, URI.parse('inmemory://modified/config.ts'), 'typescript'));
+
+	const original3 = textModels.add(createTextModel(instantiationService, ORIGINAL_CODE_3, URI.parse('inmemory://original/server.ts'), 'typescript'));
+	const modified3 = textModels.add(createTextModel(instantiationService, MODIFIED_CODE_3, URI.parse('inmemory://modified/server.ts'), 'typescript'));
 
 	const documents: RefCounted<IDocumentDiffItem>[] = [
 		RefCounted.createOfNonDisposable<IDocumentDiffItem>({ original: original1, modified: modified1 }, { dispose() { } }),
@@ -143,16 +161,9 @@ function renderMultiDiffEditor({ container, disposableStore, theme }: ComponentF
 		documents: ValueWithChangeEvent.const(documents),
 	};
 
-	const uiFactory = instantiationService.createInstance(FixtureWorkbenchUIElementFactory);
-
-	const widget = disposableStore.add(instantiationService.createInstance(
-		MultiDiffEditorWidget,
-		container,
-		uiFactory,
-	));
-
 	const viewModel = widget.createViewModel(model);
 	widget.setViewModel(viewModel);
+
 	widget.layout(new Dimension(800, 600));
 }
 
