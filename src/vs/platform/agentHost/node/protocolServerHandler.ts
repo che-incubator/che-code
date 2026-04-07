@@ -12,7 +12,7 @@ import { ILogService } from '../../log/common/log.js';
 import { AHPFileSystemProvider } from '../common/agentHostFileSystemProvider.js';
 import { AgentSession, type IAgentService } from '../common/agentService.js';
 import type { ICommandMap } from '../common/state/protocol/messages.js';
-import { IActionEnvelope, INotification, isSessionAction, type ISessionAction } from '../common/state/sessionActions.js';
+import { IActionEnvelope, INotification, isSessionAction, isTerminalAction, type ISessionAction } from '../common/state/sessionActions.js';
 import { MIN_PROTOCOL_VERSION, PROTOCOL_VERSION } from '../common/state/sessionCapabilities.js';
 import {
 	AHP_AUTH_REQUIRED,
@@ -32,7 +32,7 @@ import {
 } from '../common/state/sessionProtocol.js';
 import { ROOT_STATE_URI, SessionStatus } from '../common/state/sessionState.js';
 import type { IProtocolServer, IProtocolTransport } from '../common/state/sessionTransport.js';
-import { SessionStateManager } from './sessionStateManager.js';
+import { AgentHostStateManager } from './agentHostStateManager.js';
 
 /** Default capacity of the server-side action replay buffer. */
 const REPLAY_BUFFER_CAPACITY = 1000;
@@ -107,7 +107,7 @@ export class ProtocolServerHandler extends Disposable {
 
 	constructor(
 		private readonly _agentService: IAgentService,
-		private readonly _stateManager: SessionStateManager,
+		private readonly _stateManager: AgentHostStateManager,
 		private readonly _server: IProtocolServer,
 		private readonly _config: IProtocolServerConfig,
 		private readonly _clientFileSystemProvider: AHPFileSystemProvider,
@@ -433,6 +433,14 @@ export class ProtocolServerHandler extends Disposable {
 			}
 			return {};
 		},
+		createTerminal: async (_client, params) => {
+			await this._agentService.createTerminal(params);
+			return null;
+		},
+		disposeTerminal: async (_client, params) => {
+			await this._agentService.disposeTerminal(URI.parse(params.terminal));
+			return null;
+		},
 	};
 
 
@@ -539,6 +547,9 @@ export class ProtocolServerHandler extends Disposable {
 		}
 		if (isSessionAction(action)) {
 			return client.subscriptions.has(action.session);
+		}
+		if (isTerminalAction(action)) {
+			return client.subscriptions.has(action.terminal);
 		}
 		return false;
 	}

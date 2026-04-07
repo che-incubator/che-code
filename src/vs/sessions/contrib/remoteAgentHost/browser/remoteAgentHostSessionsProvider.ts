@@ -451,7 +451,7 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 			cached.title.set(_title, undefined);
 			this._onDidChangeSessions.fire({ added: [], removed: [], changed: [this._chatToSession(cached)] });
 			const action = { type: ActionType.SessionTitleChanged as const, session: AgentSession.uri(cached.agentProvider, rawId).toString(), title: _title };
-			this._connection.dispatchAction(action, this._connection.clientId, this._connection.nextClientSeq());
+			this._connection.dispatch(action);
 		}
 	}
 

@@ -357,7 +357,7 @@ export class LocalAgentHostSessionsProvider extends Disposable implements ISessi
 			cached.title.set(title, undefined);
 			this._onDidChangeSessions.fire({ added: [], removed: [], changed: [cached] });
 			const action = { type: ActionType.SessionTitleChanged as const, session: AgentSession.uri(cached.agentProvider, rawId).toString(), title };
-			this._agentHostService.dispatchAction(action, this._agentHostService.clientId, this._agentHostService.nextClientSeq());
+			this._agentHostService.dispatch(action);
 		}
 	}
 
