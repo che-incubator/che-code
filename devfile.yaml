@@ -129,3 +129,9 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
+
+  - id: install-claude
+    exec:
+      label: Install Claude CLI
+      commandLine: curl -fsSL https://claude.ai/install.sh -o claude-install.sh && chmod +x claude-install.sh && ./claude-install.sh
+      component: dev
