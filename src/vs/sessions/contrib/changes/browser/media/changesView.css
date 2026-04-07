@@ -254,7 +254,7 @@
 }
 
 .changes-view-body .chat-editing-session-container.show-file-icons .monaco-scrollable-element .monaco-list-rows .monaco-list-row {
-	border-radius: 2px;
+	border-radius: 4px;
 }
 
 /* Action bar in list rows */
