@@ -73,7 +73,7 @@ jobs:
       - name: Upload screenshots
         run: |
           cd test/componentFixtures/.screenshots/current
-          zip -r "$GITHUB_WORKSPACE/screenshots.zip" .
+          zip -qr "$GITHUB_WORKSPACE/screenshots.zip" .
           curl -sS -f -X POST "https://hediet-screenshots.azurewebsites.net/upload" \
             -H "Content-Type: application/zip" \
             -H "Authorization: Bearer $SCREENSHOT_SERVICE_TOKEN" \
