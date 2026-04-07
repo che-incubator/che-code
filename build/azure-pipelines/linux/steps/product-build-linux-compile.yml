@@ -417,7 +417,6 @@ steps:
       echo "Disk usage before cleanup:"
       df -h /
       # Remove build intermediates no longer needed after tests
-      rm -rf .build/node_modules_cache
       rm -rf .build/sysroots
       rm -rf .build/electron
       rm -rf out
