@@ -72,15 +72,18 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 		this._enabled = !!configurationService.getValue<boolean>(AgentHostIpcLoggingSettingId);
 
 		if (this._enabled) {
-			// Register the output channel
+			// Register the output channel if not already registered (e.g. by an
+			// earlier connection to the same host that was torn down on reconnect).
 			const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
-			registry.registerChannel({
-				id: this._channelId,
-				label: this._channelLabel,
-				log: false,
-				languageId: 'log',
-			});
-			this._register({ dispose: () => registry.removeChannel(this._channelId) });
+			if (!registry.getChannel(this._channelId)) {
+				registry.registerChannel({
+					id: this._channelId,
+					label: this._channelLabel,
+					log: false,
+					languageId: 'log',
+				});
+				this._register({ dispose: () => registry.removeChannel(this._channelId) });
+			}
 		}
 
 		// Wrap events with logging
