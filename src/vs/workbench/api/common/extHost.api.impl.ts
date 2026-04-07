@@ -1843,9 +1843,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				checkProposedApiEnabled(extension, 'mcpServerDefinitions');
 				return extHostMcp.mcpServerDefinitions;
 			},
-			startMcpGateway() {
+			startMcpGateway(chatSessionResource?: URI) {
 				checkProposedApiEnabled(extension, 'mcpServerDefinitions');
-				return extHostMcp.startMcpGateway();
+				return extHostMcp.startMcpGateway(chatSessionResource);
 			},
 			onDidChangeChatRequestTools(...args) {
 				checkProposedApiEnabled(extension, 'chatParticipantAdditions');
