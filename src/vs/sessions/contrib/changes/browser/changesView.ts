@@ -797,7 +797,10 @@ export class ChangesViewPane extends ViewPane {
 
 	override focus(): void {
 		super.focus();
-		this.tree?.domFocus();
+
+		if (this.tree && this.tree.getNode(null).visibleChildrenCount > 0) {
+			this.tree.domFocus();
+		}
 	}
 
 	private renderSidebarList(

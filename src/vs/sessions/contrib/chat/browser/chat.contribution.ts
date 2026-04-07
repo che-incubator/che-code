@@ -42,6 +42,8 @@ import { ChatViewPane } from '../../../../workbench/contrib/chat/browser/widgetH
 import { IsAuxiliaryWindowContext } from '../../../../workbench/common/contextkeys.js';
 import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
 import { CopilotCLISessionType } from '../../../services/sessions/common/session.js';
+import { AccessibleViewRegistry } from '../../../../platform/accessibility/browser/accessibleViewRegistry.js';
+import { SessionsChatAccessibilityHelp } from './sessionsChatAccessibilityHelp.js';
 
 export class OpenSessionWorktreeInVSCodeAction extends Action2 {
 	static readonly ID = 'chat.openSessionWorktreeInVSCode';
@@ -199,3 +201,6 @@ registerSingleton(IPromptsService, AgenticPromptsService, InstantiationType.Dela
 registerSingleton(ISessionsConfigurationService, SessionsConfigurationService, InstantiationType.Delayed);
 registerSingleton(IAICustomizationWorkspaceService, SessionsAICustomizationWorkspaceService, InstantiationType.Delayed);
 registerSingleton(ICustomizationHarnessService, SessionsCustomizationHarnessService, InstantiationType.Delayed);
+
+// register accessibility help
+AccessibleViewRegistry.register(new SessionsChatAccessibilityHelp());
