@@ -101,7 +101,8 @@ import { ITextModel } from '../../../../editor/common/model.js';
 
 
 // Import color registrations to ensure colors are available
-import { isThenable } from '../../../../base/common/async.js';
+import { IdleDeadline, installFakeRunWhenIdle, isThenable } from '../../../../base/common/async.js';
+import { TimeTravelScheduler } from '../../../../base/test/common/timeTravelScheduler.js';
 import '../../../../platform/theme/common/colors/baseColors.js';
 import '../../../../platform/theme/common/colors/editorColors.js';
 import '../../../../platform/theme/common/colors/listColors.js';
@@ -291,7 +292,7 @@ function installGlobalStyles(): void {
 
 export function setupTheme(container: HTMLElement, theme: ColorThemeData): void {
 	installGlobalStyles();
-	container.classList.add('monaco-workbench', getPlatformClass(), ...theme.classNames);
+	container.classList.add('monaco-workbench', getPlatformClass(), 'disable-animations', ...theme.classNames);
 }
 
 function getPlatformClass(): string {
@@ -624,12 +625,46 @@ export function defineComponentFixture(options: ComponentFixtureOptions): Themed
 		isolation: 'none',
 		displayMode: { type: 'component' },
 		background: theme === darkTheme ? 'dark' : 'light',
-		render: (container: HTMLElement) => {
+		render: async (container: HTMLElement) => {
 			const disposableStore = new DisposableStore();
 			setupTheme(container, theme);
-			// Start render (may be async) - component-explorer will wait 2 rAF after this returns
+
+			const scheduler = new TimeTravelScheduler(Date.now());
+			disposableStore.add(scheduler.installGlobally());
+			disposableStore.add(installFakeRunWhenIdle((_targetWindow, callback, _timeout?) => {
+				return scheduler.schedule({
+					time: scheduler.now,
+					run: () => {
+						const deadline: IdleDeadline = {
+							didTimeout: true,
+							timeRemaining: () => 50,
+						};
+						callback(deadline);
+					},
+					source: {
+						toString() { return 'runWhenIdle'; },
+						stackTrace: undefined,
+					},
+				});
+			}));
+
 			const result = options.render({ container, disposableStore, theme });
-			return isThenable(result) ? result.then(() => disposableStore) : disposableStore;
+			if (isThenable(result)) {
+				await result;
+			}
+
+			// Drain all pending virtual timers so animations reach their final state
+			let iterations = 0;
+			while (scheduler.hasScheduledTasks && iterations < 10) {
+				scheduler.runNext();
+				await Promise.resolve();
+				iterations++;
+			}
+			if (iterations > 0) {
+				console.log(`[fixture] drained ${iterations} virtual timer(s)`);
+			}
+
+			return disposableStore;
 		},
 	});
 
