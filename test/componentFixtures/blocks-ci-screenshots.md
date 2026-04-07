@@ -25,7 +25,7 @@
 ![screenshot](https://hediet-screenshots.azurewebsites.net/images/5dde8b97d2124e8277c145e6fe118fd99dc3d82715311f968afae09d6682856a)
 
 #### editor/codeEditor/CodeEditor/Dark
-![screenshot](https://hediet-screenshots.azurewebsites.net/images/0df99bccb101cf98033b2ee803213bcf385195eccac8cf151f0806f51daf77a2)
+![screenshot](https://hediet-screenshots.azurewebsites.net/images/fb6693f7373d126fda52629148610777edb8ae8fec5b9f3d14053d25b86cfd56)
 
 #### editor/codeEditor/CodeEditor/Light
-![screenshot](https://hediet-screenshots.azurewebsites.net/images/0f270976bd9a821ecf24858003089206f5aed1dd5465fe0c545d81fa8f8b4cbe)
+![screenshot](https://hediet-screenshots.azurewebsites.net/images/df3ff700f2f8df41b522d37cfdb488e147dfe3ecf9c66a6313375dde493807e2)
