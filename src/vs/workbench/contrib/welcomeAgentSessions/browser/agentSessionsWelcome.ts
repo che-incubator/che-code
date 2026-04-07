@@ -37,7 +37,7 @@ import { ChatAgentLocation, ChatConfiguration, ChatModeKind } from '../../chat/c
 import { ChatContextKeys } from '../../chat/common/actions/chatContextKeys.js';
 import { ChatWidget } from '../../chat/browser/widget/chatWidget.js';
 import { IAgentSessionsService } from '../../chat/browser/agentSessions/agentSessionsService.js';
-import { AgentSessionProviders } from '../../chat/browser/agentSessions/agentSessions.js';
+import { AgentSessionProviders, AgentSessionTarget } from '../../chat/browser/agentSessions/agentSessions.js';
 import { IAgentSession } from '../../chat/browser/agentSessions/agentSessionsModel.js';
 import { AgentSessionsWelcomeEditorOptions, AgentSessionsWelcomeInput, AgentSessionsWelcomeWorkspaceKind } from './agentSessionsWelcomeInput.js';
 import { IChatService } from '../../chat/common/chatService/chatService.js';
@@ -65,6 +65,11 @@ const configurationKey = 'workbench.startupEditor';
 const MAX_SESSIONS = 6;
 const MAX_REPO_PICKS = 10;
 const MAX_WALKTHROUGHS = 10;
+const WELCOME_CHAT_INPUT_LAYOUT_HEIGHT = 150;
+const WELCOME_CHAT_INPUT_RESERVED_LIST_HEIGHT = 50;
+const WELCOME_CHAT_INPUT_RESERVED_CHROME_HEIGHT = 72;
+// Mirror ChatWidget's compact-surface sizing so the hidden list reservation and input chrome do not collapse the editor.
+const WELCOME_CHAT_INPUT_MAX_HEIGHT_OVERRIDE = WELCOME_CHAT_INPUT_LAYOUT_HEIGHT + WELCOME_CHAT_INPUT_RESERVED_LIST_HEIGHT + WELCOME_CHAT_INPUT_RESERVED_CHROME_HEIGHT;
 
 /**
  * - visibleDurationMs: Do they close it right away or leave it open (#3)
@@ -132,7 +137,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 	private readonly contentDisposables = this._register(new DisposableStore());
 	private contextService: IContextKeyService;
 	private walkthroughs: IResolvedWalkthrough[] = [];
-	private _selectedSessionProvider: AgentSessionProviders = AgentSessionProviders.Local;
+	private _selectedSessionProvider: AgentSessionTarget = AgentSessionProviders.Local;
 	private _selectedWorkspace: IWorkspacePickerItem | undefined;
 	private _recentTrustedWorkspaces: Array<IRecentWorkspace | IRecentFolder> = [];
 	private _isEmptyWorkspace: boolean = false;
@@ -293,7 +298,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 			button.appendChild(document.createTextNode(entry.label));
 			button.onclick = () => {
 				this.telemetryService.publicLog2<AgentSessionsWelcomeActionEvent, AgentSessionsWelcomeActionClassification>(
-					'gettingStarted.ActionExecuted',
+					'agentSessionsWelcome.ActionExecuted',
 					{ welcomeKind: 'agentSessionsWelcomePage', action: 'executeCommand', actionId: entry.command }
 				);
 				this.commandService.executeCommand(entry.command);
@@ -313,8 +318,8 @@ export class AgentSessionsWelcomePage extends EditorPane {
 		const scopedInstantiationService = this.contentDisposables.add(this.instantiationService.createChild(new ServiceCollection([IContextKeyService, scopedContextKeyService])));
 
 		// Create a delegate for the session target picker with independent local state
-		const onDidChangeActiveSessionProvider = this.contentDisposables.add(new Emitter<AgentSessionProviders>());
-		const recreateSessionForProvider = async (provider: AgentSessionProviders) => {
+		const onDidChangeActiveSessionProvider = this.contentDisposables.add(new Emitter<AgentSessionTarget>());
+		const recreateSessionForProvider = async (provider: AgentSessionTarget) => {
 			if (this.chatWidget && this.chatModelRef) {
 				this.chatWidget.setModel(undefined);
 				this.chatModelRef.dispose();
@@ -323,8 +328,8 @@ export class AgentSessionsWelcomePage extends EditorPane {
 					position: ChatSessionPosition.Sidebar,
 					displayName: ''
 				});
-				const ref = await this.chatService.loadSessionForResource(newResource, ChatAgentLocation.Chat, CancellationToken.None);
-				this.chatModelRef = ref ?? this.chatService.startSession(ChatAgentLocation.Chat);
+				const ref = await this.chatService.acquireOrLoadSession(newResource, ChatAgentLocation.Chat, CancellationToken.None);
+				this.chatModelRef = ref ?? this.chatService.startNewLocalSession(ChatAgentLocation.Chat);
 				this.contentDisposables.add(this.chatModelRef);
 				if (this.chatModelRef.object) {
 					this.chatWidget.setModel(this.chatModelRef.object);
@@ -333,7 +338,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 		};
 		const sessionTypePickerDelegate: ISessionTypePickerDelegate = {
 			getActiveSessionProvider: () => this._selectedSessionProvider,
-			setActiveSessionProvider: (provider: AgentSessionProviders) => {
+			setActiveSessionProvider: (provider: AgentSessionTarget) => {
 				this._selectedSessionProvider = provider;
 				onDidChangeActiveSessionProvider.fire(provider);
 				try {
@@ -404,7 +409,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 
 		// Start a chat session so the widget has a viewModel
 		// This is necessary for actions like mode switching to work properly
-		this.chatModelRef = this.chatService.startSession(ChatAgentLocation.Chat);
+		this.chatModelRef = this.chatService.startNewLocalSession(ChatAgentLocation.Chat);
 		this.contentDisposables.add(this.chatModelRef);
 		if (this.chatModelRef.object) {
 			this.chatWidget.setModel(this.chatModelRef.object);
@@ -554,6 +559,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 			}),
 			filter: this.sessionsControlDisposables.add(this.instantiationService.createInstance(AgentSessionsFilter, {
 				limitResults: () => MAX_SESSIONS,
+				overrideExclude: (session) => session.isArchived() ? true : undefined,
 			})),
 			getHoverPosition: () => HoverPosition.BELOW,
 			trackActiveEditorSession: () => false,
@@ -651,7 +657,7 @@ export class AgentSessionsWelcomePage extends EditorPane {
 		card.onclick = () => {
 			const walkthrough = activeWalkthroughs[currentIndex];
 			this.telemetryService.publicLog2<AgentSessionsWelcomeActionEvent, AgentSessionsWelcomeActionClassification>(
-				'gettingStarted.ActionExecuted',
+				'agentSessionsWelcome.ActionExecuted',
 				{ welcomeKind: 'agentSessionsWelcomePage', action: 'openWalkthrough', actionId: walkthrough.id }
 			);
 			// Open walkthrough with returnToCommand so back button returns to agent sessions welcome
@@ -803,9 +809,8 @@ export class AgentSessionsWelcomePage extends EditorPane {
 		}
 
 		const chatWidth = Math.min(800, this.lastDimension.width - 80);
-		// Use a reasonable height for the input part - the CSS will hide the list area
-		const inputHeight = 150;
-		this.chatWidget.layout(inputHeight, chatWidth);
+		this.chatWidget.setInputPartMaxHeightOverride(WELCOME_CHAT_INPUT_MAX_HEIGHT_OVERRIDE);
+		this.chatWidget.layout(WELCOME_CHAT_INPUT_LAYOUT_HEIGHT, chatWidth);
 	}
 
 	private layoutSessionsControl(): void {

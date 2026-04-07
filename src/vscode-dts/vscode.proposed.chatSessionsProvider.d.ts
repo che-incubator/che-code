@@ -92,6 +92,58 @@ declare module 'vscode' {
 	 */
 	export type ChatSessionItemControllerRefreshHandler = (token: CancellationToken) => Thenable<void>;
 
+	export interface ChatSessionItemControllerNewItemHandlerContext {
+		// TODO: Use a better type but for now decrease this down to just the prompt and command since that's all we currently need.
+		// The problem with ChatRequest is that it has a resourceUri which is not good for this code path.
+		readonly request: {
+			readonly prompt: string;
+			readonly command?: string;
+		};
+
+		/**
+		 * @deprecated Use `inputState` instead
+		 */
+		readonly sessionOptions: ReadonlyArray<{ optionId: string; value: string | ChatSessionProviderOptionItem }>;
+
+		readonly inputState: ChatSessionInputState;
+	}
+
+	/**
+	 * Extension callback invoked when a new chat session is started.
+	 */
+	export type ChatSessionItemControllerNewItemHandler = (context: ChatSessionItemControllerNewItemHandlerContext, token: CancellationToken) => Thenable<ChatSessionItem>;
+
+	/**
+	 * Extension callback invoked to get the input state for a chat session.
+	 *
+	 * @param sessionResource The resource of the chat session to get the input state for. `undefined` indicates this is
+	 * for a blank chat editor that is not yet associated with a session.
+	 * @param context Additional context
+	 * @param token Cancellation token.
+	 *
+	 * @return A new chat session input state. This should be created using {@link ChatSessionItemController.createChatSessionInputState}.
+	 */
+	export type ChatSessionControllerGetInputState = (sessionResource: Uri | undefined, context: {
+		/**
+		 * The previous input state for the session.
+		 */
+		readonly previousInputState: ChatSessionInputState | undefined;
+	}, token: CancellationToken) => Thenable<ChatSessionInputState> | ChatSessionInputState;
+
+	/**
+	 * Extension callback invoked to fork an existing chat session item managed by a {@linkcode ChatSessionItemController}.
+	 *
+	 * The handler should create a new session on the provider's backend and
+	 * return the new {@link ChatSessionItem} representing the forked session.
+	 *
+	 * @param sessionResource The resource of the chat session being forked.
+	 * @param request The request turn that marks the fork point. The forked session includes all turns
+	 * upto this request turn and excludes this request turn itself. If undefined, fork the full session.
+	 * @param token A cancellation token.
+	 * @returns The forked session item.
+	 */
+	export type ChatSessionItemControllerForkHandler = (sessionResource: Uri, request: ChatRequestTurn2 | undefined, token: CancellationToken) => Thenable<ChatSessionItem> | ChatSessionItem;
+
 	/**
 	 * Manages chat sessions for a specific chat session type
 	 */
@@ -124,6 +176,33 @@ declare module 'vscode' {
 		 * Fired when an item's archived state changes.
 		 */
 		readonly onDidChangeChatSessionItemState: Event<ChatSessionItem>;
+
+		/**
+		 * Invoked when a new chat session is started.
+		 *
+		 * This allows the controller to initialize the chat session item with information from the initial request.
+		 *
+		 * The returned chat session is added to the collection and shown in the UI.
+		 */
+		newChatSessionItemHandler?: ChatSessionItemControllerNewItemHandler;
+
+		/**
+		 * Invoked when an existing chat session is forked.
+		 *
+		 * When both this handler and {@linkcode ChatSession.forkHandler} are registered,
+		 * this handler takes precedence.
+		 */
+		forkHandler?: ChatSessionItemControllerForkHandler;
+
+		/**
+		 * Gets the input state for a chat session.
+		 */
+		getChatSessionInputState?: ChatSessionControllerGetInputState;
+
+		/**
+		 * Create a new managed ChatSessionInputState object.
+		 */
+		createChatSessionInputState(groups: ChatSessionProviderOptionGroup[]): ChatSessionInputState;
 	}
 
 	/**
@@ -274,6 +353,9 @@ declare module 'vscode' {
 		metadata?: { readonly [key: string]: any };
 	}
 
+	/**
+	 * @deprecated Use `ChatSessionChangedFile2` instead
+	 */
 	export class ChatSessionChangedFile {
 		/**
 		 * URI of the file.
@@ -329,6 +411,15 @@ declare module 'vscode' {
 
 	export interface ChatSession {
 		/**
+		 * An optional title for the chat session.
+		 *
+		 * When provided, this title is used as the display name for the session
+		 * (e.g. in the editor tab). When not provided, the title defaults to
+		 * the first user message in the session history.
+		 */
+		readonly title?: string;
+
+		/**
 		 * The full history of the session
 		 *
 		 * This should not include any currently active responses
@@ -363,7 +454,24 @@ declare module 'vscode' {
 		 */
 		// TODO: Should we introduce our own type for `ChatRequestHandler` since not all field apply to chat sessions?
 		// TODO: Revisit this to align with code.
+		// TODO: pass in options?
 		readonly requestHandler: ChatRequestHandler | undefined;
+
+		/**
+		 * Handles a request to fork the session.
+		 *
+		 * The handler should create a new session on the provider's backend and
+		 * return the new {@link ChatSessionItem} representing the forked session.
+		 *
+		 * @deprecated Use {@linkcode ChatSessionItemController.forkHandler} instead. This remains supported for backwards compatibility.
+		 *
+		 * @param sessionResource The resource of the chat session being forked.
+		 * @param request The request turn that marks the fork point. The forked session includes all turns
+		 * upto this request turn and excludes this request turn itself. If undefined, fork the full session.
+		 * @param token A cancellation token.
+		 * @returns The forked session item.
+		 */
+		readonly forkHandler?: ChatSessionItemControllerForkHandler;
 	}
 
 	/**
@@ -395,11 +503,15 @@ declare module 'vscode' {
 	 */
 	export interface ChatSessionContentProvider {
 		/**
+		 * @deprecated
+		 *
 		 * Event that the provider can fire to signal that the options for a chat session have changed.
 		 */
 		readonly onDidChangeChatSessionOptions?: Event<ChatSessionOptionChangeEvent>;
 
 		/**
+		 * @deprecated
+		 *
 		 * Event that the provider can fire to signal that the available provider options have changed.
 		 *
 		 * When fired, the editor will re-query {@link ChatSessionContentProvider.provideChatSessionProviderOptions}
@@ -414,12 +526,22 @@ declare module 'vscode' {
 		 *
 		 * @param resource The URI of the chat session to resolve.
 		 * @param token A cancellation token that can be used to cancel the operation.
+		 * @param context Additional context for the chat session.
 		 *
 		 * @return The {@link ChatSession chat session} associated with the given URI.
 		 */
-		provideChatSessionContent(resource: Uri, token: CancellationToken): Thenable<ChatSession> | ChatSession;
+		provideChatSessionContent(resource: Uri, token: CancellationToken, context: {
+			readonly inputState: ChatSessionInputState;
+
+			/**
+			 * @deprecated Use `inputState` instead
+			 */
+			readonly sessionOptions: ReadonlyArray<{ optionId: string; value: string | ChatSessionProviderOptionItem }>;
+		}): Thenable<ChatSession> | ChatSession;
 
 		/**
+		 * @deprecated
+		 *
 		 * @param resource Identifier of the chat session being updated.
 		 * @param updates Collection of option identifiers and their new values. Only the options that changed are included.
 		 * @param token A cancellation token that can be used to cancel the notification if the session is disposed.
@@ -427,10 +549,11 @@ declare module 'vscode' {
 		provideHandleOptionsChange?(resource: Uri, updates: ReadonlyArray<ChatSessionOptionUpdate>, token: CancellationToken): void;
 
 		/**
+		 * @deprecated
+		 *
 		 * Called as soon as you register (call me once)
-		 * @param token
 		 */
-		provideChatSessionProviderOptions?(token: CancellationToken): Thenable<ChatSessionProviderOptions | ChatSessionProviderOptions>;
+		provideChatSessionProviderOptions?(token: CancellationToken): Thenable<ChatSessionProviderOptions>;
 	}
 
 	export interface ChatSessionOptionUpdate {
@@ -451,10 +574,11 @@ declare module 'vscode' {
 		 *
 		 * @param scheme The uri-scheme to register for. This must be unique.
 		 * @param provider The provider to register.
+		 * @param defaultChatParticipant The default {@link ChatParticipant chat participant} used in sessions provided by this provider.
 		 *
 		 * @returns A disposable that unregisters the provider when disposed.
 		 */
-		export function registerChatSessionContentProvider(scheme: string, provider: ChatSessionContentProvider, chatParticipant: ChatParticipant, capabilities?: ChatSessionCapabilities): Disposable;
+		export function registerChatSessionContentProvider(scheme: string, provider: ChatSessionContentProvider, defaultChatParticipant: ChatParticipant, capabilities?: ChatSessionCapabilities): Disposable;
 	}
 
 	export interface ChatContext {
@@ -463,7 +587,15 @@ declare module 'vscode' {
 
 	export interface ChatSessionContext {
 		readonly chatSessionItem: ChatSessionItem; // Maps to URI of chat session editor (could be 'untitled-1', etc..)
+
+		/** @deprecated This will be removed along with the concept of `untitled-` sessions.  */
 		readonly isUntitled: boolean;
+
+		/**
+		 * The initial option selections for the session, provided with the first request.
+		 * Contains the options the user selected (or defaults) before the session was created.
+		 */
+		readonly initialSessionOptions?: ReadonlyArray<{ optionId: string; value: string | ChatSessionProviderOptionItem }>;
 	}
 
 	export interface ChatSessionCapabilities {
@@ -531,9 +663,14 @@ declare module 'vscode' {
 		readonly description?: string;
 
 		/**
+		 * The currently selected option for this group. This must be one of the items provided in the `items` array.
+		 */
+		readonly selected?: ChatSessionProviderOptionItem;
+
+		/**
 		 * The selectable items within this option group.
 		 */
-		readonly items: ChatSessionProviderOptionItem[];
+		readonly items: readonly ChatSessionProviderOptionItem[];
 
 		/**
 		 * A context key expression that controls when this option group picker is visible.
@@ -546,30 +683,17 @@ declare module 'vscode' {
 		readonly when?: string;
 
 		/**
-		 * When true, displays a searchable QuickPick with a "See more..." option.
-		 * Recommended for option groups with additional async items (e.g., repositories).
-		 */
-		readonly searchable?: boolean;
-
-		/**
 		 * An icon for the option group shown in UI.
 		 */
 		readonly icon?: ThemeIcon;
 
 		/**
-		 * Handler for dynamic search when `searchable` is true.
-		 * Called when the user types in the searchable QuickPick or clicks "See more..." to load additional items.
-		 *
-		 * @param query The search query entered by the user. Empty string for initial load.
-		 * @param token A cancellation token.
-		 * @returns Additional items to display in the searchable QuickPick.
-		 */
-		readonly onSearch?: (query: string, token: CancellationToken) => Thenable<ChatSessionProviderOptionItem[]>;
-
-		/**
 		 * Optional commands.
 		 *
 		 * These commands will be displayed at the bottom of the group.
+		 *
+		 * For extensions that use the new `provideChatSessionInputState` API, these commands are passed a context object
+		 * `{ inputState: ChatSessionInputState; sessionResource: Uri | undefined }` that they can use to determine which session and options they are being invoked for.
 		 */
 		readonly commands?: Command[];
 	}
@@ -579,6 +703,30 @@ declare module 'vscode' {
 		 * Provider-defined option groups (0-2 groups supported).
 		 * Examples: models picker, sub-agents picker, etc.
 		 */
-		optionGroups?: ChatSessionProviderOptionGroup[];
+		readonly optionGroups?: readonly ChatSessionProviderOptionGroup[];
+
+		/**
+		 * The set of default options used for new chat sessions, provided as key-value pairs.
+		 *
+		 * Keys correspond to option group IDs (e.g., 'models', 'subagents').
+		 */
+		readonly newSessionOptions?: Record<string, string | ChatSessionProviderOptionItem>;
+	}
+
+	/**
+	 * Represents the current state of user inputs for a chat session.
+	 */
+	export interface ChatSessionInputState {
+		/**
+		 * Fired when the input state is changed by the user.
+		 */
+		readonly onDidChange: Event<void>;
+
+		/**
+		 * The groups of options to show in the UI for user input.
+		 *
+		 * To update the groups you must replace the entire `groups` array with a new array.
+		 */
+		groups: readonly ChatSessionProviderOptionGroup[];
 	}
 }

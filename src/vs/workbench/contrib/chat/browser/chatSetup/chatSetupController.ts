@@ -28,7 +28,7 @@ import { IExtensionsWorkbenchService } from '../../../extensions/common/extensio
 import { ChatEntitlement, ChatEntitlementContext, ChatEntitlementRequests, isProUser } from '../../../../services/chat/common/chatEntitlementService.js';
 import { CHAT_OPEN_ACTION_ID } from '../actions/chatActions.js';
 import { ChatViewId, ChatViewContainerId } from '../chat.js';
-import { ChatSetupAnonymous, ChatSetupStep, ChatSetupResultValue, InstallChatEvent, InstallChatClassification, refreshTokens } from './chatSetup.js';
+import { ChatSetupAnonymous, ChatSetupStep, ChatSetupResultValue, InstallChatEvent, InstallChatClassification, refreshTokens, maybeEnableAuthExtension } from './chatSetup.js';
 import { IDefaultAccount } from '../../../../../base/common/defaultAccount.js';
 import { IDefaultAccountService } from '../../../../../platform/defaultAccount/common/defaultAccount.js';
 
@@ -153,6 +153,11 @@ export class ChatSetupController extends Disposable {
 	}
 
 	private async signIn(options: IChatSetupControllerOptions): Promise<{ defaultAccount: IDefaultAccount | undefined; entitlement: ChatEntitlement | undefined }> {
+		const authExtensionReEnabled = await maybeEnableAuthExtension(this.extensionsWorkbenchService, this.logService);
+		if (authExtensionReEnabled) {
+			refreshTokens(this.commandService);
+		}
+
 		let entitlements;
 		let defaultAccount;
 		try {
@@ -178,7 +183,7 @@ export class ChatSetupController extends Disposable {
 	}
 
 	private async install(entitlement: ChatEntitlement, watch: StopWatch, options: IChatSetupControllerOptions): Promise<ChatSetupResultValue> {
-		const wasRunning = this.context.state.installed && !this.context.state.disabled;
+		const wasRunning = this.context.state.completed && !this.context.state.disabled;
 		let signUpResult: boolean | { errorCode: number } | undefined = undefined;
 
 		let provider: string;

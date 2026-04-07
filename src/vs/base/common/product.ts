@@ -76,9 +76,12 @@ export interface IProductConfiguration {
 	readonly win32AppUserModelId?: string;
 	readonly win32MutexName?: string;
 	readonly win32RegValueName?: string;
+	readonly win32NameVersion?: string;
 	readonly win32VersionedUpdate?: boolean;
+	readonly win32SiblingExeBasename?: string;
 	readonly applicationName: string;
 	readonly embedderIdentifier?: string;
+	readonly telemetryAppName?: string;
 
 	readonly urlProtocol: string;
 	readonly dataFolderName: string; // location for extensions (e.g. ~/.vscode-insiders)
@@ -230,7 +233,24 @@ export interface IProductConfiguration {
 	readonly remoteDefaultExtensionsIfInstalledLocally?: string[];
 
 	readonly extensionConfigurationPolicy?: IStringDictionary<IPolicy>;
+
+	readonly embedded?: IEmbeddedProductConfiguration;
 }
+
+export type IEmbeddedProductConfiguration = Pick<IProductConfiguration,
+	'nameShort' |
+	'nameLong' |
+	'applicationName' |
+	'dataFolderName' |
+	'darwinBundleIdentifier' |
+	'urlProtocol' |
+	'win32AppUserModelId' |
+	'win32MutexName' |
+	'win32RegValueName' |
+	'win32NameVersion' |
+	'win32VersionedUpdate' |
+	'win32SiblingExeBasename'
+>;
 
 export interface ITunnelApplicationConfig {
 	authenticationProviders: IStringDictionary<{ scopes: string[] }>;
@@ -340,6 +360,7 @@ export interface IDefaultChatAgent {
 	readonly chatExtensionId: string;
 
 	readonly chatExtensionOutputId: string;
+	readonly chatExtensionOutputExtensionStateCommand: string;
 
 	readonly documentationUrl: string;
 	readonly skusDocumentationUrl: string;
@@ -359,6 +380,7 @@ export interface IDefaultChatAgent {
 		apple: { id: string; name: string };
 	};
 
+	readonly providerExtensionId: string;
 	readonly providerUriSetting: string;
 	readonly providerScopes: string[][];
 

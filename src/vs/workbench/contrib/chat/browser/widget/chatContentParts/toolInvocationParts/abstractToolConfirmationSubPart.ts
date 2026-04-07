@@ -27,7 +27,11 @@ export interface IToolConfirmationConfig {
 	subtitle?: string;
 }
 
-type AbstractToolPrimaryAction = IChatConfirmationButton<(() => void)> | Separator;
+export interface IAbstractToolPrimaryAction extends IChatConfirmationButton<(() => void)> {
+	scope?: 'session' | 'workspace' | 'profile';
+}
+
+type AbstractToolPrimaryAction = IAbstractToolPrimaryAction | Separator;
 
 /**
  * Base class for a tool confirmation.
@@ -75,14 +79,32 @@ export abstract class AbstractToolConfirmationSubPart extends BaseChatToolInvoca
 			const skipTooltip = keybindingService.appendKeybinding(config.skipLabel, config.skipActionId);
 
 			const additionalActions = this.additionalPrimaryActions();
+
+			// find session scoped action
+			const sessionAction = this.useAllowOnceAsPrimary() ? undefined : additionalActions.find(
+				(action): action is IAbstractToolPrimaryAction => 'scope' in action && action.scope === 'session'
+			);
+
+			// regular allow action
+			const allowAction: IAbstractToolPrimaryAction = {
+				label: config.allowLabel,
+				tooltip: allowTooltip,
+				data: () => { this.confirmWith(toolInvocation, { type: ToolConfirmKind.UserAction }); },
+			};
+
+			const primaryAction = sessionAction ?? allowAction;
+
+			// rebuild additional list with allow action
+			const moreActions = sessionAction
+				? [allowAction, ...additionalActions.filter(a => a !== sessionAction)]
+				: additionalActions;
+
 			buttons = [
 				{
-					label: config.allowLabel,
-					tooltip: allowTooltip,
-					data: () => {
-						this.confirmWith(toolInvocation, { type: ToolConfirmKind.UserAction });
-					},
-					moreActions: additionalActions.length > 0 ? additionalActions : undefined,
+					label: primaryAction.label,
+					tooltip: primaryAction.tooltip,
+					data: primaryAction.data,
+					moreActions: moreActions.length > 0 ? moreActions : undefined,
 				},
 				{
 					label: localize('skip', "Skip"),
@@ -133,6 +155,16 @@ export abstract class AbstractToolConfirmationSubPart extends BaseChatToolInvoca
 
 	protected additionalPrimaryActions(): AbstractToolPrimaryAction[] {
 		return [];
+	}
+
+	/**
+	 * When true, "Allow Once" stays the primary button even when a
+	 * session-scoped action is available. Subclasses override this
+	 * to keep the simple allow-once default (e.g. when combination
+	 * approval options are present).
+	 */
+	protected useAllowOnceAsPrimary(): boolean {
+		return false;
 	}
 
 	protected abstract createContentElement(): HTMLElement | string;

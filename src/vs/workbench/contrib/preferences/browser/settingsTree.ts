@@ -75,6 +75,11 @@ import { ExcludeSettingWidget, IBoolObjectDataItem, IIncludeExcludeDataItem, ILi
 
 const $ = DOM.$;
 
+const multiGroupTocSettings = new Set([
+	'accessibility.signals.chatUserActionRequired',
+	'accessibility.signals.chatResponseReceived'
+]);
+
 function getIncludeExcludeDisplayValue(element: SettingsTreeSettingElement): IIncludeExcludeDataItem[] {
 	const elementDefaultValue: Record<string, unknown> = typeof element.defaultValue === 'object'
 		? element.defaultValue ?? {}
@@ -665,7 +670,9 @@ function getMatchingSettings(allSettings: Set<ISetting>, filter: ITOCFilter): IS
 		// Include if matches include filter and doesn't match exclude filter
 		if (shouldInclude && !shouldExclude) {
 			result.push(setting);
-			allSettings.delete(setting);
+			if (!multiGroupTocSettings.has(setting.key)) {
+				allSettings.delete(setting);
+			}
 		}
 	});
 
@@ -2111,12 +2118,12 @@ class SettingBoolRenderer extends AbstractSettingRenderer implements ITreeRender
 			template.descriptionElement.classList.remove('disabled');
 
 			// Need to listen for mouse clicks on description and toggle checkbox - use target ID for safety
-			// Also have to ignore embedded links - too buried to stop propagation
+			// Also have to ignore embedded links - use closest('a') to handle clicks on child elements of links (e.g. SVG icons inside <a> tags)
 			template.elementDisposables.add(DOM.addDisposableListener(template.descriptionElement, DOM.EventType.MOUSE_DOWN, (e) => {
-				const targetElement = <HTMLElement>e.target;
+				const targetElement: Element | null = e.target instanceof Element ? e.target : null;
 
 				// Toggle target checkbox
-				if (targetElement.tagName.toLowerCase() !== 'a') {
+				if (!targetElement || !targetElement.closest('a')) {
 					template.checkbox.checked = !template.checkbox.checked;
 					template.onChange!(template.checkbox.checked);
 				}

@@ -11,31 +11,26 @@ import { escapeRegExpCharacters } from '../../../../../base/common/strings.js';
 import { Disposable, IDisposable } from '../../../../../base/common/lifecycle.js';
 import { ResourceSet } from '../../../../../base/common/map.js';
 import { ThemeIcon } from '../../../../../base/common/themables.js';
-import { URI } from '../../../../../base/common/uri.js';
-import { relativePath } from '../../../../../base/common/resources.js';
+import { isEqual, relativePath } from '../../../../../base/common/resources.js';
 import { Position } from '../../../../../editor/common/core/position.js';
 import { Range } from '../../../../../editor/common/core/range.js';
 import { Location, LocationLink } from '../../../../../editor/common/languages.js';
 import { IModelService } from '../../../../../editor/common/services/model.js';
 import { ILanguageFeaturesService } from '../../../../../editor/common/services/languageFeatures.js';
 import { ITextModelService } from '../../../../../editor/common/services/resolverService.js';
+import { ILanguageService } from '../../../../../editor/common/languages/language.js';
 import { getDefinitionsAtPosition, getImplementationsAtPosition, getReferencesAtPosition } from '../../../../../editor/contrib/gotoSymbol/browser/goToSymbol.js';
 import { localize } from '../../../../../nls.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
 import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IWorkbenchContribution } from '../../../../common/contributions.js';
 import { ISearchService, QueryType, resultIsMatch } from '../../../../services/search/common/search.js';
 import { CountTokensCallback, ILanguageModelToolsService, IPreparedToolInvocation, IToolData, IToolImpl, IToolInvocation, IToolInvocationPreparationContext, IToolResult, ToolDataSource, ToolProgress, } from '../../common/tools/languageModelToolsService.js';
 import { createToolSimpleTextResult } from '../../common/tools/builtinTools/toolHelpers.js';
+import { errorResult, findLineNumber, findSymbolColumn, ISymbolToolInput, resolveToolUri } from './toolHelpers.js';
 
 export const UsagesToolId = 'vscode_listCodeUsages';
-
-interface IUsagesToolInput {
-	symbol: string;
-	uri?: string;
-	filePath?: string;
-	lineContent: string;
-}
 
 const BaseModelDescription = `Find all usages (references, definitions, and implementations) of a code symbol across the workspace. This tool locates where a symbol is referenced, defined, or implemented.
 
@@ -56,6 +51,7 @@ export class UsagesTool extends Disposable implements IToolImpl {
 
 	constructor(
 		@ILanguageFeaturesService private readonly _languageFeaturesService: ILanguageFeaturesService,
+		@ILanguageService private readonly _languageService: ILanguageService,
 		@IModelService private readonly _modelService: IModelService,
 		@ISearchService private readonly _searchService: ISearchService,
 		@ITextModelService private readonly _textModelService: ITextModelService,
@@ -70,17 +66,23 @@ export class UsagesTool extends Disposable implements IToolImpl {
 		)((() => this._onDidUpdateToolData.fire())));
 	}
 
-	getToolData(): IToolData {
+	getToolData(): IToolData | undefined {
 		const languageIds = this._languageFeaturesService.referenceProvider.registeredLanguageIds;
 
+		if (languageIds.size === 0) {
+			return undefined;
+		}
+
 		let modelDescription = BaseModelDescription;
+		let userDescription: string;
 		if (languageIds.has('*')) {
 			modelDescription += '\n\nSupported for all languages.';
-		} else if (languageIds.size > 0) {
+			userDescription = localize('tool.usages.userDescription', 'Find references, definitions, and implementations of a symbol');
+		} else {
 			const sorted = [...languageIds].sort();
 			modelDescription += `\n\nCurrently supported for: ${sorted.join(', ')}.`;
-		} else {
-			modelDescription += '\n\nNo languages currently have reference providers registered.';
+			const niceNames = sorted.map(id => this._languageService.getLanguageName(id) ?? id);
+			userDescription = localize('tool.usages.userDescriptionWithLanguages', 'Find references, definitions, and implementations of a symbol ({0})', niceNames.join(', '));
 		}
 
 		return {
@@ -89,9 +91,10 @@ export class UsagesTool extends Disposable implements IToolImpl {
 			canBeReferencedInPrompt: false,
 			icon: ThemeIcon.fromId(Codicon.references.id),
 			displayName: localize('tool.usages.displayName', 'List Code Usages'),
-			userDescription: localize('tool.usages.userDescription', 'Find references, definitions, and implementations of a symbol'),
+			userDescription,
 			modelDescription,
 			source: ToolDataSource.Internal,
+			when: ContextKeyExpr.has('config.chat.tools.usagesTool.enabled'),
 			inputSchema: {
 				type: 'object',
 				properties: {
@@ -118,19 +121,19 @@ export class UsagesTool extends Disposable implements IToolImpl {
 	}
 
 	async prepareToolInvocation(context: IToolInvocationPreparationContext, _token: CancellationToken): Promise<IPreparedToolInvocation | undefined> {
-		const input = context.parameters as IUsagesToolInput;
+		const input = context.parameters as ISymbolToolInput;
 		return {
 			invocationMessage: localize('tool.usages.invocationMessage', 'Analyzing usages of `{0}`', input.symbol),
 		};
 	}
 
 	async invoke(invocation: IToolInvocation, _countTokens: CountTokensCallback, _progress: ToolProgress, token: CancellationToken): Promise<IToolResult> {
-		const input = invocation.parameters as IUsagesToolInput;
+		const input = invocation.parameters as ISymbolToolInput;
 
 		// --- resolve URI ---
-		const uri = this._resolveUri(input);
+		const uri = resolveToolUri(input, this._workspaceContextService);
 		if (!uri) {
-			return this._errorResult('Provide either "uri" (a full URI) or "filePath" (a workspace-relative path) to identify the file.');
+			return errorResult('Provide either "uri" (a full URI) or "filePath" (a workspace-relative path) to identify the file.');
 		}
 
 		// --- open text model ---
@@ -139,23 +142,20 @@ export class UsagesTool extends Disposable implements IToolImpl {
 			const model = ref.object.textEditorModel;
 
 			if (!this._languageFeaturesService.referenceProvider.has(model)) {
-				return this._errorResult(`No reference provider available for this file's language. The usages tool may not support this language.`);
+				return errorResult(`No reference provider available for this file's language. The usages tool may not support this language.`);
 			}
 
 			// --- find line containing lineContent ---
-			const parts = input.lineContent.trim().split(/\s+/);
-			const lineContent = parts.map(escapeRegExpCharacters).join('\\s+');
-			const matches = model.findMatches(lineContent, false, true, false, null, false, 1);
-			if (matches.length === 0) {
-				return this._errorResult(`Could not find line content "${input.lineContent}" in ${uri.toString()}. Provide the exact text from the line where the symbol appears.`);
+			const lineNumber = findLineNumber(model, input.lineContent);
+			if (lineNumber === undefined) {
+				return errorResult(`Could not find line content "${input.lineContent}" in ${uri.toString()}. Provide the exact text from the line where the symbol appears.`);
 			}
-			const lineNumber = matches[0].range.startLineNumber;
 
 			// --- find symbol in that line ---
 			const lineText = model.getLineContent(lineNumber);
-			const column = this._findSymbolColumn(lineText, input.symbol);
+			const column = findSymbolColumn(lineText, input.symbol);
 			if (column === undefined) {
-				return this._errorResult(`Could not find symbol "${input.symbol}" in the matched line. Ensure the symbol name is correct and appears in the provided line content.`);
+				return errorResult(`Could not find symbol "${input.symbol}" in the matched line. Ensure the symbol name is correct and appears in the provided line content.`);
 			}
 
 			const position = new Position(lineNumber, column);
@@ -294,33 +294,6 @@ export class UsagesTool extends Disposable implements IToolImpl {
 		return previews;
 	}
 
-	private _resolveUri(input: IUsagesToolInput): URI | undefined {
-		if (input.uri) {
-			return URI.parse(input.uri);
-		}
-		if (input.filePath) {
-			const folders = this._workspaceContextService.getWorkspace().folders;
-			if (folders.length === 1) {
-				return folders[0].toResource(input.filePath);
-			}
-			// try each folder, return the first
-			for (const folder of folders) {
-				return folder.toResource(input.filePath);
-			}
-		}
-		return undefined;
-	}
-
-	private _findSymbolColumn(lineText: string, symbol: string): number | undefined {
-		// use word boundary matching to avoid partial matches
-		const pattern = new RegExp(`\\b${escapeRegExpCharacters(symbol)}\\b`);
-		const match = pattern.exec(lineText);
-		if (match) {
-			return match.index + 1; // 1-based column
-		}
-		return undefined;
-	}
-
 	private _classifyReference(ref: LocationLink, definitions: LocationLink[], implementations: LocationLink[]): string {
 		if (definitions.some(d => this._overlaps(ref, d))) {
 			return 'definition';
@@ -332,17 +305,12 @@ export class UsagesTool extends Disposable implements IToolImpl {
 	}
 
 	private _overlaps(a: LocationLink, b: LocationLink): boolean {
-		if (a.uri.toString() !== b.uri.toString()) {
+		if (!isEqual(a.uri, b.uri)) {
 			return false;
 		}
 		return Range.areIntersectingOrTouching(a.range, b.range);
 	}
 
-	private _errorResult(message: string): IToolResult {
-		const result = createToolSimpleTextResult(message);
-		result.toolResultMessage = new MarkdownString(message);
-		return result;
-	}
 }
 
 export class UsagesToolContribution extends Disposable implements IWorkbenchContribution {
@@ -360,9 +328,12 @@ export class UsagesToolContribution extends Disposable implements IWorkbenchCont
 		let registration: IDisposable | undefined;
 		const registerUsagesTool = () => {
 			registration?.dispose();
+			registration = undefined;
 			toolsService.flushToolUpdates();
 			const toolData = usagesTool.getToolData();
-			registration = toolsService.registerTool(toolData, usagesTool);
+			if (toolData) {
+				registration = toolsService.registerTool(toolData, usagesTool);
+			}
 		};
 		registerUsagesTool();
 		this._store.add(usagesTool.onDidUpdateToolData(registerUsagesTool));

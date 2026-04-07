@@ -20,6 +20,10 @@ export class BrowserViewDebugger extends Disposable implements ICDPTarget {
 	/** Map from CDP sessionId to the per-connection event emitter */
 	private readonly _sessions = this._register(new DisposableMap<string, DebugSession>());
 
+	/** Whether any attached debugger session has paused JavaScript execution. */
+	private _isPaused = false;
+	get isPaused(): boolean { return this._isPaused; }
+
 	/**
 	 * The real CDP targetId discovered from Target.getTargets().
 	 * Ideally this could be fetched synchronously from the WebContents,
@@ -60,7 +64,7 @@ export class BrowserViewDebugger extends Disposable implements ICDPTarget {
 		}) as { sessionId: string };
 
 		const sessionId = result.sessionId;
-		const session = new DebugSession(sessionId, this._electronDebugger);
+		const session = new DebugSession(sessionId, this.view, this._electronDebugger);
 		this._sessions.set(sessionId, session);
 		session.onClose(() => this._sessions.deleteAndDispose(sessionId));
 
@@ -141,6 +145,13 @@ export class BrowserViewDebugger extends Disposable implements ICDPTarget {
 			return;
 		}
 
+		// Track debugger pause state
+		if (method === 'Debugger.paused') {
+			this._isPaused = true;
+		} else if (method === 'Debugger.resumed') {
+			this._isPaused = false;
+		}
+
 		// Find the session for this sessionId and fire the event
 		const session = this._sessions.get(sessionId);
 		if (session) {
@@ -152,7 +163,7 @@ export class BrowserViewDebugger extends Disposable implements ICDPTarget {
 	 * Detach from the Electron debugger
 	 */
 	private detachElectronDebugger(): void {
-		if (!this._electronDebugger.isAttached()) {
+		if (this.view.webContents.isDestroyed() || !this._electronDebugger.isAttached()) {
 			return;
 		}
 
@@ -182,18 +193,27 @@ class DebugSession extends Disposable implements ICDPConnection {
 
 	constructor(
 		public readonly sessionId: string,
+		private readonly _view: BrowserView,
 		private readonly _electronDebugger: Electron.Debugger
 	) {
 		super();
 	}
 
-	async sendMessage(method: string, params?: unknown, _sessionId?: string): Promise<unknown> {
+	async sendCommand(method: string, params?: unknown, _sessionId?: string): Promise<unknown> {
 		// This crashes Electron. Don't pass it through.
 		if (method === 'Emulation.setDeviceMetricsOverride') {
 			return Promise.resolve({});
 		}
 
-		return this._electronDebugger.sendCommand(method, params, this.sessionId);
+		const result = await this._electronDebugger.sendCommand(method, params, this.sessionId);
+
+		// Electron overrides dialog behavior in a way that this command does not auto-dismiss the dialog.
+		// So we manually emit the (internal) event to dismiss open dialogs when this command is sent.
+		if (method === 'Page.handleJavaScriptDialog') {
+			this._view.webContents.emit('-cancel-dialogs');
+		}
+
+		return result;
 	}
 
 	override dispose(): void {

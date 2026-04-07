@@ -518,7 +518,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 
 		// When a custom pty is used set the name immediately so it gets passed over to the exthost
 		// and is available when Pseudoterminal.open fires.
-		if (this.shellLaunchConfig.customPtyImplementation) {
+		if (this.shellLaunchConfig.customPtyImplementation && !this._shellLaunchConfig.titleTemplate) {
 			this._setTitle(this._shellLaunchConfig.name, TitleEventSource.Api);
 		}
 
@@ -877,6 +877,8 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 				lineDataEventAddon.setOperatingSystem(this._processManager.os);
 			}
 			xterm.raw.options.windowsPty = processTraits.windowsPty;
+			// Enable reflow cursor to avoid prompt loss: https://github.com/microsoft/vscode/issues/274372
+			xterm.raw.options.reflowCursorLine = processTraits?.windowsPty?.backend === 'conpty' && !!this._terminalConfigurationService.config.windowsUseConptyDll;
 		}));
 		this._register(this._processManager.onRestoreCommands(e => this.xterm?.shellIntegration.deserialize(e)));
 
@@ -972,7 +974,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		});
 	}
 
-	async runCommand(commandLine: string, shouldExecute: boolean, commandId?: string): Promise<void> {
+	async runCommand(commandLine: string, shouldExecute: boolean, commandId?: string, forceBracketedPasteMode?: boolean): Promise<void> {
 		let commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
 		const siInjectionEnabled = this._configurationService.getValue(TerminalSettingId.ShellIntegrationEnabled) === true;
 		const timeoutMs = getShellIntegrationTimeout(
@@ -1018,8 +1020,9 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 			// is being evaluated
 			await timeout(100);
 		}
-		// Use bracketed paste mode only when not running the command
-		await this.sendText(commandLine, shouldExecute, !shouldExecute);
+		// By default, use bracketed paste mode only when not running the command; callers can override
+		// this by explicitly enabling it via the bracketedPasteMode argument.
+		await this.sendText(commandLine, shouldExecute, !shouldExecute || forceBracketedPasteMode);
 	}
 
 	detachFromElement(): void {
@@ -1129,10 +1132,12 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 			}
 
 			// Skip processing by xterm.js of keyboard events that resolve to commands defined in
-			// the commandsToSkipShell setting. Ensure sendKeybindingsToShell is respected here
-			// which will disable this special handling and always opt to send the keystroke to the
-			// shell process
-			if (!this._terminalConfigurationService.config.sendKeybindingsToShell && resolveResult.kind === ResultKind.KbFound && resolveResult.commandId && this._skipTerminalCommands.some(k => k === resolveResult.commandId)) {
+			// the commandsToSkipShell setting, or that use the Meta.
+			// The metaKey check is needed because when a shell like fish enables the kitty
+			// keyboard protocol, xterm.js encodes Meta-modified keys as CSI u sequences and
+			// consumes them via preventDefault. The (non-kitty) traditional xterm.js handler already skips
+			// Meta keys so they bubble up naturally, but the kitty handler does not.
+			if (!this._terminalConfigurationService.config.sendKeybindingsToShell && resolveResult.kind === ResultKind.KbFound && resolveResult.commandId && (event.metaKey || this._skipTerminalCommands.some(k => k === resolveResult.commandId))) {
 				event.preventDefault();
 				return false;
 			}
@@ -1340,10 +1345,10 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		this.focus(force);
 	}
 
-	async sendText(text: string, shouldExecute: boolean, bracketedPasteMode?: boolean): Promise<void> {
+	async sendText(text: string, shouldExecute: boolean, forceBracketedPasteMode?: boolean): Promise<void> {
 		// Apply bracketed paste sequences if the terminal has the mode enabled, this will prevent
 		// the text from triggering keybindings and ensure new lines are handled properly
-		if (bracketedPasteMode && this.xterm?.raw.modes.bracketedPasteMode) {
+		if (forceBracketedPasteMode && this.xterm?.raw.modes.bracketedPasteMode) {
 			text = `\x1b[200~${text}\x1b[201~`;
 		}
 
@@ -1471,7 +1476,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 					}
 				}));
 			}
-			if (this._shellLaunchConfig.name) {
+			if (this._shellLaunchConfig.name && !this._shellLaunchConfig.titleTemplate) {
 				this._setTitle(this._shellLaunchConfig.name, TitleEventSource.Api);
 			} else {
 				// Listen to xterm.js' sequence title change event, trigger this async to ensure
@@ -1483,7 +1488,13 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 						}
 					});
 				});
-				this._setTitle(this._shellLaunchConfig.executable, TitleEventSource.Process);
+				// When a title template is provided, use the name as the initial process name
+				// so it can be referenced via ${process} in the template
+				if (this._shellLaunchConfig.titleTemplate && this._shellLaunchConfig.name) {
+					this._setTitle(this._shellLaunchConfig.name, TitleEventSource.Process);
+				} else {
+					this._setTitle(this._shellLaunchConfig.executable, TitleEventSource.Process);
+				}
 			}
 		}));
 		this._register(processManager.onProcessExit(exitCode => this._onProcessExit(exitCode)));
@@ -2006,7 +2017,11 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	}
 
 	private async _updatePtyDimensions(rawXterm: XTermTerminal): Promise<void> {
-		await this._processManager.setDimensions(rawXterm.cols, rawXterm.rows);
+		const pixelWidth = rawXterm.dimensions?.css.canvas.width;
+		const pixelHeight = rawXterm.dimensions?.css.canvas.height;
+		const roundedPixelWidth = pixelWidth ? Math.round(pixelWidth) : undefined;
+		const roundedPixelHeight = pixelHeight ? Math.round(pixelHeight) : undefined;
+		await this._processManager.setDimensions(rawXterm.cols, rawXterm.rows, undefined, roundedPixelWidth, roundedPixelHeight);
 	}
 
 	setShellType(shellType: TerminalShellType | undefined) {
@@ -2629,7 +2644,8 @@ export class TerminalLabelComputer extends Disposable {
 	}
 
 	refreshLabel(instance: Pick<ITerminalInstance, 'shellLaunchConfig' | 'shellType' | 'cwd' | 'fixedCols' | 'fixedRows' | 'initialCwd' | 'processName' | 'sequence' | 'userHome' | 'workspaceFolder' | 'staticTitle' | 'capabilities' | 'title' | 'description'>, reset?: boolean): void {
-		this._title = this.computeLabel(instance, this._terminalConfigurationService.config.tabs.title, TerminalLabelType.Title, reset);
+		const titleTemplate = instance.shellLaunchConfig.titleTemplate ?? this._terminalConfigurationService.config.tabs.title;
+		this._title = this.computeLabel(instance, titleTemplate, TerminalLabelType.Title, reset);
 		this._description = this.computeLabel(instance, this._terminalConfigurationService.config.tabs.description, TerminalLabelType.Description);
 		if (this._title !== instance.title || this._description !== instance.description || reset) {
 			this._onDidChangeLabel.fire({ title: this._title, description: this._description });

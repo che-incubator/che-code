@@ -655,4 +655,6 @@ export const codiconsLibrary = {
 	openai: register('openai', 0xec81),
 	claude: register('claude', 0xec82),
 	openInWindow: register('open-in-window', 0xec83),
+	newSession: register('new-session', 0xec84),
+	terminalSecure: register('terminal-secure', 0xec85),
 } as const;
