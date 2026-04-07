@@ -8,7 +8,8 @@ import * as dom from '../../../../base/browser/dom.js';
 import { DEFAULT_FONT_FAMILY } from '../../../../base/browser/fonts.js';
 import { StandardKeyboardEvent } from '../../../../base/browser/keyboardEvent.js';
 import { renderAsPlaintext, renderMarkdown } from '../../../../base/browser/markdownRenderer.js';
-import { ActionBar, ActionsOrientation } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { ActionsOrientation } from '../../../../base/browser/ui/actionbar/actionbar.js';
+import { WorkbenchActionBar } from '../../../../platform/actions/browser/actionbar.js';
 import { BaseActionViewItem } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
 import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
 import { ActionRunner, IAction } from '../../../../base/common/actions.js';
@@ -89,9 +90,10 @@ export class InlineChatInputWidget extends Disposable {
 
 		// Create vertical actions bar below the input container
 		const actionsContainer = dom.append(this._domNode, dom.$('.inline-chat-gutter-actions'));
-		const actionBar = this._store.add(new ActionBar(actionsContainer, {
+		const actionBar = this._store.add(instantiationService.createInstance(WorkbenchActionBar, actionsContainer, {
 			orientation: ActionsOrientation.VERTICAL,
 			preventLoopNavigation: true,
+			telemetrySource: 'inlineChatInput.actionBar',
 		}));
 		const actionsMenu = this._store.add(this._menuService.createMenu(MenuId.ChatEditorInlineMenu, this._contextKeyService));
 		const updateActions = () => {
