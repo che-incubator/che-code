@@ -20,7 +20,6 @@ export class SessionTypePicker extends Disposable {
 	private _sessionTypes: ISessionType[] = [];
 
 	private readonly _renderDisposables = this._register(new DisposableStore());
-	private _slotElement: HTMLElement | undefined;
 	private _triggerElement: HTMLElement | undefined;
 
 	constructor(
@@ -46,7 +45,6 @@ export class SessionTypePicker extends Disposable {
 		this._renderDisposables.clear();
 
 		const slot = dom.append(container, dom.$('.sessions-chat-picker-slot'));
-		this._slotElement = slot;
 		this._renderDisposables.add({ dispose: () => slot.remove() });
 
 		const trigger = dom.append(slot, dom.$('a.action-label'));
@@ -128,8 +126,6 @@ export class SessionTypePicker extends Disposable {
 		const labelSpan = dom.append(this._triggerElement, dom.$('span.sessions-chat-dropdown-label'));
 		labelSpan.textContent = modeLabel;
 
-		const hasMultipleTypes = this._sessionTypes.length > 1;
-		this._slotElement?.classList.toggle('disabled', !hasMultipleTypes);
 		dom.append(this._triggerElement, renderIcon(Codicon.chevronDown));
 	}
 }
