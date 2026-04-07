@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          lfs: true
           persist-credentials: false
 
       - uses: actions/setup-node@v6

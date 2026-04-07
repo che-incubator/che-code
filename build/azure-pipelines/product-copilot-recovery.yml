@@ -50,11 +50,6 @@ extends:
               exit 1
             displayName: Validate confirm parameter
 
-      - script: |
-          set -e
-          git submodule update --init extensions/copilot
-        displayName: Initialize copilot submodule
-
       - template: copilot/setup-steps.yml
       - script: node build/azure-pipelines/common/updateCopilotChatRecoveryVersion.ts
         displayName: Update Copilot Chat recovery version
@@ -66,12 +61,6 @@ extends:
     testSteps:
       - checkout: self
         lfs: true
-
-      - script: |
-          set -e
-          git submodule update --init extensions/copilot
-        displayName: Initialize copilot submodule
-
       - template: copilot/setup-steps.yml
       - template: copilot/test-steps.yml
 

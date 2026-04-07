@@ -24,7 +24,7 @@ jobs:
       - name: Checkout microsoft/vscode
         uses: actions/checkout@v6
         with:
-          submodules: true
+          lfs: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -167,7 +167,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          submodules: true
           lfs: true
 
       - uses: actions/setup-node@v6
@@ -213,7 +212,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          submodules: true
           lfs: true
 
       - uses: actions/setup-node@v6
@@ -233,7 +231,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          submodules: true
           lfs: true
 
       - name: Setup Node.js
@@ -342,7 +339,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          submodules: true
           lfs: true
 
       - name: Setup Node.js

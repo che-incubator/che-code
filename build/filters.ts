@@ -63,7 +63,7 @@ export const unicodeFilter = Object.freeze<string[]>([
 	'!extensions/**/colorize-fixtures/**',
 	'!extensions/terminal-suggest/src/shell/fishBuiltinsCache.ts',
 
-	// extensions/copilot is a git submodule with its own code style
+	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
 
 	'!src/vs/base/browser/dompurify/**',
@@ -129,7 +129,7 @@ export const indentationFilter = Object.freeze<string[]>([
 	'!extensions/**/themes/**',
 	'!extensions/**/colorize-fixtures/**',
 
-	// extensions/copilot is a git submodule with its own code style
+	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
 
 	// except specific file types
@@ -201,7 +201,7 @@ export const copyrightFilter = Object.freeze<string[]>([
 	'!extensions/*/server/bin/*',
 	'!src/vs/workbench/contrib/terminal/common/scripts/psreadline/**',
 
-	// extensions/copilot is a git submodule with its own code style
+	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
 ]);
 
@@ -223,7 +223,7 @@ export const tsFormattingFilter = Object.freeze<string[]>([
 	'!extensions/terminal-suggest/src/shell/zshBuiltinsCache.ts',
 	'!extensions/terminal-suggest/src/shell/fishBuiltinsCache.ts',
 
-	// extensions/copilot is a git submodule with its own code style
+	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
 ]);
 

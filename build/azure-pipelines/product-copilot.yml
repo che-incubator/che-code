@@ -22,11 +22,6 @@ jobs:
         fetchTags: false
         displayName: Checkout microsoft/vscode
 
-      - script: |
-          set -e
-          git submodule update --init extensions/copilot
-        displayName: Initialize copilot submodule
-
       - template: copilot/setup-steps.yml
       - template: copilot/test-steps.yml
         parameters:
