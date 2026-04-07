@@ -626,7 +626,7 @@ async function promptForTunnelFolder(
 		return;
 	}
 
-	const workspace = await browseAction.execute();
+	const workspace = await browseAction.run();
 	if (!workspace) {
 		return;
 	}
