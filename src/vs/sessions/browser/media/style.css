@@ -122,6 +122,12 @@
 	background: rgba(0, 0, 0, 0.5);
 }
 
+.agent-sessions-workbench .monaco-modal-editor-block .modal-editor-sidebar .monaco-tl-twistie.force-no-twistie {
+	width: 0 !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
 
 /* ---- Customization Empty State ---- */
 
