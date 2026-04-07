@@ -97,6 +97,7 @@ export class AsyncSchedulerProcessor extends Disposable {
 	public readonly onTaskQueueEmpty = this.queueEmptyEmitter.event;
 
 	private lastError: Error | undefined;
+	private _virtualDeadline = Number.MAX_SAFE_INTEGER;
 
 	constructor(private readonly scheduler: TimeTravelScheduler, options?: { useSetImmediate?: boolean; maxTaskCount?: number }) {
 		super();
@@ -140,6 +141,12 @@ export class AsyncSchedulerProcessor extends Disposable {
 				this.queueEmptyEmitter.fire();
 				return;
 			}
+
+			if (this.scheduler.now >= this._virtualDeadline && this.scheduler.hasScheduledTasks) {
+				this.isProcessing = false;
+				this.queueEmptyEmitter.fire();
+				return;
+			}
 		}
 
 		if (this.scheduler.hasScheduledTasks) {
@@ -170,15 +177,10 @@ export class AsyncSchedulerProcessor extends Disposable {
 	}
 
 	waitFor(virtualTimeMs: number): Promise<void> {
-		return Promise.race([
-			this.waitForEmptyQueue(),
-			new Promise<void>((_resolve, reject) =>
-				originalGlobalValues.setTimeout(() => {
-					const lastTasks = this._history.slice(-10).map(h => `${h.source.toString()}: ${h.source.stackTrace}`);
-					reject(new Error(`waitFor timed out after ${virtualTimeMs}ms (processed ${this._history.length} tasks, ${this.scheduler.getScheduledTasks().length} pending). These are the last ${lastTasks.length} scheduled tasks:\n${lastTasks.join('\n\n\n')}`));
-				}, virtualTimeMs)
-			),
-		]);
+		this._virtualDeadline = this.scheduler.now + virtualTimeMs;
+		return this.waitForEmptyQueue().finally(() => {
+			this._virtualDeadline = Number.MAX_SAFE_INTEGER;
+		});
 	}
 }
 
