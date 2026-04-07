@@ -724,6 +724,17 @@ configurationRegistry.registerConfiguration({
 			description: nls.localize('chat.plugins.enabled', "Enable agent plugin integration in chat."),
 			default: true,
 			tags: ['preview'],
+			policy: {
+				name: 'ChatPluginsEnabled',
+				category: PolicyCategory.InteractiveSession,
+				minimumVersion: '1.116',
+				localization: {
+					description: {
+						key: 'chat.plugins.enabled',
+						value: nls.localize('chat.plugins.enabled', "Enable agent plugin integration in chat."),
+					}
+				},
+			},
 		},
 		[ChatConfiguration.PluginLocations]: {
 			type: 'object',
