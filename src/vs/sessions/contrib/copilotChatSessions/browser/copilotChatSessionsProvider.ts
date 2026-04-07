@@ -41,6 +41,7 @@ import { localize } from '../../../../nls.js';
 import { SessionsGroupModel } from '../../sessions/browser/sessionsGroupModel.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
 
 export interface ICopilotChatSession {
 	/** Globally unique session ID (`providerId:localId`). */
@@ -1057,6 +1058,7 @@ export class CopilotChatSessionsProvider extends Disposable implements ISessions
 		@ILanguageModelToolsService private readonly toolsService: ILanguageModelToolsService,
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
+		@ILogService private readonly logService: ILogService,
 	) {
 		super();
 
@@ -1372,6 +1374,11 @@ export class CopilotChatSessionsProvider extends Disposable implements ISessions
 		}
 
 		// Send request
+		this.logService.debug(`[CopilotChatSessionsProvider] Sending first chat for session ${session.id} with options:`, {
+			userSelectedModelId: sendOptions.userSelectedModelId,
+			modeInfo: sendOptions.modeInfo,
+			agentIdSilent: sendOptions.agentIdSilent,
+		});
 		const result = await this.chatService.sendRequest(session.resource, query, sendOptions);
 		if (result.kind === 'rejected') {
 			throw new Error(`[DefaultCopilotProvider] sendRequest rejected: ${result.reason}`);
