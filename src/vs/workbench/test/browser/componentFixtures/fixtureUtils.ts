@@ -641,7 +641,8 @@ export function defineComponentFixture(options: ComponentFixtureOptions): Themed
 
 				setupTheme(container, theme);
 
-				schedulerStore.add(scheduler.installGlobally());
+				// Temporarily disable TimeTravelScheduler, as this needs a component explorer update
+				// schedulerStore.add(scheduler.installGlobally());
 				disposableStore.add(installFakeRunWhenIdle((_targetWindow, callback, _timeout?) => {
 					return scheduler.schedule({
 						time: scheduler.now,
