@@ -43,7 +43,6 @@ export class ModePicker extends Disposable {
 	readonly onDidChange: Event<IChatMode> = this._onDidChange.event;
 
 	private _triggerElement: HTMLElement | undefined;
-	private _slotElement: HTMLElement | undefined;
 	private readonly _renderDisposables = this._register(new DisposableStore());
 
 	private _selectedMode: IChatMode = ChatMode.Agent;
@@ -85,7 +84,6 @@ export class ModePicker extends Disposable {
 		this._renderDisposables.clear();
 
 		const slot = dom.append(container, dom.$('.sessions-chat-picker-slot'));
-		this._slotElement = slot;
 		this._renderDisposables.add({ dispose: () => slot.remove() });
 
 		const trigger = dom.append(slot, dom.$('a.action-label'));
@@ -237,8 +235,5 @@ export class ModePicker extends Disposable {
 		const labelSpan = dom.append(this._triggerElement, dom.$('span.sessions-chat-dropdown-label'));
 		labelSpan.textContent = this._selectedMode.label.get();
 		dom.append(this._triggerElement, renderIcon(Codicon.chevronDown));
-
-		const modes = this._getAvailableModes();
-		this._slotElement?.classList.toggle('disabled', modes.length <= 1);
 	}
 }
