@@ -16,9 +16,9 @@ import { IChatSessionFileChange, IChatSessionFileChange2 } from '../../../../wor
 import { GitDiffChange, GitRepositoryState, IGitRepository, IGitService } from '../../../../workbench/contrib/git/common/gitService.js';
 import { IAgentFeedbackService } from '../../agentFeedback/browser/agentFeedbackService.js';
 import { CodeReviewStateKind, getCodeReviewFilesFromSessionChanges, getCodeReviewVersion, ICodeReviewService, PRReviewStateKind } from '../../codeReview/browser/codeReviewService.js';
-import { ISessionsManagementService } from '../../sessions/browser/sessionsManagementService.js';
-import { COPILOT_CLOUD_SESSION_TYPE } from '../../sessions/browser/sessionTypes.js';
+import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 import { ChangesVersionMode, ChangesViewMode, IsolationMode } from '../common/changes.js';
+import { COPILOT_CLOUD_SESSION_TYPE } from '../../../services/sessions/common/session.js';
 
 function toIChatSessionFileChange2(changes: GitDiffChange[], originalRef: string | undefined, modifiedRef: string | undefined): IChatSessionFileChange2[] {
 	return changes.map(change => ({

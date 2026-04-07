@@ -8,36 +8,8 @@ import { IObservable } from '../../../../base/common/observable.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { URI } from '../../../../base/common/uri.js';
 import { RemoteAgentHostConnectionStatus } from '../../../../platform/agentHost/common/remoteAgentHostService.js';
-import { ISession, ISessionWorkspace } from '../common/sessionData.js';
 import { IChatRequestVariableEntry } from '../../../../workbench/contrib/chat/common/attachments/chatVariableEntries.js';
-
-/**
- * A platform-level session type identifying an agent backend.
- * Lightweight label — says nothing about where it runs or how it's configured.
- */
-export interface ISessionType {
-	/** Unique identifier (e.g., 'copilot-cli', 'copilot-cloud', 'claude-code'). */
-	readonly id: string;
-	/** Display label (e.g., 'Copilot CLI', 'Cloud'). */
-	readonly label: string;
-	/** Icon for this session type. */
-	readonly icon: ThemeIcon;
-}
-
-/**
- * A browse action contributed by a sessions provider.
- * Shown in the workspace picker (e.g., "Browse Folders...", "Browse Repositories...").
- */
-export interface ISessionsBrowseAction {
-	/** Display label for the browse action. */
-	readonly label: string;
-	/** Icon for the browse action. */
-	readonly icon: ThemeIcon;
-	/** The provider that owns this action. */
-	readonly providerId: string;
-	/** Execute the browse action and return the selected workspace, or undefined if cancelled. */
-	execute(): Promise<ISessionWorkspace | undefined>;
-}
+import { ISession, ISessionType, ISessionWorkspace, ISessionWorkspaceBrowseAction } from './session.js';
 
 /**
  * Event fired when sessions change within a provider.
@@ -98,7 +70,7 @@ export interface ISessionsProvider {
 	// -- Workspaces --
 
 	/** Browse actions shown in the workspace picker. */
-	readonly browseActions: readonly ISessionsBrowseAction[];
+	readonly browseActions: readonly ISessionWorkspaceBrowseAction[];
 	/** Resolve a repository URI to a session workspace with label and icon. */
 	resolveWorkspace(repositoryUri: URI): ISessionWorkspace;
 

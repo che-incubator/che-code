@@ -3,11 +3,42 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { Codicon } from '../../../../base/common/codicons.js';
 import { IMarkdownString } from '../../../../base/common/htmlContent.js';
 import { IObservable } from '../../../../base/common/observable.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { URI } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
 import { IChatSessionFileChange } from '../../../../workbench/contrib/chat/common/chatSessionsService.js';
+
+export interface ISessionType {
+	/** Unique identifier (e.g., 'copilot-cli', 'copilot-cloud', 'claude-code'). */
+	readonly id: string;
+	/** Display label (e.g., 'Copilot CLI', 'Cloud'). */
+	readonly label: string;
+	/** Icon for this session type. */
+	readonly icon: ThemeIcon;
+}
+
+/** Session type ID for local Copilot CLI sessions. */
+export const COPILOT_CLI_SESSION_TYPE = 'copilotcli';
+
+/** Session type ID for Copilot Cloud sessions. */
+export const COPILOT_CLOUD_SESSION_TYPE = 'copilot-cloud-agent';
+
+/** Copilot CLI session type — local background agent running in a Git worktree. */
+export const CopilotCLISessionType: ISessionType = {
+	id: COPILOT_CLI_SESSION_TYPE,
+	label: localize('copilotCLI', "Copilot CLI"),
+	icon: Codicon.copilot,
+};
+
+/** Copilot Cloud session type - cloud-hosted agent. */
+export const CopilotCloudSessionType: ISessionType = {
+	id: COPILOT_CLOUD_SESSION_TYPE,
+	label: localize('copilotCloud', "Cloud"),
+	icon: Codicon.cloud,
+};
 
 export const GITHUB_REMOTE_FILE_SCHEME = 'github-remote-file';
 
@@ -159,4 +190,15 @@ export interface ISession {
 	readonly chats: IObservable<readonly IChat[]>;
 	/** The main (first) chat of this session. */
 	readonly mainChat: IChat;
+}
+
+export interface ISessionWorkspaceBrowseAction {
+	/** Display label for the browse action. */
+	readonly label: string;
+	/** Icon for the browse action. */
+	readonly icon: ThemeIcon;
+	/** The provider that owns this action. */
+	readonly providerId: string;
+	/** Execute the browse action and return the selected workspace, or undefined if cancelled. */
+	run(): Promise<ISessionWorkspace | undefined>;
 }
