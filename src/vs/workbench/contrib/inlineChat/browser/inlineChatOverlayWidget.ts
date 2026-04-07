@@ -614,7 +614,7 @@ export class InlineChatSessionOverlayWidget extends Disposable {
 		// EditorAction2-based actions resolve the correct editor instance
 		// even when the user has clicked into a different editor.
 		const actionRunner = this._showStore.add(new class extends ActionRunner {
-			override async runAction(action: IAction, context?: unknown): Promise<void> {
+			protected override async runAction(action: IAction, context?: unknown): Promise<void> {
 				that._editorObs.editor.focus();
 				return super.runAction(action, context);
 			}
