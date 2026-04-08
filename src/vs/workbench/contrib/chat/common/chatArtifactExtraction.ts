@@ -14,6 +14,7 @@ import { IArtifactGroupConfig, IChatArtifact } from './tools/chatArtifactsServic
 import { isToolResultInputOutputDetails } from './tools/languageModelToolsService.js';
 
 const CHAT_MEMORY_FILE_SCHEME = 'chat-memory-file';
+const MEMORY_TOOL_ID = 'copilot_memory';
 
 export namespace ChatMemoryFileResource {
 	export function createUri(memoryPath: string, sessionResource: URI): URI {
@@ -186,7 +187,7 @@ export function extractArtifactsFromResponse(
 		}
 
 		// Memory tool invocations
-		if (part.kind === 'toolInvocation' || part.kind === 'toolInvocationSerialized') {
+		if ((part.kind === 'toolInvocation' || part.kind === 'toolInvocationSerialized') && part.toolId === MEMORY_TOOL_ID) {
 			const params = IChatToolInvocation.getParameters(part);
 			const memoryPath = getMemoryPathFromParams(params);
 			if (memoryPath && isMemoryWriteCommand(params)) {
