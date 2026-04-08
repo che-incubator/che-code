@@ -98,11 +98,11 @@ import { constObservable } from '../../../../base/common/observable.js';
 // Editor
 import { ITextModel } from '../../../../editor/common/model.js';
 
-
+import './fixtures.css';
 
 // Import color registrations to ensure colors are available
-import { IdleDeadline, installFakeRunWhenIdle, isThenable } from '../../../../base/common/async.js';
-import { AsyncSchedulerProcessor, originalGlobalValues, TimeTravelScheduler } from '../../../../base/test/common/timeTravelScheduler.js';
+import { IdleDeadline, installFakeRunWhenIdle } from '../../../../base/common/async.js';
+import { AsyncSchedulerProcessor, TimeTravelScheduler } from '../../../../base/test/common/timeTravelScheduler.js';
 import '../../../../platform/theme/common/colors/baseColors.js';
 import '../../../../platform/theme/common/colors/editorColors.js';
 import '../../../../platform/theme/common/colors/listColors.js';
@@ -450,6 +450,8 @@ export function createEditorServices(disposables: DisposableStore, options?: Cre
 		_serviceBrand: undefined,
 		registerTextModelContentProvider: () => ({ dispose: () => { } }),
 		canHandleResource: () => false,
+		// eslint-disable-next-line local/code-no-any-casts, @typescript-eslint/no-explicit-any
+		createModelReference: async () => ({ object: { textEditorModel: null }, dispose() { } } as any),
 	});
 
 	defineInstance(IAgentFeedbackService, {
@@ -498,8 +500,22 @@ export function createEditorServices(disposables: DisposableStore, options?: Cre
 		markPRReviewCommentConverted: () => { },
 	});
 
-	// Allow additional services to be registered
-	options?.additionalServices?.({ define, defineInstance, definePartialInstance });
+	// Allow additional services to override defaults
+	options?.additionalServices?.({
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		define: <T>(id: ServiceIdentifier<T>, ctor: new (...args: any[]) => T) => {
+			services.set(id, new SyncDescriptor(ctor));
+			serviceIdentifiers.push(id);
+		},
+		defineInstance: <T>(id: ServiceIdentifier<T>, instance: T) => {
+			services.set(id, instance);
+			serviceIdentifiers.push(id);
+		},
+		definePartialInstance: <T>(id: ServiceIdentifier<T>, instance: Partial<T>) => {
+			services.set(id, instance as T);
+			serviceIdentifiers.push(id);
+		},
+	});
 
 	const instantiationService = disposables.add(new TestInstantiationService(services, true));
 
@@ -629,16 +645,18 @@ export function defineComponentFixture(options: ComponentFixtureOptions): Themed
 		render: async (container: HTMLElement) => {
 			const disposableStore = new DisposableStore();
 
+			const schedulerStore = disposableStore.add(new DisposableStore());
+			const scheduler = new TimeTravelScheduler(Date.now());
+			const p = schedulerStore.add(new AsyncSchedulerProcessor(scheduler, {
+				maxTaskCount: 100,
+			}));
+
 			async function actualRender() {
 
 				setupTheme(container, theme);
 
-				const scheduler = new TimeTravelScheduler(Date.now());
-				const p = new AsyncSchedulerProcessor(scheduler, {
-					maxTaskCount: 100,
-				});
-
-				disposableStore.add(scheduler.installGlobally());
+				// Temporarily disable TimeTravelScheduler, as this needs a component explorer update
+				// schedulerStore.add(scheduler.installGlobally());
 				disposableStore.add(installFakeRunWhenIdle((_targetWindow, callback, _timeout?) => {
 					return scheduler.schedule({
 						time: scheduler.now,
@@ -658,20 +676,17 @@ export function defineComponentFixture(options: ComponentFixtureOptions): Themed
 
 				const result = options.render({ container, disposableStore, theme });
 
-				const p2 = p.waitForEmptyQueue();
+				const p2 = p.waitFor(1000);
 
-				if (isThenable(result)) {
-					await result;
-				}
-
-				await p2;
+				await Promise.all([
+					result instanceof Promise ? result : Promise.resolve(),
+					p2,
+				]);
 			}
 
-			await Promise.race([
-				actualRender(),
-				new Promise((resolve, reject) => originalGlobalValues.setTimeout(
-					() => reject(new Error('Timeout waiting for render to complete')), 400))
-			]);
+			await actualRender();
+
+			schedulerStore.dispose();
 
 			return disposableStore;
 		},

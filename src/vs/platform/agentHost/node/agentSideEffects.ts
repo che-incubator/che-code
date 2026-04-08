@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { match as globMatch } from '../../../base/common/glob.js';
 import { SequencerByKey } from '../../../base/common/async.js';
+import { match as globMatch } from '../../../base/common/glob.js';
 import { Disposable, DisposableStore, IDisposable } from '../../../base/common/lifecycle.js';
 import { autorun, IObservable } from '../../../base/common/observable.js';
 import { extUriBiasedIgnorePathCase, normalizePath } from '../../../base/common/resources.js';
@@ -12,6 +12,7 @@ import { URI } from '../../../base/common/uri.js';
 import { generateUuid } from '../../../base/common/uuid.js';
 import { ILogService } from '../../log/common/log.js';
 import { IAgent, IAgentAttachment, IAgentProgressEvent } from '../common/agentService.js';
+import { IDiffComputeService } from '../common/diffComputeService.js';
 import { ISessionDataService } from '../common/sessionDataService.js';
 import { ActionType, ISessionAction } from '../common/state/sessionActions.js';
 import {
@@ -22,11 +23,10 @@ import {
 	type URI as ProtocolURI,
 } from '../common/state/sessionState.js';
 import { AgentEventMapper } from './agentEventMapper.js';
+import { AgentHostStateManager } from './agentHostStateManager.js';
 import { CommandAutoApprover } from './commandAutoApprover.js';
-import { IDiffComputeService } from '../common/diffComputeService.js';
 import { NodeWorkerDiffComputeService } from './diffComputeService.js';
 import { computeSessionDiffs, type IIncrementalDiffOptions } from './sessionDiffAggregator.js';
-import { SessionStateManager } from './sessionStateManager.js';
 
 /**
  * Options for constructing an {@link AgentSideEffects} instance.
@@ -64,7 +64,7 @@ export class AgentSideEffects extends Disposable {
 	private readonly _diffComputationSequencer = new SequencerByKey<string>();
 
 	constructor(
-		private readonly _stateManager: SessionStateManager,
+		private readonly _stateManager: AgentHostStateManager,
 		private readonly _options: IAgentSideEffectsOptions,
 		private readonly _logService: ILogService,
 	) {
