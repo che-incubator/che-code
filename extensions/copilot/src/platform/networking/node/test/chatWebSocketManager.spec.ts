@@ -51,6 +51,7 @@ function createFakeCAPIClientService(ws: FakeWebSocket): ICAPIClientService {
 			responseHeaders: new HeadersImpl({}),
 			responseStatusCode: 101,
 			responseStatusText: 'Switching Protocols',
+			networkError: undefined,
 		} satisfies WebSocketConnection as unknown as WebSocketConnection),
 	} as unknown as ICAPIClientService;
 }

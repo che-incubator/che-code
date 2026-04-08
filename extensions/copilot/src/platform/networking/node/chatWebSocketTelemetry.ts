@@ -26,6 +26,7 @@ export interface IChatWebSocketConnectErrorTelemetryProperties extends IChatWebS
 	connectDurationMs: number;
 	responseStatusCode: number | undefined;
 	responseStatusText: string | undefined;
+	networkError: string | undefined;
 }
 
 export interface IChatWebSocketCloseTelemetryProperties extends IChatWebSocketRequestTelemetryProperties {
@@ -141,7 +142,8 @@ export class ChatWebSocketTelemetrySender {
 				"error": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "Error message for the failed connection" },
 				"connectDurationMs": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "Time until the connection error in milliseconds", "isMeasurement": true },
 				"responseStatusCode": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "HTTP response status code from the failed connection attempt", "isMeasurement": true },
-				"responseStatusText": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "HTTP response status text from the failed connection attempt" }
+				"responseStatusText": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "HTTP response status text from the failed connection attempt" },
+				"networkError": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "comment": "The underlying network error code and message from the dispatch layer" }
 			}
 		*/
 		telemetryService.sendTelemetryErrorEvent('websocket.connectError', { github: true, microsoft: true }, {
@@ -150,6 +152,7 @@ export class ChatWebSocketTelemetrySender {
 			gitHubRequestId: properties.gitHubRequestId,
 			error: properties.error,
 			responseStatusText: properties.responseStatusText,
+			networkError: properties.networkError,
 		}, {
 			connectDurationMs: properties.connectDurationMs,
 			responseStatusCode: properties.responseStatusCode,

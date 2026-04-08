@@ -369,8 +369,10 @@ class ChatWebSocketConnection extends Disposable implements IChatWebSocketConnec
 				this._responseStatusCode = connection.responseStatusCode;
 				this._responseStatusText = connection.responseStatusText;
 				const errorMessage = event.error ? `${event.message}: ${collectSingleLineErrorMessage(event.error)}` : event.message || 'WebSocket error';
+				const networkError = event.error?.cause ?? connection.networkError;
+				const networkErrorMessage = networkError ? collectSingleLineErrorMessage(networkError) : undefined;
 				const connectDurationMs = Date.now() - (this._connectStartTime ?? Date.now());
-				this._logService.error(`[ChatWebSocketManager] Connection error for conversation ${this._conversationId}: ${errorMessage}`);
+				this._logService.error(`[ChatWebSocketManager] Connection error for conversation ${this._conversationId}: ${errorMessage}${networkErrorMessage ? ` (cause: ${networkErrorMessage})` : ''}`);
 				ChatWebSocketTelemetrySender.sendConnectErrorTelemetry(this._telemetryService, {
 					conversationId: this._conversationId,
 					requestId: this.requestId,
@@ -379,6 +381,7 @@ class ChatWebSocketConnection extends Disposable implements IChatWebSocketConnec
 					connectDurationMs,
 					responseStatusCode: this._responseStatusCode,
 					responseStatusText: this._responseStatusText,
+					networkError: networkErrorMessage,
 				});
 				reject(new Error(errorMessage));
 			};
