@@ -838,7 +838,7 @@ export class AICustomizationManagementEditor extends EditorPane {
 				if (this.input) {
 					this.group.closeEditor(this.input);
 				}
-				this.commandService.executeCommand('workbench.action.chat.open', { query: '/agent-customizations ', isPartialQuery: true });
+				this.commandService.executeCommand('workbench.action.chat.open', { query: '/agent-customization ', isPartialQuery: true });
 			}));
 		}
 
