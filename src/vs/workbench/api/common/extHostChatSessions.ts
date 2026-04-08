@@ -21,9 +21,10 @@ import { ILogService } from '../../../platform/log/common/log.js';
 import { IChatRequestVariableEntry, IDiagnosticVariableEntryFilterData, ISymbolVariableEntry, PromptFileVariableKind, toPromptFileVariableEntry } from '../../contrib/chat/common/attachments/chatVariableEntries.js';
 import { IChatSessionProviderOptionItem } from '../../contrib/chat/common/chatSessionsService.js';
 import { ChatAgentLocation } from '../../contrib/chat/common/constants.js';
+import { isUntitledChatSession } from '../../contrib/chat/common/model/chatUri.js';
 import { IChatAgentRequest, IChatAgentResult } from '../../contrib/chat/common/participants/chatAgents.js';
 import { Proxied } from '../../services/extensions/common/proxyIdentifier.js';
-import { ChatSessionContentContextDto, IChatSessionDto, ExtHostChatSessionsShape, IChatAgentProgressShape, IChatSessionRequestHistoryItemDto, IChatSessionProviderOptions, MainContext, MainThreadChatSessionsShape, IChatNewSessionRequestDto } from './extHost.protocol.js';
+import { ChatSessionContentContextDto, ExtHostChatSessionsShape, IChatAgentProgressShape, IChatNewSessionRequestDto, IChatSessionDto, IChatSessionProviderOptions, IChatSessionRequestHistoryItemDto, MainContext, MainThreadChatSessionsShape } from './extHost.protocol.js';
 import { ChatAgentResponseStream } from './extHostChatAgents2.js';
 import { CommandsConverter, ExtHostCommands } from './extHostCommands.js';
 import { ExtHostLanguageModels } from './extHostLanguageModels.js';
@@ -31,7 +32,6 @@ import { IExtHostRpcService } from './extHostRpcService.js';
 import * as typeConvert from './extHostTypeConverters.js';
 import { Diagnostic } from './extHostTypeConverters.js';
 import * as extHostTypes from './extHostTypes.js';
-import { isUntitledChatSession } from '../../contrib/chat/common/model/chatUri.js';
 
 type ChatSessionTiming = vscode.ChatSessionItem['timing'];
 
@@ -60,6 +60,10 @@ class ChatSessionInputStateImpl implements vscode.ChatSessionInputState {
 
 	_fireDidChange(): void {
 		this.#onDidChangeEmitter.fire();
+	}
+
+	_setGroups(groups: readonly vscode.ChatSessionProviderOptionGroup[]): void {
+		this.#groups = groups;
 	}
 }
 
@@ -664,25 +668,46 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 			return;
 		}
 
-		if (!provider.provider.provideHandleOptionsChange) {
-			this._logService.debug(`Provider for handle ${handle} does not implement provideHandleOptionsChange`);
+		// Old provider based implementation
+		if (provider.provider.provideHandleOptionsChange) {
+			try {
+				const updatesToSend = Object.entries(updates).map(([optionId, value]) => ({
+					optionId,
+					value: value === undefined ? undefined : (typeof value === 'string' ? value : value.id)
+				}));
+				provider.provider.provideHandleOptionsChange(sessionResource, updatesToSend, token);
+			} catch (error) {
+				this._logService.error(`Error calling provideHandleOptionsChange for handle ${handle}, sessionResource ${sessionResource}:`, error);
+			}
 			return;
 		}
 
-		try {
-			const updatesToSend = Object.entries(updates).map(([optionId, value]) => ({
-				optionId,
-				value: value === undefined ? undefined : (typeof value === 'string' ? value : value.id)
-			}));
-			provider.provider.provideHandleOptionsChange(sessionResource, updatesToSend, token);
-		} catch (error) {
-			this._logService.error(`Error calling provideHandleOptionsChange for handle ${handle}, sessionResource ${sessionResource}:`, error);
+		const controllerData = this.getChatSessionItemController(sessionResource.scheme);
+		if (!controllerData || !controllerData.controller.getChatSessionInputState) {
+			this._logService.warn(`No valid controller found for scheme ${sessionResource.scheme}`);
+			return;
 		}
 
 		// Temporary workaround: input state changes for one resource are propagated to all
 		// input states for the same resource type until we can make this session-specific.
-		const controllerData = this.getChatSessionItemController(sessionResource.scheme);
 		for (const inputState of controllerData?.inputStates ?? []) {
+			// Update the selected items on the groups before firing the change event
+			const updatedGroups = inputState.groups.map(group => {
+				const update = updates[group.id];
+				if (!update) {
+					return group;
+				}
+
+				const selectedId = typeof update === 'string' ? update : update.id;
+				const selectedItem = group.items.find(item => item.id === selectedId);
+				if (!selectedItem) {
+					return group;
+				}
+				return { ...group, selected: selectedItem };
+			});
+
+			// Use quiet setter to avoid notifying the main thread back (it's the source of this change)
+			inputState._setGroups(updatedGroups);
 			inputState._fireDidChange();
 		}
 	}
