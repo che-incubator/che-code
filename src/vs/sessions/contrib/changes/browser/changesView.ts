@@ -570,52 +570,6 @@ export class ChangesViewPane extends ViewPane {
 			// Re-layout when collapse state changes so the card height adjusts
 			this.renderDisposables.add(tree.onDidChangeContentHeight(() => this.layoutSplitView()));
 
-			const openFileItem = (item: IChangesFileItem, items: IChangesFileItem[], sideBySide: boolean, preserveFocus: boolean, pinned: boolean, includeSidebar: boolean) => {
-				const { uri: modifiedFileUri, originalUri, isDeletion } = item;
-				const currentIndex = items.indexOf(item);
-
-				const sidebar = includeSidebar ? {
-					render: (container: unknown, onDidLayout: Event<{ readonly height: number; readonly width: number }>) => {
-						return this.renderSidebarList(container as HTMLElement, onDidLayout, items, openFileItem);
-					}
-				} : undefined;
-
-				const navigation = {
-					total: items.length,
-					current: currentIndex,
-					navigate: (index: number) => {
-						const target = items[index];
-						if (target) {
-							openFileItem(target, items, false, false, false, includeSidebar);
-						}
-					}
-				};
-
-				const group = sideBySide ? SIDE_GROUP : ACTIVE_GROUP;
-
-				if (isDeletion && originalUri) {
-					this.editorService.openEditor({
-						resource: originalUri,
-						options: { preserveFocus, pinned, modal: { sidebar, navigation } }
-					}, group);
-					return;
-				}
-
-				if (originalUri) {
-					this.editorService.openEditor({
-						original: { resource: originalUri },
-						modified: { resource: modifiedFileUri },
-						options: { preserveFocus, pinned, modal: { sidebar, navigation } }
-					}, group);
-					return;
-				}
-
-				this.editorService.openEditor({
-					resource: modifiedFileUri,
-					options: { preserveFocus, pinned, modal: { sidebar, navigation } }
-				}, group);
-			};
-
 			this.renderDisposables.add(tree.onDidOpen((e) => {
 				if (!e.element || !isChangesFileItem(e.element)) {
 					return;
@@ -624,7 +578,7 @@ export class ChangesViewPane extends ViewPane {
 				logChangesViewFileSelect(this.telemetryService, e.element.changeType);
 
 				const items = changesObs.get();
-				openFileItem(e.element, items, e.sideBySide, !!e.editorOptions?.preserveFocus, !!e.editorOptions?.pinned, items.length > 1);
+				this._openFileItem(e.element, items, e.sideBySide, !!e.editorOptions?.preserveFocus, !!e.editorOptions?.pinned, items.length > 1);
 			}));
 		}
 
@@ -942,6 +896,62 @@ export class ChangesViewPane extends ViewPane {
 				},
 			}
 		));
+	}
+
+	async openChanges(): Promise<void> {
+		const items = this.viewModel.activeSessionChangesObs.get();
+		if (items.length === 0) {
+			return;
+		}
+
+		const changes = toIChangesFileItem(items);
+		await this._openFileItem(changes[0], changes, false, false, false, changes.length > 1);
+	}
+
+	private async _openFileItem(item: IChangesFileItem, items: IChangesFileItem[], sideBySide: boolean, preserveFocus: boolean, pinned: boolean, includeSidebar: boolean): Promise<void> {
+		const { uri: modifiedFileUri, originalUri, isDeletion } = item;
+		const currentIndex = items.indexOf(item);
+
+		const sidebar = includeSidebar ? {
+			render: (container: unknown, onDidLayout: Event<{ readonly height: number; readonly width: number }>) => {
+				return this.renderSidebarList(container as HTMLElement, onDidLayout, items, this._openFileItem.bind(this));
+			}
+		} : undefined;
+
+		const navigation = {
+			total: items.length,
+			current: currentIndex,
+			navigate: (index: number) => {
+				const target = items[index];
+				if (target) {
+					this._openFileItem(target, items, false, false, false, includeSidebar);
+				}
+			}
+		};
+
+		const group = sideBySide ? SIDE_GROUP : ACTIVE_GROUP;
+
+		if (isDeletion && originalUri) {
+			this.editorService.openEditor({
+				resource: originalUri,
+				options: { preserveFocus, pinned, modal: { sidebar, navigation } }
+			}, group);
+			return;
+		}
+
+		if (originalUri) {
+			this.editorService.openEditor({
+				original: { resource: originalUri },
+				modified: { resource: modifiedFileUri },
+				options: { preserveFocus, pinned, modal: { sidebar, navigation } }
+			}, group);
+			return;
+		}
+
+		this.editorService.openEditor({
+			resource: modifiedFileUri,
+			options: { preserveFocus, pinned, modal: { sidebar, navigation } }
+		}, group);
 	}
 
 	override dispose(): void {
