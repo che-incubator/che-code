@@ -13,6 +13,9 @@
 set -e
 set -u
 
+PREVIOUS_UPSTREAM_VERSION="release/1.104"
+CURRENT_UPSTREAM_VERSION="release/1.108"
+
 # update $1 json file
 # $2 is the formatting option
 override_json_file() {
