@@ -13,6 +13,7 @@ import { Codicon } from '../../../../base/common/codicons.js';
 import { Disposable, DisposableStore, IDisposable } from '../../../../base/common/lifecycle.js';
 import { Event } from '../../../../base/common/event.js';
 import { autorun, derived, derivedOpts, IObservable } from '../../../../base/common/observable.js';
+import { CountBadge } from '../../../../base/browser/ui/countBadge/countBadge.js';
 import { ProgressBar } from '../../../../base/browser/ui/progressbar/progressbar.js';
 import { basename, isEqual } from '../../../../base/common/resources.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
@@ -39,7 +40,7 @@ import { ServiceCollection } from '../../../../platform/instantiation/common/ser
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
-import { defaultProgressBarStyles } from '../../../../platform/theme/browser/defaultStyles.js';
+import { defaultCountBadgeStyles, defaultProgressBarStyles } from '../../../../platform/theme/browser/defaultStyles.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { fillEditorsDragData } from '../../../../workbench/browser/dnd.js';
 import { ResourceLabels } from '../../../../workbench/browser/labels.js';
@@ -53,10 +54,10 @@ import { createFileIconThemableTreeContainerScope } from '../../../../workbench/
 import { ACTIVE_GROUP, IEditorService, SIDE_GROUP } from '../../../../workbench/services/editor/common/editorService.js';
 import { IExtensionService } from '../../../../workbench/services/extensions/common/extensions.js';
 import { IWorkbenchLayoutService } from '../../../../workbench/services/layout/browser/layoutService.js';
-import { ISessionsManagementService } from '../../sessions/browser/sessionsManagementService.js';
+import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 import { CodeReviewStateKind, getCodeReviewFilesFromSessionChanges, getCodeReviewVersion, ICodeReviewService, PRReviewStateKind } from '../../codeReview/browser/codeReviewService.js';
 import { CIStatusWidget } from './checksWidget.js';
-import { GITHUB_REMOTE_FILE_SCHEME, SessionStatus } from '../../sessions/common/sessionData.js';
+import { COPILOT_CLOUD_SESSION_TYPE, GITHUB_PR_FILE_SCHEME, GITHUB_REMOTE_FILE_SCHEME, SessionStatus } from '../../../services/sessions/common/session.js';
 import { Orientation } from '../../../../base/browser/ui/sash/sash.js';
 import { IView, Sizing, SplitView } from '../../../../base/browser/ui/splitview/splitview.js';
 import { Color } from '../../../../base/common/color.js';
@@ -754,7 +755,7 @@ export class ChangesViewPane extends ViewPane {
 
 		if (workspaceFolderUri.scheme === GITHUB_REMOTE_FILE_SCHEME) {
 			// Cloud session
-			resourceTreeRootUri = URI.from({ scheme: 'copilot-pr', path: '/' });
+			resourceTreeRootUri = URI.from({ scheme: GITHUB_PR_FILE_SCHEME, path: '/' });
 			const segments = workspaceFolderUri.path.split('/').filter(Boolean);
 			name = `${segments.slice(0, 2).join('/')} (${decodeURIComponent(segments[2])})`;
 		} else {
@@ -796,7 +797,10 @@ export class ChangesViewPane extends ViewPane {
 
 	override focus(): void {
 		super.focus();
-		this.tree?.domFocus();
+
+		if (this.tree && this.tree.getNode(null).visibleChildrenCount > 0) {
+			this.tree.domFocus();
+		}
 	}
 
 	private renderSidebarList(
@@ -811,6 +815,13 @@ export class ChangesViewPane extends ViewPane {
 
 		const viewMode = this.viewModel.viewModeObs.get();
 		container.classList.toggle('list-mode', viewMode === ChangesViewMode.List);
+
+		// "Changes" header
+		const headerNode = dom.append(container, $('.changes-sidebar-header'));
+		const headerLabel = dom.append(headerNode, $('span'));
+		headerLabel.textContent = localize('changes', "Changes");
+		const countBadge = disposables.add(new CountBadge(headerNode, { count: items.length }, defaultCountBadgeStyles));
+		countBadge.setCount(items.length);
 
 		const tree = this.createChangesTree(container, Event.None, disposables, () => tree.getSelection().filter(item => !!item && isChangesFileItem(item)));
 
@@ -855,8 +866,11 @@ export class ChangesViewPane extends ViewPane {
 			}
 		}));
 
-		// Layout on resize
-		disposables.add(onDidLayout(e => tree.layout(e.height, e.width)));
+		// Layout on resize, accounting for the header height
+		disposables.add(onDidLayout(e => {
+			const headerHeight = headerNode.offsetHeight;
+			tree.layout(Math.max(0, e.height - headerHeight), e.width);
+		}));
 
 		return disposables;
 	}
@@ -884,7 +898,7 @@ export class ChangesViewPane extends ViewPane {
 					const activeSession = this.sessionManagementService.activeSession.get();
 					const repository = activeSession?.workspace.get()?.repositories[0];
 					return repository?.uri.scheme === GITHUB_REMOTE_FILE_SCHEME
-						? URI.from({ scheme: 'copilot-pr', path: '/' })
+						? URI.from({ scheme: GITHUB_PR_FILE_SCHEME, path: '/' })
 						: repository?.workingDirectory ?? repository?.uri;
 				})],
 			{
@@ -1154,8 +1168,9 @@ class ChangesPickerActionItem extends ActionWidgetDropdownActionViewItem {
 						description: localize('chatEditing.versionsAllChanges.description', 'Show all changes made in this session'),
 						checked: viewModel.versionModeObs.get() === ChangesVersionMode.AllChanges,
 						category: { label: 'checkpoints', order: 2, showHeader: false },
-						enabled: viewModel.activeSessionFirstCheckpointRefObs.get() !== undefined &&
-							viewModel.activeSessionLastCheckpointRefObs.get() !== undefined,
+						enabled: viewModel.activeSessionTypeObs.get() === COPILOT_CLOUD_SESSION_TYPE ||
+							(viewModel.activeSessionFirstCheckpointRefObs.get() !== undefined &&
+								viewModel.activeSessionLastCheckpointRefObs.get() !== undefined),
 						run: async () => {
 							viewModel.setVersionMode(ChangesVersionMode.AllChanges);
 							logChangesViewVersionModeChange(this.telemetryService, ChangesVersionMode.AllChanges);
@@ -1171,8 +1186,9 @@ class ChangesPickerActionItem extends ActionWidgetDropdownActionViewItem {
 						description: localize('chatEditing.versionsLastTurnChanges.description', 'Show only changes from the last turn'),
 						checked: viewModel.versionModeObs.get() === ChangesVersionMode.LastTurn,
 						category: { label: 'checkpoints', order: 3, showHeader: false },
-						enabled: viewModel.activeSessionFirstCheckpointRefObs.get() !== undefined &&
-							viewModel.activeSessionLastCheckpointRefObs.get() !== undefined,
+						enabled: viewModel.activeSessionTypeObs.get() === COPILOT_CLOUD_SESSION_TYPE ||
+							(viewModel.activeSessionFirstCheckpointRefObs.get() !== undefined &&
+								viewModel.activeSessionLastCheckpointRefObs.get() !== undefined),
 						run: async () => {
 							viewModel.setVersionMode(ChangesVersionMode.LastTurn);
 							logChangesViewVersionModeChange(this.telemetryService, ChangesVersionMode.LastTurn);
