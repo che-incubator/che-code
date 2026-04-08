@@ -27,7 +27,7 @@ import { StopWatch } from '../../../util/vs/base/common/stopwatch';
 import { hasKey } from '../../../util/vs/base/common/types';
 import { EXTENSION_ID } from '../../common/constants';
 import { GitBranchNameGenerator } from '../../prompt/node/gitBranch';
-import { IChatSessionMetadataStore } from '../common/chatSessionMetadataStore';
+import { IChatSessionMetadataStore, RepositoryProperties } from '../common/chatSessionMetadataStore';
 import { IChatSessionWorkspaceFolderService } from '../common/chatSessionWorkspaceFolderService';
 import { IChatSessionWorktreeService } from '../common/chatSessionWorktreeService';
 import { IChatFolderMruService, IFolderRepositoryManager, IsolationMode } from '../common/folderRepositoryManager';
@@ -1360,7 +1360,14 @@ export function registerCLIChatCommands(
 			return;
 		}
 
-		copilotCliWorkspaceSession.trackSessionWorkspaceFolder(sessionId, workspaceFolder.fsPath, repository.headBranchName ? { repositoryPath: repository.rootUri.fsPath, branchName: repository.headBranchName } : undefined);
+		const repositoryProperties = repository.headBranchName
+			? {
+				repositoryPath: repository.rootUri.fsPath,
+				branchName: repository.headBranchName
+			} satisfies RepositoryProperties
+			: undefined;
+
+		await copilotCliWorkspaceSession.trackSessionWorkspaceFolder(sessionId, workspaceFolder.fsPath, repositoryProperties);
 		copilotCliWorkspaceSession.clearWorkspaceChanges(sessionId);
 
 		await contentProvider.refreshSession({ reason: 'update', sessionId });

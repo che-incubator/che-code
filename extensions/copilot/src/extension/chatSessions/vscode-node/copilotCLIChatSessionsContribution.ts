@@ -2390,7 +2390,7 @@ export function registerCLIChatCommands(
 			} satisfies RepositoryProperties
 			: undefined;
 
-		copilotCliWorkspaceSession.trackSessionWorkspaceFolder(sessionId, workspaceFolder.fsPath, repositoryProperties);
+		await copilotCliWorkspaceSession.trackSessionWorkspaceFolder(sessionId, workspaceFolder.fsPath, repositoryProperties);
 		copilotCliWorkspaceSession.clearWorkspaceChanges(sessionId);
 
 		copilotcliSessionItemProvider.notifySessionsChange();
