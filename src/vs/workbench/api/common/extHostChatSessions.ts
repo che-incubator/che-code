@@ -14,6 +14,7 @@ import { ResourceMap, ResourceSet } from '../../../base/common/map.js';
 import { MarshalledId } from '../../../base/common/marshallingIds.js';
 import * as objects from '../../../base/common/objects.js';
 import { URI, UriComponents } from '../../../base/common/uri.js';
+import { generateUuid } from '../../../base/common/uuid.js';
 import { SymbolKind, SymbolKinds } from '../../../editor/common/languages.js';
 import { IExtensionDescription } from '../../../platform/extensions/common/extensions.js';
 import { ILogService } from '../../../platform/log/common/log.js';
@@ -361,6 +362,12 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 	 */
 	private readonly _extHostChatSessions = new ResourceMap<{ readonly sessionObj: ExtHostChatSession; readonly disposeCts: CancellationTokenSource }>();
 
+	/**
+	 * Map of proxy command id -> original command id + controller handle.
+	 * Used to wrap option group commands so they receive `{ inputState, sessionResource }` instead of just `sessionResource`.
+	 */
+	private readonly _proxyCommands = new Map</* proxyId */ string, { readonly originalCommandId: string; readonly controllerHandle: number }>();
+
 	constructor(
 		private readonly commands: ExtHostCommands,
 		private readonly _languageModels: ExtHostLanguageModels,
@@ -507,7 +514,8 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 					if (entry) {
 						entry.optionGroups = inputState.groups;
 					}
-					const serializableGroups = inputState.groups.map(g => ({
+					const wrappedGroups = this._wrapOptionGroupCommands(controllerHandle, inputState.groups);
+					const serializableGroups = wrappedGroups.map(g => ({
 						id: g.id,
 						name: g.name,
 						description: g.description,
@@ -818,6 +826,77 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 		return new ChatSessionInputStateImpl(resolvedGroups);
 	}
 
+	/**
+	 * Gets the input state for a session. This calls the controller's `getChatSessionInputState` handler if available,
+	 * otherwise falls back to creating an input state from the session options.
+	 */
+	async getInputStateForSession(
+		sessionResource: URI | undefined,
+		initialSessionOptions: ReadonlyArray<{ optionId: string; value: string }> | undefined,
+		token: CancellationToken,
+	): Promise<vscode.ChatSessionInputState> {
+		const scheme = sessionResource?.scheme;
+		const controllerData = scheme ? this.getChatSessionItemController(scheme) : undefined;
+		if (controllerData?.controller.getChatSessionInputState) {
+			const result = await controllerData.controller.getChatSessionInputState(
+				sessionResource && !isUntitledChatSession(sessionResource) ? sessionResource : undefined,
+				{ previousInputState: this._createInputStateFromOptions(controllerData.optionGroups ?? [], initialSessionOptions) },
+				token,
+			);
+			if (result) {
+				return result;
+			}
+		}
+		return this._createInputStateFromOptions(controllerData?.optionGroups ?? [], initialSessionOptions);
+	}
+
+	/**
+	 * Wraps option group commands with proxy commands so that extensions using the new
+	 * `getChatSessionInputState` API receive `{ inputState, sessionResource }` instead of just `sessionResource`.
+	 *
+	 * For controllers that do not implement the new API, commands are returned unchanged.
+	 */
+	private _wrapOptionGroupCommands(
+		controllerHandle: number,
+		groups: readonly vscode.ChatSessionProviderOptionGroup[],
+	): readonly vscode.ChatSessionProviderOptionGroup[] {
+		const controllerData = this._chatSessionItemControllers.get(controllerHandle);
+		if (!controllerData?.controller.getChatSessionInputState) {
+			return groups;
+		}
+
+		return groups.map(group => {
+			if (!group.commands?.length) {
+				return group;
+			}
+			return {
+				...group,
+				commands: group.commands.map(command => {
+					const proxyId = `_chatSession.proxyCommand.${generateUuid()}`;
+					this._proxyCommands.set(proxyId, { originalCommandId: command.command, controllerHandle });
+
+					this.commands.registerCommand(true, proxyId, async (...args: unknown[]) => {
+						// The main thread passes sessionResource as the first argument
+						const sessionResource = args[0] instanceof URI ? args[0] : undefined;
+						const inputState = await this.getInputStateForSession(
+							sessionResource,
+							undefined,
+							CancellationToken.None,
+						);
+						// Call the original command with the new context object
+						return this.commands.executeCommand(
+							command.command,
+							{ inputState, sessionResource },
+							...(command.arguments ?? []),
+						);
+					});
+
+					return { ...command, command: proxyId };
+				}),
+			};
+		});
+	}
+
 	private async getModelForRequest(request: IChatAgentRequest, extension: IExtensionDescription): Promise<vscode.LanguageModelChat> {
 		let model: vscode.LanguageModelChat | undefined;
 		if (request.userSelectedModelId) {
@@ -996,8 +1075,10 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 		// Store the option groups for onSearch callbacks
 		controllerData.optionGroups = inputState.groups;
 
+		const wrappedGroups = this._wrapOptionGroupCommands(controllerHandle, inputState.groups);
+
 		// Strip non-serializable fields (onSearch) before returning over the protocol
-		return inputState.groups.map(g => ({
+		return wrappedGroups.map(g => ({
 			id: g.id,
 			name: g.name,
 			description: g.description,
