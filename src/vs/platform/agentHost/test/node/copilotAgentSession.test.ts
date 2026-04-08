@@ -12,6 +12,7 @@ import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/c
 import { NullLogService, ILogService } from '../../../log/common/log.js';
 import { IFileService } from '../../../files/common/files.js';
 import { AgentSession, IAgentProgressEvent } from '../../common/agentService.js';
+import { IDiffComputeService } from '../../common/diffComputeService.js';
 import { ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
 import { CopilotAgentSession, SessionWrapperFactory } from '../../node/copilot/copilotAgentSession.js';
 import { CopilotSessionWrapper } from '../../node/copilot/copilotSessionWrapper.js';
@@ -67,8 +68,11 @@ function createMockSessionDataService(): ISessionDataService {
 		deleteTurn: async () => { },
 		storeFileEdit: async () => { },
 		getFileEdits: async () => [],
+		getAllFileEdits: async () => [],
 		readFileEditContent: async () => undefined,
 		getMetadata: async () => undefined,
+		getFileEditsByTurn: async () => [],
+		getMetadataObject: async (obj) => Object.fromEntries(Object.keys(obj).map(k => [k, undefined])) as never,
 		setMetadata: async () => { },
 		close: async () => { },
 		dispose: () => { },
@@ -102,6 +106,7 @@ async function createAgentSession(disposables: DisposableStore, options?: { work
 	services.set(ILogService, new NullLogService());
 	services.set(IFileService, { _serviceBrand: undefined } as IFileService);
 	services.set(ISessionDataService, createMockSessionDataService());
+	services.set(IDiffComputeService, { _serviceBrand: undefined, computeDiffCounts: async () => ({ added: 0, removed: 0 }) } as IDiffComputeService);
 	const instantiationService = disposables.add(new InstantiationService(services));
 
 	const session = disposables.add(instantiationService.createInstance(

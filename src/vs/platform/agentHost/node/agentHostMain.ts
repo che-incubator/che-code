@@ -34,6 +34,8 @@ import { InstantiationService } from '../../instantiation/common/instantiationSe
 import { ServiceCollection } from '../../instantiation/common/serviceCollection.js';
 import { SessionDataService } from './sessionDataService.js';
 import { ISessionDataService } from '../common/sessionDataService.js';
+import { IDiffComputeService } from '../common/diffComputeService.js';
+import { NodeWorkerDiffComputeService } from './diffComputeService.js';
 import { AgentHostClientFileSystemProvider } from '../common/agentHostClientFileSystemProvider.js';
 import { AGENT_CLIENT_SCHEME } from '../common/agentClientUri.js';
 import { IAgentPluginManager } from '../common/agentPluginManager.js';
@@ -83,6 +85,10 @@ function startAgentHost(): void {
 		diServices.set(IFileService, fileService);
 		diServices.set(ISessionDataService, sessionDataService);
 		diServices.set(IAgentPluginManager, pluginManager);
+
+		const diffComputeService = disposables.add(new NodeWorkerDiffComputeService(logService));
+		diServices.set(IDiffComputeService, diffComputeService);
+
 		const instantiationService = new InstantiationService(diServices);
 		agentService.registerProvider(instantiationService.createInstance(CopilotAgent));
 	} catch (err) {

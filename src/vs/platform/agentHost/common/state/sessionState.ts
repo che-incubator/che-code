@@ -40,6 +40,7 @@ export {
 	type IResponsePart,
 	type IRootState,
 	type ISessionActiveClient,
+	type ISessionFileDiff,
 	type ISessionModelInfo,
 	type ISessionState,
 	type ISessionSummary,
