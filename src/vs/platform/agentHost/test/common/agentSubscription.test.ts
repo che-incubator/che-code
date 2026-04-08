@@ -9,6 +9,7 @@ import { URI } from '../../../../base/common/uri.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 import { ActionType, type IActionEnvelope } from '../../common/state/sessionActions.js';
 import { SessionLifecycle, SessionStatus, TerminalClaimKind, type IRootState, type ISessionState, type ITerminalState } from '../../common/state/protocol/state.js';
+import { StateComponents } from '../../common/state/sessionState.js';
 import { AgentSubscriptionManager, RootStateSubscription, SessionStateSubscription, TerminalStateSubscription } from '../../common/state/agentSubscription.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -487,7 +488,7 @@ suite('AgentSubscriptionManager', () => {
 	test('getSubscription returns IReference with subscription', async () => {
 		const mgr = createManager();
 		const uri = URI.parse(sessionUri);
-		const ref = mgr.getSubscription<ISessionState>(uri);
+		const ref = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
 
 		assert.ok(ref.object);
 		assert.strictEqual(ref.object.value, undefined); // not yet initialized (async)
@@ -502,8 +503,8 @@ suite('AgentSubscriptionManager', () => {
 	test('second call for same resource increments refcount', async () => {
 		const mgr = createManager();
 		const uri = URI.parse(sessionUri);
-		const ref1 = mgr.getSubscription<ISessionState>(uri);
-		const ref2 = mgr.getSubscription<ISessionState>(uri);
+		const ref1 = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
+		const ref2 = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
 
 		await new Promise(r => setTimeout(r, 0));
 
@@ -522,7 +523,7 @@ suite('AgentSubscriptionManager', () => {
 	test('disposing last ref calls unsubscribe callback', async () => {
 		const mgr = createManager();
 		const uri = URI.parse(sessionUri);
-		const ref = mgr.getSubscription<ISessionState>(uri);
+		const ref = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
 
 		await new Promise(r => setTimeout(r, 0));
 
@@ -535,7 +536,7 @@ suite('AgentSubscriptionManager', () => {
 		mgr.handleRootSnapshot(makeRootState(), 0);
 
 		const uri = URI.parse(sessionUri);
-		const ref = mgr.getSubscription<ISessionState>(uri);
+		const ref = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
 		await new Promise(r => setTimeout(r, 0));
 
 		// Send a root action
@@ -558,7 +559,7 @@ suite('AgentSubscriptionManager', () => {
 	test('creating session subscription for copilot: URI', async () => {
 		const mgr = createManager();
 		const mySessionUri = URI.from({ scheme: 'copilot', path: '/my-session' });
-		const ref = mgr.getSubscription<ISessionState>(mySessionUri);
+		const ref = mgr.getSubscription<ISessionState>(StateComponents.Session, mySessionUri);
 		await new Promise(r => setTimeout(r, 0));
 
 		assert.ok(ref.object.value);
@@ -570,7 +571,7 @@ suite('AgentSubscriptionManager', () => {
 	test('creating terminal subscription for terminal URI', async () => {
 		const mgr = createManager();
 		const uri = URI.parse(terminalUri);
-		const ref = mgr.getSubscription<ITerminalState>(uri);
+		const ref = mgr.getSubscription<ITerminalState>(StateComponents.Terminal, uri);
 		await new Promise(r => setTimeout(r, 0));
 
 		assert.ok(ref.object.value);
@@ -582,7 +583,7 @@ suite('AgentSubscriptionManager', () => {
 	test('dispatchOptimistic applies to matching session subscription', async () => {
 		const mgr = createManager();
 		const uri = URI.parse(sessionUri);
-		const ref = mgr.getSubscription<ISessionState>(uri);
+		const ref = mgr.getSubscription<ISessionState>(StateComponents.Session, uri);
 		await new Promise(r => setTimeout(r, 0));
 
 		const clientSeq = mgr.dispatchOptimistic({
@@ -602,8 +603,8 @@ suite('AgentSubscriptionManager', () => {
 	test('dispose clears all subscriptions and calls unsubscribe for each', async () => {
 		const mgr = createManager();
 
-		const ref1 = mgr.getSubscription<ISessionState>(URI.parse(sessionUri));
-		const ref2 = mgr.getSubscription<ITerminalState>(URI.parse(terminalUri));
+		const ref1 = mgr.getSubscription<ISessionState>(StateComponents.Session, URI.parse(sessionUri));
+		const ref2 = mgr.getSubscription<ITerminalState>(StateComponents.Terminal, URI.parse(terminalUri));
 		await new Promise(r => setTimeout(r, 0));
 
 		// Remove the manager from disposables so we can dispose it manually

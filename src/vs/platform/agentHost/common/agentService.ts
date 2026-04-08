@@ -14,7 +14,7 @@ import type { IActionEnvelope, INotification, ISessionAction, ITerminalAction } 
 import type { IAgentSubscription } from './state/agentSubscription.js';
 import type { ICreateTerminalParams } from './state/protocol/commands.js';
 import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, IResourceDeleteResult, IResourceListResult, IResourceMoveParams, IResourceMoveResult, IResourceReadResult, IResourceWriteParams, IResourceWriteResult, IStateSnapshot } from './state/sessionProtocol.js';
-import { AttachmentType, type ICustomizationRef, type IPendingMessage, type IRootState, type IToolCallResult, type PolicyState, type StringOrMarkdown } from './state/sessionState.js';
+import { AttachmentType, ComponentToState, StateComponents, type ICustomizationRef, type IPendingMessage, type IRootState, type IToolCallResult, type PolicyState, type StringOrMarkdown } from './state/sessionState.js';
 
 // IPC contract between the renderer and the agent host utility process.
 // Defines all serializable event types, the IAgent provider interface,
@@ -508,7 +508,7 @@ export interface IAgentConnection {
 
 	// ---- State subscriptions ------------------------------------------------
 	readonly rootState: IAgentSubscription<IRootState>;
-	getSubscription<T>(resource: URI): IReference<IAgentSubscription<T>>;
+	getSubscription<T extends StateComponents>(kind: T, resource: URI): IReference<IAgentSubscription<ComponentToState[T]>>;
 
 	// ---- Action dispatch ----------------------------------------------------
 	dispatch(action: ISessionAction | ITerminalAction): void;

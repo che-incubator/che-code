@@ -20,7 +20,7 @@ import { ISessionTruncatedAction } from '../../../../../../platform/agentHost/co
 import { ICustomizationRef, type IProtectedResourceMetadata } from '../../../../../../platform/agentHost/common/state/protocol/state.js';
 import { ActionType, ISessionTurnStartedAction, type ISessionAction } from '../../../../../../platform/agentHost/common/state/sessionActions.js';
 import { AHP_AUTH_REQUIRED, ProtocolError } from '../../../../../../platform/agentHost/common/state/sessionProtocol.js';
-import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, ToolResultContentType, TurnState, type IMessageAttachment, type IRootState, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
+import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, StateComponents, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, ToolResultContentType, TurnState, type IMessageAttachment, type IRootState, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
 import { ExtensionIdentifier } from '../../../../../../platform/extensions/common/extensions.js';
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
@@ -1489,7 +1489,7 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 	private _ensureSessionSubscription(sessionUri: string): IAgentSubscription<ISessionState> {
 		let ref = this._sessionSubscriptions.get(sessionUri);
 		if (!ref) {
-			ref = this._config.connection.getSubscription(URI.parse(sessionUri));
+			ref = this._config.connection.getSubscription(StateComponents.Session, URI.parse(sessionUri));
 			this._sessionSubscriptions.set(sessionUri, ref);
 		}
 		return ref.object;

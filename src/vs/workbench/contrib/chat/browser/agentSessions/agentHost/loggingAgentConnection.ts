@@ -9,7 +9,7 @@ import { URI, UriComponents } from '../../../../../../base/common/uri.js';
 import { Registry } from '../../../../../../platform/registry/common/platform.js';
 import { IAgentConnection, IAgentCreateSessionConfig, IAgentSessionMetadata, IAuthenticateParams, IAuthenticateResult, AgentHostIpcLoggingSettingId } from '../../../../../../platform/agentHost/common/agentService.js';
 import type { IAgentSubscription } from '../../../../../../platform/agentHost/common/state/agentSubscription.js';
-import type { IRootState } from '../../../../../../platform/agentHost/common/state/sessionState.js';
+import { StateComponents, type ComponentToState, type IRootState } from '../../../../../../platform/agentHost/common/state/sessionState.js';
 import type { IActionEnvelope, INotification, ISessionAction, ITerminalAction } from '../../../../../../platform/agentHost/common/state/sessionActions.js';
 import type { ICreateTerminalParams } from '../../../../../../platform/agentHost/common/state/protocol/commands.js';
 import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, IResourceDeleteResult, IResourceListResult, IResourceMoveParams, IResourceMoveResult, IResourceReadResult, IResourceWriteParams, IResourceWriteResult } from '../../../../../../platform/agentHost/common/state/sessionProtocol.js';
@@ -64,9 +64,10 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 	 * connection, or creates one if none exists yet. The channel ID and label
 	 * from the first caller win.
 	 *
-	 * The returned instance is shared and must NOT be disposed by callers.
-	 * It is cleaned up automatically when the inner connection is garbage
-	 * collected.
+	 * Callers that own the lifecycle of the connection (e.g. contributions)
+	 * should register the result for disposal. When disposed, the cached
+	 * instance is removed from the WeakMap so a fresh one can be created
+	 * on next access.
 	 */
 	static getOrCreate(
 		instantiationService: IInstantiationService,
@@ -76,7 +77,9 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 		let instance = LoggingAgentConnection._instances.get(inner);
 		if (!instance) {
 			instance = instantiationService.createInstance(LoggingAgentConnection, inner, `agenthost.${inner.clientId}`, channelLabel);
-			LoggingAgentConnection._instances.set(inner, instance);
+			const captured = instance;
+			instance._register({ dispose: () => LoggingAgentConnection._instances.delete(inner) });
+			LoggingAgentConnection._instances.set(inner, captured);
 		}
 		return instance;
 	}
@@ -157,8 +160,8 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 		return this._inner.rootState;
 	}
 
-	getSubscription<T>(resource: URI): IReference<IAgentSubscription<T>> {
-		return this._inner.getSubscription(resource);
+	getSubscription<T extends StateComponents>(kind: T, resource: URI): IReference<IAgentSubscription<ComponentToState[T]>> {
+		return this._inner.getSubscription(kind, resource);
 	}
 
 	dispatch(action: ISessionAction | ITerminalAction): void {

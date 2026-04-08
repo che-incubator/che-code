@@ -17,6 +17,7 @@ import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, I
 
 import { AgentHostPty } from '../../browser/agentHostPty.js';
 import { IAgentSubscription } from '../../../../../platform/agentHost/common/state/agentSubscription.js';
+import { StateComponents } from '../../../../../platform/agentHost/common/state/sessionState.js';
 import { hasKey } from '../../../../../base/common/types.js';
 
 // ---- Mock IAgentConnection --------------------------------------------------
@@ -86,7 +87,7 @@ class MockAgentConnection implements IAgentConnection {
 		onWillApplyAction: Event.None,
 		onDidApplyAction: Event.None,
 	};
-	getSubscription<T>(_resource: URI): IReference<IAgentSubscription<T>> {
+	getSubscription<T>(_kind: StateComponents, _resource: URI): IReference<IAgentSubscription<T>> {
 		const onDidChange = new Emitter<ITerminalState>();
 		const onWillApplyAction = new Emitter<IActionEnvelope>();
 		const onDidApplyAction = new Emitter<IActionEnvelope>();

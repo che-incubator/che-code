@@ -12,6 +12,7 @@ import { terminalReducer } from './protocol/reducers.js';
 import type { IRootAction, ISessionAction as IProtocolSessionAction, ITerminalAction } from './protocol/action-origin.generated.js';
 import type { IRootState, ISessionState, ITerminalState } from './protocol/state.js';
 import type { IStateSnapshot } from './sessionProtocol.js';
+import { StateComponents } from './sessionState.js';
 
 // --- Public API --------------------------------------------------------------
 
@@ -391,7 +392,7 @@ export class AgentSubscriptionManager extends Disposable {
 	 * the returned reference decrements the refcount; when it reaches zero
 	 * the subscription is torn down and the server is notified.
 	 */
-	getSubscription<T>(resource: URI): IReference<IAgentSubscription<T>> {
+	getSubscription<T>(kind: StateComponents, resource: URI): IReference<IAgentSubscription<T>> {
 		const key = resource.toString();
 		const existing = this._subscriptions.get(key);
 		if (existing) {
@@ -402,8 +403,8 @@ export class AgentSubscriptionManager extends Disposable {
 			};
 		}
 
-		// Create new subscription based on URI scheme/pattern
-		const sub = this._createSubscription(key);
+		// Create new subscription based on caller-specified kind
+		const sub = this._createSubscription(kind, key);
 		const entry = { sub, refCount: 1 };
 		this._subscriptions.set(key, entry);
 
@@ -454,13 +455,15 @@ export class AgentSubscriptionManager extends Disposable {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private _createSubscription(key: string): BaseAgentSubscription<any> {
-		// Session URIs typically use copilot: scheme; terminal URIs use agenthost-terminal:
-		// For now, use simple heuristic based on what the caller subscribes to
-		if (key.startsWith('copilot:') || key.includes('/session/')) {
-			return new SessionStateSubscription(key, this._clientId, this._seqAllocator, this._log);
+	private _createSubscription(kind: StateComponents, key: string): BaseAgentSubscription<any> {
+		switch (kind) {
+			case StateComponents.Session:
+				return new SessionStateSubscription(key, this._clientId, this._seqAllocator, this._log);
+			case StateComponents.Terminal:
+				return new TerminalStateSubscription(key, this._clientId, this._log);
+			default:
+				return new TerminalStateSubscription(key, this._clientId, this._log);
 		}
-		return new TerminalStateSubscription(key, this._clientId, this._log);
 	}
 
 	private _releaseSubscription(key: string): void {

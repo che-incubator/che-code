@@ -11,6 +11,7 @@ import { IAgentConnection } from '../../../../platform/agentHost/common/agentSer
 import { ActionType, IActionEnvelope } from '../../../../platform/agentHost/common/state/sessionActions.js';
 import { TerminalClaimKind, type ITerminalState } from '../../../../platform/agentHost/common/state/protocol/state.js';
 import { IAgentSubscription } from '../../../../platform/agentHost/common/state/agentSubscription.js';
+import { StateComponents } from '../../../../platform/agentHost/common/state/sessionState.js';
 import { BasePty } from '../common/basePty.js';
 
 /**
@@ -65,7 +66,7 @@ export class AgentHostPty extends BasePty implements ITerminalChildProcess {
 			});
 
 			// 2. Get a subscription for the terminal URI (auto-subscribes)
-			this._subscriptionRef = this._connection.getSubscription(this._terminalUri);
+			this._subscriptionRef = this._connection.getSubscription(StateComponents.Terminal, this._terminalUri);
 			const subscription = this._subscriptionRef.object;
 
 			// 3. Wait for hydration via onDidChange, then replay snapshot

@@ -18,9 +18,9 @@ import { AgentSubscriptionManager, type IAgentSubscription } from '../common/sta
 import type { ICreateTerminalParams } from '../common/state/protocol/commands.js';
 import type { IActionEnvelope, INotification, ISessionAction, ITerminalAction } from '../common/state/sessionActions.js';
 import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, IResourceDeleteResult, IResourceListResult, IResourceMoveParams, IResourceMoveResult, IResourceReadResult, IResourceWriteParams, IResourceWriteResult, IStateSnapshot } from '../common/state/sessionProtocol.js';
+import { StateComponents, ROOT_STATE_URI, type IRootState } from '../common/state/sessionState.js';
 import { revive } from '../../../base/common/marshalling.js';
 import { URI } from '../../../base/common/uri.js';
-import { ROOT_STATE_URI, type IRootState } from '../common/state/sessionState.js';
 
 /**
  * Renderer-side implementation of {@link IAgentHostService} that connects
@@ -143,8 +143,8 @@ class AgentHostServiceClient extends Disposable implements IAgentHostService {
 		return this._subscriptionManager.rootState;
 	}
 
-	getSubscription<T>(resource: URI): IReference<IAgentSubscription<T>> {
-		return this._subscriptionManager.getSubscription<T>(resource);
+	getSubscription<T>(kind: StateComponents, resource: URI): IReference<IAgentSubscription<T>> {
+		return this._subscriptionManager.getSubscription<T>(kind, resource);
 	}
 
 	dispatch(action: ISessionAction | ITerminalAction): void {

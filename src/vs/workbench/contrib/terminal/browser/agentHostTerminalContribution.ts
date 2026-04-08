@@ -113,14 +113,12 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 
 	private _collectEntries(): IAgentHostEntry[] {
 		const entries: IAgentHostEntry[] = [];
-		const activeAddresses = new Set<string>();
 
 		// Remote connections
 		for (const info of this._remoteAgentHostService.connections) {
 			if (info.status !== RemoteAgentHostConnectionStatus.Connected) {
 				continue;
 			}
-			activeAddresses.add(info.address);
 			const connection = this._remoteAgentHostService.getConnection(info.address);
 			if (!connection) {
 				continue;
@@ -159,12 +157,14 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 		const provider: ITerminalProfileProvider = {
 			createContributedTerminalProfile: async (options) => {
 				let connection: IAgentConnection | undefined;
+				let displayName = entry.name;
 
 				if (key === '__quickpick__') {
 					// Show quickpick to let user choose a host
-					const picks: (IQuickPickItem & { address: string })[] = allEntries.map(e => ({
+					const picks: (IQuickPickItem & { address: string; hostName: string })[] = allEntries.map(e => ({
 						label: localize('agentHostTerminal.profileName', "Agent Host ({0})", e.name),
 						address: e.address,
+						hostName: e.name,
 					}));
 					const pick = await this._quickInputService.pick(picks, {
 						placeHolder: localize('agentHostTerminal.pickHost', "Select an agent host to open a terminal on"),
@@ -174,6 +174,7 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 					}
 					this._usedHosts.add(pick.address);
 					this._reconcile();
+					displayName = pick.hostName;
 					connection = allEntries.find(e => e.address === pick.address)?.getConnection();
 				} else {
 					connection = entry.getConnection();
@@ -190,7 +191,7 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 					config: {
 						customPtyImplementation: (id, cols, rows) => {
 							const pty = new AgentHostPty(id, capturedConnection, terminalUri, {
-								name: entry.name !== '__quickpick__' ? `Agent Host (${entry.name})` : undefined,
+								name: `Agent Host (${displayName})`,
 								cwd: options.cwd ? (typeof options.cwd === 'string' ? URI.file(options.cwd) : options.cwd) : undefined,
 							});
 							// Set initial dimensions before start
@@ -199,9 +200,7 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 							}
 							return pty;
 						},
-						name: key === '__quickpick__'
-							? localize('agentHostTerminal.profileName', "Agent Host ({0})", entry.name)
-							: localize('agentHostTerminal.profileName', "Agent Host ({0})", entry.name),
+						name: localize('agentHostTerminal.profileName', "Agent Host ({0})", displayName),
 						icon: { id: 'remote' },
 						isFeatureTerminal: false,
 					},

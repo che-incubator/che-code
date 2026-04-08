@@ -20,7 +20,7 @@ import { AgentSubscriptionManager, type IAgentSubscription } from '../common/sta
 import { agentHostAuthority, fromAgentHostUri, toAgentHostUri } from '../common/agentHostUri.js';
 import type { IClientNotificationMap, ICommandMap } from '../common/state/protocol/messages.js';
 import type { IActionEnvelope, INotification, ISessionAction, ITerminalAction } from '../common/state/sessionActions.js';
-import { ISessionSummary, ROOT_STATE_URI, type IRootState } from '../common/state/sessionState.js';
+import { ISessionSummary, ROOT_STATE_URI, StateComponents, type IRootState } from '../common/state/sessionState.js';
 import { PROTOCOL_VERSION } from '../common/state/sessionCapabilities.js';
 import { isJsonRpcNotification, isJsonRpcRequest, isJsonRpcResponse, type IJsonRpcResponse, type IProtocolMessage, type IStateSnapshot } from '../common/state/sessionProtocol.js';
 import { isClientTransport, type IProtocolTransport } from '../common/state/sessionTransport.js';
@@ -140,12 +140,12 @@ export class RemoteAgentHostProtocolClient extends Disposable implements IAgentC
 		return this._subscriptionManager.rootState;
 	}
 
-	getSubscription<T>(resource: URI): IReference<IAgentSubscription<T>> {
-		return this._subscriptionManager.getSubscription<T>(resource);
+	getSubscription<T>(kind: StateComponents, resource: URI): IReference<IAgentSubscription<T>> {
+		return this._subscriptionManager.getSubscription<T>(kind, resource);
 	}
 
 	dispatch(action: ISessionAction | ITerminalAction): void {
-		const seq = this._subscriptionManager.dispatchOptimistic(action as ISessionAction);
+		const seq = this._subscriptionManager.dispatchOptimistic(action);
 		this.dispatchAction(action, this._clientId, seq);
 	}
 
