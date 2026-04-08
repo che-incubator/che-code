@@ -498,7 +498,7 @@ export class ExternalIngestIndex extends Disposable {
 					"externalIngestIndex.search.cancelled" : {
 						"owner": "mjbvz",
 						"comment": "Logged info about cancellation of external ingest search. Mostly for timeouts",
-						"durationMs": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true, "comment": "Time taken to complete the search in milliseconds" }
+						"durationMs": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true, "comment": "Time taken before the search was cancelled or aborted in milliseconds" }
 					}
 				*/
 				this._telemetryService.sendMSFTTelemetryEvent('externalIngestIndex.search.cancelled', undefined, {
