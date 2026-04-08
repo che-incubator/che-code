@@ -15,7 +15,7 @@ import { AgentProvider, AgentSession, IAgent, IAgentCreateSessionConfig, IAgentM
 import { ISessionDataService } from '../common/sessionDataService.js';
 import { ActionType, IActionEnvelope, INotification, ISessionAction } from '../common/state/sessionActions.js';
 import { AhpErrorCodes, AHP_SESSION_NOT_FOUND, ContentEncoding, JSON_RPC_INTERNAL_ERROR, ProtocolError, type IDirectoryEntry, type IResourceCopyParams, type IResourceCopyResult, type IResourceDeleteParams, type IResourceDeleteResult, type IResourceListResult, type IResourceMoveParams, type IResourceMoveResult, type IResourceReadResult, type IResourceWriteParams, type IResourceWriteResult, type IStateSnapshot } from '../common/state/sessionProtocol.js';
-import { ResponsePartKind, SessionStatus, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IResponsePart, type ISessionSummary, type IToolCallCompletedState, type ITurn } from '../common/state/sessionState.js';
+import { ResponsePartKind, SessionStatus, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IResponsePart, type ISessionFileDiff, type ISessionSummary, type IToolCallCompletedState, type ITurn } from '../common/state/sessionState.js';
 import { AgentSideEffects } from './agentSideEffects.js';
 import { ISessionDbUriFields, parseSessionDbUri } from './copilot/fileEditTracker.js';
 import { SessionStateManager } from './sessionStateManager.js';
@@ -122,20 +122,19 @@ export class AgentService extends Disposable implements IAgentService {
 					return s;
 				}
 				try {
-					const [customTitle, isReadRaw, isDoneRaw] = await Promise.all([
-						ref.object.getMetadata('customTitle'),
-						ref.object.getMetadata('isRead'),
-						ref.object.getMetadata('isDone'),
-					]);
+					const m = await ref.object.getMetadataObject({ customTitle: true, isRead: true, isDone: true, diffs: true });
 					let updated = s;
-					if (customTitle) {
-						updated = { ...updated, summary: customTitle };
+					if (m.customTitle) {
+						updated = { ...updated, summary: m.customTitle };
 					}
-					if (isReadRaw !== undefined) {
-						updated = { ...updated, isRead: isReadRaw === 'true' };
+					if (m.isRead !== undefined) {
+						updated = { ...updated, isRead: m.isRead === 'true' };
 					}
-					if (isDoneRaw !== undefined) {
-						updated = { ...updated, isDone: isDoneRaw === 'true' };
+					if (m.isDone !== undefined) {
+						updated = { ...updated, isDone: m.isDone === 'true' };
+					}
+					if (m.diffs) {
+						try { updated = { ...updated, diffs: JSON.parse(m.diffs) }; } catch { /* ignore malformed */ }
 					}
 					return updated;
 				} finally {
@@ -318,25 +317,25 @@ export class AgentService extends Disposable implements IAgentService {
 		let title = meta.summary ?? 'Session';
 		let isRead: boolean | undefined;
 		let isDone: boolean | undefined;
+		let diffs: ISessionFileDiff[] | undefined;
 		const ref = this._sessionDataService.tryOpenDatabase?.(session);
 		if (ref) {
 			try {
 				const db = await ref;
 				if (db) {
 					try {
-						const [customTitle, isReadRaw, isDoneRaw] = await Promise.all([
-							db.object.getMetadata('customTitle'),
-							db.object.getMetadata('isRead'),
-							db.object.getMetadata('isDone'),
-						]);
-						if (customTitle) {
-							title = customTitle;
+						const m = await db.object.getMetadataObject({ customTitle: true, isRead: true, isDone: true, diffs: true });
+						if (m.customTitle) {
+							title = m.customTitle;
 						}
-						if (isReadRaw !== undefined) {
-							isRead = isReadRaw === 'true';
+						if (m.isRead !== undefined) {
+							isRead = m.isRead === 'true';
 						}
-						if (isDoneRaw !== undefined) {
-							isDone = isDoneRaw === 'true';
+						if (m.isDone !== undefined) {
+							isDone = m.isDone === 'true';
+						}
+						if (m.diffs) {
+							try { diffs = JSON.parse(m.diffs); } catch { /* ignore malformed */ }
 						}
 					} finally {
 						db.dispose();
@@ -357,6 +356,7 @@ export class AgentService extends Disposable implements IAgentService {
 			workingDirectory: meta.workingDirectory?.toString(),
 			isRead,
 			isDone,
+			diffs,
 		};
 
 		this._stateManager.restoreSession(summary, turns);

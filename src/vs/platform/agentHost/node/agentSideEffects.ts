@@ -22,6 +22,9 @@ import {
 } from '../common/state/sessionState.js';
 import { AgentEventMapper } from './agentEventMapper.js';
 import { CommandAutoApprover } from './commandAutoApprover.js';
+import { IDiffComputeService } from '../common/diffComputeService.js';
+import { NodeWorkerDiffComputeService } from './diffComputeService.js';
+import { computeSessionDiffs } from './sessionDiffAggregator.js';
 import { SessionStateManager } from './sessionStateManager.js';
 
 /**
@@ -54,6 +57,8 @@ export class AgentSideEffects extends Disposable {
 	private readonly _eventMappers = new Map<string, AgentEventMapper>();
 	/** Auto-approver for shell commands parsed via tree-sitter. */
 	private readonly _commandAutoApprover: CommandAutoApprover;
+	/** Shared diff compute service for calculating line-level diffs in a worker thread. */
+	private readonly _diffComputeService: IDiffComputeService;
 
 	constructor(
 		private readonly _stateManager: SessionStateManager,
@@ -62,6 +67,7 @@ export class AgentSideEffects extends Disposable {
 	) {
 		super();
 		this._commandAutoApprover = this._register(new CommandAutoApprover(this._logService));
+		this._diffComputeService = this._register(new NodeWorkerDiffComputeService(this._logService));
 
 		// Whenever the agents observable changes, publish to root state.
 		this._register(autorun(reader => {
@@ -218,8 +224,10 @@ export class AgentSideEffects extends Disposable {
 				this._dispatchProgressActions(agentMapper, e, sessionKey, turnId);
 			}
 
-			// After a turn completes (idle event), try to consume the next queued message
+			// After a turn completes (idle event), compute session diffs and
+			// try to consume the next queued message
 			if (e.type === 'idle') {
+				this._computeSessionDiffs(sessionKey);
 				this._tryConsumeNextQueuedMessage(sessionKey);
 			}
 
@@ -496,6 +504,38 @@ export class AgentSideEffects extends Disposable {
 				turnId,
 				error: { errorType: 'sendFailed', message: String(err) },
 			});
+		});
+	}
+
+	// ---- Session diff computation ----------------------------------------------
+
+	/**
+	 * Asynchronously (re)computes aggregated diff statistics for a session
+	 * and dispatches {@link ActionType.SessionDiffsChanged} to update the
+	 * session summary. Fire-and-forget: errors are logged but do not fail
+	 * the turn.
+	 */
+	private _computeSessionDiffs(session: ProtocolURI): void {
+		let ref: ReturnType<ISessionDataService['openDatabase']>;
+		try {
+			ref = this._options.sessionDataService.openDatabase(URI.parse(session));
+		} catch {
+			return;
+		}
+		computeSessionDiffs(ref.object, this._diffComputeService).then(diffs => {
+			this._stateManager.dispatchServerAction({
+				type: ActionType.SessionDiffsChanged,
+				session,
+				diffs,
+			});
+			// Persist diffs to the session database so they survive restarts
+			ref.object.setMetadata('diffs', JSON.stringify(diffs)).catch(err => {
+				this._logService.warn('[AgentSideEffects] Failed to persist session diffs', err);
+			});
+		}).catch(err => {
+			this._logService.warn('[AgentSideEffects] Failed to compute session diffs', err);
+		}).finally(() => {
+			ref.dispose();
 		});
 	}
 

@@ -167,7 +167,7 @@ export class AgentHostContribution extends Disposable implements IWorkbenchContr
 		}));
 
 		// Session list controller
-		const listController = store.add(this._instantiationService.createInstance(AgentHostSessionListController, sessionType, agent.provider, this._loggedConnection!, undefined));
+		const listController = store.add(this._instantiationService.createInstance(AgentHostSessionListController, sessionType, agent.provider, this._loggedConnection!, undefined, 'local'));
 		store.add(this._chatSessionsService.registerChatSessionItemController(sessionType, listController));
 
 		// Customization sync provider + bundler + observable
@@ -310,9 +310,18 @@ export class AgentHostContribution extends Disposable implements IWorkbenchContr
 	private async _resolveAuthenticationInteractively(protectedResources: IProtectedResourceMetadata[]): Promise<boolean> {
 		try {
 			for (const resource of protectedResources) {
+				const resourceUri = URI.parse(resource.resource);
+				const resolved = await resolveTokenForResource(resourceUri, resource.authorization_servers || [], resource.scopes_supported || [], this._authenticationService, this._logService, '[AgentHost]');
+				if (resolved) {
+					await this._loggedConnection!.authenticate({
+						resource: resource.resource,
+						token: resolved,
+					});
+					return true;
+				}
+
 				for (const server of resource.authorization_servers ?? []) {
 					const serverUri = URI.parse(server);
-					const resourceUri = URI.parse(resource.resource);
 					const providerId = await this._authenticationService.getOrActivateProviderIdForServer(serverUri, resourceUri);
 					if (!providerId) {
 						continue;

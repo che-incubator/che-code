@@ -9,7 +9,7 @@ import { Emitter } from '../../../../base/common/event.js';
 import { Disposable, IReference, toDisposable } from '../../../../base/common/lifecycle.js';
 import { URI } from '../../../../base/common/uri.js';
 import { extUriBiasedIgnorePathCase, normalizePath } from '../../../../base/common/resources.js';
-import { IFileService } from '../../../files/common/files.js';
+import { IInstantiationService } from '../../../instantiation/common/instantiation.js';
 import { ILogService } from '../../../log/common/log.js';
 import { localize } from '../../../../nls.js';
 import { IAgentAttachment, IAgentMessageEvent, IAgentProgressEvent, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
@@ -127,7 +127,7 @@ export class CopilotAgentSession extends Disposable {
 		workingDirectory: URI | undefined,
 		private readonly _onDidSessionProgress: Emitter<IAgentProgressEvent>,
 		private readonly _wrapperFactory: SessionWrapperFactory,
-		@IFileService private readonly _fileService: IFileService,
+		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@ILogService private readonly _logService: ILogService,
 		@ISessionDataService sessionDataService: ISessionDataService,
 	) {
@@ -139,7 +139,7 @@ export class CopilotAgentSession extends Disposable {
 		this._databaseRef = sessionDataService.openDatabase(sessionUri);
 		this._register(toDisposable(() => this._databaseRef.dispose()));
 
-		this._editTracker = new FileEditTracker(sessionUri.toString(), this._databaseRef.object, this._fileService, this._logService);
+		this._editTracker = this._instantiationService.createInstance(FileEditTracker, sessionUri.toString(), this._databaseRef.object);
 
 		this._register(toDisposable(() => this._denyPendingPermissions()));
 	}
@@ -381,7 +381,7 @@ export class CopilotAgentSession extends Disposable {
 			this._turnId = e.data.turnId;
 		}));
 
-		this._register(wrapper.onToolComplete(e => {
+		this._register(wrapper.onToolComplete(async e => {
 			const tracked = this._activeToolCalls.get(e.data.toolCallId);
 			if (!tracked) {
 				return;
@@ -396,12 +396,15 @@ export class CopilotAgentSession extends Disposable {
 				content.push({ type: ToolResultContentType.Text, text: toolOutput });
 			}
 
-			// File edit data was already prepared by the onPostToolUse hook
 			const filePath = isEditTool(tracked.toolName) ? getEditFilePath(tracked.parameters) : undefined;
 			if (filePath) {
-				const fileEdit = this._editTracker.takeCompletedEdit(this._turnId, e.data.toolCallId, filePath);
-				if (fileEdit) {
-					content.push(fileEdit);
+				try {
+					const fileEdit = await this._editTracker.takeCompletedEdit(this._turnId, e.data.toolCallId, filePath);
+					if (fileEdit) {
+						content.push(fileEdit);
+					}
+				} catch (err) {
+					this._logService.warn(`[Copilot:${sessionId}] Failed to take completed edit`, err);
 				}
 			}
 

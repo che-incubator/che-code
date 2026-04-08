@@ -217,7 +217,7 @@ function createContribution(disposables: DisposableStore) {
 
 	const clientState = disposables.add(new SessionClientState(agentHostService.clientId, new NullLogService(), () => agentHostService.nextClientSeq()));
 	disposables.add(agentHostService.onDidAction(e => clientState.receiveEnvelope(e)));
-	const listController = disposables.add(instantiationService.createInstance(AgentHostSessionListController, 'agent-host-copilot', 'copilot', agentHostService, undefined));
+	const listController = disposables.add(instantiationService.createInstance(AgentHostSessionListController, 'agent-host-copilot', 'copilot', agentHostService, undefined, 'local'));
 	const sessionHandler = disposables.add(instantiationService.createInstance(AgentHostSessionHandler, {
 		provider: 'copilot' as const,
 		agentId: 'agent-host-copilot',
@@ -1551,7 +1551,7 @@ suite('AgentHostChatContribution', () => {
 			const { instantiationService, agentHostService } = createTestServices(disposables);
 
 			const controller = disposables.add(instantiationService.createInstance(
-				AgentHostSessionListController, 'remote-test', 'copilot', agentHostService, 'My Remote Host'));
+				AgentHostSessionListController, 'remote-test', 'copilot', agentHostService, 'My Remote Host', 'local'));
 
 			agentHostService.addSession({ session: AgentSession.uri('copilot', 'sess-1'), startTime: 1000, modifiedTime: 2000, summary: 'Test session' });
 			await controller.refresh(CancellationToken.None);
@@ -1564,7 +1564,7 @@ suite('AgentHostChatContribution', () => {
 			const { instantiationService, agentHostService } = createTestServices(disposables);
 
 			const controller = disposables.add(instantiationService.createInstance(
-				AgentHostSessionListController, 'agent-host-copilot', 'copilot', agentHostService, undefined));
+				AgentHostSessionListController, 'agent-host-copilot', 'copilot', agentHostService, undefined, 'local'));
 
 			agentHostService.addSession({ session: AgentSession.uri('copilot', 'sess-2'), startTime: 1000, modifiedTime: 2000, summary: 'Test' });
 			await controller.refresh(CancellationToken.None);
