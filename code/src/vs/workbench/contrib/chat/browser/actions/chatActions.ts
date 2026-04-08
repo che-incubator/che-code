@@ -982,8 +982,7 @@ registerAction2(class ToggleCopilotControl extends ToggleTitleBarConfigAction {
 					ChatContextKeys.Setup.disabled.negate()
 				),
 				IsCompactTitleBarContext.negate(),
-				ChatContextKeys.supported,
-				ContextKeyExpr.has('config.chat.commandCenter.enabled')
+				ChatContextKeys.supported
 			)
 		);
 	}
