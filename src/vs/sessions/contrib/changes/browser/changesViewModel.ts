@@ -185,9 +185,12 @@ export class ChangesViewModel extends Disposable {
 	}
 
 	private _getActiveSessionGitRepository(): { repository: IObservable<IGitRepository | undefined>; repositoryState: IObservable<GitRepositoryState | undefined> } {
-		const activeSessionRepositoryObs = derived(reader => {
-			const activeSession = this.sessionManagementService.activeSession.read(reader);
-			return activeSession?.workspace.read(reader)?.repositories[0];
+		const activeSessionRepositoryPathObs = derived(reader => {
+			const metadata = this._activeSessionMetadataObs.read(reader);
+			const repositoryPath = metadata?.repositoryPath as string | undefined;
+			const worktreePath = metadata?.worktreePath as string | undefined;
+
+			return worktreePath ?? repositoryPath;
 		});
 
 		const activeSessionRepositoryPromiseObs = derived(reader => {
@@ -196,13 +199,11 @@ export class ChangesViewModel extends Disposable {
 				return constObservable(undefined);
 			}
 
-			const metadata = this._activeSessionMetadataObs.read(reader);
-			const activeSessionRepository = activeSessionRepositoryObs.read(reader);
+			const activeSessionRepositoryPath = activeSessionRepositoryPathObs.read(reader);
+			const workingDirectory = activeSessionRepositoryPath
+				? URI.file(activeSessionRepositoryPath)
+				: undefined;
 
-			const repositoryPath = metadata?.repositoryPath as string | undefined;
-			const workingDirectory = repositoryPath
-				? URI.file(repositoryPath)
-				: activeSessionRepository?.workingDirectory ?? activeSessionRepository?.uri;
 			if (!workingDirectory) {
 				return constObservable(undefined);
 			}
