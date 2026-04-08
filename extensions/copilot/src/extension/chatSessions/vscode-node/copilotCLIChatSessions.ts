@@ -253,6 +253,9 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 					try {
 						const result = await this.copilotCLIWorktreeManagerService.recreateWorktreeOnUnarchive(sessionId);
 						this.logService.trace(`[CopilotCLI] Worktree recreation for session ${sessionId}: ${result.recreated ? 'recreated' : result.reason}`);
+						if (result.recreated) {
+							await this.refreshSession({ reason: 'update', sessionId });
+						}
 					} catch (error) {
 						this.logService.error(`[CopilotCLI] Failed to recreate worktree for unarchived session ${sessionId}:`, error);
 					}

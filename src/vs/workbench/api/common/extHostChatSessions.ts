@@ -439,13 +439,17 @@ export class ExtHostChatSessions extends Disposable implements ExtHostChatSessio
 			}));
 		}
 
-		return {
+		const disposable: vscode.Disposable = {
 			dispose: () => {
 				this._chatSessionItemControllers.delete(controllerHandle);
 				disposables.dispose();
 				this._proxy.$unregisterChatSessionItemController(controllerHandle);
 			}
 		};
+
+		return Object.assign(disposable, {
+			onDidChangeChatSessionItemState: onDidChangeChatSessionItemStateEmitter.event,
+		});
 	}
 
 	createChatSessionItemController(extension: IExtensionDescription, id: string, refreshHandler: (token: vscode.CancellationToken) => Thenable<void>): vscode.ChatSessionItemController {
