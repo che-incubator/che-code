@@ -95,7 +95,7 @@ suite('stateToProgressAdapter', () => {
 					kind: ResponsePartKind.ToolCall, toolCall: createCompletedToolCall({
 						toolInput: 'echo hello',
 						content: [
-							{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t1' },
+							{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t1', title: 'Terminal' },
 							{ type: ToolResultContentType.Text, text: 'hello' },
 						],
 						success: true,
@@ -153,7 +153,7 @@ suite('stateToProgressAdapter', () => {
 					kind: ResponsePartKind.ToolCall, toolCall: createCompletedToolCall({
 						toolInput: 'bad-command',
 						content: [
-							{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t2' },
+							{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t2', title: 'Terminal' },
 							{ type: ToolResultContentType.Text, text: 'error' },
 						],
 						success: false,
@@ -195,7 +195,7 @@ suite('stateToProgressAdapter', () => {
 			const tc = createToolCallState({
 				toolInput: 'ls -la',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t3' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t3', title: 'Terminal' },
 				],
 			});
 
@@ -221,7 +221,7 @@ suite('stateToProgressAdapter', () => {
 				toolInput: 'echo hi',
 				status: ToolCallStatus.Running,
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t4' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t4', title: 'Terminal' },
 				],
 			});
 			const invocation = toolCallStateToInvocation(tc);
@@ -237,7 +237,7 @@ suite('stateToProgressAdapter', () => {
 				success: true,
 				pastTenseMessage: 'Ran echo hi',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t4' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///t4', title: 'Terminal' },
 					{ type: ToolResultContentType.Text, text: 'output text' },
 				],
 			});
@@ -530,7 +530,7 @@ suite('stateToProgressAdapter', () => {
 				_meta: { toolKind: 'terminal' },
 				toolInput: 'npm test',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///abc123' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///abc123', title: 'Terminal' },
 				],
 				success: true,
 			});
@@ -558,7 +558,7 @@ suite('stateToProgressAdapter', () => {
 				},
 				toolInput: 'npm test',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///abc123' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///abc123', title: 'Terminal' },
 					{ type: ToolResultContentType.Text, text: 'text-output' },
 				],
 				success: true,
@@ -585,7 +585,7 @@ suite('stateToProgressAdapter', () => {
 				_meta: { toolKind: 'terminal' },
 				toolInput: 'npm test',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///running-term' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///running-term', title: 'Terminal' },
 				],
 			});
 
@@ -602,7 +602,7 @@ suite('stateToProgressAdapter', () => {
 				_meta: { toolKind: 'terminal' },
 				toolInput: 'echo hello',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///final-term' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///final-term', title: 'Terminal' },
 				],
 			});
 			const invocation = toolCallStateToInvocation(tc);
@@ -619,7 +619,7 @@ suite('stateToProgressAdapter', () => {
 				success: true,
 				pastTenseMessage: 'Ran echo hello',
 				content: [
-					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///final-term' },
+					{ type: ToolResultContentType.Terminal, resource: 'agenthost-terminal:///final-term', title: 'Terminal' },
 				],
 			});
 

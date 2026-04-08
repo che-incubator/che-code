@@ -428,12 +428,6 @@ export class ProtocolServerHandler extends Disposable {
 		resourceMove: async (_client, params) => {
 			return this._agentService.resourceMove(params);
 		},
-		createTerminal: async () => {
-			return null;
-		},
-		disposeTerminal: async () => {
-			return null;
-		},
 		authenticate: async (_client, params) => {
 			const result = await this._agentService.authenticate(params);
 			if (!result.authenticated) {
