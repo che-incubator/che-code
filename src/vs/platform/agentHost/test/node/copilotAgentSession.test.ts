@@ -71,6 +71,7 @@ function createMockSessionDataService(): ISessionDataService {
 		getAllFileEdits: async () => [],
 		readFileEditContent: async () => undefined,
 		getMetadata: async () => undefined,
+		getFileEditsByTurn: async () => [],
 		getMetadataObject: async (obj) => Object.fromEntries(Object.keys(obj).map(k => [k, undefined])) as never,
 		setMetadata: async () => { },
 		close: async () => { },
