@@ -316,6 +316,20 @@ export interface ISessionActiveClient {
 }
 
 /**
+ * A summary of changes to a single file within a session.
+ *
+ * @category Session State
+ */
+export interface ISessionFileDiff {
+	/** URI of the affected file */
+	uri: URI;
+	/** Number of items added (e.g., lines for text files, cells for notebooks) */
+	added?: number;
+	/** Number of items removed (e.g., lines for text files, cells for notebooks) */
+	removed?: number;
+}
+
+/**
  * @category Session State
  */
 export interface ISessionSummary {
@@ -335,6 +349,12 @@ export interface ISessionSummary {
 	model?: string;
 	/** The working directory URI for this session */
 	workingDirectory?: URI;
+	/** Whether the client has viewed this session since its last modification */
+	isRead?: boolean;
+	/** Whether the session has been marked as done by the client */
+	isDone?: boolean;
+	/** Files changed during this session with diff statistics */
+	diffs?: ISessionFileDiff[];
 }
 
 // ─── Turn Types ──────────────────────────────────────────────────────────────
@@ -805,6 +825,7 @@ export const enum ToolResultContentType {
 	Resource = 'resource',
 	FileEdit = 'fileEdit',
 	Terminal = 'terminal',
+	Subagent = 'subagent',
 }
 
 /**
@@ -891,6 +912,28 @@ export interface IToolResultTerminalContent {
 	type: ToolResultContentType.Terminal;
 	/** Terminal URI (subscribable for full terminal state) */
 	resource: URI;
+	/** Display title for the terminal content */
+	title: string;
+}
+
+/**
+ * A reference to a subagent session spawned by a tool.
+ *
+ * Clients can subscribe to the subagent's session URI to stream its
+ * progress in real time, including inner tool calls and responses.
+ *
+ * @category Tool Result Content
+ */
+export interface IToolResultSubagentContent {
+	type: ToolResultContentType.Subagent;
+	/** Subagent session URI (subscribable for full session state) */
+	resource: URI;
+	/** Display title for the subagent */
+	title: string;
+	/** Internal agent name */
+	agentName?: string;
+	/** Human-readable description of the subagent's task */
+	description?: string;
 }
 
 /**
@@ -898,8 +941,9 @@ export interface IToolResultTerminalContent {
  *
  * Mirrors the content blocks in MCP `CallToolResult.content`, plus
  * `IToolResultResourceContent` for lazy-loading large results,
- * `IToolResultFileEditContent` for file edit diffs, and
- * `IToolResultTerminalContent` for live terminal output (AHP extensions).
+ * `IToolResultFileEditContent` for file edit diffs,
+ * `IToolResultTerminalContent` for live terminal output, and
+ * `IToolResultSubagentContent` for subagent sessions (AHP extensions).
  *
  * @category Tool Result Content
  */
@@ -908,7 +952,8 @@ export type IToolResultContent =
 	| IToolResultEmbeddedResourceContent
 	| IToolResultResourceContent
 	| IToolResultFileEditContent
-	| IToolResultTerminalContent;
+	| IToolResultTerminalContent
+	| IToolResultSubagentContent;
 
 // ─── Customization Types ─────────────────────────────────────────────────────
 

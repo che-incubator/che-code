@@ -130,15 +130,27 @@ export class AgentService extends Disposable implements IAgentService {
 					return s;
 				}
 				try {
-					const customTitle = await ref.object.getMetadata('customTitle');
+					const [customTitle, isReadRaw, isDoneRaw] = await Promise.all([
+						ref.object.getMetadata('customTitle'),
+						ref.object.getMetadata('isRead'),
+						ref.object.getMetadata('isDone'),
+					]);
+					let updated = s;
 					if (customTitle) {
-						return { ...s, summary: customTitle };
+						updated = { ...updated, summary: customTitle };
 					}
+					if (isReadRaw !== undefined) {
+						updated = { ...updated, isRead: isReadRaw === 'true' };
+					}
+					if (isDoneRaw !== undefined) {
+						updated = { ...updated, isDone: isDoneRaw === 'true' };
+					}
+					return updated;
 				} finally {
 					ref.dispose();
 				}
-			} catch {
-				// ignore — title overlay is best-effort
+			} catch (e) {
+				this._logService.warn(`[AgentService] Failed to read session metadata overlay for ${s.session}`, e);
 			}
 			return s;
 		}));
@@ -329,24 +341,36 @@ export class AgentService extends Disposable implements IAgentService {
 		}
 		const turns = this._buildTurnsFromMessages(messages);
 
-		// Check for a persisted custom title in the session database
+		// Check for persisted metadata in the session database
 		let title = meta.summary ?? 'Session';
+		let isRead: boolean | undefined;
+		let isDone: boolean | undefined;
 		const ref = this._sessionDataService.tryOpenDatabase?.(session);
 		if (ref) {
 			try {
 				const db = await ref;
 				if (db) {
 					try {
-						const customTitle = await db.object.getMetadata('customTitle');
+						const [customTitle, isReadRaw, isDoneRaw] = await Promise.all([
+							db.object.getMetadata('customTitle'),
+							db.object.getMetadata('isRead'),
+							db.object.getMetadata('isDone'),
+						]);
 						if (customTitle) {
 							title = customTitle;
+						}
+						if (isReadRaw !== undefined) {
+							isRead = isReadRaw === 'true';
+						}
+						if (isDoneRaw !== undefined) {
+							isDone = isDoneRaw === 'true';
 						}
 					} finally {
 						db.dispose();
 					}
 				}
 			} catch {
-				// Best-effort: fall back to agent-provided title
+				// Best-effort: fall back to agent-provided metadata
 			}
 		}
 
@@ -358,6 +382,8 @@ export class AgentService extends Disposable implements IAgentService {
 			createdAt: meta.startTime,
 			modifiedAt: meta.modifiedTime,
 			workingDirectory: meta.workingDirectory?.toString(),
+			isRead,
+			isDone,
 		};
 
 		this._stateManager.restoreSession(summary, turns);

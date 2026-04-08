@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Emitter, Event } from '../../../../../../base/common/event.js';
-import { Disposable, IReference } from '../../../../../../base/common/lifecycle.js';
+import { Disposable, IReference, toDisposable } from '../../../../../../base/common/lifecycle.js';
 import { URI, UriComponents } from '../../../../../../base/common/uri.js';
 import { Registry } from '../../../../../../platform/registry/common/platform.js';
 import { IAgentConnection, IAgentCreateSessionConfig, IAgentSessionMetadata, IAuthenticateParams, IAuthenticateResult, AgentHostIpcLoggingSettingId } from '../../../../../../platform/agentHost/common/agentService.js';
@@ -15,7 +15,6 @@ import type { ICreateTerminalParams } from '../../../../../../platform/agentHost
 import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, IResourceDeleteResult, IResourceListResult, IResourceMoveParams, IResourceMoveResult, IResourceReadResult, IResourceWriteParams, IResourceWriteResult } from '../../../../../../platform/agentHost/common/state/sessionProtocol.js';
 import { Extensions, IOutputChannel, IOutputChannelRegistry, IOutputService } from '../../../../../services/output/common/output.js';
 import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
-import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 
 /**
  * JSON replacer that serializes revived URI objects to their string form,
@@ -44,8 +43,9 @@ function formatPayload(data: unknown): string {
  * traffic to a dedicated output channel. Used by both local and remote agent
  * host contributions to provide per-host IPC tracing.
  *
- * The output channel is registered on construction and removed on dispose,
- * so its lifetime matches the connection.
+ * The output channel is registered on first construction for a given channel
+ * ID and ref-counted across instances, so it survives reconnections and is
+ * only removed when the last instance for that ID is disposed.
  *
  * All method calls, results, errors, and events are logged with arrows:
  * - `>>` for outgoing calls
@@ -57,32 +57,8 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 
 	declare readonly _serviceBrand: undefined;
 
-	private static readonly _instances = new WeakMap<IAgentConnection, LoggingAgentConnection>();
-
-	/**
-	 * Returns an existing {@link LoggingAgentConnection} for the given inner
-	 * connection, or creates one if none exists yet. The channel ID and label
-	 * from the first caller win.
-	 *
-	 * Callers that own the lifecycle of the connection (e.g. contributions)
-	 * should register the result for disposal. When disposed, the cached
-	 * instance is removed from the WeakMap so a fresh one can be created
-	 * on next access.
-	 */
-	static getOrCreate(
-		instantiationService: IInstantiationService,
-		inner: IAgentConnection,
-		channelLabel: string,
-	): LoggingAgentConnection {
-		let instance = LoggingAgentConnection._instances.get(inner);
-		if (!instance) {
-			instance = instantiationService.createInstance(LoggingAgentConnection, inner, `agenthost.${inner.clientId}`, channelLabel);
-			const captured = instance;
-			instance._register({ dispose: () => LoggingAgentConnection._instances.delete(inner) });
-			LoggingAgentConnection._instances.set(inner, captured);
-		}
-		return instance;
-	}
+	/** Ref-count per channel ID so the output channel survives reconnections. */
+	private static readonly _channelRefCounts = new Map<string, number>();
 
 	private _outputChannel: IOutputChannel | undefined;
 	private readonly _enabled: boolean;
@@ -103,15 +79,26 @@ export class LoggingAgentConnection extends Disposable implements IAgentConnecti
 		this._enabled = !!configurationService.getValue<boolean>(AgentHostIpcLoggingSettingId);
 
 		if (this._enabled) {
-			// Register the output channel
 			const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
-			registry.registerChannel({
-				id: this.channelId,
-				label: this._channelLabel,
-				log: false,
-				languageId: 'log',
-			});
-			this._register({ dispose: () => registry.removeChannel(this.channelId) });
+			const refs = LoggingAgentConnection._channelRefCounts.get(this.channelId) ?? 0;
+			if (refs === 0) {
+				registry.registerChannel({
+					id: this.channelId,
+					label: this._channelLabel,
+					log: false,
+					languageId: 'log',
+				});
+			}
+			LoggingAgentConnection._channelRefCounts.set(this.channelId, refs + 1);
+			this._register(toDisposable(() => {
+				const current = LoggingAgentConnection._channelRefCounts.get(this.channelId)! - 1;
+				if (current <= 0) {
+					LoggingAgentConnection._channelRefCounts.delete(this.channelId);
+					registry.removeChannel(this.channelId);
+				} else {
+					LoggingAgentConnection._channelRefCounts.set(this.channelId, current);
+				}
+			}));
 		}
 
 		// Wrap events with logging

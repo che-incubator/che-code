@@ -75,9 +75,10 @@ export class AgentHostContribution extends Disposable implements IWorkbenchContr
 		}
 
 		// Wrap the agent host service with logging to a dedicated output channel
-		this._loggedConnection = this._register(LoggingAgentConnection.getOrCreate(
-			this._instantiationService,
+		this._loggedConnection = this._register(this._instantiationService.createInstance(
+			LoggingAgentConnection,
 			this._agentHostService,
+			`agenthost.${this._agentHostService.clientId}`,
 			'Agent Host (Local)'));
 
 		this._register(_agentHostFileSystemService.registerAuthority('local', this._agentHostService));

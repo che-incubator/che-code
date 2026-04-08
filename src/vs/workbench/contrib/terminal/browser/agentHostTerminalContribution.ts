@@ -127,9 +127,10 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 			entries.push({
 				name: info.name || info.address,
 				address: info.address,
-				getConnection: () => LoggingAgentConnection.getOrCreate(
-					this._instantiationService,
+				getConnection: () => this._instantiationService.createInstance(
+					LoggingAgentConnection,
 					connection,
+					`agenthost.${connection.clientId}`,
 					localize('agentHostTerminal.channelRemote', "Agent Host Terminal ({0})", info.address),
 				),
 			});
@@ -140,9 +141,10 @@ export class AgentHostTerminalContribution extends Disposable implements IWorkbe
 			entries.push({
 				name: localize('agentHostTerminal.local', "Local"),
 				address: '__local__',
-				getConnection: () => LoggingAgentConnection.getOrCreate(
-					this._instantiationService,
+				getConnection: () => this._instantiationService.createInstance(
+					LoggingAgentConnection,
 					this._agentHostService,
+					`agenthost.${this._agentHostService.clientId}`,
 					localize('agentHostTerminal.channelLocal', "Agent Host Terminal (Local)"),
 				),
 			});

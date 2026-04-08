@@ -221,7 +221,7 @@ export function sessionReducer(state: ISessionState, action: ISessionAction, log
 		case ActionType.SessionTurnStarted: {
 			let next: ISessionState = {
 				...state,
-				summary: { ...state.summary, status: SessionStatus.InProgress, modifiedAt: Date.now() },
+				summary: { ...state.summary, status: SessionStatus.InProgress, modifiedAt: Date.now(), isRead: false },
 				activeTurn: {
 					id: action.turnId,
 					userMessage: action.userMessage,
@@ -460,6 +460,24 @@ export function sessionReducer(state: ISessionState, action: ISessionAction, log
 			return {
 				...state,
 				summary: { ...state.summary, model: action.model, modifiedAt: Date.now() },
+			};
+
+		case ActionType.SessionIsReadChanged:
+			return {
+				...state,
+				summary: { ...state.summary, isRead: action.isRead },
+			};
+
+		case ActionType.SessionIsDoneChanged:
+			return {
+				...state,
+				summary: { ...state.summary, isDone: action.isDone },
+			};
+
+		case ActionType.SessionDiffsChanged:
+			return {
+				...state,
+				summary: { ...state.summary, diffs: action.diffs },
 			};
 
 		case ActionType.SessionServerToolsChanged:
