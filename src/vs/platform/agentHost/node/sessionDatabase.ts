@@ -259,8 +259,8 @@ export class SessionDatabase implements ISessionDatabase {
 	async storeFileEdit(edit: IFileEditRecord & IFileEditContent): Promise<void> {
 		return this._fileEditSequencer.queue(edit.filePath, async () => {
 			const db = await this._ensureDb();
-			// Ensure the turn exists — the onTurnStart event that calls
-			// createTurn() is fire-and-forget and may not have completed yet.
+			// Ensure the turn exists — lazily insert since the turn record
+			// may not have been created by an explicit createTurn() call.
 			await dbRun(db, 'INSERT OR IGNORE INTO turns (id) VALUES (?)', [edit.turnId]);
 			await dbRun(
 				db,

@@ -155,16 +155,20 @@ export class FileEditTracker {
 			this._logService.warn(`[FileEditTracker] Failed to compute diff counts: ${filePath}`, err);
 		}
 
-		this._db.storeFileEdit({
-			turnId,
-			toolCallId,
-			filePath,
-			kind: FileEditKind.Edit,
-			beforeContent: beforeBytes,
-			afterContent: afterBytes,
-			addedLines,
-			removedLines,
-		}).catch(err => this._logService.warn(`[FileEditTracker] Failed to persist file edit to database: ${filePath}`, err));
+		try {
+			await this._db.storeFileEdit({
+				turnId,
+				toolCallId,
+				filePath,
+				kind: FileEditKind.Edit,
+				beforeContent: beforeBytes,
+				afterContent: afterBytes,
+				addedLines,
+				removedLines,
+			});
+		} catch (err) {
+			this._logService.warn(`[FileEditTracker] Failed to persist file edit to database: ${filePath}`, err);
+		}
 
 		return {
 			type: ToolResultContentType.FileEdit,

@@ -114,7 +114,7 @@ export class CopilotAgentSession extends Disposable {
 	private readonly _editTracker: FileEditTracker;
 	/** Session database reference. */
 	private readonly _databaseRef: IReference<ISessionDatabase>;
-	/** Turn ID tracked across tool events. */
+	/** Protocol turn ID set by {@link send}, used for file edit tracking. */
 	private _turnId = '';
 	/** SDK session wrapper, set by {@link initializeSession}. */
 	private _wrapper!: CopilotSessionWrapper;
@@ -177,7 +177,10 @@ export class CopilotAgentSession extends Disposable {
 
 	// ---- session operations -------------------------------------------------
 
-	async send(prompt: string, attachments?: IAgentAttachment[]): Promise<void> {
+	async send(prompt: string, attachments?: IAgentAttachment[], turnId?: string): Promise<void> {
+		if (turnId) {
+			this._turnId = turnId;
+		}
 		this._logService.info(`[Copilot:${this.sessionId}] sendMessage called: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}" (${attachments?.length ?? 0} attachments)`);
 
 		const sdkAttachments = attachments?.map(a => {
@@ -375,10 +378,6 @@ export class CopilotAgentSession extends Disposable {
 				mcpToolName: e.data.mcpToolName,
 				parentToolCallId: e.data.parentToolCallId,
 			});
-		}));
-
-		this._register(wrapper.onTurnStart(e => {
-			this._turnId = e.data.turnId;
 		}));
 
 		this._register(wrapper.onToolComplete(async e => {

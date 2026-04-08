@@ -284,7 +284,7 @@ export class AgentSideEffects extends Disposable {
 					path: a.path,
 					displayName: a.displayName,
 				}));
-				agent.sendMessage(URI.parse(action.session), action.userMessage.text, attachments).catch(err => {
+				agent.sendMessage(URI.parse(action.session), action.userMessage.text, attachments, action.turnId).catch(err => {
 					this._logService.error('[AgentSideEffects] sendMessage failed', err);
 					this._stateManager.dispatchServerAction({
 						type: ActionType.SessionError,
@@ -501,7 +501,7 @@ export class AgentSideEffects extends Disposable {
 			path: a.path,
 			displayName: a.displayName,
 		}));
-		agent.sendMessage(URI.parse(session), msg.userMessage.text, attachments).catch(err => {
+		agent.sendMessage(URI.parse(session), msg.userMessage.text, attachments, turnId).catch(err => {
 			this._logService.error('[AgentSideEffects] sendMessage failed (queued)', err);
 			this._stateManager.dispatchServerAction({
 				type: ActionType.SessionError,
