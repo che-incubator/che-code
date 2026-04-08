@@ -86,7 +86,7 @@ function startAgentHost(): void {
 		diServices.set(ISessionDataService, sessionDataService);
 		diServices.set(IAgentPluginManager, pluginManager);
 
-		const diffComputeService = new NodeWorkerDiffComputeService(logService);
+		const diffComputeService = disposables.add(new NodeWorkerDiffComputeService(logService));
 		diServices.set(IDiffComputeService, diffComputeService);
 
 		const instantiationService = new InstantiationService(diServices);

@@ -327,6 +327,27 @@ export class SessionDatabase implements ISessionDatabase {
 		}));
 	}
 
+	async getFileEditsByTurn(turnId: string): Promise<IFileEditRecord[]> {
+		const db = await this._ensureDb();
+		const rows = await dbAll(
+			db,
+			`SELECT turn_id, tool_call_id, file_path, edit_type, original_path, added_lines, removed_lines
+				FROM file_edits
+				WHERE turn_id = ?
+				ORDER BY rowid`,
+			[turnId],
+		);
+		return rows.map(row => ({
+			turnId: row.turn_id as string,
+			toolCallId: row.tool_call_id as string,
+			filePath: row.file_path as string,
+			kind: (row.edit_type as IFileEditRecord['kind']) ?? 'edit',
+			originalPath: row.original_path as string | undefined ?? undefined,
+			addedLines: row.added_lines as number | undefined ?? undefined,
+			removedLines: row.removed_lines as number | undefined ?? undefined,
+		}));
+	}
+
 	async readFileEditContent(toolCallId: string, filePath: string): Promise<IFileEditContent | undefined> {
 		return this._fileEditSequencer.queue(filePath, async () => {
 			const db = await this._ensureDb();

@@ -92,6 +92,13 @@ export interface ISessionDatabase extends IDisposable {
 	getAllFileEdits(): Promise<IFileEditRecord[]>;
 
 	/**
+	 * Retrieve file-edit metadata for all edits belonging to a specific turn.
+	 * Content blobs are **not** included — use {@link readFileEditContent}
+	 * to fetch them on demand. Results are returned in insertion order.
+	 */
+	getFileEditsByTurn(turnId: string): Promise<IFileEditRecord[]>;
+
+	/**
 	 * Read the before/after content blobs for a single file edit.
 	 * Returns `undefined` if no edit exists for the given key.
 	 */

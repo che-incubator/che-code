@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { match as globMatch } from '../../../base/common/glob.js';
+import { SequencerByKey } from '../../../base/common/async.js';
 import { Disposable, DisposableStore, IDisposable } from '../../../base/common/lifecycle.js';
 import { autorun, IObservable } from '../../../base/common/observable.js';
 import { extUriBiasedIgnorePathCase, normalizePath } from '../../../base/common/resources.js';
@@ -24,7 +25,7 @@ import { AgentEventMapper } from './agentEventMapper.js';
 import { CommandAutoApprover } from './commandAutoApprover.js';
 import { IDiffComputeService } from '../common/diffComputeService.js';
 import { NodeWorkerDiffComputeService } from './diffComputeService.js';
-import { computeSessionDiffs } from './sessionDiffAggregator.js';
+import { computeSessionDiffs, type IIncrementalDiffOptions } from './sessionDiffAggregator.js';
 import { SessionStateManager } from './sessionStateManager.js';
 
 /**
@@ -59,6 +60,8 @@ export class AgentSideEffects extends Disposable {
 	private readonly _commandAutoApprover: CommandAutoApprover;
 	/** Shared diff compute service for calculating line-level diffs in a worker thread. */
 	private readonly _diffComputeService: IDiffComputeService;
+	/** Serializes per-session diff computations to avoid races with stale previousDiffs. */
+	private readonly _diffComputationSequencer = new SequencerByKey<string>();
 
 	constructor(
 		private readonly _stateManager: SessionStateManager,
@@ -227,7 +230,7 @@ export class AgentSideEffects extends Disposable {
 			// After a turn completes (idle event), compute session diffs and
 			// try to consume the next queued message
 			if (e.type === 'idle') {
-				this._computeSessionDiffs(sessionKey);
+				this._computeSessionDiffs(sessionKey, turnId);
 				this._tryConsumeNextQueuedMessage(sessionKey);
 			}
 
@@ -343,6 +346,8 @@ export class AgentSideEffects extends Disposable {
 				agent?.truncateSession?.(URI.parse(action.session), turnIndex).catch(err => {
 					this._logService.error('[AgentSideEffects] truncateSession failed', err);
 				});
+				// Turns were removed — recompute diffs from scratch (no changedTurnId)
+				this._computeSessionDiffs(action.session);
 				break;
 			}
 			case ActionType.SessionActiveClientChanged: {
@@ -515,14 +520,30 @@ export class AgentSideEffects extends Disposable {
 	 * session summary. Fire-and-forget: errors are logged but do not fail
 	 * the turn.
 	 */
-	private _computeSessionDiffs(session: ProtocolURI): void {
+	private _computeSessionDiffs(session: ProtocolURI, changedTurnId?: string): void {
+		// Chain onto any pending computation for this session to ensure
+		// sequential access to previousDiffs (avoids stale-read races).
+		this._diffComputationSequencer.queue(session, () => this._doComputeSessionDiffs(session, changedTurnId));
+	}
+
+	private async _doComputeSessionDiffs(session: ProtocolURI, changedTurnId?: string): Promise<void> {
 		let ref: ReturnType<ISessionDataService['openDatabase']>;
 		try {
 			ref = this._options.sessionDataService.openDatabase(URI.parse(session));
 		} catch {
 			return;
 		}
-		computeSessionDiffs(ref.object, this._diffComputeService).then(diffs => {
+		try {
+			// Build incremental options when a specific turn triggered the recomputation
+			let incremental: IIncrementalDiffOptions | undefined;
+			if (changedTurnId) {
+				const previousDiffs = this._stateManager.getSessionState(session)?.summary.diffs;
+				if (previousDiffs) {
+					incremental = { changedTurnId, previousDiffs };
+				}
+			}
+
+			const diffs = await computeSessionDiffs(ref.object, this._diffComputeService, incremental);
 			this._stateManager.dispatchServerAction({
 				type: ActionType.SessionDiffsChanged,
 				session,
@@ -532,11 +553,11 @@ export class AgentSideEffects extends Disposable {
 			ref.object.setMetadata('diffs', JSON.stringify(diffs)).catch(err => {
 				this._logService.warn('[AgentSideEffects] Failed to persist session diffs', err);
 			});
-		}).catch(err => {
+		} catch (err) {
 			this._logService.warn('[AgentSideEffects] Failed to compute session diffs', err);
-		}).finally(() => {
+		} finally {
 			ref.dispose();
-		});
+		}
 	}
 
 	override dispose(): void {

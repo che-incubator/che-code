@@ -34,7 +34,12 @@ export class NodeWorkerDiffComputeService extends Disposable implements IDiffCom
 		const id = this._nextId++;
 		return new Promise<IDiffCountResult>((resolve, reject) => {
 			this._pending.set(id, { resolve, reject });
-			worker.postMessage({ id, fn: 'computeDiffCounts', args: [original, modified, timeoutMs] });
+			try {
+				worker.postMessage({ id, fn: 'computeDiffCounts', args: [original, modified, timeoutMs] });
+			} catch (err) {
+				this._pending.delete(id);
+				reject(err instanceof Error ? err : new Error(String(err)));
+			}
 		});
 	}
 

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { URI } from '../../../base/common/uri.js';
-import type { ISessionDatabase } from '../common/sessionDataService.js';
+import type { IFileEditRecord, ISessionDatabase } from '../common/sessionDataService.js';
 import type { IDiffComputeService } from '../common/diffComputeService.js';
 import { FileEditKind, type ISessionFileDiff } from '../common/state/sessionState.js';
 
@@ -30,8 +30,27 @@ interface IFileIdentity {
 }
 
 /**
+ * Options for incremental diff computation. When provided,
+ * {@link computeSessionDiffs} reuses previous diff results for file
+ * identities that were not touched in the given turn.
+ */
+export interface IIncrementalDiffOptions {
+	/** The turn ID that just completed — only identities touched by edits
+	 *  in this turn will be recomputed. */
+	changedTurnId: string;
+	/** Previously computed diffs (from the last dispatch). Entries for
+	 *  untouched identities are carried over without recomputation. */
+	previousDiffs: ISessionFileDiff[];
+}
+
+/**
  * Computes aggregated diff statistics for a session by comparing each file's
  * first snapshot to its last snapshot, tracking renames across the chain.
+ *
+ * When {@link incremental} is provided, only identities that were touched
+ * by edits in the given turn are recomputed; all other identities reuse
+ * the previous diff results. This avoids expensive content fetches and
+ * diff computations for unchanged files.
  *
  * Returns an {@link ISessionFileDiff} array with the "last known URI" for each
  * file and the total lines added/removed across the session.
@@ -39,8 +58,36 @@ interface IFileIdentity {
 export async function computeSessionDiffs(
 	db: ISessionDatabase,
 	diffService: IDiffComputeService,
+	incremental?: IIncrementalDiffOptions,
 ): Promise<ISessionFileDiff[]> {
-	const edits = await db.getAllFileEdits();
+	// In incremental mode, try to fetch only the current turn's edits.
+	// When the turn only introduces new files (no renames, no re-edits of
+	// previously changed files), the full edit history is not needed.
+	let edits: IFileEditRecord[];
+	let fastPath = false;
+
+	if (incremental) {
+		const turnEdits = await db.getFileEditsByTurn(incremental.changedTurnId);
+		if (turnEdits.length === 0) {
+			return [...incremental.previousDiffs];
+		}
+
+		const previousDiffsUris = new Set(incremental.previousDiffs.map(d => d.uri));
+		const needsFullHistory = turnEdits.some(e =>
+			e.kind === FileEditKind.Rename ||
+			previousDiffsUris.has(URI.file(e.filePath).toString())
+		);
+
+		if (needsFullHistory) {
+			edits = await db.getAllFileEdits();
+		} else {
+			edits = turnEdits;
+			fastPath = true;
+		}
+	} else {
+		edits = await db.getAllFileEdits();
+	}
+
 	if (edits.length === 0) {
 		return [];
 	}
@@ -53,6 +100,9 @@ export async function computeSessionDiffs(
 	const pathToIdentityKey = new Map<string, string>();
 	// Maps identity keys to their accumulated data
 	const identities = new Map<string, IFileIdentity>();
+	// Track which identity keys were touched by the incremental turn.
+	// In fast-path mode all identities are from the current turn, so no tracking needed.
+	const touchedIdentityKeys = (incremental && !fastPath) ? new Set<string>() : undefined;
 
 	for (const edit of edits) {
 		let identityKey: string;
@@ -68,6 +118,10 @@ export async function computeSessionDiffs(
 			// Regular edit, create, or delete: look up or create identity
 			identityKey = pathToIdentityKey.get(edit.filePath) ?? edit.filePath;
 			pathToIdentityKey.set(edit.filePath, identityKey);
+		}
+
+		if (touchedIdentityKeys && edit.turnId === incremental!.changedTurnId) {
+			touchedIdentityKeys.add(identityKey);
 		}
 
 		const existing = identities.get(identityKey);
@@ -91,11 +145,28 @@ export async function computeSessionDiffs(
 		}
 	}
 
+	// In incremental slow-path mode, build a lookup map from URI string →
+	// previous diff so untouched identities can carry over their previous results.
+	const previousDiffsMap = (incremental && !fastPath)
+		? new Map(incremental.previousDiffs.map(d => [d.uri, d]))
+		: undefined;
+
 	// Compute diffs for each file identity
 	const results: ISessionFileDiff[] = [];
 	const diffPromises: Promise<void>[] = [];
 
-	for (const identity of identities.values()) {
+	for (const [identityKey, identity] of identities) {
+		// In incremental slow-path mode, skip recomputation for untouched identities
+		if (touchedIdentityKeys && !touchedIdentityKeys.has(identityKey)) {
+			const uri = URI.file(identity.terminalPath).toString();
+			const prev = previousDiffsMap!.get(uri);
+			if (prev) {
+				results.push(prev);
+			}
+			// If no previous entry, the file previously had zero net change — skip
+			continue;
+		}
+
 		diffPromises.push((async () => {
 			// Determine "before" text
 			let beforeText: string;
@@ -130,5 +201,12 @@ export async function computeSessionDiffs(
 	}
 
 	await Promise.allSettled(diffPromises);
+
+	// In fast-path mode, carry over previous diffs for untouched files
+	// (they were not in the identity graph since we only loaded the current turn)
+	if (fastPath) {
+		results.push(...incremental!.previousDiffs);
+	}
+
 	return results;
 }
