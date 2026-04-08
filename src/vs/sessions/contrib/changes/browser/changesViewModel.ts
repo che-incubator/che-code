@@ -45,6 +45,7 @@ export interface ActiveSessionState {
 	readonly hasGitRepository: boolean;
 	readonly branchName: string | undefined;
 	readonly baseBranchName: string | undefined;
+	readonly upstreamBranchName: string | undefined;
 	readonly isMergeBaseBranchProtected: boolean | undefined;
 	readonly incomingChanges: number | undefined;
 	readonly outgoingChanges: number | undefined;
@@ -389,6 +390,9 @@ export class ChangesViewModel extends Disposable {
 					gitHubInfo.pullRequest.icon?.id === Codicon.gitPullRequest.id);
 
 			// Repository state
+			const upstreamBranchName = hasGitRepository && repositoryState?.HEAD?.upstream
+				? `${repositoryState.HEAD.upstream.remote}/${repositoryState.HEAD.upstream.name}`
+				: undefined;
 			const incomingChanges = hasGitRepository
 				? repositoryState?.HEAD?.behind ?? 0
 				: undefined;
@@ -408,6 +412,7 @@ export class ChangesViewModel extends Disposable {
 				branchName,
 				baseBranchName,
 				isMergeBaseBranchProtected,
+				upstreamBranchName,
 				incomingChanges,
 				outgoingChanges,
 				uncommittedChanges,
