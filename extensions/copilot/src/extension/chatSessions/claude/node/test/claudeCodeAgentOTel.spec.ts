@@ -76,6 +76,8 @@ function createToolCallSdkService(messageFactory: (sessionId: string) => AsyncGe
 		async getSessionMessages() { return []; },
 		async renameSession() { },
 		async forkSession() { return { sessionId: 'forked' }; },
+		async listSubagents() { return []; },
+		async getSubagentMessages() { return []; },
 	};
 }
 
@@ -109,6 +111,8 @@ function createSdkServiceWithHooks(
 		async getSessionMessages() { return []; },
 		async renameSession() { },
 		async forkSession() { return { sessionId: 'forked' }; },
+		async listSubagents() { return []; },
+		async getSubagentMessages() { return []; },
 	};
 }
 

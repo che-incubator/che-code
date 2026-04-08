@@ -192,6 +192,8 @@ function createProviderWithServices(
 		getSessionMessages: vi.fn().mockResolvedValue([]),
 		renameSession: vi.fn().mockResolvedValue(undefined),
 		forkSession: vi.fn().mockResolvedValue({ sessionId: 'forked' }),
+		listSubagents: vi.fn().mockResolvedValue([]),
+		getSubagentMessages: vi.fn().mockResolvedValue([]),
 	});
 
 	const accessor = serviceCollection.createTestingAccessor();
@@ -1042,6 +1044,8 @@ describe('ClaudeChatSessionItemController', () => {
 			getSessionMessages: vi.fn().mockResolvedValue([]),
 			renameSession: vi.fn().mockResolvedValue(undefined),
 			forkSession: vi.fn().mockResolvedValue({ sessionId: 'forked-session-id' }),
+			listSubagents: vi.fn().mockResolvedValue([]),
+			getSubagentMessages: vi.fn().mockResolvedValue([]),
 		};
 		serviceCollection.define(IClaudeCodeSdkService, mockSdkService);
 		const accessor = serviceCollection.createTestingAccessor();
