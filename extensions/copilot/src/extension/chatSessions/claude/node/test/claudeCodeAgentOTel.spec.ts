@@ -20,11 +20,13 @@ import type { ClaudeFolderInfo } from '../../common/claudeFolderInfo';
 import { ClaudeCodeSession } from '../claudeCodeAgent';
 import { IClaudeCodeSdkService } from '../claudeCodeSdkService';
 import { ClaudeLanguageModelServer } from '../claudeLanguageModelServer';
+import { parseClaudeModelId } from '../claudeModelId';
 import { IClaudeSessionStateService } from '../claudeSessionStateService';
 // Side-effect import: registers all hook handlers in the global registry
 import '../hooks/index';
 
-const TEST_MODEL_ID = 'claude-3-sonnet';
+const TEST_MODEL_ID_STRING = 'claude-3-sonnet';
+const TEST_MODEL_ID = parseClaudeModelId(TEST_MODEL_ID_STRING);
 const TEST_PERMISSION_MODE: PermissionMode = 'acceptEdits';
 const TEST_FOLDER_INFO: ClaudeFolderInfo = { cwd: '/test/project', additionalDirectories: [] };
 const SERVER_CONFIG = { port: 8080, nonce: 'test-nonce' };
@@ -152,7 +154,7 @@ function makeAssistantMessage(sessionId: string, content: Anthropic.Beta.Message
 			id: `msg-${randomUUID()}`,
 			type: 'message',
 			role: 'assistant',
-			model: TEST_MODEL_ID,
+			model: TEST_MODEL_ID_STRING,
 			content,
 			stop_reason: 'tool_use',
 			stop_sequence: null,
