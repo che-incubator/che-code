@@ -522,7 +522,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 		private readonly sessionItemProvider: ICopilotCLIChatSessionItemProvider,
 		private readonly promptResolver: CopilotCLIPromptResolver,
 		private readonly cloudSessionProvider: CopilotCloudSessionsProvider | undefined,
-		private readonly branchNameGenerator: GitBranchNameGenerator,
+		private readonly branchNameGenerator: GitBranchNameGenerator | undefined,
 		@IGitService private readonly gitService: IGitService,
 		@ICopilotCLISessionService private readonly sessionService: ICopilotCLISessionService,
 		@IChatSessionWorktreeService private readonly copilotCLIWorktreeManagerService: IChatSessionWorktreeService,
@@ -694,7 +694,7 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 				history: [requestTurn],
 				yieldRequested: false,
 			};
-			const branchNamePromise = isNewSession && request.prompt ? this.branchNameGenerator.generateBranchName(fakeContext, token) : Promise.resolve(undefined);
+			const branchNamePromise = (isNewSession && request.prompt && this.branchNameGenerator) ? this.branchNameGenerator.generateBranchName(fakeContext, token) : Promise.resolve(undefined);
 
 			const sessionResult = await this.getOrCreateSession(request, chatSessionContext, stream, { branchName: branchNamePromise }, disposables, token);
 			({ session } = sessionResult);
