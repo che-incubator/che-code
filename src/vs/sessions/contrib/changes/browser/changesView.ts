@@ -302,12 +302,6 @@ export class ChangesViewPane extends ViewPane {
 		this._register(bindContextKey(ChatContextKeys.agentSessionType, this.scopedContextKeyService, reader => {
 			return this.viewModel.activeSessionTypeObs.read(reader) ?? '';
 		}));
-
-		// Title actions
-		this._register(autorun(reader => {
-			this.viewModel.activeSessionResourceObs.read(reader);
-			this.updateActions();
-		}));
 	}
 
 	protected override renderBody(container: HTMLElement): void {
@@ -476,6 +470,13 @@ export class ChangesViewPane extends ViewPane {
 	private onVisible(): void {
 		this.renderDisposables.clear();
 
+		// Title actions
+		this.renderDisposables.add(autorun(reader => {
+			this.viewModel.activeSessionResourceObs.read(reader);
+			this.updateActions();
+		}));
+
+		// Loading
 		this.renderDisposables.add(autorun(reader => {
 			const isLoading = this.viewModel.activeSessionIsLoadingObs.read(reader);
 			if (isLoading) {
