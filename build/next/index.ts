@@ -1027,18 +1027,19 @@ ${tslib}`,
 	// Uses esbuild.transform() as a parser since the bundles are ESM.
 	const postProcessedFiles = new Set([...mangleEdits.keys(), ...nlsEdits.keys()]);
 	if (postProcessedFiles.size > 0) {
-		const errors: string[] = [];
-		await Promise.all([...postProcessedFiles].map(async jsPath => {
+		const errors = (await Promise.all([...postProcessedFiles].map(async jsPath => {
 			try {
 				const src = await fs.promises.readFile(jsPath, 'utf-8');
 				await esbuild.transform(src, { loader: 'js', format: 'esm' });
-			} catch (e: any) {
+				return undefined;
+			} catch (e: unknown) {
 				const rel = path.relative(path.join(REPO_ROOT, outDir), jsPath);
-				errors.push(`${rel}: ${e.message}`);
+				const message = e instanceof Error ? e.message : String(e);
+				return { rel, message };
 			}
-		}));
+		}))).filter(error => error !== undefined).sort((a, b) => a.rel.localeCompare(b.rel));
 		if (errors.length > 0) {
-			throw new Error(`[bundle] Syntax errors in post-processed JS files:\n${errors.join('\n')}`);
+			throw new Error(`[bundle] Syntax errors in post-processed JS files:\n${errors.map(e => `${e.rel}: ${e.message}`).join('\n')}`);
 		}
 		console.log(`[bundle] Syntax check passed for ${postProcessedFiles.size} post-processed JS files`);
 	}

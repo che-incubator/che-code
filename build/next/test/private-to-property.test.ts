@@ -368,6 +368,38 @@ suite('convertPrivateFields', () => {
 			'public and private properties must remain distinct, code:\n' + result.code);
 	});
 
+	test('collision avoidance — string-literal public property name', () => {
+		const code = [
+			'class Foo {',
+			'  \'$a\' = "public";',
+			'  #x = "private";',
+			'  getPublic() { return this[\'$a\']; }',
+			'  getPrivate() { return this.#x; }',
+			'}',
+			'const f = new Foo();',
+			'return f.getPublic() + "," + f.getPrivate();',
+		].join('\n');
+		const result = convertPrivateFields(code, 'test.js');
+		assert.strictEqual(new Function(result.code)(), 'public,private',
+			'string-literal public property must not collide, code:\n' + result.code);
+	});
+
+	test('collision avoidance — computed string-literal public property name', () => {
+		const code = [
+			'class Foo {',
+			'  [\'$a\'] = "public";',
+			'  #x = "private";',
+			'  getPublic() { return this[\'$a\']; }',
+			'  getPrivate() { return this.#x; }',
+			'}',
+			'const f = new Foo();',
+			'return f.getPublic() + "," + f.getPrivate();',
+		].join('\n');
+		const result = convertPrivateFields(code, 'test.js');
+		assert.strictEqual(new Function(result.code)(), 'public,private',
+			'computed string-literal public property must not collide, code:\n' + result.code);
+	});
+
 	test('brand check in heritage clause resolves to outer scope', () => {
 		const code = [
 			'class Outer {',

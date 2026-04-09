@@ -88,6 +88,7 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 
 	// Global counter for unique name generation
 	let nameCounter = 0;
+	let fieldCount = 0;
 	let classCount = 0;
 
 	// Collect all edits
@@ -114,7 +115,7 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 		lastEnd = edit.end;
 	}
 	parts.push(code.substring(lastEnd));
-	return { code: parts.join(''), classCount, fieldCount: nameCounter, editCount: edits.length, elapsed: Date.now() - t1, edits };
+return { code: parts.join(''), classCount, fieldCount: fieldCount, editCount: edits.length, elapsed: Date.now() - t1, edits };
 
 	// --- AST walking ---
 
@@ -130,8 +131,15 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 		// 1) Collect public member names so generated names don't collide
 		const publicNames = new Set<string>();
 		for (const member of node.members) {
-			if (member.name && ts.isIdentifier(member.name)) {
+			if (!member.name) {
+				continue;
+			}
+			if (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) {
 				publicNames.add(member.name.text);
+				continue;
+			}
+			if (ts.isComputedPropertyName(member.name) && ts.isStringLiteral(member.name.expression)) {
+				publicNames.add(member.name.expression.text);
 			}
 		}
 
@@ -147,6 +155,7 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 						shortName = generateShortName(nameCounter++);
 					} while (publicNames.has(shortName));
 					scope.set(name, shortName);
+					fieldCount++;
 				}
 			}
 		}
