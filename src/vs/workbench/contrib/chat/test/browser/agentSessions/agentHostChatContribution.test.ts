@@ -45,6 +45,8 @@ import { ICustomizationHarnessService } from '../../../common/customizationHarne
 import { IAgentPluginService } from '../../../common/plugins/agentPluginService.js';
 import { IStorageService, InMemoryStorageService } from '../../../../../../platform/storage/common/storage.js';
 import { IAgentSubscription } from '../../../../../../platform/agentHost/common/state/agentSubscription.js';
+import { ITerminalChatService } from '../../../../terminal/browser/terminal.js';
+import { IAgentHostTerminalService } from '../../../../terminal/browser/agentHostTerminalService.js';
 
 // ---- Mock agent host service ------------------------------------------------
 
@@ -289,6 +291,13 @@ function createTestServices(disposables: DisposableStore) {
 	});
 	instantiationService.stub(IAgentPluginService, {
 		plugins: observableValue('plugins', []),
+	});
+	instantiationService.stub(ITerminalChatService, {
+		onDidContinueInBackground: Event.None,
+		registerTerminalInstanceWithToolSession: () => { },
+	});
+	instantiationService.stub(IAgentHostTerminalService, {
+		reviveTerminal: async () => undefined,
 	});
 
 	return { instantiationService, agentHostService, chatAgentService };

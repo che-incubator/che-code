@@ -27,7 +27,7 @@ import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../../../platform/product/common/productService.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { ITerminalChatService } from '../../../../terminal/browser/terminal.js';
-import { ChatRequestQueueKind, IChatProgress, IChatService, IChatToolInvocation, ToolConfirmKind } from '../../../common/chatService/chatService.js';
+import { ChatRequestQueueKind, IChatProgress, IChatService, IChatToolInvocation, ToolConfirmKind, type IChatTerminalToolInvocationData } from '../../../common/chatService/chatService.js';
 import { IChatSession, IChatSessionContentProvider, IChatSessionHistoryItem, IChatSessionItem, IChatSessionRequestHistoryItem } from '../../../common/chatSessionsService.js';
 import { ChatAgentLocation, ChatModeKind } from '../../../common/constants.js';
 import { IChatEditingService } from '../../../common/editing/chatEditingService.js';
@@ -968,7 +968,7 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 				this._awaitToolConfirmation(confirmInvocation, toolCallId, ctx.backendSession, ctx.turnId, ctx.cancellationToken);
 				existing = confirmInvocation;
 			}
-		} else if (tc.status === ToolCallStatus.Running) {
+		} else if (tc.status === ToolCallStatus.Running || tc.status === ToolCallStatus.PendingResultConfirmation) {
 			existing.invocationMessage = typeof tc.invocationMessage === 'string'
 				? tc.invocationMessage
 				: new MarkdownString(tc.invocationMessage.markdown);
@@ -1010,7 +1010,11 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		invocation.presentation = undefined;
 		const toolInput = tc.toolInput;
 		this._ensureTerminalInstance(terminalUri, backendSession).then(sessionId => {
+			const existing = invocation.toolSpecificData?.kind === 'terminal'
+				? invocation.toolSpecificData as IChatTerminalToolInvocationData
+				: undefined;
 			invocation.toolSpecificData = {
+				...existing,
 				kind: 'terminal',
 				commandLine: { original: toolInput },
 				language: 'shellscript',
@@ -1076,6 +1080,14 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 
 							if (tc.status === ToolCallStatus.PendingConfirmation) {
 								this._awaitToolConfirmation(existing, tc.toolCallId, ctx.backendSession, ctx.turnId, ctx.cancellationToken);
+							} else {
+								// First snapshot may already be Running/Completed/
+								// Cancelled (due to throttling). Process immediately
+								// so terminal revival and finalization still happen.
+								const { fileEdits } = this._updateToolCallState(existing, tc, ctx);
+								if (fileEdits.length > 0) {
+									ctx.onFileEdits?.(tc, fileEdits);
+								}
 							}
 						} else {
 							const { fileEdits } = this._updateToolCallState(existing, tc, ctx);

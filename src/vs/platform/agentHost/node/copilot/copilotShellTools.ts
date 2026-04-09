@@ -246,7 +246,11 @@ async function executeCommandInShell(
 
 		const checkForSentinel = () => {
 			const fullContent = terminalManager.getContent(shell.terminalUri) ?? '';
-			const newContent = fullContent.substring(offsetBefore);
+			// Clamp offset: the terminal manager trims content when it exceeds
+			// 100k chars (slices to last 80k). If trimming happened after we
+			// captured offsetBefore, scan from the start of the current buffer.
+			const clampedOffset = Math.min(offsetBefore, fullContent.length);
+			const newContent = fullContent.substring(clampedOffset);
 			const parsed = parseSentinel(newContent, sentinelId);
 			if (parsed.found) {
 				const output = prepareOutputForModel(parsed.outputBeforeSentinel);
