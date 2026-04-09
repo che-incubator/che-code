@@ -462,8 +462,18 @@ export class ChatTerminalToolProgressPart extends BaseChatToolInvocationSubPart 
 				},
 			}
 		));
-		this._initializeTerminalActions();
-		this._terminalService.whenConnected.then(() => this._initializeTerminalActions());
+		let didInitializeTerminalActions = false;
+		const initializeTerminalActionsOnce = () => {
+			if (didInitializeTerminalActions || this._store.isDisposed) {
+				return;
+			}
+			didInitializeTerminalActions = true;
+			this._initializeTerminalActions();
+		};
+		initializeTerminalActionsOnce();
+		this._terminalService.whenConnected.then(() => {
+			initializeTerminalActionsOnce();
+		});
 
 		// Listen for continue in background — sets context key so toolbar auto-hides the action
 		const terminalToolSessionId = this._terminalData.terminalToolSessionId;
