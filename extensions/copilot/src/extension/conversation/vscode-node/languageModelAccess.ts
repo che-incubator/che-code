@@ -272,7 +272,11 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 				const autoModeHint = this._expService.getTreatmentVariable<string>('copilotchat.autoModelHint');
 				const showExperimentalHint = !isOrgManaged && !!autoModeHint && (autoModeHint.includes('minimax') || autoModeHint.includes('mm-base_') || autoModeHint.includes('mm-ft_'));
 				if (showExperimentalHint) {
-					modelTooltip += ' ' + vscode.l10n.t('This model may be experimental or in evaluation.');
+					modelTooltip = vscode.l10n.t(
+						'{0} {1}',
+						modelTooltip,
+						vscode.l10n.t('This model may be experimental or in evaluation.')
+					);
 				}
 			} else {
 				modelTooltip = getModelCapabilitiesDescription(endpoint);
