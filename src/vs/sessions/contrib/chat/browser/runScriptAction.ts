@@ -338,7 +338,7 @@ export class RunScriptContribution extends Disposable implements IWorkbenchContr
 				let updatedTask: ITaskEntry = {
 					...existingTask.task,
 					label: newLabel,
-					inSessions: true,
+					inAgents: true,
 				};
 
 				if (taskConfiguration.command && existingTask.task.command !== undefined) {
@@ -365,7 +365,7 @@ export class RunScriptContribution extends Disposable implements IWorkbenchContr
 			await this._sessionsConfigService.addTaskToSessions(existingTask.task, session, existingTask.target, { runOn: taskConfiguration.runOn ?? 'default' });
 			return {
 				...existingTask.task,
-				inSessions: true,
+				inAgents: true,
 				...(taskConfiguration.runOn ? { runOptions: { runOn: taskConfiguration.runOn } } : {}),
 			};
 		}
