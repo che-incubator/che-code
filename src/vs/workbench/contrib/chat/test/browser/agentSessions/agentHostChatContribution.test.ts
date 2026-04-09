@@ -187,6 +187,20 @@ class MockAgentHostService extends mock<IAgentHostService>() {
 			},
 		};
 	}
+	override getSubscriptionUnmanaged<T>(_kind: StateComponents, resource: URI): IAgentSubscription<T> | undefined {
+		const entry = this._liveSubscriptions.get(resource.toString());
+		if (!entry) {
+			return undefined;
+		}
+		const self = this;
+		return {
+			get value() { return self._liveSubscriptions.get(resource.toString())?.state as unknown as T; },
+			get verifiedValue() { return self._liveSubscriptions.get(resource.toString())?.state as unknown as T; },
+			onDidChange: entry.emitter.event as unknown as Event<T>,
+			onWillApplyAction: Event.None,
+			onDidApplyAction: Event.None,
+		} satisfies IAgentSubscription<T>;
+	}
 	override dispatch(action: ISessionAction | ITerminalAction): void {
 		this.dispatchedActions.push({ action, clientId: this.clientId, clientSeq: this._nextSeq++ });
 		// Apply state-management actions optimistically so state-dependent
