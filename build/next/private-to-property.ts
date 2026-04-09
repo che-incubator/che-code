@@ -127,13 +127,26 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 	}
 
 	function visitClass(node: ts.ClassDeclaration | ts.ClassExpression): void {
-		// 1) Collect all private field/method/accessor declarations in THIS class
+		// 1) Collect public member names so generated names don't collide
+		const publicNames = new Set<string>();
+		for (const member of node.members) {
+			if (member.name && ts.isIdentifier(member.name)) {
+				publicNames.add(member.name.text);
+			}
+		}
+
+		// 2) Collect all private field/method/accessor declarations in THIS class,
+		//    skipping generated names that collide with existing public members.
 		const scope: ClassScope = new Map();
 		for (const member of node.members) {
 			if (member.name && ts.isPrivateIdentifier(member.name)) {
 				const name = member.name.text;
 				if (!scope.has(name)) {
-					scope.set(name, generateShortName(nameCounter++));
+					let shortName: string;
+					do {
+						shortName = generateShortName(nameCounter++);
+					} while (publicNames.has(shortName));
+					scope.set(name, shortName);
 				}
 			}
 		}
@@ -141,12 +154,27 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 		if (scope.size > 0) {
 			classCount++;
 		}
-		classStack.push(scope);
 
-		// 2) Walk the class body, replacing PrivateIdentifier nodes
-		ts.forEachChild(node, function walkInClass(child: ts.Node): void {
+		// 3) Walk heritage clauses BEFORE pushing this class's scope.
+		//    The `extends` expression is evaluated in the enclosing lexical scope,
+		//    so any private-field references there belong to an outer class.
+		const walkInClass = createWalkInClass(node);
+		for (const clause of node.heritageClauses ?? []) {
+			ts.forEachChild(clause, walkInClass);
+		}
+
+		// 4) Now push the scope and walk the class members
+		classStack.push(scope);
+		for (const member of node.members) {
+			ts.forEachChild(member, walkInClass);
+		}
+		classStack.pop();
+	}
+
+	function createWalkInClass(classNode: ts.ClassDeclaration | ts.ClassExpression) {
+		return function walkInClass(child: ts.Node): void {
 			// Nested class: process independently with its own scope
-			if ((ts.isClassDeclaration(child) || ts.isClassExpression(child)) && child !== node) {
+			if ((ts.isClassDeclaration(child) || ts.isClassExpression(child)) && child !== classNode) {
 				visitClass(child);
 				return;
 			}
@@ -182,9 +210,7 @@ export function convertPrivateFields(code: string, filename: string): ConvertPri
 			}
 
 			ts.forEachChild(child, walkInClass);
-		});
-
-		classStack.pop();
+		};
 	}
 
 	function resolvePrivateName(name: string): string | undefined {
