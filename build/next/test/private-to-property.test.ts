@@ -326,11 +326,17 @@ suite('convertPrivateFields', () => {
 		assert.doesNotThrow(() => new Function(result.code), 'transformed code must be valid JS');
 	});
 
-	test('static async private method — no token fusion', () => {
-		const code = 'class Foo{static async#init(){await Promise.resolve()}static go(){return Foo.#init()}}';
+	test('static async private method — no token fusion', async () => {
+		const code = 'class Foo{static async#init(){return await Promise.resolve(1)}static go(){return Foo.#init()}}';
 		const result = convertPrivateFields(code, 'test.js');
 		assert.doesNotThrow(() => new Function(result.code),
 			'static async private method must produce valid JS, got:\n' + result.code);
+		const exec = new Function(`
+			${result.code}
+			return Foo.go();
+		`);
+		const value = await exec();
+		assert.strictEqual(value, 1);
 	});
 
 	test('heritage clause — extends expression resolves outer private field, not inner', () => {
