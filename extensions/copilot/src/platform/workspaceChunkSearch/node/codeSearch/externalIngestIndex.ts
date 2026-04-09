@@ -482,7 +482,7 @@ export class ExternalIngestIndex extends Disposable {
 				"externalIngestIndex.search.success" : {
 					"owner": "mjbvz",
 					"comment": "Logged when external ingest search completes successfully",
-					"resultEmbeddingType": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "The embedding model used for the search" },
+					"resultEmbeddingType": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The embedding model used for the search" },
 					"workspaceSearchSource": { "classification": "SystemMetaData", "purpose": "FeatureInsight",  "comment": "Caller of the search" },
 					"workspaceSearchCorrelationId": { "classification": "SystemMetaData", "purpose": "FeatureInsight",  "comment": "Correlation id for the search" },
 					"resultCount": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Number of chunks returned from the search" },
