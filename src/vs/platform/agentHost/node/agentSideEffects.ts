@@ -308,9 +308,8 @@ export class AgentSideEffects extends Disposable {
 				break;
 			}
 			case ActionType.SessionInputCompleted: {
-				for (const agent of this._options.agents.get()) {
-					agent.respondToUserInputRequest(action.requestId, action.response, action.answers);
-				}
+				const agent = this._options.getAgent(action.session);
+				agent?.respondToUserInputRequest(action.requestId, action.response, action.answers);
 				break;
 			}
 			case ActionType.SessionTurnCancelled: {
