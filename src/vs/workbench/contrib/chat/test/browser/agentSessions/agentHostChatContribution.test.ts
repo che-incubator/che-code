@@ -297,7 +297,7 @@ function createTestServices(disposables: DisposableStore) {
 		registerTerminalInstanceWithToolSession: () => { },
 	});
 	instantiationService.stub(IAgentHostTerminalService, {
-		reviveTerminal: async () => undefined,
+		reviveTerminal: async () => undefined!,
 	});
 
 	return { instantiationService, agentHostService, chatAgentService };
