@@ -20,18 +20,19 @@ import { ISessionTruncatedAction } from '../../../../../../platform/agentHost/co
 import { ICustomizationRef, TerminalClaimKind, type IProtectedResourceMetadata } from '../../../../../../platform/agentHost/common/state/protocol/state.js';
 import { ActionType, ISessionTurnStartedAction, type ISessionAction } from '../../../../../../platform/agentHost/common/state/sessionActions.js';
 import { AHP_AUTH_REQUIRED, ProtocolError } from '../../../../../../platform/agentHost/common/state/sessionProtocol.js';
-import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, StateComponents, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IMessageAttachment, type IRootState, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
+import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, SessionInputAnswerState, SessionInputAnswerValueKind, SessionInputQuestionKind, SessionInputResponseKind, StateComponents, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IMessageAttachment, type IRootState, type ISessionInputAnswer, type ISessionInputRequest, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
 import { ExtensionIdentifier } from '../../../../../../platform/extensions/common/extensions.js';
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../../../platform/product/common/productService.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { ITerminalChatService } from '../../../../terminal/browser/terminal.js';
-import { ChatRequestQueueKind, IChatProgress, IChatService, IChatToolInvocation, ToolConfirmKind, type IChatTerminalToolInvocationData } from '../../../common/chatService/chatService.js';
+import { ChatRequestQueueKind, IChatProgress, IChatQuestion, IChatQuestionAnswers, IChatService, IChatToolInvocation, ToolConfirmKind, type IChatTerminalToolInvocationData, type IChatMultiSelectAnswer, type IChatSingleSelectAnswer } from '../../../common/chatService/chatService.js';
 import { IChatSession, IChatSessionContentProvider, IChatSessionHistoryItem, IChatSessionItem, IChatSessionRequestHistoryItem } from '../../../common/chatSessionsService.js';
 import { ChatAgentLocation, ChatModeKind } from '../../../common/constants.js';
 import { IChatEditingService } from '../../../common/editing/chatEditingService.js';
 import { ChatToolInvocation } from '../../../common/model/chatProgressTypes/chatToolInvocation.js';
+import { ChatQuestionCarouselData } from '../../../common/model/chatProgressTypes/chatQuestionCarouselData.js';
 import { IChatAgentData, IChatAgentImplementation, IChatAgentRequest, IChatAgentResult, IChatAgentService } from '../../../common/participants/chatAgents.js';
 import { getAgentHostIcon } from '../agentSessions.js';
 import { AgentHostEditingSession } from './agentHostEditingSession.js';
@@ -74,6 +75,54 @@ function parseAhpTerminalToolSessionId(id: string): { terminal: string; session:
 		}
 	} catch { /* not an AHP terminal session ID */ }
 	return undefined;
+}
+
+/**
+ * Converts carousel answers (IChatQuestionAnswers) to protocol
+ * ISessionInputAnswer records, handling text, single-select,
+ * and multi-select answer shapes.
+ */
+export function convertCarouselAnswers(raw: IChatQuestionAnswers): Record<string, ISessionInputAnswer> {
+	const answers: Record<string, ISessionInputAnswer> = {};
+	for (const [qId, answer] of Object.entries(raw)) {
+		if (typeof answer === 'string') {
+			answers[qId] = {
+				state: SessionInputAnswerState.Submitted,
+				value: { kind: SessionInputAnswerValueKind.Text, value: answer },
+			};
+		} else if (answer && typeof answer === 'object') {
+			const multi = answer as IChatMultiSelectAnswer;
+			const single = answer as IChatSingleSelectAnswer;
+			if (Array.isArray(multi.selectedValues)) {
+				// Multi-select answer
+				answers[qId] = {
+					state: SessionInputAnswerState.Submitted,
+					value: {
+						kind: SessionInputAnswerValueKind.SelectedMany,
+						value: multi.selectedValues,
+						freeformValues: multi.freeformValue ? [multi.freeformValue] : undefined,
+					},
+				};
+			} else if (single.selectedValue) {
+				// Single-select answer
+				answers[qId] = {
+					state: SessionInputAnswerState.Submitted,
+					value: {
+						kind: SessionInputAnswerValueKind.Selected,
+						value: single.selectedValue,
+						freeformValues: single.freeformValue ? [single.freeformValue] : undefined,
+					},
+				};
+			} else if (single.freeformValue) {
+				// Freeform-only answer (no selection)
+				answers[qId] = {
+					state: SessionInputAnswerState.Submitted,
+					value: { kind: SessionInputAnswerValueKind.Text, value: single.freeformValue },
+				};
+			}
+		}
+	}
+	return answers;
 }
 
 // =============================================================================
@@ -684,6 +733,7 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		const sessionStr = backendSession.toString();
 		const activeToolInvocations = new Map<string, ChatToolInvocation>();
 		const lastEmittedLengths = new Map<string, number>();
+		const activeInputRequests = new Map<string, ChatQuestionCarouselData>();
 		const throttler = new Throttler();
 		turnDisposables.add(throttler);
 
@@ -720,7 +770,9 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 			if (finished) {
 				return;
 			}
-			if (!this._processSessionState(sessionState, ctx) && !finished) {
+			const isActive = this._processSessionState(sessionState, ctx);
+			this._syncInputRequests(activeInputRequests, sessionState.inputRequests, backendSession, CancellationToken.None, progress);
+			if (!isActive && !finished) {
 				finish();
 			}
 		};
@@ -827,6 +879,9 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		// Track live ChatToolInvocation objects for this turn
 		const activeToolInvocations = new Map<string, ChatToolInvocation>();
 
+		// Track live input request carousels to cancel if they disappear from state
+		const activeInputRequests = new Map<string, ChatQuestionCarouselData>();
+
 		// Track last-emitted content lengths per response part to compute deltas
 		const lastEmittedLengths = new Map<string, number>();
 
@@ -878,7 +933,12 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 				if (cancellationToken.isCancellationRequested) {
 					return;
 				}
-				if (!this._processSessionState(rawSessionState, ctx) && !finished) {
+				const isActive = this._processSessionState(rawSessionState, ctx);
+
+				// Process input requests (ask_user tool elicitations)
+				this._syncInputRequests(activeInputRequests, rawSessionState.inputRequests, session, cancellationToken, progress);
+
+				if (!isActive && !finished) {
 					finish();
 				}
 			});
@@ -1111,6 +1171,142 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		return true;
 	}
 
+	// ---- Input request handling ---------------------------------------------
+
+	/**
+	 * Syncs the set of active input request carousels against the current
+	 * session state. Cancels carousels whose requests disappeared and creates
+	 * new carousels for newly appeared requests.
+	 */
+	private _syncInputRequests(
+		active: Map<string, ChatQuestionCarouselData>,
+		inputRequests: readonly ISessionInputRequest[] | undefined,
+		session: URI,
+		token: CancellationToken,
+		progress: (items: IChatProgress[]) => void,
+	): void {
+		const currentIds = new Set(inputRequests?.map(r => r.id));
+		for (const [id, carousel] of active) {
+			if (!currentIds.has(id)) {
+				carousel.completion.complete({ answers: undefined });
+				active.delete(id);
+			}
+		}
+		if (inputRequests) {
+			for (const inputReq of inputRequests) {
+				if (!active.has(inputReq.id)) {
+					active.set(inputReq.id, this._handleInputRequest(inputReq, session, token, progress));
+				}
+			}
+		}
+	}
+
+	/**
+	 * Creates a question carousel for a session input request and dispatches
+	 * the `SessionInputCompleted` action when the user answers or cancels.
+	 */
+	private _handleInputRequest(
+		inputReq: ISessionInputRequest,
+		session: URI,
+		cancellationToken: CancellationToken,
+		progress: (items: IChatProgress[]) => void,
+	): ChatQuestionCarouselData {
+		const questions: IChatQuestion[] = (inputReq.questions ?? []).map((q): IChatQuestion => {
+			switch (q.kind) {
+				case SessionInputQuestionKind.SingleSelect:
+					return {
+						id: q.id,
+						type: 'singleSelect',
+						title: q.title ?? q.message,
+						description: q.title !== undefined ? q.message : undefined,
+						required: q.required,
+						allowFreeformInput: q.allowFreeformInput ?? true,
+						options: q.options.map(o => ({ id: o.id, label: o.label, value: o.id })),
+					};
+				case SessionInputQuestionKind.MultiSelect:
+					return {
+						id: q.id,
+						type: 'multiSelect',
+						title: q.title ?? q.message,
+						description: q.title !== undefined ? q.message : undefined,
+						required: q.required,
+						allowFreeformInput: q.allowFreeformInput ?? true,
+						options: q.options.map(o => ({ id: o.id, label: o.label, value: o.id })),
+					};
+				case SessionInputQuestionKind.Text:
+					return {
+						id: q.id,
+						type: 'text',
+						title: q.title ?? q.message,
+						description: q.title !== undefined ? q.message : undefined,
+						required: q.required,
+						defaultValue: q.defaultValue,
+					};
+				default:
+					return {
+						id: q.id,
+						type: 'text',
+						title: q.title ?? q.message,
+						description: q.title !== undefined ? q.message : undefined,
+						required: q.required,
+					};
+			}
+		});
+
+		if (questions.length === 0) {
+			// Fallback for input requests with no structured questions —
+			// create a single text question from the message.
+			questions.push({
+				id: 'answer',
+				type: 'text',
+				title: inputReq.message,
+				required: true,
+			});
+		}
+
+		const carousel = new ChatQuestionCarouselData(
+			questions,
+			/* allowSkip */ true,
+			/* resolveId */ undefined,
+			/* data */ undefined,
+			/* isUsed */ undefined,
+			/* message */ new MarkdownString(inputReq.message),
+		);
+
+		progress([carousel]);
+
+		if (cancellationToken.isCancellationRequested) {
+			carousel.completion.complete({ answers: undefined });
+		} else {
+			const tokenListener = cancellationToken.onCancellationRequested(() => {
+				carousel.completion.complete({ answers: undefined });
+			});
+			carousel.completion.p.finally(() => tokenListener.dispose());
+		}
+
+		carousel.completion.p.then(result => {
+			if (!result.answers) {
+				this._config.connection.dispatch({
+					type: ActionType.SessionInputCompleted,
+					session: session.toString(),
+					requestId: inputReq.id,
+					response: SessionInputResponseKind.Cancel,
+				});
+			} else {
+				const answers = convertCarouselAnswers(result.answers);
+				this._config.connection.dispatch({
+					type: ActionType.SessionInputCompleted,
+					session: session.toString(),
+					requestId: inputReq.id,
+					response: SessionInputResponseKind.Accept,
+					answers,
+				});
+			}
+		});
+
+		return carousel;
+	}
+
 	// ---- Reconnection to active turn ----------------------------------------
 
 	/**
@@ -1175,6 +1371,13 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 			}
 		}
 
+		// Track live input request carousels for reconnection
+		const activeInputRequests = new Map<string, ChatQuestionCarouselData>();
+		const appendProgress = (parts: IChatProgress[]) => chatSession.appendProgress(parts);
+
+		// Restore any pending input requests from the initial state
+		this._syncInputRequests(activeInputRequests, currentState?.inputRequests, backendSession, cts.token, appendProgress);
+
 		// Process state changes from the protocol layer.
 		const ctx: ITurnProcessingContext = {
 			turnId,
@@ -1185,7 +1388,9 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 			cancellationToken: cts.token,
 		};
 		const processStateChange = (sessionState: ISessionState) => {
-			if (!this._processSessionState(sessionState, ctx)) {
+			const isActive = this._processSessionState(sessionState, ctx);
+			this._syncInputRequests(activeInputRequests, sessionState.inputRequests, backendSession, cts.token, appendProgress);
+			if (!isActive) {
 				chatSession.complete();
 				reconnectDisposables.dispose();
 			}

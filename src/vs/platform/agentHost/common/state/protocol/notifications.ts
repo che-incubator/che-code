@@ -50,7 +50,7 @@ export const enum NotificationType {
  *         "resource": "copilot:/<uuid>",
  *         "provider": "copilot",
  *         "title": "New Session",
- *         "status": "idle",
+ *         "status": 1,
  *         "createdAt": 1710000000000,
  *         "modifiedAt": 1710000000000
  *       }

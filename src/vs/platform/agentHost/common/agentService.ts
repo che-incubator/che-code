@@ -14,7 +14,7 @@ import type { IActionEnvelope, INotification, ISessionAction, ITerminalAction } 
 import type { IAgentSubscription } from './state/agentSubscription.js';
 import type { ICreateTerminalParams } from './state/protocol/commands.js';
 import type { IResourceCopyParams, IResourceCopyResult, IResourceDeleteParams, IResourceDeleteResult, IResourceListResult, IResourceMoveParams, IResourceMoveResult, IResourceReadResult, IResourceWriteParams, IResourceWriteResult, IStateSnapshot } from './state/sessionProtocol.js';
-import { AttachmentType, ComponentToState, StateComponents, type ICustomizationRef, type IPendingMessage, type IRootState, type IToolCallResult, type PolicyState, type StringOrMarkdown } from './state/sessionState.js';
+import { AttachmentType, ComponentToState, SessionStatus, StateComponents, type ICustomizationRef, type IPendingMessage, type IRootState, type ISessionInputAnswer, type ISessionInputRequest, type IToolCallResult, type PolicyState, type StringOrMarkdown, SessionInputResponseKind } from './state/sessionState.js';
 
 // IPC contract between the renderer and the agent host utility process.
 // Defines all serializable event types, the IAgent provider interface,
@@ -42,6 +42,7 @@ export interface IAgentSessionMetadata {
 	readonly startTime: number;
 	readonly modifiedTime: number;
 	readonly summary?: string;
+	readonly status?: SessionStatus;
 	readonly workingDirectory?: URI;
 	readonly isRead?: boolean;
 	readonly isDone?: boolean;
@@ -245,6 +246,12 @@ export interface IAgentSteeringConsumedEvent extends IAgentProgressEventBase {
 	readonly id: string;
 }
 
+/** The agent's ask_user tool is requesting user input. */
+export interface IAgentUserInputRequestEvent extends IAgentProgressEventBase {
+	readonly type: 'user_input_request';
+	readonly request: ISessionInputRequest;
+}
+
 export type IAgentProgressEvent =
 	| IAgentDeltaEvent
 	| IAgentMessageEvent
@@ -256,7 +263,8 @@ export type IAgentProgressEvent =
 	| IAgentErrorEvent
 	| IAgentUsageEvent
 	| IAgentReasoningEvent
-	| IAgentSteeringConsumedEvent;
+	| IAgentSteeringConsumedEvent
+	| IAgentUserInputRequestEvent;
 
 // ---- Session URI helpers ----------------------------------------------------
 
@@ -333,6 +341,9 @@ export interface IAgent {
 
 	/** Respond to a pending permission request from the SDK. */
 	respondToPermissionRequest(requestId: string, approved: boolean): void;
+
+	/** Respond to a pending user input request from the SDK's ask_user tool. */
+	respondToUserInputRequest(requestId: string, response: SessionInputResponseKind, answers?: Record<string, ISessionInputAnswer>): void;
 
 	/** Return the descriptor for this agent. */
 	getDescriptor(): IAgentDescriptor;
@@ -512,6 +523,7 @@ export interface IAgentConnection {
 	// ---- State subscriptions ------------------------------------------------
 	readonly rootState: IAgentSubscription<IRootState>;
 	getSubscription<T extends StateComponents>(kind: T, resource: URI): IReference<IAgentSubscription<ComponentToState[T]>>;
+	getSubscriptionUnmanaged<T extends StateComponents>(kind: T, resource: URI): IAgentSubscription<ComponentToState[T]> | undefined;
 
 	// ---- Action dispatch ----------------------------------------------------
 	dispatch(action: ISessionAction | ITerminalAction): void;

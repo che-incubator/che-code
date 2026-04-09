@@ -19,7 +19,7 @@ import { ILogService } from '../../../log/common/log.js';
 import { IAgentPluginManager, ISyncedCustomization } from '../../common/agentPluginManager.js';
 import { AgentSession, IAgent, IAgentAttachment, IAgentCreateSessionConfig, IAgentDescriptor, IAgentMessageEvent, IAgentModelInfo, IAgentProgressEvent, IAgentSessionMetadata, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
 import { ISessionDataService } from '../../common/sessionDataService.js';
-import { CustomizationStatus, ICustomizationRef, type IPendingMessage, type PolicyState } from '../../common/state/sessionState.js';
+import { CustomizationStatus, ICustomizationRef, SessionInputResponseKind, type ISessionInputAnswer, type IPendingMessage, type PolicyState } from '../../common/state/sessionState.js';
 import { CopilotAgentSession, SessionWrapperFactory } from './copilotAgentSession.js';
 import { parsedPluginsEqual, toSdkCustomAgents, toSdkHooks, toSdkMcpServers, toSdkSkillDirectories } from './copilotPluginConverters.js';
 import { CopilotSessionWrapper } from './copilotSessionWrapper.js';
@@ -383,6 +383,14 @@ export class CopilotAgent extends Disposable implements IAgent {
 		}
 	}
 
+	respondToUserInputRequest(requestId: string, response: SessionInputResponseKind, answers?: Record<string, ISessionInputAnswer>): void {
+		for (const [, session] of this._sessions) {
+			if (session.respondToUserInputRequest(requestId, response, answers)) {
+				return;
+			}
+		}
+	}
+
 	/**
 	 * Returns true if this provider owns the given session ID.
 	 */
@@ -429,6 +437,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 			const customAgents = await toSdkCustomAgents(parsedPlugins.flatMap(p => p.agents), this._fileService);
 			return {
 				onPermissionRequest: callbacks.onPermissionRequest,
+				onUserInputRequest: callbacks.onUserInputRequest,
 				hooks: toSdkHooks(parsedPlugins.flatMap(p => p.hooks), callbacks.hooks),
 				mcpServers: toSdkMcpServers(parsedPlugins.flatMap(p => p.mcpServers)),
 				customAgents,

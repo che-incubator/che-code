@@ -157,8 +157,17 @@ export class AgentService extends Disposable implements IAgentService {
 			return s;
 		}));
 
-		this._logService.trace(`[AgentService] listSessions returned ${result.length} sessions`);
-		return result;
+		// Overlay live session status from the state manager
+		const withStatus = result.map(s => {
+			const liveState = this._stateManager.getSessionState(s.session.toString());
+			if (liveState) {
+				return { ...s, status: liveState.summary.status };
+			}
+			return s;
+		});
+
+		this._logService.trace(`[AgentService] listSessions returned ${withStatus.length} sessions`);
+		return withStatus;
 	}
 
 	async createSession(config?: IAgentCreateSessionConfig): Promise<URI> {

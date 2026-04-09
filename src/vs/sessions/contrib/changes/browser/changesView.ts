@@ -242,6 +242,7 @@ export class ChangesViewPane extends ViewPane {
 	private readonly hasOpenPullRequestContextKey: IContextKey<boolean>;
 	private readonly hasOutgoingChangesContextKey: IContextKey<boolean>;
 	private readonly hasPullRequestContextKey: IContextKey<boolean>;
+	private readonly hasGitHubRemoteContextKey: IContextKey<boolean>;
 	private readonly hasUncommittedChangesContextKey: IContextKey<boolean>;
 
 	private readonly renderDisposables = this._register(new DisposableStore());
@@ -281,6 +282,7 @@ export class ChangesViewPane extends ViewPane {
 		this.hasIncomingChangesContextKey = ActiveSessionContextKeys.HasIncomingChanges.bindTo(this.scopedContextKeyService);
 		this.hasOutgoingChangesContextKey = ActiveSessionContextKeys.HasOutgoingChanges.bindTo(this.scopedContextKeyService);
 		this.hasUncommittedChangesContextKey = ActiveSessionContextKeys.HasUncommittedChanges.bindTo(this.scopedContextKeyService);
+		this.hasGitHubRemoteContextKey = ActiveSessionContextKeys.HasGitHubRemote.bindTo(this.scopedContextKeyService);
 		this.hasPullRequestContextKey = ActiveSessionContextKeys.HasPullRequest.bindTo(this.scopedContextKeyService);
 		this.hasOpenPullRequestContextKey = ActiveSessionContextKeys.HasOpenPullRequest.bindTo(this.scopedContextKeyService);
 
@@ -299,12 +301,6 @@ export class ChangesViewPane extends ViewPane {
 		// changes.
 		this._register(bindContextKey(ChatContextKeys.agentSessionType, this.scopedContextKeyService, reader => {
 			return this.viewModel.activeSessionTypeObs.read(reader) ?? '';
-		}));
-
-		// Title actions
-		this._register(autorun(reader => {
-			this.viewModel.activeSessionResourceObs.read(reader);
-			this.updateActions();
 		}));
 	}
 
@@ -474,6 +470,13 @@ export class ChangesViewPane extends ViewPane {
 	private onVisible(): void {
 		this.renderDisposables.clear();
 
+		// Title actions
+		this.renderDisposables.add(autorun(reader => {
+			this.viewModel.activeSessionResourceObs.read(reader);
+			this.updateActions();
+		}));
+
+		// Loading
 		this.renderDisposables.add(autorun(reader => {
 			const isLoading = this.viewModel.activeSessionIsLoadingObs.read(reader);
 			if (isLoading) {
@@ -518,10 +521,21 @@ export class ChangesViewPane extends ViewPane {
 				ChangesButtonBarWidget, this.actionsContainer, this.viewModel));
 		}
 
+		const activeSessionStatusObs = derived(reader => {
+			const activeSession = this.sessionManagementService.activeSession.read(reader);
+			return activeSession?.status.read(reader);
+		});
+
 		// Update visibility and file count badge based on entries
 		this.renderDisposables.add(autorun(reader => {
 			if (this.viewModel.activeSessionIsLoadingObs.read(reader)) {
 				return;
+			}
+
+			// Hide the actions toolbar for untitled sessions.
+			const activeSessionStatus = activeSessionStatusObs.read(reader);
+			if (this.actionsContainer) {
+				dom.setVisibility(activeSessionStatus !== SessionStatus.Untitled, this.actionsContainer);
 			}
 
 			const hasGitRepository = this.viewModel.activeSessionHasGitRepositoryObs.read(reader);
@@ -537,6 +551,8 @@ export class ChangesViewPane extends ViewPane {
 				this.filesCountBadge.textContent = `${files}`;
 				this.filesCountBadge.style.display = '';
 			}
+
+			this.layoutSplitView();
 		}));
 
 		// Update summary text (line counts only, file count is shown in badge)
@@ -648,6 +664,7 @@ export class ChangesViewPane extends ViewPane {
 				this.isolationModeContextKey.set(state.isolationMode);
 				this.hasGitRepositoryContextKey.set(state.hasGitRepository);
 				this.isMergeBaseBranchProtectedContextKey.set(state.isMergeBaseBranchProtected === true);
+				this.hasGitHubRemoteContextKey.set(state.hasGitHubRemote === true);
 				this.hasPullRequestContextKey.set(state.hasPullRequest === true);
 				this.hasOpenPullRequestContextKey.set(state.hasOpenPullRequest === true);
 				this.hasUpstreamContextKey.set(state.upstreamBranchName !== undefined);

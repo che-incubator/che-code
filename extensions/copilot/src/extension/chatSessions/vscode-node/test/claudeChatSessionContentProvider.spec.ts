@@ -654,6 +654,7 @@ describe('ChatSessionContentProvider', () => {
 						label: 'Test Session',
 					},
 					initialSessionOptions,
+					inputState: { groups: [], onDidChange: Event.None },
 				},
 			} as vscode.ChatContext;
 		}
@@ -763,6 +764,7 @@ describe('ChatSessionContentProvider', () => {
 						label: 'Test Session',
 					},
 					initialSessionOptions,
+					inputState: { groups: [], onDidChange: Event.None },
 				},
 			} as vscode.ChatContext;
 		}
@@ -833,6 +835,7 @@ describe('ChatSessionContentProvider', () => {
 						resource: ClaudeSessionUri.forSessionId(sessionId),
 						label: 'Test Session',
 					},
+					inputState: { groups: [], onDidChange: Event.None },
 				},
 			} as vscode.ChatContext;
 		}
@@ -932,6 +935,7 @@ describe('ChatSessionContentProvider', () => {
 						resource: ClaudeSessionUri.forSessionId(sessionId),
 						label: 'Test Session',
 					},
+					inputState: { groups: [], onDidChange: Event.None },
 				},
 			} as vscode.ChatContext;
 		}

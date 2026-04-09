@@ -9,12 +9,13 @@ import { Emitter } from '../../../../base/common/event.js';
 import { Disposable, IReference, toDisposable } from '../../../../base/common/lifecycle.js';
 import { URI } from '../../../../base/common/uri.js';
 import { extUriBiasedIgnorePathCase, normalizePath } from '../../../../base/common/resources.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
 import { IInstantiationService } from '../../../instantiation/common/instantiation.js';
 import { ILogService } from '../../../log/common/log.js';
 import { localize } from '../../../../nls.js';
 import { IAgentAttachment, IAgentMessageEvent, IAgentProgressEvent, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
 import { ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
-import { ToolResultContentType, type IPendingMessage, type IToolResultContent } from '../../common/state/sessionState.js';
+import { SessionInputAnswerState, SessionInputAnswerValueKind, SessionInputQuestionKind, SessionInputResponseKind, ToolResultContentType, type ISessionInputAnswer, type ISessionInputRequest, type IPendingMessage, type IToolResultContent } from '../../common/state/sessionState.js';
 import { CopilotSessionWrapper } from './copilotSessionWrapper.js';
 import { getEditFilePath, getInvocationMessage, getPastTenseMessage, getShellLanguage, getToolDisplayName, getToolInputString, getToolKind, isEditTool, isHiddenTool, isShellTool } from './copilotToolDisplay.js';
 import { FileEditTracker } from './fileEditTracker.js';
@@ -32,11 +33,25 @@ import type { ShellManager } from './copilotShellTools.js';
  */
 export type SessionWrapperFactory = (callbacks: {
 	readonly onPermissionRequest: (request: PermissionRequest) => Promise<PermissionRequestResult>;
+	readonly onUserInputRequest: (request: IUserInputRequest, invocation: { sessionId: string }) => Promise<IUserInputResponse>;
 	readonly hooks: {
 		readonly onPreToolUse: (input: { toolName: string; toolArgs: unknown }) => Promise<void>;
 		readonly onPostToolUse: (input: { toolName: string; toolArgs: unknown }) => Promise<void>;
 	};
 }) => Promise<CopilotSessionWrapper>;
+
+/** Matches the SDK's `UserInputRequest` which is not re-exported from the package entry point. */
+interface IUserInputRequest {
+	question: string;
+	choices?: string[];
+	allowFreeform?: boolean;
+}
+
+/** Matches the SDK's `UserInputResponse` which is not re-exported from the package entry point. */
+interface IUserInputResponse {
+	answer: string;
+	wasFreeform: boolean;
+}
 
 function tryStringify(value: unknown): string | undefined {
 	try {
@@ -139,6 +154,8 @@ export class CopilotAgentSession extends Disposable {
 	private readonly _activeToolCalls = new Map<string, { toolName: string; displayName: string; parameters: Record<string, unknown> | undefined }>();
 	/** Pending permission requests awaiting a renderer-side decision. */
 	private readonly _pendingPermissions = new Map<string, DeferredPromise<boolean>>();
+	/** Pending user input requests awaiting a renderer-side answer. */
+	private readonly _pendingUserInputs = new Map<string, { deferred: DeferredPromise<{ response: SessionInputResponseKind; answers?: Record<string, ISessionInputAnswer> }>; questionId: string }>();
 	/** File edit tracker for this session. */
 	private readonly _editTracker: FileEditTracker;
 	/** Session database reference. */
@@ -173,6 +190,7 @@ export class CopilotAgentSession extends Disposable {
 
 		this._register(toDisposable(() => this._denyPendingPermissions()));
 		this._register(toDisposable(() => this._shellManager?.dispose()));
+		this._register(toDisposable(() => this._cancelPendingUserInputs()));
 	}
 
 	/**
@@ -183,6 +201,7 @@ export class CopilotAgentSession extends Disposable {
 	async initializeSession(): Promise<void> {
 		this._wrapper = this._register(await this._wrapperFactory({
 			onPermissionRequest: request => this.handlePermissionRequest(request),
+			onUserInputRequest: (request, invocation) => this.handleUserInputRequest(request, invocation),
 			hooks: {
 				onPreToolUse: async input => {
 					if (isEditTool(input.toolName)) {
@@ -335,6 +354,86 @@ export class CopilotAgentSession extends Disposable {
 		if (deferred) {
 			this._pendingPermissions.delete(requestId);
 			deferred.complete(approved);
+			return true;
+		}
+		return false;
+	}
+
+	// ---- user input handling ------------------------------------------------
+
+	/**
+	 * Handles a user input request from the SDK (ask_user tool) by firing a
+	 * `user_input_request` progress event and waiting for the renderer to
+	 * respond via {@link respondToUserInputRequest}.
+	 */
+	async handleUserInputRequest(
+		request: IUserInputRequest,
+		_invocation: { sessionId: string },
+	): Promise<IUserInputResponse> {
+		const requestId = generateUuid();
+		const questionId = generateUuid();
+		this._logService.info(`[Copilot:${this.sessionId}] User input request: requestId=${requestId}, question="${request.question.substring(0, 100)}"`);
+
+		const deferred = new DeferredPromise<{ response: SessionInputResponseKind; answers?: Record<string, ISessionInputAnswer> }>();
+		this._pendingUserInputs.set(requestId, { deferred, questionId });
+
+		// Build the protocol ISessionInputRequest from the SDK's simple format
+		const inputRequest: ISessionInputRequest = {
+			id: requestId,
+			message: request.question,
+			questions: [request.choices && request.choices.length > 0
+				? {
+					kind: SessionInputQuestionKind.SingleSelect,
+					id: questionId,
+					message: request.question,
+					required: true,
+					options: request.choices.map(c => ({ id: c, label: c })),
+					allowFreeformInput: request.allowFreeform ?? true,
+				}
+				: {
+					kind: SessionInputQuestionKind.Text,
+					id: questionId,
+					message: request.question,
+					required: true,
+				},
+			],
+		};
+
+		this._onDidSessionProgress.fire({
+			session: this.sessionUri,
+			type: 'user_input_request',
+			request: inputRequest,
+		});
+
+		const result = await deferred.p;
+		this._logService.info(`[Copilot:${this.sessionId}] User input response: requestId=${requestId}, response=${result.response}`);
+
+		if (result.response !== SessionInputResponseKind.Accept || !result.answers) {
+			return { answer: '', wasFreeform: true };
+		}
+
+		// Extract the answer for our single question
+		const answer = result.answers[questionId];
+		if (!answer || answer.state === SessionInputAnswerState.Skipped) {
+			return { answer: '', wasFreeform: true };
+		}
+
+		const { value: val } = answer;
+		if (val.kind === SessionInputAnswerValueKind.Text) {
+			return { answer: val.value, wasFreeform: true };
+		} else if (val.kind === SessionInputAnswerValueKind.Selected) {
+			const wasFreeform = !request.choices?.includes(val.value);
+			return { answer: val.value, wasFreeform };
+		}
+
+		return { answer: '', wasFreeform: true };
+	}
+
+	respondToUserInputRequest(requestId: string, response: SessionInputResponseKind, answers?: Record<string, ISessionInputAnswer>): boolean {
+		const pending = this._pendingUserInputs.get(requestId);
+		if (pending) {
+			this._pendingUserInputs.delete(requestId);
+			pending.deferred.complete({ response, answers });
 			return true;
 		}
 		return false;
@@ -632,5 +731,12 @@ export class CopilotAgentSession extends Disposable {
 			deferred.complete(false);
 		}
 		this._pendingPermissions.clear();
+	}
+
+	private _cancelPendingUserInputs(): void {
+		for (const [, pending] of this._pendingUserInputs) {
+			pending.deferred.complete({ response: SessionInputResponseKind.Cancel });
+		}
+		this._pendingUserInputs.clear();
 	}
 }
