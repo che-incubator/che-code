@@ -118,6 +118,13 @@ jobs:
             echo "body<<SCREENSHOT_EOF" >> "$GITHUB_OUTPUT"
             echo "$BODY" >> "$GITHUB_OUTPUT"
             echo "SCREENSHOT_EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "No screenshot changes to report."
+          fi
+          if [ -f .tmp/screenshotDiffReport.json ]; then
+            echo "::group::Compare response JSON"
+            cat .tmp/screenshotDiffReport.json
+            echo "::endgroup::"
           fi
         continue-on-error: true
         env:
