@@ -1402,15 +1402,6 @@ configurationRegistry.registerConfiguration({
 				mode: 'auto'
 			}
 		},
-		[ChatConfiguration.SubagentsAllowModelSelection]: {
-			type: 'boolean',
-			description: nls.localize('chat.subagents.allowModelSelection', "Allow the model to select which model a subagent should use."),
-			default: false,
-			tags: ['experimental'],
-			experiment: {
-				mode: 'auto'
-			}
-		},
 
 		[ChatConfiguration.ChatCustomizationHarnessSelectorEnabled]: {
 			type: 'boolean',

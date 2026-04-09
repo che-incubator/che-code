@@ -50,7 +50,6 @@ export enum ChatConfiguration {
 	SubagentToolCustomAgents = 'chat.customAgentInSubagent.enabled',
 	GeneralPurposeAgentEnabled = 'chat.generalPurposeAgent.enabled',
 	SubagentsAllowInvocationsFromSubagents = 'chat.subagents.allowInvocationsFromSubagents',
-	SubagentsAllowModelSelection = 'chat.subagents.allowModelSelection',
 	ShowCodeBlockProgressAnimation = 'chat.agent.codeBlockProgress',
 	RestoreLastPanelSession = 'chat.restoreLastPanelSession',
 	ExitAfterDelegation = 'chat.exitAfterDelegation',
