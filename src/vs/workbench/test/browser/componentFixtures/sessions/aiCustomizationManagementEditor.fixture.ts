@@ -460,7 +460,7 @@ async function renderEditor(ctx: ComponentFixtureContext, options: IRenderEditor
 			reg.defineInstance(IAICustomizationWorkspaceService, new class extends mock<IAICustomizationWorkspaceService>() {
 				override readonly isSessionsWindow = isSessionsWindow;
 				override readonly welcomePageFeatures = {
-					showGettingStartedBanner: !isSessionsWindow,
+					showGettingStartedBanner: true,
 					showGenerateActions: !isSessionsWindow,
 				};
 				override readonly activeProjectRoot = observableValue('root', URI.file('/workspace'));
