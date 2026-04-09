@@ -504,13 +504,6 @@ configurationRegistry.registerConfiguration({
 			type: 'boolean',
 			tags: ['experimental']
 		},
-		[ChatConfiguration.ArtifactsMode]: {
-			default: 'rules',
-			description: nls.localize('chat.artifacts.mode', "Controls how artifacts are populated. 'rules' extracts artifacts deterministically from the conversation. 'tool' lets the model set artifacts via a tool call."),
-			type: 'string',
-			enum: ['rules', 'tool'],
-			tags: ['experimental']
-		},
 		[ChatConfiguration.ArtifactsRulesByMimeType]: {
 			default: {
 				'image/*': { groupName: 'Screenshots', onlyShowGroup: true }
@@ -1405,6 +1398,15 @@ configurationRegistry.registerConfiguration({
 			description: nls.localize('chat.subagents.allowInvocationsFromSubagents', "Allow subagents to invoke subagents."),
 			markdownDescription: nls.localize('chat.subagents.allowInvocationsFromSubagents.md', "Controls whether subagents can invoke other subagents. When enabled, nesting is limited to a maximum depth of 5."),
 			default: false,
+			experiment: {
+				mode: 'auto'
+			}
+		},
+		[ChatConfiguration.SubagentsAllowModelSelection]: {
+			type: 'boolean',
+			description: nls.localize('chat.subagents.allowModelSelection', "Allow the model to select which model a subagent should use."),
+			default: false,
+			tags: ['experimental'],
 			experiment: {
 				mode: 'auto'
 			}
