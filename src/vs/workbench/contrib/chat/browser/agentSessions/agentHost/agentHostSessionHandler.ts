@@ -17,15 +17,16 @@ import { localize } from '../../../../../../nls.js';
 import { AgentProvider, AgentSession, IAgentAttachment, type IAgentConnection } from '../../../../../../platform/agentHost/common/agentService.js';
 import { IAgentSubscription } from '../../../../../../platform/agentHost/common/state/agentSubscription.js';
 import { ISessionTruncatedAction } from '../../../../../../platform/agentHost/common/state/protocol/actions.js';
-import { ICustomizationRef, type IProtectedResourceMetadata } from '../../../../../../platform/agentHost/common/state/protocol/state.js';
+import { ICustomizationRef, TerminalClaimKind, type IProtectedResourceMetadata } from '../../../../../../platform/agentHost/common/state/protocol/state.js';
 import { ActionType, ISessionTurnStartedAction, type ISessionAction } from '../../../../../../platform/agentHost/common/state/sessionActions.js';
 import { AHP_AUTH_REQUIRED, ProtocolError } from '../../../../../../platform/agentHost/common/state/sessionProtocol.js';
-import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, StateComponents, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, ToolResultContentType, TurnState, type IMessageAttachment, type IRootState, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
+import { AttachmentType, getToolFileEdits, PendingMessageKind, ResponsePartKind, StateComponents, ToolCallCancellationReason, ToolCallConfirmationReason, ToolCallStatus, TurnState, type IMessageAttachment, type IRootState, type ISessionState, type IToolCallState, type ITurn } from '../../../../../../platform/agentHost/common/state/sessionState.js';
 import { ExtensionIdentifier } from '../../../../../../platform/extensions/common/extensions.js';
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../../../platform/product/common/productService.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
+import { ITerminalChatService } from '../../../../terminal/browser/terminal.js';
 import { ChatRequestQueueKind, IChatProgress, IChatService, IChatToolInvocation, ToolConfirmKind } from '../../../common/chatService/chatService.js';
 import { IChatSession, IChatSessionContentProvider, IChatSessionHistoryItem, IChatSessionItem, IChatSessionRequestHistoryItem } from '../../../common/chatSessionsService.js';
 import { ChatAgentLocation, ChatModeKind } from '../../../common/constants.js';
@@ -34,7 +35,8 @@ import { ChatToolInvocation } from '../../../common/model/chatProgressTypes/chat
 import { IChatAgentData, IChatAgentImplementation, IChatAgentRequest, IChatAgentResult, IChatAgentService } from '../../../common/participants/chatAgents.js';
 import { getAgentHostIcon } from '../agentSessions.js';
 import { AgentHostEditingSession } from './agentHostEditingSession.js';
-import { activeTurnToProgress, finalizeToolInvocation, toolCallStateToInvocation, turnsToHistory } from './stateToProgressAdapter.js';
+import { IAgentHostTerminalService } from '../../../../terminal/browser/agentHostTerminalService.js';
+import { activeTurnToProgress, finalizeToolInvocation, getTerminalContentUri, toolCallStateToInvocation, turnsToHistory, type IToolCallFileEdit } from './stateToProgressAdapter.js';
 
 // =============================================================================
 // AgentHostSessionHandler - renderer-side handler for a single agent host
@@ -43,6 +45,36 @@ import { activeTurnToProgress, finalizeToolInvocation, toolCallStateToInvocation
 // changes, and dispatches client actions (turnStarted, toolCallConfirmed,
 // turnCancelled) back to the server.
 // =============================================================================
+
+/**
+ * Shared context for processing turn state changes. Threaded through
+ * {@link AgentHostSessionHandler._processSessionState} and
+ * {@link AgentHostSessionHandler._updateToolCallState}.
+ */
+interface ITurnProcessingContext {
+	readonly turnId: string;
+	readonly backendSession: URI;
+	readonly activeToolInvocations: Map<string, ChatToolInvocation>;
+	readonly lastEmittedLengths: Map<string, number>;
+	readonly progress: (parts: IChatProgress[]) => void;
+	readonly cancellationToken: CancellationToken;
+	/** Called when a completed tool produces file edits. */
+	readonly onFileEdits?: (tc: IToolCallState, fileEdits: IToolCallFileEdit[]) => void;
+}
+
+function makeAhpTerminalToolSessionId(terminalUri: string, session: URI): string {
+	return JSON.stringify({ terminal: terminalUri, session: session.toString() });
+}
+
+function parseAhpTerminalToolSessionId(id: string): { terminal: string; session: string } | undefined {
+	try {
+		const parsed = JSON.parse(id);
+		if (typeof parsed?.terminal === 'string' && typeof parsed?.session === 'string') {
+			return parsed;
+		}
+	} catch { /* not an AHP terminal session ID */ }
+	return undefined;
+}
 
 // =============================================================================
 // Chat session
@@ -201,9 +233,30 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		@IProductService private readonly _productService: IProductService,
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@ITerminalChatService private readonly _terminalChatService: ITerminalChatService,
+		@IAgentHostTerminalService private readonly _agentHostTerminalService: IAgentHostTerminalService,
 	) {
 		super();
 		this._config = config;
+
+		// When the user clicks "Continue in Background" on an AHP terminal
+		// tool, narrow the terminal claim so the server-side tool handler
+		// can detect it and return early.
+		this._register(this._terminalChatService.onDidContinueInBackground(terminalToolSessionId => {
+			const parsed = parseAhpTerminalToolSessionId(terminalToolSessionId);
+			if (!parsed) {
+				return;
+			}
+			this._logService.info(`[AgentHost] Continue in background: terminal=${parsed.terminal}, session=${parsed.session}`);
+			this._config.connection.dispatch({
+				type: ActionType.TerminalClaimed,
+				terminal: parsed.terminal,
+				claim: {
+					kind: TerminalClaimKind.Session,
+					session: parsed.session,
+				},
+			});
+		}));
 
 		// Register an editing session provider for this handler's session type
 		this._register(this._chatEditingService.registerEditingSessionProvider(
@@ -654,90 +707,20 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 			chatSession.isCompleteObs.set(true, undefined);
 		});
 
+		const ctx: ITurnProcessingContext = {
+			turnId,
+			backendSession,
+			activeToolInvocations,
+			lastEmittedLengths,
+			progress,
+			cancellationToken: CancellationToken.None,
+		};
+
 		const processState = (sessionState: ISessionState) => {
 			if (finished) {
 				return;
 			}
-			const activeTurn = sessionState.activeTurn;
-			const isActive = activeTurn?.id === turnId;
-			const responseParts = isActive
-				? activeTurn.responseParts
-				: sessionState.turns.find(t => t.id === turnId)?.responseParts;
-
-			if (responseParts) {
-				for (const rp of responseParts) {
-					switch (rp.kind) {
-						case ResponsePartKind.Markdown: {
-							const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-							if (rp.content.length > lastLen) {
-								const delta = rp.content.substring(lastLen);
-								lastEmittedLengths.set(rp.id, rp.content.length);
-								progress([{ kind: 'markdownContent', content: new MarkdownString(delta, { supportHtml: true }) }]);
-							}
-							break;
-						}
-						case ResponsePartKind.Reasoning: {
-							const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-							if (rp.content.length > lastLen) {
-								const delta = rp.content.substring(lastLen);
-								lastEmittedLengths.set(rp.id, rp.content.length);
-								progress([{ kind: 'thinking', value: delta }]);
-							}
-							break;
-						}
-						case ResponsePartKind.ToolCall: {
-							const tc = rp.toolCall;
-							const toolCallId = tc.toolCallId;
-							let existing = activeToolInvocations.get(toolCallId);
-
-							if (!existing) {
-								existing = toolCallStateToInvocation(tc);
-								activeToolInvocations.set(toolCallId, existing);
-								progress([existing]);
-
-								if (tc.status === ToolCallStatus.PendingConfirmation) {
-									this._awaitToolConfirmation(existing, toolCallId, backendSession, turnId, CancellationToken.None);
-								}
-							} else if (tc.status === ToolCallStatus.PendingConfirmation) {
-								// Running → PendingConfirmation (re-confirmation).
-								// Only replace if the existing invocation is not already
-								// waiting for confirmation (avoids flickering on duplicate
-								// state change events).
-								const existingState = existing.state.get();
-								if (existingState.type !== IChatToolInvocation.StateKind.WaitingForConfirmation) {
-									existing.didExecuteTool(undefined);
-									const confirmInvocation = toolCallStateToInvocation(tc);
-									activeToolInvocations.set(toolCallId, confirmInvocation);
-									progress([confirmInvocation]);
-									this._awaitToolConfirmation(confirmInvocation, toolCallId, backendSession, turnId, CancellationToken.None);
-								}
-							} else if (tc.status === ToolCallStatus.Running) {
-								existing.invocationMessage = typeof tc.invocationMessage === 'string'
-									? tc.invocationMessage
-									: new MarkdownString(tc.invocationMessage.markdown);
-								if (tc.content?.some(c => c.type === ToolResultContentType.Terminal) && tc.toolInput) {
-									existing.toolSpecificData = {
-										kind: 'terminal',
-										commandLine: { original: tc.toolInput },
-										language: 'shellscript',
-									};
-								}
-							}
-
-							if (existing && (tc.status === ToolCallStatus.Completed || tc.status === ToolCallStatus.Cancelled) && !IChatToolInvocation.isComplete(existing)) {
-								finalizeToolInvocation(existing, tc);
-							}
-							break;
-						}
-					}
-				}
-			}
-
-			if (!isActive && !finished) {
-				const lastTurn = sessionState.turns.find(t => t.id === turnId);
-				if (lastTurn?.state === TurnState.Error && lastTurn.error) {
-					progress([{ kind: 'markdownContent', content: new MarkdownString(`\n\nError: (${lastTurn.error.errorType}) ${lastTurn.error.message}`) }]);
-				}
+			if (!this._processSessionState(sessionState, ctx) && !finished) {
 				finish();
 			}
 		};
@@ -875,108 +858,28 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 
 		// Listen to state changes and translate to IChatProgress[]
 		const handleTurnSub = this._ensureSessionSubscription(session.toString());
+		const ctx: ITurnProcessingContext = {
+			turnId,
+			backendSession: session,
+			activeToolInvocations,
+			lastEmittedLengths,
+			progress,
+			cancellationToken,
+			onFileEdits: (tc, fileEdits) => {
+				const editParts = this._hydrateFileEdits(request.sessionResource, request.requestId, tc);
+				if (editParts.length > 0) {
+					progress(editParts);
+				}
+			},
+		};
+
 		turnDisposables.add(handleTurnSub.onDidChange(rawSessionState => {
 			throttler.queue(async () => {
-				const sessionState = rawSessionState;
 				if (cancellationToken.isCancellationRequested) {
 					return;
 				}
-
-				// Find response parts for our turn — either from the active
-				// turn or from the finalized turn in the history array.
-				const activeTurn = sessionState.activeTurn;
-				const isActive = activeTurn?.id === turnId;
-				const responseParts = isActive
-					? activeTurn.responseParts
-					: sessionState.turns.find(t => t.id === turnId)?.responseParts;
-
-				if (responseParts) {
-					for (const rp of responseParts) {
-						switch (rp.kind) {
-							case ResponsePartKind.Markdown: {
-								const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-								if (rp.content.length > lastLen) {
-									const delta = rp.content.substring(lastLen);
-									lastEmittedLengths.set(rp.id, rp.content.length);
-									// supportHtml is load bearing. Without this the markdown string
-									// gets merged into the edit part in chatModel.ts which breaks
-									// rendering because the thinking content part does not deal with this.
-									progress([{ kind: 'markdownContent', content: new MarkdownString(delta, { supportHtml: true }) }]);
-								}
-								break;
-							}
-							case ResponsePartKind.Reasoning: {
-								const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-								if (rp.content.length > lastLen) {
-									const delta = rp.content.substring(lastLen);
-									lastEmittedLengths.set(rp.id, rp.content.length);
-									progress([{ kind: 'thinking', value: delta }]);
-								}
-								break;
-							}
-							case ResponsePartKind.ToolCall: {
-								const tc = rp.toolCall;
-								const toolCallId = tc.toolCallId;
-								let existing = activeToolInvocations.get(toolCallId);
-
-								if (!existing) {
-									// First time seeing this tool call — create an invocation
-									existing = toolCallStateToInvocation(tc);
-									activeToolInvocations.set(toolCallId, existing);
-									progress([existing]);
-
-									if (tc.status === ToolCallStatus.PendingConfirmation) {
-										this._awaitToolConfirmation(existing, toolCallId, session, turnId, cancellationToken);
-									}
-								} else if (tc.status === ToolCallStatus.PendingConfirmation) {
-									// Running → PendingConfirmation (re-confirmation).
-									const existingState = existing.state.get();
-									if (existingState.type !== IChatToolInvocation.StateKind.WaitingForConfirmation) {
-										existing.didExecuteTool(undefined);
-										const confirmInvocation = toolCallStateToInvocation(tc);
-										activeToolInvocations.set(toolCallId, confirmInvocation);
-										progress([confirmInvocation]);
-										this._awaitToolConfirmation(confirmInvocation, toolCallId, session, turnId, cancellationToken);
-									}
-								} else if (tc.status === ToolCallStatus.Running) {
-									// Streaming → Running: update with now-available parameters.
-									existing.invocationMessage = typeof tc.invocationMessage === 'string'
-										? tc.invocationMessage
-										: new MarkdownString(tc.invocationMessage.markdown);
-									if (tc.content?.some(c => c.type === ToolResultContentType.Terminal) && tc.toolInput) {
-										existing.toolSpecificData = {
-											kind: 'terminal',
-											commandLine: { original: tc.toolInput },
-											language: 'shellscript',
-										};
-									}
-								}
-
-								// Finalize terminal-state tools (whether just created or pre-existing)
-								if (existing && (tc.status === ToolCallStatus.Completed || tc.status === ToolCallStatus.Cancelled) && !IChatToolInvocation.isComplete(existing)) {
-									const fileEdits = finalizeToolInvocation(existing, tc);
-									if (fileEdits.length > 0) {
-										const editParts = this._hydrateFileEdits(request.sessionResource, request.requestId, tc);
-										if (editParts.length > 0) {
-											progress(editParts);
-										}
-									}
-								}
-								break;
-							}
-						}
-					}
-				}
-
-				// If the turn is no longer active, emit any error and finish.
-				if (!isActive) {
-					const lastTurn = sessionState.turns.find((t: ITurn) => t.id === turnId);
-					if (lastTurn?.state === TurnState.Error && lastTurn.error) {
-						progress([{ kind: 'markdownContent', content: new MarkdownString(`\n\nError: (${lastTurn.error.errorType}) ${lastTurn.error.message}`) }]);
-					}
-					if (!finished) {
-						finish();
-					}
+				if (!this._processSessionState(rawSessionState, ctx) && !finished) {
+					finish();
 				}
 			});
 		}));
@@ -1032,6 +935,168 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		}).catch(err => {
 			this._logService.warn(`[AgentHost] Tool confirmation failed for toolCallId=${toolCallId}`, err);
 		});
+	}
+
+	// ---- Tool call state updates --------------------------------------------
+
+	/**
+	 * Shared logic for updating an existing {@link ChatToolInvocation} when
+	 * the protocol tool-call state changes. Handles:
+	 * - PendingConfirmation re-confirmation (Running → PendingConfirmation)
+	 * - Running status: updates invocation message and detects terminal content
+	 * - Completed/Cancelled: revives terminal if needed, then finalizes
+	 *
+	 * @returns Updated invocation (may differ from `existing` on re-confirmation)
+	 *   and file edits produced by finalization.
+	 */
+	private _updateToolCallState(
+		existing: ChatToolInvocation,
+		tc: IToolCallState,
+		ctx: ITurnProcessingContext,
+	): { invocation: ChatToolInvocation; fileEdits: IToolCallFileEdit[] } {
+		const toolCallId = tc.toolCallId;
+		let fileEdits: IToolCallFileEdit[] = [];
+
+		if (tc.status === ToolCallStatus.PendingConfirmation) {
+			// Running → PendingConfirmation (re-confirmation).
+			const existingState = existing.state.get();
+			if (existingState.type !== IChatToolInvocation.StateKind.WaitingForConfirmation) {
+				existing.didExecuteTool(undefined);
+				const confirmInvocation = toolCallStateToInvocation(tc);
+				ctx.activeToolInvocations.set(toolCallId, confirmInvocation);
+				ctx.progress([confirmInvocation]);
+				this._awaitToolConfirmation(confirmInvocation, toolCallId, ctx.backendSession, ctx.turnId, ctx.cancellationToken);
+				existing = confirmInvocation;
+			}
+		} else if (tc.status === ToolCallStatus.Running) {
+			existing.invocationMessage = typeof tc.invocationMessage === 'string'
+				? tc.invocationMessage
+				: new MarkdownString(tc.invocationMessage.markdown);
+			this._reviveTerminalIfNeeded(existing, tc, ctx.backendSession);
+		}
+
+		// Finalize terminal-state tools
+		if ((tc.status === ToolCallStatus.Completed || tc.status === ToolCallStatus.Cancelled) && !IChatToolInvocation.isComplete(existing)) {
+			// Revive terminal before finalizing — handles the case where
+			// Running was skipped due to throttling and terminal content
+			// only appears at Completed time.
+			this._reviveTerminalIfNeeded(existing, tc, ctx.backendSession);
+			fileEdits = finalizeToolInvocation(existing, tc);
+		}
+
+		return { invocation: existing, fileEdits };
+	}
+
+	/**
+	 * Detects terminal content in a tool call and creates a local terminal
+	 * instance backed by the agent host connection. Updates the invocation's
+	 * `toolSpecificData` to `kind: 'terminal'` and clears
+	 * `HiddenAfterComplete` so the terminal UI stays visible.
+	 */
+	private _reviveTerminalIfNeeded(
+		invocation: ChatToolInvocation,
+		tc: IToolCallState,
+		backendSession: URI,
+	): void {
+		// content is only present on Running/Completed/PendingResultConfirmation.
+		// toolInput is present on all post-streaming states.
+		if (tc.status !== ToolCallStatus.Running && tc.status !== ToolCallStatus.Completed && tc.status !== ToolCallStatus.PendingResultConfirmation) {
+			return;
+		}
+		const terminalUri = getTerminalContentUri(tc.content);
+		if (!terminalUri || !tc.toolInput) {
+			return;
+		}
+		invocation.presentation = undefined;
+		const toolInput = tc.toolInput;
+		this._ensureTerminalInstance(terminalUri, backendSession).then(sessionId => {
+			invocation.toolSpecificData = {
+				kind: 'terminal',
+				commandLine: { original: toolInput },
+				language: 'shellscript',
+				terminalToolSessionId: sessionId,
+				terminalCommandUri: URI.parse(terminalUri),
+			};
+		});
+	}
+
+	/**
+	 * Processes a session state snapshot for a specific turn, emitting
+	 * incremental progress for new or changed content. Handles markdown
+	 * and reasoning deltas, tool call lifecycle (creation, updates,
+	 * confirmation, finalization), and turn-end error messages.
+	 *
+	 * @returns `true` if the turn is still active, `false` if it has ended.
+	 *   When `false`, any error message has already been emitted via
+	 *   `progress`.
+	 */
+	private _processSessionState(
+		sessionState: ISessionState,
+		ctx: ITurnProcessingContext,
+	): boolean {
+		const activeTurn = sessionState.activeTurn;
+		const isActive = activeTurn?.id === ctx.turnId;
+		const responseParts = isActive
+			? activeTurn.responseParts
+			: sessionState.turns.find(t => t.id === ctx.turnId)?.responseParts;
+
+		if (responseParts) {
+			for (const rp of responseParts) {
+				switch (rp.kind) {
+					case ResponsePartKind.Markdown: {
+						const lastLen = ctx.lastEmittedLengths.get(rp.id) ?? 0;
+						if (rp.content.length > lastLen) {
+							const delta = rp.content.substring(lastLen);
+							ctx.lastEmittedLengths.set(rp.id, rp.content.length);
+							// supportHtml is load bearing. Without this the markdown
+							// string gets merged into the edit part in chatModel.ts
+							// which breaks rendering because the thinking content
+							// part does not deal with this.
+							ctx.progress([{ kind: 'markdownContent', content: new MarkdownString(delta, { supportHtml: true }) }]);
+						}
+						break;
+					}
+					case ResponsePartKind.Reasoning: {
+						const lastLen = ctx.lastEmittedLengths.get(rp.id) ?? 0;
+						if (rp.content.length > lastLen) {
+							const delta = rp.content.substring(lastLen);
+							ctx.lastEmittedLengths.set(rp.id, rp.content.length);
+							ctx.progress([{ kind: 'thinking', value: delta }]);
+						}
+						break;
+					}
+					case ResponsePartKind.ToolCall: {
+						const tc = rp.toolCall;
+						let existing = ctx.activeToolInvocations.get(tc.toolCallId);
+
+						if (!existing) {
+							existing = toolCallStateToInvocation(tc);
+							ctx.activeToolInvocations.set(tc.toolCallId, existing);
+							ctx.progress([existing]);
+
+							if (tc.status === ToolCallStatus.PendingConfirmation) {
+								this._awaitToolConfirmation(existing, tc.toolCallId, ctx.backendSession, ctx.turnId, ctx.cancellationToken);
+							}
+						} else {
+							const { fileEdits } = this._updateToolCallState(existing, tc, ctx);
+							if (fileEdits.length > 0) {
+								ctx.onFileEdits?.(tc, fileEdits);
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+
+		if (!isActive) {
+			const lastTurn = sessionState.turns.find(t => t.id === ctx.turnId);
+			if (lastTurn?.state === TurnState.Error && lastTurn.error) {
+				ctx.progress([{ kind: 'markdownContent', content: new MarkdownString(`\n\nError: (${lastTurn.error.errorType}) ${lastTurn.error.message}`) }]);
+			}
+			return false;
+		}
+		return true;
 	}
 
 	// ---- Reconnection to active turn ----------------------------------------
@@ -1099,92 +1164,16 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 		}
 
 		// Process state changes from the protocol layer.
+		const ctx: ITurnProcessingContext = {
+			turnId,
+			backendSession,
+			activeToolInvocations,
+			lastEmittedLengths,
+			progress: parts => chatSession.appendProgress(parts),
+			cancellationToken: cts.token,
+		};
 		const processStateChange = (sessionState: ISessionState) => {
-			const activeTurn = sessionState.activeTurn;
-			const isActive = activeTurn?.id === turnId;
-			const responseParts = isActive
-				? activeTurn.responseParts
-				: sessionState.turns.find(t => t.id === turnId)?.responseParts;
-
-			if (responseParts) {
-				for (const rp of responseParts) {
-					switch (rp.kind) {
-						case ResponsePartKind.Markdown: {
-							const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-							if (rp.content.length > lastLen) {
-								const delta = rp.content.substring(lastLen);
-								lastEmittedLengths.set(rp.id, rp.content.length);
-								chatSession.appendProgress([{ kind: 'markdownContent', content: new MarkdownString(delta, { supportHtml: true }) }]);
-							}
-							break;
-						}
-						case ResponsePartKind.Reasoning: {
-							const lastLen = lastEmittedLengths.get(rp.id) ?? 0;
-							if (rp.content.length > lastLen) {
-								const delta = rp.content.substring(lastLen);
-								lastEmittedLengths.set(rp.id, rp.content.length);
-								chatSession.appendProgress([{ kind: 'thinking', value: delta }]);
-							}
-							break;
-						}
-						case ResponsePartKind.ToolCall: {
-							const tc = rp.toolCall;
-							const toolCallId = tc.toolCallId;
-							let existing = activeToolInvocations.get(toolCallId);
-
-							if (!existing) {
-								existing = toolCallStateToInvocation(tc);
-								activeToolInvocations.set(toolCallId, existing);
-								chatSession.appendProgress([existing]);
-
-								if (tc.status === ToolCallStatus.PendingConfirmation) {
-									this._awaitToolConfirmation(existing, toolCallId, backendSession, turnId, cts.token);
-								}
-							} else if (tc.status === ToolCallStatus.PendingConfirmation) {
-								// Running -> PendingConfirmation (re-confirmation).
-								const existingState = existing.state.get();
-								if (existingState.type !== IChatToolInvocation.StateKind.WaitingForConfirmation) {
-									existing.didExecuteTool(undefined);
-									const confirmInvocation = toolCallStateToInvocation(tc);
-									activeToolInvocations.set(toolCallId, confirmInvocation);
-									chatSession.appendProgress([confirmInvocation]);
-									this._awaitToolConfirmation(confirmInvocation, toolCallId, backendSession, turnId, cts.token);
-								}
-							} else if (tc.status === ToolCallStatus.Running) {
-								existing.invocationMessage = typeof tc.invocationMessage === 'string'
-									? tc.invocationMessage
-									: new MarkdownString(tc.invocationMessage.markdown);
-								if (tc.content?.some(c => c.type === ToolResultContentType.Terminal) && tc.toolInput) {
-									existing.toolSpecificData = {
-										kind: 'terminal',
-										commandLine: { original: tc.toolInput },
-										language: 'shellscript',
-									};
-								}
-							}
-
-							// Finalize terminal-state tools
-							if (existing && (tc.status === ToolCallStatus.Completed || tc.status === ToolCallStatus.Cancelled) && !IChatToolInvocation.isComplete(existing)) {
-								finalizeToolInvocation(existing, tc);
-								// Note: file edits from reconnection are not routed through
-								// the editing session pipeline as there is no active request
-								// context. The edits already happened on the remote.
-							}
-							break;
-						}
-					}
-				}
-			}
-
-			// If the turn is no longer active, emit any error and finish.
-			if (!isActive) {
-				const lastTurn = sessionState.turns.find(t => t.id === turnId);
-				if (lastTurn?.state === TurnState.Error && lastTurn.error) {
-					chatSession.appendProgress([{
-						kind: 'markdownContent',
-						content: new MarkdownString(`\n\nError: (${lastTurn.error.errorType}) ${lastTurn.error.message}`),
-					}]);
-				}
+			if (!this._processSessionState(sessionState, ctx)) {
 				chatSession.complete();
 				reconnectDisposables.dispose();
 			}
@@ -1263,6 +1252,22 @@ export class AgentHostSessionHandler extends Disposable implements IChatSessionC
 	}
 
 	// ---- Session resolution -------------------------------------------------
+
+	/**
+	 * Attaches to an existing server-side terminal via the agent host
+	 * terminal service and registers it with the terminal chat service.
+	 *
+	 * Returns the `terminalToolSessionId` to use for the tool invocation.
+	 */
+	private async _ensureTerminalInstance(terminalUri: string, backendSession: URI): Promise<string> {
+		const terminalToolSessionId = makeAhpTerminalToolSessionId(terminalUri, backendSession);
+		const instance = await this._agentHostTerminalService.reviveTerminal(
+			this._config.connection,
+			URI.parse(terminalUri),
+		);
+		this._terminalChatService.registerTerminalInstanceWithToolSession(terminalToolSessionId, instance);
+		return terminalToolSessionId;
+	}
 
 	/** Maps a UI session resource to a backend provider URI. */
 	private _resolveSessionUri(sessionResource: URI): URI {
