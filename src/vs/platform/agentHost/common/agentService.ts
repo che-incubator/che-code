@@ -45,6 +45,7 @@ export interface IAgentSessionMetadata {
 	readonly workingDirectory?: URI;
 	readonly isRead?: boolean;
 	readonly isDone?: boolean;
+	readonly diffs?: readonly { readonly uri: string; readonly added?: number; readonly removed?: number }[];
 }
 
 export type AgentProvider = string;
@@ -306,7 +307,7 @@ export interface IAgent {
 	createSession(config?: IAgentCreateSessionConfig): Promise<URI>;
 
 	/** Send a user message into an existing session. */
-	sendMessage(session: URI, prompt: string, attachments?: IAgentAttachment[]): Promise<void>;
+	sendMessage(session: URI, prompt: string, attachments?: IAgentAttachment[], turnId?: string): Promise<void>;
 
 	/**
 	 * Called when the session's pending (steering) message changes.

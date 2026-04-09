@@ -21,6 +21,7 @@ export {
 	type IRootActiveSessionsChangedAction,
 	type ISessionCreationFailedAction,
 	type ISessionDeltaAction,
+	type ISessionDiffsChangedAction,
 	type ISessionErrorAction,
 	type ISessionModelChangedAction,
 	type ISessionReadyAction,
