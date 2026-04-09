@@ -92,6 +92,7 @@ async function createAgentSession(disposables: DisposableStore, options?: { work
 		options?.workingDirectory,
 		progressEmitter,
 		factory,
+		undefined, // shellManager
 	));
 
 	await session.initializeSession();
