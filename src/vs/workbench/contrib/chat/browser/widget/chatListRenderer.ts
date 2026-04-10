@@ -2689,7 +2689,8 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 						() => ({ domNode: markdownPart.domNode, disposable: markdownPart }),
 						markdownPart.codeblocksPartId,
 						markdown,
-						templateData.value
+						templateData.value,
+						markdownPart,
 					);
 					return subagentPart;
 				}
@@ -2709,7 +2710,8 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 						markdownPart.codeblocksPartId,
 						markdown,
 						templateData.value,
-						markdownPart.onDidChangeDiff
+						markdownPart.onDidChangeDiff,
+						markdownPart,
 					);
 				}
 
@@ -2718,7 +2720,10 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 
 			if (this.shouldPinPart(markdown, context.element) && isComplete) {
 				if (lastThinking && markdownPart?.domNode) {
-					// Factory wrapping already-created markdown part
+					// Factory wrapping already-created markdown part.
+					// No eagerDisposable needed here because the markdownPart is returned
+					// from this method and tracked directly in renderedParts, so it will
+					// be disposed by clearRenderedParts.
 					lastThinking.appendItem(
 						() => ({ domNode: markdownPart.domNode, disposable: markdownPart }),
 						markdownPart.codeblocksPartId,
