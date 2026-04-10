@@ -321,3 +321,41 @@
 .monaco-workbench .inline-chat .chat-attached-context {
 	padding: 2px 0px;
 }
+
+/* Termination card (zone widget) */
+
+.monaco-workbench .inline-chat-terminated-card {
+	padding: 8px 16px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 12px;
+}
+
+.monaco-workbench .inline-chat-terminated-card.hidden {
+	display: none;
+}
+
+.monaco-workbench .inline-chat-terminated-card > .status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.monaco-workbench .inline-chat-terminated-card > .status > .message {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	line-height: 1.4;
+}
+
+.monaco-workbench .inline-chat-terminated-card > .status > .toolbar {
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.monaco-workbench .inline-chat-terminated-card > .status > .toolbar .monaco-text-button {
+	padding: 2px 8px;
+	font-size: 12px;
+	white-space: nowrap;
+}
