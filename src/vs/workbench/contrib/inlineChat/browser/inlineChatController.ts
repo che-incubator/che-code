@@ -42,7 +42,7 @@ import { IChatWidgetLocationOptions } from '../../chat/browser/widget/chatWidget
 import { IChatEditingService, ModifiedFileEntryState } from '../../chat/common/editing/chatEditingService.js';
 import { ChatModel } from '../../chat/common/model/chatModel.js';
 import { ChatMode } from '../../chat/common/chatModes.js';
-import { IChatLocationData, IChatService } from '../../chat/common/chatService/chatService.js';
+import { IChatLocationData, IChatService, IChatToolInvocation, ToolConfirmKind } from '../../chat/common/chatService/chatService.js';
 import { IChatRequestVariableEntry, IDiagnosticVariableEntryFilterData } from '../../chat/common/attachments/chatVariableEntries.js';
 import { isResponseVM } from '../../chat/common/model/chatViewModel.js';
 import { ChatAgentLocation, ChatModeKind } from '../../chat/common/constants.js';
@@ -377,6 +377,27 @@ export class InlineChatController implements IEditorContribution {
 				sessionOverlayWidget.show(session);
 			} else {
 				sessionOverlayWidget.hide();
+			}
+		}));
+
+		// Auto-approve tool confirmations for inline chat. The user implicitly
+		// consents to editing the current file by invoking inline chat on it,
+		// even if the file qualifies as a sensitive file.
+		this._store.add(autorun(r => {
+			const session = this._currentSession.read(r);
+			if (!session) {
+				return;
+			}
+			const lastRequest = session.chatModel.lastRequestObs.read(r);
+			const response = lastRequest?.response;
+			const pending = response?.isPendingConfirmation.read(r);
+			if (pending) {
+				_logService.info(`[InlineChat] auto-approving: ${pending.detail ?? 'unknown'}`);
+				for (const part of response!.response.value) {
+					if (part.kind === 'toolInvocation') {
+						IChatToolInvocation.confirmWith(part as IChatToolInvocation, { type: ToolConfirmKind.ConfirmationNotNeeded, reason: 'inlineChat' });
+					}
+				}
 			}
 		}));
 
