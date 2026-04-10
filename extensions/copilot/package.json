@@ -6106,12 +6106,12 @@
 					{
 						"name": "plan",
 						"description": "%github.copilot.command.cli.plan.description%",
-						"when": "config.github.copilot.chat.cli.planExitMode.enabled"
+						"when": "false"
 					},
 					{
 						"name": "fleet",
 						"description": "%github.copilot.command.cli.fleet.description%",
-						"when": "config.github.copilot.chat.cli.planExitMode.enabled"
+						"when": "false"
 					}
 				],
 				"customAgentTarget": "github-copilot",
