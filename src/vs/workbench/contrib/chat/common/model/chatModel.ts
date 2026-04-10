@@ -1430,8 +1430,6 @@ export class ChatResponseModel extends Disposable implements IChatResponseModel 
 
 	override dispose(): void {
 		super.dispose();
-		// Break back-reference to ChatModel to prevent retention cycles
-		this._session = undefined!;
 		this._response.clear();
 		if (this._codeBlockInfos) {
 			this._codeBlockInfos.length = 0;
