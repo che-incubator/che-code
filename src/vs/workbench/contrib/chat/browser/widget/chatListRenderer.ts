@@ -2432,6 +2432,21 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 		this.finalizeCurrentThinkingPart(context, templateData);
 		this._notifyOnQuestionCarousel(context, carousel);
 
+		// Backfill terminal correlation on the carousel from the originating request.
+		// This keeps focus button / send_to_terminal correlation working even when
+		// askQuestions couldn't stamp terminalId during tool execution.
+		if (!carousel.terminalId && isResponseVM(context.element)) {
+			const responseElement = context.element;
+			const model = this.chatService.getSession(responseElement.sessionResource);
+			const request = model?.getRequests().find(r => r.id === responseElement.requestId);
+			if (request?.terminalExecutionId) {
+				carousel.terminalId = request.terminalExecutionId;
+				this.logService.trace(`ChatListItemRenderer#renderQuestionCarousel: backfilled terminalId=${carousel.terminalId} for request=${responseElement.requestId}`);
+			} else {
+				this.logService.trace(`ChatListItemRenderer#renderQuestionCarousel: no terminalExecutionId to backfill for request=${responseElement.requestId}`);
+			}
+		}
+
 		const widget = isResponseVM(context.element) ? this.chatWidgetService.getWidgetBySessionResource(context.element.sessionResource) : undefined;
 		const shouldAutoFocus = widget ? widget.getInput() === '' : true;
 		const responseId = isResponseVM(context.element) ? context.element.requestId : undefined;
