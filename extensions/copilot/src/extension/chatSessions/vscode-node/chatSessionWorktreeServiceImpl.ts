@@ -395,9 +395,11 @@ export class ChatSessionWorktreeService extends Disposable implements IChatSessi
 					? await this._getWorktreeChanges(sessionId, worktreeProperties)
 					: await this._getWorktreeChangesFromCommits(worktreeProperties);
 
-				await this.setWorktreeProperties(sessionId, {
-					...worktreeProperties, ...properties
-				});
+				if (properties) {
+					await this.setWorktreeProperties(sessionId, {
+						...worktreeProperties, ...properties
+					});
+				}
 
 				return properties?.changes.map(change => this._toChatSessionChangedFile2(sessionId, change, worktreeProperties)) ?? [];
 			}
@@ -720,6 +722,7 @@ export class ChatSessionWorktreeService extends Disposable implements IChatSessi
 
 	private async _getWorktreeChanges(sessionId: string, worktreeProperties: ChatSessionWorktreeProperties): Promise<{
 		readonly changes: readonly ChatSessionWorktreeFile[];
+		readonly hasGitHubRemote?: boolean;
 		readonly upstreamBranchName?: string;
 		readonly incomingChanges?: number;
 		readonly outgoingChanges?: number;
@@ -803,6 +806,7 @@ export class ChatSessionWorktreeService extends Disposable implements IChatSessi
 		} satisfies ChatSessionWorktreeFile));
 
 		const repositoryState = {
+			hasGitHubRemote: getGitHubRepoInfoFromContext(worktreeRepository) !== undefined,
 			upstreamBranchName: worktreeRepository.upstreamRemote && worktreeRepository.upstreamBranchName
 				? `${worktreeRepository.upstreamRemote}/${worktreeRepository.upstreamBranchName}`
 				: undefined,
