@@ -1521,7 +1521,10 @@ export class ChatQuestionCarouselPart extends Disposable implements IChatContent
 	private renderSkippedMessage(): void {
 		const skippedContainer = dom.$('.chat-question-carousel-summary');
 		const skippedMessage = dom.$('.chat-question-summary-skipped');
-		skippedMessage.textContent = localize('chat.questionCarousel.skipped', 'Skipped');
+		const isDismissedByTerminal = this.carousel instanceof ChatQuestionCarouselData && this.carousel.dismissedByTerminalInput;
+		skippedMessage.textContent = isDismissedByTerminal
+			? localize('chat.questionCarousel.deferredToTerminal', "Deferring to user's input in the terminal")
+			: localize('chat.questionCarousel.skipped', 'Skipped');
 		skippedContainer.appendChild(skippedMessage);
 		this.domNode.appendChild(skippedContainer);
 	}
