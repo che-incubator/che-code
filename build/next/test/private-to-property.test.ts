@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import assert from 'assert';
+import { suite, test } from 'node:test';
 import { convertPrivateFields, adjustSourceMap } from '../private-to-property.ts';
 import { SourceMapConsumer, SourceMapGenerator, type RawSourceMap } from 'source-map';
 
