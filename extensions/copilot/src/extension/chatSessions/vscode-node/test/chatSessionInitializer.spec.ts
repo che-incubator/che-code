@@ -575,13 +575,12 @@ describe('ChatSessionInitializer', () => {
 				worktreeProperties: undefined,
 			};
 
-			const result = await initializer.createDelegatedSession(
+			const session = await initializer.createDelegatedSession(
 				makeRequest(), workspace, { mcpServerMappings: new Map() },
 				CancellationToken.None
 			);
 
-			expect(result.session).toBeDefined();
-			expect(result.model).toEqual(expect.objectContaining({ model: 'resolved-model' }));
+			expect(session).toBeDefined();
 			expect(sessionService.createSession).toHaveBeenCalled();
 		});
 
