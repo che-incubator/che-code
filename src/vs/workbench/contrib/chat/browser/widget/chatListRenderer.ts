@@ -264,9 +264,9 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 
 		this.chatContentMarkdownRenderer = this.instantiationService.createInstance(ChatContentMarkdownRenderer);
 		this.markdownDecorationsRenderer = this.instantiationService.createInstance(ChatMarkdownDecorationsRenderer);
-		this._editorPool = this._register(this.instantiationService.createInstance(EditorPool, editorOptions, delegate, overflowWidgetsDomNode, false));
+		this._editorPool = this._register(this.instantiationService.createInstance(EditorPool, editorOptions, delegate, overflowWidgetsDomNode, true));
 		this._toolEditorPool = this._register(this.instantiationService.createInstance(EditorPool, editorOptions, delegate, overflowWidgetsDomNode, true));
-		this._diffEditorPool = this._register(this.instantiationService.createInstance(DiffEditorPool, editorOptions, delegate, overflowWidgetsDomNode, false));
+		this._diffEditorPool = this._register(this.instantiationService.createInstance(DiffEditorPool, editorOptions, delegate, overflowWidgetsDomNode, true));
 		this._treePool = this._register(this.instantiationService.createInstance(TreePool, this._onDidChangeVisibility.event));
 		this._contentReferencesListPool = this._register(this.instantiationService.createInstance(CollapsibleListPool, this._onDidChangeVisibility.event, undefined, undefined));
 
@@ -2689,7 +2689,8 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 						() => ({ domNode: markdownPart.domNode, disposable: markdownPart }),
 						markdownPart.codeblocksPartId,
 						markdown,
-						templateData.value
+						templateData.value,
+						markdownPart,
 					);
 					return subagentPart;
 				}
@@ -2709,7 +2710,8 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 						markdownPart.codeblocksPartId,
 						markdown,
 						templateData.value,
-						markdownPart.onDidChangeDiff
+						markdownPart.onDidChangeDiff,
+						markdownPart,
 					);
 				}
 
@@ -2718,7 +2720,10 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 
 			if (this.shouldPinPart(markdown, context.element) && isComplete) {
 				if (lastThinking && markdownPart?.domNode) {
-					// Factory wrapping already-created markdown part
+					// Factory wrapping already-created markdown part.
+					// No eagerDisposable needed here because the markdownPart is returned
+					// from this method and tracked directly in renderedParts, so it will
+					// be disposed by clearRenderedParts.
 					lastThinking.appendItem(
 						() => ({ domNode: markdownPart.domNode, disposable: markdownPart }),
 						markdownPart.codeblocksPartId,

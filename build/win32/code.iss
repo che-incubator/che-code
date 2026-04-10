@@ -125,6 +125,9 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#ProxyNameLong}";
 [Run]
 Filename: "{app}\{#ExeBasename}.exe"; Description: "{cm:LaunchProgram,{#NameLong}}"; Tasks: runcode; Flags: nowait postinstall; Check: ShouldRunAfterUpdate
 Filename: "{app}\{#ExeBasename}.exe"; Description: "{cm:LaunchProgram,{#NameLong}}"; Flags: nowait postinstall; Check: WizardNotSilent
+#ifdef ProxyExeBasename
+Filename: "{app}\{#ProxyExeBasename}.exe"; Description: "{cm:LaunchProgram,{#ProxyNameLong}}"; Tasks: runcode; Flags: nowait postinstall; Check: ShouldRunProxyAfterUpdate
+#endif
 
 [Registry]
 #if "user" == InstallTarget
@@ -1414,6 +1417,10 @@ end;
 
 var
 	ShouldRestartTunnelService: Boolean;
+#ifdef ProxyMutex
+	ProxyWasRunning: Boolean;
+	AppWasRunning: Boolean;
+#endif
 
 function StopTunnelOtherProcesses(): Boolean;
 var
@@ -1509,10 +1516,26 @@ end;
 function ShouldRunAfterUpdate(): Boolean;
 begin
   if IsBackgroundUpdate() then
+#ifdef ProxyMutex
+    Result := (not LockFileExists()) and AppWasRunning
+#else
     Result := not LockFileExists()
+#endif
   else
     Result := True;
 end;
+
+#ifdef ProxyMutex
+function ShouldRunProxyAfterUpdate(): Boolean;
+begin
+  // Relaunch the proxy app after a background update if it was
+  // running when the update started (detected via its mutex).
+  if IsBackgroundUpdate() then
+    Result := (not LockFileExists()) and ProxyWasRunning
+  else
+    Result := False;
+end;
+#endif
 
 function IsWindows11OrLater(): Boolean;
 begin
@@ -1603,7 +1626,11 @@ begin
   if IsBackgroundUpdate() then
     Result := ''
   else
+#ifdef ProxyMutex
+    Result := '{#AppMutex},{#ProxyMutex}';
+#else
     Result := '{#AppMutex}';
+#endif
 end;
 
 function GetSetupMutex(Value: string): string;
@@ -1612,7 +1639,11 @@ begin
   // During background updates, also create a -updating mutex that VS Code checks
   // to avoid launching while an update is in progress.
   if IsBackgroundUpdate() then
+#ifdef ProxyMutex
+    Result := '{#AppMutex}setup,{#AppMutex}-updating,{#ProxyMutex}-updating'
+#else
     Result := '{#AppMutex}setup,{#AppMutex}-updating'
+#endif
   else
     Result := '{#AppMutex}setup';
 end;
@@ -1788,12 +1819,24 @@ begin
 
     if IsBackgroundUpdate() then
     begin
+#ifdef ProxyMutex
+      // Snapshot whether each app is running before we wait for them to exit
+      ProxyWasRunning := CheckForMutexes('{#ProxyMutex}');
+      AppWasRunning := CheckForMutexes('{#AppMutex}');
+      Log('App was running: ' + BoolToStr(AppWasRunning));
+      Log('Proxy app was running: ' + BoolToStr(ProxyWasRunning));
+#endif
+
       SaveStringToFile(ExpandConstant('{app}\updating_version'), '{#Commit}', False);
       CreateMutex('{#AppMutex}-ready');
       DeleteFile(GetUpdateProgressFilePath());
 
       Log('Checking whether application is still running...');
+#ifdef ProxyMutex
+      while (CheckForMutexes('{#AppMutex},{#ProxyMutex}')) do
+#else
       while (CheckForMutexes('{#AppMutex}')) do
+#endif
       begin
         if CancelFileExists() then
         begin

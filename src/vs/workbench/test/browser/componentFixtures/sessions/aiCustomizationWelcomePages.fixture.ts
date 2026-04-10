@@ -43,7 +43,6 @@ function createMockWorkspaceService(): IAICustomizationWorkspaceService {
 		override readonly managementSections = Array.from(visibleSections);
 		override readonly welcomePageFeatures = {
 			showGettingStartedBanner: true,
-			showGenerateActions: true,
 		};
 		override readonly activeProjectRoot = constObservable(URI.file('/workspace'));
 		override readonly hasOverrideProjectRoot = constObservable(false);
@@ -92,6 +91,7 @@ function renderClassicWelcomePage(ctx: ComponentFixtureContext): void {
 		workspaceService.welcomePageFeatures,
 		{
 			selectSection: () => { },
+			selectSectionWithMarketplace: () => { },
 			closeEditor: () => { },
 			prefillChat: () => { },
 		},
@@ -109,6 +109,7 @@ function renderPromptLaunchersWelcomePage(ctx: ComponentFixtureContext): void {
 		workspaceService.welcomePageFeatures,
 		{
 			selectSection: () => { },
+			selectSectionWithMarketplace: () => { },
 			closeEditor: () => { },
 			prefillChat: () => { },
 		},
@@ -129,6 +130,7 @@ function renderSelectedWelcomePage(ctx: ComponentFixtureContext, variant: AICust
 		workspaceService.welcomePageFeatures,
 		{
 			selectSection: () => { },
+			selectSectionWithMarketplace: () => { },
 			closeEditor: () => { },
 			prefillChat: () => { },
 		},

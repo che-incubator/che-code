@@ -13,13 +13,14 @@ import { generateUuid } from '../../../../base/common/uuid.js';
 import { IInstantiationService } from '../../../instantiation/common/instantiation.js';
 import { ILogService } from '../../../log/common/log.js';
 import { localize } from '../../../../nls.js';
-import { IAgentAttachment, IAgentMessageEvent, IAgentProgressEvent, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
+import { IAgentAttachment, IAgentMessageEvent, IAgentProgressEvent, IAgentSubagentStartedEvent, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
 import { ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
 import { SessionInputAnswerState, SessionInputAnswerValueKind, SessionInputQuestionKind, SessionInputResponseKind, ToolResultContentType, type ISessionInputAnswer, type ISessionInputRequest, type IPendingMessage, type IToolResultContent } from '../../common/state/sessionState.js';
 import { CopilotSessionWrapper } from './copilotSessionWrapper.js';
-import { getEditFilePath, getInvocationMessage, getPastTenseMessage, getShellLanguage, getToolDisplayName, getToolInputString, getToolKind, isEditTool, isHiddenTool } from './copilotToolDisplay.js';
+import { getEditFilePath, getInvocationMessage, getPastTenseMessage, getShellLanguage, getToolDisplayName, getToolInputString, getToolKind, isEditTool, isHiddenTool, isShellTool } from './copilotToolDisplay.js';
 import { FileEditTracker } from './fileEditTracker.js';
 import { mapSessionEvents } from './mapSessionEvents.js';
+import type { ShellManager } from './copilotShellTools.js';
 
 /**
  * Factory function that produces a {@link CopilotSessionWrapper}.
@@ -67,6 +68,8 @@ function getPermissionDisplay(request: { kind: string;[key: string]: unknown }):
 	confirmationTitle: string;
 	invocationMessage: string;
 	toolInput?: string;
+	/** Normalized permission kind for auto-approval routing. */
+	permissionKind: string;
 } {
 	const path = typeof request.path === 'string' ? request.path : (typeof request.fileName === 'string' ? request.fileName : undefined);
 	const fullCommandText = typeof request.fullCommandText === 'string' ? request.fullCommandText : undefined;
@@ -80,12 +83,35 @@ function getPermissionDisplay(request: { kind: string;[key: string]: unknown }):
 				confirmationTitle: localize('copilot.permission.shell.title', "Run in terminal"),
 				invocationMessage: intention ?? localize('copilot.permission.shell.message', "Run command"),
 				toolInput: fullCommandText,
+				permissionKind: 'shell',
 			};
+		case 'custom-tool': {
+			// Custom tool overrides (e.g. our shell tool). Extract the actual
+			// tool args from the SDK's wrapper envelope.
+			const args = typeof request.args === 'object' && request.args !== null ? request.args as Record<string, unknown> : undefined;
+			const command = typeof args?.command === 'string' ? args.command : undefined;
+			const sdkToolName = typeof request.toolName === 'string' ? request.toolName : undefined;
+			if (command && sdkToolName && isShellTool(sdkToolName)) {
+				return {
+					confirmationTitle: localize('copilot.permission.shell.title', "Run in terminal"),
+					invocationMessage: localize('copilot.permission.shell.message', "Run command"),
+					toolInput: command,
+					permissionKind: 'shell',
+				};
+			}
+			return {
+				confirmationTitle: toolName ?? localize('copilot.permission.default.title', "Permission request"),
+				invocationMessage: localize('copilot.permission.default.message', "Permission request"),
+				toolInput: args ? tryStringify(args) : tryStringify(request),
+				permissionKind: request.kind,
+			};
+		}
 		case 'write':
 			return {
 				confirmationTitle: localize('copilot.permission.write.title', "Write file"),
 				invocationMessage: path ? localize('copilot.permission.write.message', "Edit {0}", path) : localize('copilot.permission.write.messageGeneric', "Edit file"),
 				toolInput: tryStringify(path ? { path } : request) ?? undefined,
+				permissionKind: 'write',
 			};
 		case 'mcp': {
 			const title = toolName ?? localize('copilot.permission.mcp.defaultTool', "MCP Tool");
@@ -93,6 +119,7 @@ function getPermissionDisplay(request: { kind: string;[key: string]: unknown }):
 				confirmationTitle: serverName ? `${serverName}: ${title}` : title,
 				invocationMessage: serverName ? `${serverName}: ${title}` : title,
 				toolInput: tryStringify({ serverName, toolName }) ?? undefined,
+				permissionKind: 'mcp',
 			};
 		}
 		case 'read':
@@ -100,12 +127,14 @@ function getPermissionDisplay(request: { kind: string;[key: string]: unknown }):
 				confirmationTitle: localize('copilot.permission.read.title', "Read file"),
 				invocationMessage: intention ?? localize('copilot.permission.read.message', "Read file"),
 				toolInput: tryStringify(path ? { path, intention } : request) ?? undefined,
+				permissionKind: 'read',
 			};
 		default:
 			return {
 				confirmationTitle: localize('copilot.permission.default.title', "Permission request"),
 				invocationMessage: localize('copilot.permission.default.message', "Permission request"),
 				toolInput: tryStringify(request) ?? undefined,
+				permissionKind: request.kind,
 			};
 	}
 }
@@ -144,6 +173,7 @@ export class CopilotAgentSession extends Disposable {
 		workingDirectory: URI | undefined,
 		private readonly _onDidSessionProgress: Emitter<IAgentProgressEvent>,
 		private readonly _wrapperFactory: SessionWrapperFactory,
+		private readonly _shellManager: ShellManager | undefined,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@ILogService private readonly _logService: ILogService,
 		@ISessionDataService sessionDataService: ISessionDataService,
@@ -159,6 +189,7 @@ export class CopilotAgentSession extends Disposable {
 		this._editTracker = this._instantiationService.createInstance(FileEditTracker, sessionUri.toString(), this._databaseRef.object);
 
 		this._register(toDisposable(() => this._denyPendingPermissions()));
+		this._register(toDisposable(() => this._shellManager?.dispose()));
 		this._register(toDisposable(() => this._cancelPendingUserInputs()));
 	}
 
@@ -233,7 +264,7 @@ export class CopilotAgentSession extends Disposable {
 		}
 	}
 
-	async getMessages(): Promise<(IAgentMessageEvent | IAgentToolStartEvent | IAgentToolCompleteEvent)[]> {
+	async getMessages(): Promise<(IAgentMessageEvent | IAgentToolStartEvent | IAgentToolCompleteEvent | IAgentSubagentStartedEvent)[]> {
 		const events = await this._wrapper.session.getMessages();
 		let db: ISessionDatabase | undefined;
 		try {
@@ -299,7 +330,7 @@ export class CopilotAgentSession extends Disposable {
 		this._pendingPermissions.set(toolCallId, deferred);
 
 		// Derive display information from the permission request kind
-		const { confirmationTitle, invocationMessage, toolInput } = getPermissionDisplay(request);
+		const { confirmationTitle, invocationMessage, toolInput, permissionKind } = getPermissionDisplay(request);
 
 		// Fire a tool_ready event to transition the tool to PendingConfirmation
 		this._onDidSessionProgress.fire({
@@ -309,7 +340,7 @@ export class CopilotAgentSession extends Disposable {
 			invocationMessage,
 			toolInput,
 			confirmationTitle,
-			permissionKind: request.kind,
+			permissionKind,
 			permissionPath: typeof request.path === 'string' ? request.path : (typeof request.fileName === 'string' ? request.fileName : undefined),
 		});
 
@@ -506,6 +537,18 @@ export class CopilotAgentSession extends Disposable {
 				}
 			}
 
+			// Add terminal content reference for shell tools
+			if (isShellTool(tracked.toolName) && this._shellManager) {
+				const terminalUri = this._shellManager.getTerminalUriForToolCall(e.data.toolCallId);
+				if (terminalUri) {
+					content.push({
+						type: ToolResultContentType.Terminal,
+						resource: terminalUri,
+						title: tracked.displayName,
+					});
+				}
+			}
+
 			this._onDidSessionProgress.fire({
 				session,
 				type: 'tool_complete',
@@ -525,6 +568,18 @@ export class CopilotAgentSession extends Disposable {
 		this._register(wrapper.onIdle(() => {
 			this._logService.info(`[Copilot:${sessionId}] Session idle`);
 			this._onDidSessionProgress.fire({ session, type: 'idle' });
+		}));
+
+		this._register(wrapper.onSubagentStarted(e => {
+			this._logService.info(`[Copilot:${sessionId}] Subagent started: toolCallId=${e.data.toolCallId}, agent=${e.data.agentName}`);
+			this._onDidSessionProgress.fire({
+				session,
+				type: 'subagent_started',
+				toolCallId: e.data.toolCallId,
+				agentName: e.data.agentName,
+				agentDisplayName: e.data.agentDisplayName,
+				agentDescription: e.data.agentDescription,
+			});
 		}));
 
 		this._register(wrapper.onSessionError(e => {

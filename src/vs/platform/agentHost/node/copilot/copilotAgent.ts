@@ -17,7 +17,7 @@ import { IFileService } from '../../../files/common/files.js';
 import { IInstantiationService } from '../../../instantiation/common/instantiation.js';
 import { ILogService } from '../../../log/common/log.js';
 import { IAgentPluginManager, ISyncedCustomization } from '../../common/agentPluginManager.js';
-import { AgentSession, IAgent, IAgentAttachment, IAgentCreateSessionConfig, IAgentDescriptor, IAgentMessageEvent, IAgentModelInfo, IAgentProgressEvent, IAgentSessionMetadata, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
+import { AgentSession, IAgent, IAgentAttachment, IAgentCreateSessionConfig, IAgentDescriptor, IAgentMessageEvent, IAgentModelInfo, IAgentProgressEvent, IAgentSessionMetadata, IAgentSubagentStartedEvent, IAgentToolCompleteEvent, IAgentToolStartEvent } from '../../common/agentService.js';
 import { ISessionDataService } from '../../common/sessionDataService.js';
 import { CustomizationStatus, ICustomizationRef, SessionInputResponseKind, type ISessionInputAnswer, type IPendingMessage, type PolicyState } from '../../common/state/sessionState.js';
 import { CopilotAgentSession, SessionWrapperFactory } from './copilotAgentSession.js';
@@ -25,6 +25,8 @@ import { parsedPluginsEqual, toSdkCustomAgents, toSdkHooks, toSdkMcpServers, toS
 import { CopilotSessionWrapper } from './copilotSessionWrapper.js';
 import { forkCopilotSessionOnDisk, getCopilotDataDir, truncateCopilotSessionOnDisk } from './copilotAgentForking.js';
 import { IProtectedResourceMetadata } from '../../common/state/protocol/state.js';
+import { IAgentHostTerminalManager } from '../agentHostTerminalManager.js';
+import { createShellTools, ShellManager } from './copilotShellTools.js';
 
 /**
  * Agent provider backed by the Copilot SDK {@link CopilotClient}.
@@ -47,6 +49,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IFileService private readonly _fileService: IFileService,
 		@ISessionDataService private readonly _sessionDataService: ISessionDataService,
+		@IAgentHostTerminalManager private readonly _terminalManager: IAgentHostTerminalManager,
 	) {
 		super();
 		this._plugins = this._instantiationService.createInstance(PluginController);
@@ -222,24 +225,22 @@ export class CopilotAgent extends Disposable implements IAgent {
 		}
 
 		const sessionId = config?.session ? AgentSession.id(config.session) : generateUuid();
+		const sessionUri = AgentSession.uri(this.id, sessionId);
+		const shellManager = this._instantiationService.createInstance(ShellManager, sessionUri);
+		const sessionConfig = this._buildSessionConfig(parsedPlugins, shellManager);
+
 		const factory: SessionWrapperFactory = async callbacks => {
-			const customAgents = await toSdkCustomAgents(parsedPlugins.flatMap(p => p.agents), this._fileService);
 			const raw = await client.createSession({
 				model: config?.model,
 				sessionId,
 				streaming: true,
 				workingDirectory: config?.workingDirectory?.fsPath,
-				onPermissionRequest: callbacks.onPermissionRequest,
-				onUserInputRequest: callbacks.onUserInputRequest,
-				hooks: toSdkHooks(parsedPlugins.flatMap(p => p.hooks), callbacks.hooks),
-				mcpServers: toSdkMcpServers(parsedPlugins.flatMap(p => p.mcpServers)),
-				customAgents,
-				skillDirectories: toSdkSkillDirectories(parsedPlugins.flatMap(p => p.skills)),
+				...await sessionConfig(callbacks),
 			});
 			return new CopilotSessionWrapper(raw);
 		};
 
-		const agentSession = this._createAgentSession(factory, config?.workingDirectory, sessionId);
+		const agentSession = this._createAgentSession(factory, config?.workingDirectory, sessionId, shellManager);
 		this._plugins.setAppliedPlugins(agentSession, parsedPlugins);
 		await agentSession.initializeSession();
 
@@ -296,7 +297,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 		// No SDK-level enqueue is needed.
 	}
 
-	async getSessionMessages(session: URI): Promise<(IAgentMessageEvent | IAgentToolStartEvent | IAgentToolCompleteEvent)[]> {
+	async getSessionMessages(session: URI): Promise<(IAgentMessageEvent | IAgentToolStartEvent | IAgentToolCompleteEvent | IAgentSubagentStartedEvent)[]> {
 		const sessionId = AgentSession.id(session);
 		const entry = this._sessions.get(sessionId) ?? await this._resumeSession(sessionId).catch(() => undefined);
 		if (!entry) {
@@ -404,7 +405,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 	 * and returns it. The caller must call {@link CopilotAgentSession.initializeSession}
 	 * to wire up the SDK session.
 	 */
-	private _createAgentSession(wrapperFactory: SessionWrapperFactory, workingDirectory: URI | undefined, sessionId: string): CopilotAgentSession {
+	private _createAgentSession(wrapperFactory: SessionWrapperFactory, workingDirectory: URI | undefined, sessionId: string, shellManager: ShellManager): CopilotAgentSession {
 		const sessionUri = AgentSession.uri(this.id, sessionId);
 
 		const agentSession = this._instantiationService.createInstance(
@@ -414,18 +415,25 @@ export class CopilotAgent extends Disposable implements IAgent {
 			workingDirectory,
 			this._onDidSessionProgress,
 			wrapperFactory,
+			shellManager,
 		);
 
 		this._sessions.set(sessionId, agentSession);
 		return agentSession;
 	}
 
-	private async _resumeSession(sessionId: string): Promise<CopilotAgentSession> {
-		this._logService.info(`[Copilot:${sessionId}] Session not in memory, resuming...`);
-		const client = await this._ensureClient();
-		const parsedPlugins = await this._plugins.getAppliedPlugins();
+	/**
+	 * Builds the common session configuration (plugins + shell tools) shared
+	 * by both {@link createSession} and {@link _resumeSession}.
+	 *
+	 * Returns an async function that resolves the final config given the
+	 * session's permission/hook callbacks, so it can be called lazily
+	 * inside the {@link SessionWrapperFactory}.
+	 */
+	private _buildSessionConfig(parsedPlugins: readonly IParsedPlugin[], shellManager: ShellManager) {
+		const shellTools = createShellTools(shellManager, this._terminalManager, this._logService);
 
-		const buildPluginConfig = async (callbacks: Parameters<SessionWrapperFactory>[0]) => {
+		return async (callbacks: Parameters<SessionWrapperFactory>[0]) => {
 			const customAgents = await toSdkCustomAgents(parsedPlugins.flatMap(p => p.agents), this._fileService);
 			return {
 				onPermissionRequest: callbacks.onPermissionRequest,
@@ -434,14 +442,25 @@ export class CopilotAgent extends Disposable implements IAgent {
 				mcpServers: toSdkMcpServers(parsedPlugins.flatMap(p => p.mcpServers)),
 				customAgents,
 				skillDirectories: toSdkSkillDirectories(parsedPlugins.flatMap(p => p.skills)),
+				tools: shellTools,
 			};
 		};
+	}
+
+	private async _resumeSession(sessionId: string): Promise<CopilotAgentSession> {
+		this._logService.info(`[Copilot:${sessionId}] Session not in memory, resuming...`);
+		const client = await this._ensureClient();
+		const parsedPlugins = await this._plugins.getAppliedPlugins();
+
+		const sessionUri = AgentSession.uri(this.id, sessionId);
+		const shellManager = this._instantiationService.createInstance(ShellManager, sessionUri);
+		const sessionConfig = this._buildSessionConfig(parsedPlugins, shellManager);
 
 		const factory: SessionWrapperFactory = async callbacks => {
-			const pluginConfig = await buildPluginConfig(callbacks);
+			const config = await sessionConfig(callbacks);
 			try {
 				const raw = await client.resumeSession(sessionId, {
-					...pluginConfig,
+					...config,
 				});
 				return new CopilotSessionWrapper(raw);
 			} catch (err) {
@@ -453,9 +472,9 @@ export class CopilotAgent extends Disposable implements IAgent {
 				}
 
 				this._logService.warn(`[Copilot:${sessionId}] Resume failed (session not found in SDK), recreating`);
-				const metadata = await this._readSessionMetadata(AgentSession.uri(this.id, sessionId));
+				const metadata = await this._readSessionMetadata(sessionUri);
 				const raw = await client.createSession({
-					...pluginConfig,
+					...config,
 					sessionId,
 					streaming: true,
 					model: metadata.model,
@@ -466,7 +485,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 			}
 		};
 
-		const agentSession = this._createAgentSession(factory, undefined, sessionId);
+		const agentSession = this._createAgentSession(factory, undefined, sessionId, shellManager);
 		this._plugins.setAppliedPlugins(agentSession, parsedPlugins);
 		await agentSession.initializeSession();
 

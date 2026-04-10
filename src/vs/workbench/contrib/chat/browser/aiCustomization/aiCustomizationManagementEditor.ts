@@ -318,7 +318,9 @@ export class AICustomizationManagementEditor extends EditorPane {
 	private harnessDropdownButton: HTMLElement | undefined;
 	private harnessDropdownIcon: HTMLElement | undefined;
 	private harnessDropdownLabel: HTMLElement | undefined;
-	private sidebarContent: HTMLElement | undefined;
+	private sidebarHeaderContainer: HTMLElement | undefined;
+	private homeButton: HTMLElement | undefined;
+	private homeButtonLabel: HTMLElement | undefined;
 
 	private readonly inEditorContextKey: IContextKey<boolean>;
 	private readonly sectionContextKey: IContextKey<string>;
@@ -527,10 +529,10 @@ export class AICustomizationManagementEditor extends EditorPane {
 	}
 
 	private createSidebar(): void {
-		const sidebarContent = this.sidebarContent = DOM.append(this.sidebarContainer, $('.sidebar-content'));
+		const sidebarContent = DOM.append(this.sidebarContainer, $('.sidebar-content'));
 
-		// Harness dropdown (shown when multiple harnesses available)
-		this.createHarnessDropdown(sidebarContent);
+		// Header row with home button and optional harness dropdown
+		this.createSidebarHeader(sidebarContent);
 
 		// Main sections list container (takes remaining space)
 		const sectionsListContainer = DOM.append(sidebarContent, $('.sidebar-sections-list'));
@@ -619,12 +621,32 @@ export class AICustomizationManagementEditor extends EditorPane {
 		}
 	}
 
-	private createHarnessDropdown(sidebarContent: HTMLElement): void {
+	private createSidebarHeader(sidebarContent: HTMLElement): void {
+		const headerRow = this.sidebarHeaderContainer = DOM.append(sidebarContent, $('.sidebar-header-row'));
+
+		// Home/overview button
+		const homeButton = this.homeButton = DOM.append(headerRow, $('button.sidebar-home-button'));
+		homeButton.setAttribute('aria-label', localize('homeButton', "Overview"));
+		const homeIcon = DOM.append(homeButton, $('span.sidebar-home-icon'));
+		homeIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.home));
+		homeIcon.setAttribute('aria-hidden', 'true');
+		const homeLabel = this.homeButtonLabel = DOM.append(homeButton, $('span.sidebar-home-label'));
+		homeLabel.textContent = localize('overview', "Overview");
+		this.editorDisposables.add(DOM.addDisposableListener(homeButton, 'click', () => {
+			this.showWelcomePage();
+		}));
+
+		// Harness dropdown (shown when multiple harnesses available)
+		this.createHarnessDropdown(headerRow);
+		this.updateHomeButtonStyle();
+	}
+
+	private createHarnessDropdown(parent: HTMLElement): void {
 		if (!this.isHarnessSelectorEnabled) {
 			return;
 		}
 
-		const container = this.harnessDropdownContainer = DOM.append(sidebarContent, $('.sidebar-harness-dropdown'));
+		const container = this.harnessDropdownContainer = DOM.append(parent, $('.sidebar-harness-dropdown'));
 
 		this.harnessDropdownButton = DOM.append(container, $('button.harness-dropdown-button'));
 		this.harnessDropdownButton.setAttribute('aria-label', localize('selectHarness', "Select customization target"));
@@ -659,10 +681,22 @@ export class AICustomizationManagementEditor extends EditorPane {
 			this.harnessDropdownButton = undefined;
 			this.harnessDropdownIcon = undefined;
 			this.harnessDropdownLabel = undefined;
-		} else if (this.isHarnessSelectorEnabled && !this.harnessDropdownContainer && this.sidebarContent) {
-			this.createHarnessDropdown(this.sidebarContent);
+			this.updateHomeButtonStyle();
+		} else if (this.isHarnessSelectorEnabled && !this.harnessDropdownContainer && this.sidebarHeaderContainer) {
+			this.createHarnessDropdown(this.sidebarHeaderContainer);
+			this.updateHomeButtonStyle();
 		}
 		// Visibility is handled by updateHarnessDropdown based on harness count
+	}
+
+	private updateHomeButtonStyle(): void {
+		if (!this.homeButtonLabel || !this.homeButton) {
+			return;
+		}
+		// Show full label when harness dropdown is hidden, icon-only when visible
+		const harnessVisible = this.harnessDropdownContainer && this.harnessDropdownContainer.style.display !== 'none';
+		this.homeButtonLabel.style.display = harnessVisible ? 'none' : '';
+		this.homeButton.style.flex = harnessVisible ? '' : '1';
 	}
 
 	private updateHarnessDropdown(): void {
@@ -672,6 +706,7 @@ export class AICustomizationManagementEditor extends EditorPane {
 		const harnesses = this.harnessService.availableHarnesses.get();
 		// Hide dropdown when only one harness is available
 		this.harnessDropdownContainer.style.display = harnesses.length <= 1 ? 'none' : '';
+		this.updateHomeButtonStyle();
 
 		const activeId = this.harnessService.activeHarness.get();
 		const descriptor = harnesses.find(h => h.id === activeId);
@@ -771,6 +806,7 @@ export class AICustomizationManagementEditor extends EditorPane {
 			this.workspaceService.welcomePageFeatures,
 			{
 				selectSection: (section) => this.selectSection(section),
+				selectSectionWithMarketplace: (section) => this.selectSection(section, { showMarketplace: true }),
 				closeEditor: () => {
 					if (this.input) {
 						this.group.closeEditor(this.input);
@@ -1008,8 +1044,8 @@ export class AICustomizationManagementEditor extends EditorPane {
 		this.ensureSectionsListReflectsActiveSection(undefined);
 	}
 
-	private selectSection(section: AICustomizationManagementSection): void {
-		if (this.selectedSection === section) {
+	private selectSection(section: AICustomizationManagementSection, options?: { showMarketplace?: boolean }): void {
+		if (this.selectedSection === section && !options?.showMarketplace) {
 			this.ensureSectionsListReflectsActiveSection(section);
 			return;
 		}
@@ -1043,6 +1079,15 @@ export class AICustomizationManagementEditor extends EditorPane {
 		}
 
 		this.ensureSectionsListReflectsActiveSection(section);
+
+		// Activate marketplace browse mode if requested
+		if (options?.showMarketplace) {
+			if (section === AICustomizationManagementSection.McpServers) {
+				this.mcpListWidget?.showBrowseMarketplace();
+			} else if (section === AICustomizationManagementSection.Plugins) {
+				this.pluginListWidget?.showBrowseMarketplace();
+			}
+		}
 	}
 
 	private ensureSectionsListReflectsActiveSection(section: AICustomizationManagementSection | undefined = this.selectedSection): void {
@@ -1396,7 +1441,7 @@ export class AICustomizationManagementEditor extends EditorPane {
 	/**
 	 * Selects a specific section programmatically.
 	 */
-	public selectSectionById(sectionId: AICustomizationManagementSection): void {
+	public selectSectionById(sectionId: AICustomizationManagementSection, options?: { showMarketplace?: boolean }): void {
 		const index = this.sections.findIndex(s => s.id === sectionId);
 		if (index >= 0) {
 			// Directly update state and UI, bypassing the early-return guard in selectSection
@@ -1424,6 +1469,15 @@ export class AICustomizationManagementEditor extends EditorPane {
 				this.layout(this.dimension);
 			}
 			this.ensureSectionsListReflectsActiveSection(sectionId);
+
+			// Activate marketplace browse mode if requested
+			if (options?.showMarketplace) {
+				if (sectionId === AICustomizationManagementSection.McpServers) {
+					this.mcpListWidget?.showBrowseMarketplace();
+				} else if (sectionId === AICustomizationManagementSection.Plugins) {
+					this.pluginListWidget?.showBrowseMarketplace();
+				}
+			}
 		}
 	}
 

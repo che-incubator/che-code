@@ -172,9 +172,7 @@ export class ChangesViewModel extends Disposable {
 		const sessionsChangedSignal = observableSignalFromEvent(this,
 			this.sessionManagementService.onDidChangeSessions);
 
-		return derivedOpts<{ readonly [key: string]: unknown } | undefined>({
-			equalsFn: structuralEquals
-		}, reader => {
+		const sessionMetadata = derivedObservableWithCache<{ readonly [key: string]: unknown } | undefined>(this, (reader, lastValue) => {
 			const sessionResource = this.activeSessionResourceObs.read(reader);
 			if (!sessionResource) {
 				return undefined;
@@ -182,7 +180,18 @@ export class ChangesViewModel extends Disposable {
 
 			sessionsChangedSignal.read(reader);
 			const model = this.agentSessionsService.getSession(sessionResource);
-			return model?.metadata;
+			if (model === undefined) {
+				// This occurs when the untitled session is committed. In order
+				// to avoid flickering of the toolbar, we keep the old metadata
+				// until the new metadata is available.
+				return lastValue;
+			}
+
+			return model.metadata;
+		});
+
+		return derivedOpts<{ readonly [key: string]: unknown } | undefined>({ equalsFn: structuralEquals }, reader => {
+			return sessionMetadata.read(reader);
 		});
 	}
 

@@ -93,7 +93,7 @@ export class ClassicAICustomizationWelcomePage extends Disposable implements IAI
 		heading.textContent = localize('welcomeHeading', "Chat Customizations");
 
 		const subtitle = DOM.append(welcomeInner, $('p.welcome-classic-subtitle'));
-		subtitle.textContent = localize('welcomeSubtitle', "Tailor how AI agents work in your projects. Configure workspace customizations for the entire team, or create personal ones that follow you across projects.");
+		subtitle.textContent = localize('welcomeSubtitle', "Tailor how agents work in your projects. Configure workspace customizations for the entire team, or create personal ones that follow you across projects.");
 
 		if (this.welcomePageFeatures?.showGettingStartedBanner !== false) {
 			const gettingStarted = DOM.append(welcomeInner, $('button.welcome-classic-getting-started')) as HTMLButtonElement;
@@ -109,7 +109,11 @@ export class ClassicAICustomizationWelcomePage extends Disposable implements IAI
 			chevron.setAttribute('aria-hidden', 'true');
 			this._register(DOM.addDisposableListener(gettingStarted, 'click', () => {
 				this.callbacks.closeEditor();
-				this.commandService.executeCommand('workbench.action.chat.open', { query: '/agent-customization ', isPartialQuery: true });
+				if (this.workspaceService.isSessionsWindow) {
+					this.callbacks.prefillChat('Generate agent customizations. ', { isPartialQuery: true });
+				} else {
+					this.commandService.executeCommand('workbench.action.chat.open', { query: '/init ', isPartialQuery: true });
+				}
 			}));
 		}
 
@@ -145,12 +149,17 @@ export class ClassicAICustomizationWelcomePage extends Disposable implements IAI
 			const footer = DOM.append(card, $('.welcome-classic-card-footer'));
 			const browseBtn = DOM.append(footer, $('button.welcome-classic-card-browse'));
 			browseBtn.textContent = localize('browse', "Browse");
+			const hasMarketplace = category.id === AICustomizationManagementSection.McpServers || category.id === AICustomizationManagementSection.Plugins;
 			this.cardDisposables.add(DOM.addDisposableListener(browseBtn, 'click', e => {
 				e.stopPropagation();
-				this.callbacks.selectSection(category.id);
+				if (hasMarketplace) {
+					this.callbacks.selectSectionWithMarketplace(category.id);
+				} else {
+					this.callbacks.selectSection(category.id);
+				}
 			}));
 
-			if (category.promptType && this.welcomePageFeatures?.showGenerateActions !== false) {
+			if (category.promptType) {
 				const generateBtn = DOM.append(footer, $('button.welcome-classic-card-generate'));
 				DOM.append(generateBtn, $('span.codicon.codicon-sparkle'));
 				const label = DOM.append(generateBtn, $('span'));
@@ -158,7 +167,12 @@ export class ClassicAICustomizationWelcomePage extends Disposable implements IAI
 				this.cardDisposables.add(DOM.addDisposableListener(generateBtn, 'click', e => {
 					e.stopPropagation();
 					this.callbacks.closeEditor();
-					this.workspaceService.generateCustomization(category.promptType!);
+					if (this.workspaceService.isSessionsWindow) {
+						const typeLabel = category.label.toLowerCase().replace(/s$/, '');
+						this.callbacks.prefillChat(`Create me a custom ${typeLabel} that `, { isPartialQuery: true });
+					} else {
+						this.workspaceService.generateCustomization(category.promptType!);
+					}
 				}));
 			}
 
