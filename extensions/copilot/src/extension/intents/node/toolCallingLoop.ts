@@ -753,17 +753,30 @@ export abstract class ToolCallingLoop<TOptions extends IToolCallingLoopOptions =
 				// log entries are routed to a dedicated child JSONL file.
 				// parentChatSessionId is only set on subagent requests
 				// (see CapturingToken setup in defaultIntentRequestHandler).
-				if (parentChatSessionId && chatSessionId) {
-					const childLabel = debugLogLabel ?? `runSubagent-${agentName}`;
+				if (chatSessionId) {
 					const fileLogger = this._instantiationService.invokeFunction(accessor =>
 						accessor.get(IChatDebugFileLoggerService));
-					fileLogger.startChildSession(
-						chatSessionId, parentChatSessionId, childLabel, parentTraceContext?.spanId);
-					// Also register the invoke_agent span's ID so that hook spans
-					// (whose parentSpanId is this span) are routed to the child session.
-					const invokeSpanId = span.getSpanContext()?.spanId;
-					if (invokeSpanId) {
-						fileLogger.registerSpanSession(invokeSpanId, chatSessionId);
+
+					// Register this session as a child of its parent so that debug
+					// log entries are routed to a dedicated child JSONL file.
+					// parentChatSessionId is only set on subagent requests
+					// (see CapturingToken setup in defaultIntentRequestHandler).
+					if (parentChatSessionId) {
+						const childLabel = debugLogLabel ?? `runSubagent-${agentName}`;
+						fileLogger.startChildSession(
+							chatSessionId, parentChatSessionId, childLabel, parentTraceContext?.spanId);
+						// Also register the invoke_agent span's ID so that hook spans
+						// (whose parentSpanId is this span) are routed to the child session.
+						const invokeSpanId = span.getSpanContext()?.spanId;
+						if (invokeSpanId) {
+							fileLogger.registerSpanSession(invokeSpanId, chatSessionId);
+						}
+					} else {
+						// For top-level agent invocations (not subagents), start a debug
+						// file logging session so entries are flushed to JSONL on disk.
+						// This is idempotent — calling startSession on an already-started
+						// session just promotes it if needed.
+						fileLogger.startSession(chatSessionId).catch(() => { /* best effort */ });
 					}
 				}
 
