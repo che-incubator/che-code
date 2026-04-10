@@ -393,7 +393,8 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 			}));
 
 
-		const embedded = quality
+		const isInsiderOrExploration = quality === 'insider' || quality === 'exploration';
+		const embedded = isInsiderOrExploration
 			? (product as typeof product & { embedded?: EmbeddedProductInfo }).embedded
 			: undefined;
 
@@ -561,8 +562,8 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 				'**',
 				'!LICENSE',
 				'!version',
-				...(platform === 'darwin' && !quality ? ['!**/Contents/Applications', '!**/Contents/Applications/**'] : []),
-				...(platform === 'win32' && !quality ? ['!**/electron_proxy.exe'] : []),
+				...(platform === 'darwin' && !isInsiderOrExploration ? ['!**/Contents/Applications', '!**/Contents/Applications/**'] : []),
+				...(platform === 'win32' && !isInsiderOrExploration ? ['!**/electron_proxy.exe'] : []),
 			], { dot: true }));
 
 		if (platform === 'linux') {
