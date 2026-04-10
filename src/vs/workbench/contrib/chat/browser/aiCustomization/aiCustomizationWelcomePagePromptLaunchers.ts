@@ -93,7 +93,7 @@ export class PromptLaunchersAICustomizationWelcomePage extends Disposable implem
 		heading.textContent = localize('welcomeHeading', "Agent Customizations");
 
 		const subtitle = DOM.append(welcomeInner, $('p.welcome-prompts-subtitle'));
-		subtitle.textContent = localize('welcomeSubtitle', "Tailor how your agents work in your projects. Configure workspace customizations for the entire team, or create personal ones that follow you across projects.");
+		subtitle.textContent = localize('welcomeSubtitle', "Tailor how agents work in your projects. Configure workspace customizations for the entire team, or create personal ones that follow you across projects.");
 
 		if (this.welcomePageFeatures?.showGettingStartedBanner !== false) {
 			const gettingStarted = DOM.append(welcomeInner, $('.welcome-prompts-primary'));
@@ -109,7 +109,7 @@ export class PromptLaunchersAICustomizationWelcomePage extends Disposable implem
 			const inputRow = DOM.append(gettingStarted, $('.welcome-prompts-input-row'));
 			this.inputElement = DOM.append(inputRow, $('input.welcome-prompts-input')) as HTMLInputElement;
 			this.inputElement.type = 'text';
-			this.inputElement.placeholder = localize('workflowInputPlaceholder', "Describe your project and coding patterns...");
+			this.inputElement.placeholder = localize('workflowInputPlaceholder', "I'm building a React app with TypeScript and Tailwind...");
 			this.inputElement.setAttribute('aria-label', localize('workflowInputAriaLabel', "Describe your project to generate a workflow"));
 
 			const submitBtn = DOM.append(inputRow, $('button.welcome-prompts-input-submit'));
@@ -120,7 +120,12 @@ export class PromptLaunchersAICustomizationWelcomePage extends Disposable implem
 			const submit = () => {
 				const value = this.inputElement?.value?.trim();
 				this.callbacks.closeEditor();
-				const query = value ? `/agent-customization ${value}` : '/agent-customization ';
+				let query: string;
+				if (this.workspaceService.isSessionsWindow) {
+					query = value ? `Generate agent customizations. ${value}` : 'Generate agent customizations. ';
+				} else {
+					query = value ? `/init ${value}` : '/init ';
+				}
 				this.callbacks.prefillChat(query, { isPartialQuery: !value });
 			};
 			this._register(DOM.addDisposableListener(submitBtn, 'click', submit));
@@ -162,20 +167,25 @@ export class PromptLaunchersAICustomizationWelcomePage extends Disposable implem
 			descEl.textContent = category.description;
 
 			const footer = DOM.append(card, $('.welcome-prompts-card-footer'));
-			if (category.promptType && this.welcomePageFeatures?.showGenerateActions !== false) {
+			if (category.promptType) {
 				const generateBtn = DOM.append(footer, $('button.welcome-prompts-card-action'));
 				generateBtn.textContent = localize('new', "New...");
 				this.cardDisposables.add(DOM.addDisposableListener(generateBtn, 'click', e => {
 					e.stopPropagation();
 					this.callbacks.closeEditor();
-					this.workspaceService.generateCustomization(category.promptType!);
+					if (this.workspaceService.isSessionsWindow) {
+						const typeLabel = category.label.toLowerCase().replace(/s$/, '');
+						this.callbacks.prefillChat(`Create me a custom ${typeLabel} that `, { isPartialQuery: true });
+					} else {
+						this.workspaceService.generateCustomization(category.promptType!);
+					}
 				}));
 			} else {
 				const browseBtn = DOM.append(footer, $('button.welcome-prompts-card-action'));
 				browseBtn.textContent = localize('browse', "Browse...");
 				this.cardDisposables.add(DOM.addDisposableListener(browseBtn, 'click', e => {
 					e.stopPropagation();
-					this.callbacks.selectSection(category.id);
+					this.callbacks.selectSectionWithMarketplace(category.id);
 				}));
 			}
 
