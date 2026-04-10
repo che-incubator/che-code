@@ -105,7 +105,7 @@
 			},
 			"enterprise": {
 				"id": "github-enterprise",
-				"name": "GHE.com"
+				"name": "GHE"
 			},
 			"google": {
 				"id": "google",
