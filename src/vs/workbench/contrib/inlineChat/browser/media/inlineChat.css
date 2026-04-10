@@ -354,7 +354,6 @@
 	padding: 5px;
 	font-size: 12px;
 	line-height: 1.45;
-	max-height: 3.1lh; /* ~3 lines, then scroll */
 }
 
 .monaco-workbench .inline-chat-terminated-card .markdown-message p {
@@ -372,33 +371,12 @@
 	white-space: pre-wrap;
 }
 
-/* Content row: status + toolbar */
+/* Content row: toolbar */
 .monaco-workbench .inline-chat-terminated-card > .content-row {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-end;
 	gap: 4px;
-	min-width: 0;
-}
-
-.monaco-workbench .inline-chat-terminated-card .status {
-	align-items: center;
-	display: inline-flex;
-	flex: 1;
-	padding: 5px 0 5px 5px;
-	font-size: 12px;
-	overflow: hidden;
-	gap: 6px;
-}
-
-.monaco-workbench .inline-chat-terminated-card .status .message {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.monaco-workbench .inline-chat-terminated-card > .content-row > .toolbar {
-	flex-shrink: 0;
 }
 
 .monaco-workbench .inline-chat-terminated-card > .content-row > .toolbar .monaco-text-button {

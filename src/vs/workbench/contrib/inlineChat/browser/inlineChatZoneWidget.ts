@@ -2,19 +2,16 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { addDisposableListener, Dimension, $, reset } from '../../../../base/browser/dom.js';
+import { addDisposableListener, Dimension, $ } from '../../../../base/browser/dom.js';
 import * as aria from '../../../../base/browser/ui/aria/aria.js';
 import { renderMarkdown, renderAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
 import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
-import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
-import { Codicon } from '../../../../base/common/codicons.js';
 import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
 import { autorun } from '../../../../base/common/observable.js';
 import { isEqual } from '../../../../base/common/resources.js';
 import { ScrollbarVisibility } from '../../../../base/common/scrollable.js';
 import { assertType } from '../../../../base/common/types.js';
-import { ThemeIcon } from '../../../../base/common/themables.js';
 import { ICodeEditor } from '../../../../editor/browser/editorBrowser.js';
 import { StableEditorBottomScrollState } from '../../../../editor/browser/stableEditorScroll.js';
 import { EditorOption } from '../../../../editor/common/config/editorOptions.js';
@@ -59,8 +56,6 @@ export class InlineChatZoneWidget extends ZoneWidget {
 	readonly #logService: ILogService;
 
 	readonly #terminationCard: HTMLElement;
-	readonly #terminationIcon: HTMLElement;
-	readonly #terminationMessage: HTMLElement;
 	readonly #terminationMarkdownContainer: HTMLElement;
 	readonly #terminationMarkdownMessage: HTMLElement;
 	readonly #terminationMarkdownScrollable: DomScrollableElement;
@@ -96,14 +91,8 @@ export class InlineChatZoneWidget extends ZoneWidget {
 		}));
 		this.#terminationCard.appendChild(this.#terminationMarkdownScrollable.getDomNode());
 
-		// Content row: status (icon + message) + toolbar
+		// Toolbar row
 		const contentRow = $('div.content-row');
-		const statusNode = $('div.status');
-		this.#terminationIcon = $('span');
-		this.#terminationMessage = $('span.message');
-		statusNode.appendChild(this.#terminationIcon);
-		statusNode.appendChild(this.#terminationMessage);
-		contentRow.appendChild(statusNode);
 		this.#terminationToolbar = $('div.toolbar');
 		contentRow.appendChild(this.#terminationToolbar);
 		this.#terminationCard.appendChild(contentRow);
@@ -210,18 +199,12 @@ export class InlineChatZoneWidget extends ZoneWidget {
 	showTerminationCard(message: string | IMarkdownString, instaService: IInstantiationService): void {
 		this.#terminationStore.clear();
 
-		// Icon
-		this.#terminationIcon.className = '';
-		this.#terminationIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.info));
-
-		// Status message (plain text summary)
+		const rawText = typeof message === 'string' ? message : message.value;
 		const text = renderAsPlaintext(typeof message === 'string' ? new MarkdownString(message) : message);
-		this.#terminationMessage.textContent = '';
-		reset(this.#terminationMessage, ...renderLabelWithIcons(text));
 
-		// Markdown rendering in scrollable area
+		// Markdown rendering with $(info) icon prefix in scrollable area
 		this.#terminationMarkdownMessage.replaceChildren();
-		const md = typeof message === 'string' ? new MarkdownString(message) : message;
+		const md = new MarkdownString(rawText, { supportThemeIcons: true });
 		const rendered = this.#terminationStore.add(renderMarkdown(md));
 		this.#terminationMarkdownMessage.appendChild(rendered.element);
 		this.#terminationMarkdownScrollable.getDomNode().classList.remove('hidden');
@@ -283,6 +266,15 @@ export class InlineChatZoneWidget extends ZoneWidget {
 
 		this.#dimension = new Dimension(width, heightInPixel);
 		this.widget.layout(this.#dimension);
+
+		if (this.isShowingTerminationCard) {
+			// Set explicit maxHeight on the scrollable and its container so DomScrollableElement
+			// knows it needs to show a scrollbar (same pattern as the overlay widget)
+			const maxHeight = Math.max(50, heightInPixel - 40); // reserve space for toolbar row
+			this.#terminationMarkdownScrollable.getDomNode().style.maxHeight = `${maxHeight}px`;
+			this.#terminationMarkdownContainer.style.maxHeight = `${maxHeight}px`;
+			this.#terminationMarkdownScrollable.scanDomNode();
+		}
 	}
 
 	#computeHeight(): { linesValue: number; pixelsValue: number } {
