@@ -392,7 +392,7 @@ export class InlineChatController implements IEditorContribution {
 			const response = lastRequest?.response;
 			const pending = response?.isPendingConfirmation.read(r);
 			if (pending) {
-				_logService.info(`[InlineChat] auto-approving: ${pending.detail ?? 'unknown'}`);
+				this._logService.info(`[InlineChat] auto-approving: ${pending.detail ?? 'unknown'}`);
 				for (const part of response!.response.value) {
 					if (part.kind === 'toolInvocation') {
 						IChatToolInvocation.confirmWith(part as IChatToolInvocation, { type: ToolConfirmKind.ConfirmationNotNeeded, reason: 'inlineChat' });
