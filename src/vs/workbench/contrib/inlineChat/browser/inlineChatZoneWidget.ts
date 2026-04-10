@@ -4,12 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 import { addDisposableListener, Dimension, $, reset } from '../../../../base/browser/dom.js';
 import * as aria from '../../../../base/browser/ui/aria/aria.js';
+import { renderMarkdown, renderAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
+import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
 import { renderLabelWithIcons } from '../../../../base/browser/ui/iconLabel/iconLabels.js';
 import { Codicon } from '../../../../base/common/codicons.js';
-import { IMarkdownString } from '../../../../base/common/htmlContent.js';
+import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
 import { autorun } from '../../../../base/common/observable.js';
 import { isEqual } from '../../../../base/common/resources.js';
+import { ScrollbarVisibility } from '../../../../base/common/scrollable.js';
 import { assertType } from '../../../../base/common/types.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { ICodeEditor } from '../../../../editor/browser/editorBrowser.js';
@@ -58,6 +61,9 @@ export class InlineChatZoneWidget extends ZoneWidget {
 	readonly #terminationCard: HTMLElement;
 	readonly #terminationIcon: HTMLElement;
 	readonly #terminationMessage: HTMLElement;
+	readonly #terminationMarkdownContainer: HTMLElement;
+	readonly #terminationMarkdownMessage: HTMLElement;
+	readonly #terminationMarkdownScrollable: DomScrollableElement;
 	readonly #terminationToolbar: HTMLElement;
 	readonly #terminationStore = new DisposableStore();
 
@@ -78,14 +84,29 @@ export class InlineChatZoneWidget extends ZoneWidget {
 
 		// Build termination card DOM
 		this.#terminationCard = $('div.inline-chat-terminated-card.hidden');
-		const statusRow = $('div.status');
+
+		// Markdown scrollable area
+		this.#terminationMarkdownContainer = $('div.markdown-scroll-container');
+		this.#terminationMarkdownMessage = $('div.markdown-message');
+		this.#terminationMarkdownContainer.appendChild(this.#terminationMarkdownMessage);
+		this.#terminationMarkdownScrollable = this._disposables.add(new DomScrollableElement(this.#terminationMarkdownContainer, {
+			consumeMouseWheelIfScrollbarIsNeeded: true,
+			horizontal: ScrollbarVisibility.Hidden,
+			vertical: ScrollbarVisibility.Auto,
+		}));
+		this.#terminationCard.appendChild(this.#terminationMarkdownScrollable.getDomNode());
+
+		// Content row: status (icon + message) + toolbar
+		const contentRow = $('div.content-row');
+		const statusNode = $('div.status');
 		this.#terminationIcon = $('span');
 		this.#terminationMessage = $('span.message');
-		statusRow.appendChild(this.#terminationIcon);
-		statusRow.appendChild(this.#terminationMessage);
+		statusNode.appendChild(this.#terminationIcon);
+		statusNode.appendChild(this.#terminationMessage);
+		contentRow.appendChild(statusNode);
 		this.#terminationToolbar = $('div.toolbar');
-		statusRow.appendChild(this.#terminationToolbar);
-		this.#terminationCard.appendChild(statusRow);
+		contentRow.appendChild(this.#terminationToolbar);
+		this.#terminationCard.appendChild(contentRow);
 		this._disposables.add(this.#terminationStore);
 
 		this.#ctxCursorPosition = CTX_INLINE_CHAT_OUTER_CURSOR_POSITION.bindTo(contextKeyService);
@@ -193,10 +214,18 @@ export class InlineChatZoneWidget extends ZoneWidget {
 		this.#terminationIcon.className = '';
 		this.#terminationIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.info));
 
-		// Message text
-		const text = typeof message === 'string' ? message : message.value;
+		// Status message (plain text summary)
+		const text = renderAsPlaintext(typeof message === 'string' ? new MarkdownString(message) : message);
 		this.#terminationMessage.textContent = '';
 		reset(this.#terminationMessage, ...renderLabelWithIcons(text));
+
+		// Markdown rendering in scrollable area
+		this.#terminationMarkdownMessage.replaceChildren();
+		const md = typeof message === 'string' ? new MarkdownString(message) : message;
+		const rendered = this.#terminationStore.add(renderMarkdown(md));
+		this.#terminationMarkdownMessage.appendChild(rendered.element);
+		this.#terminationMarkdownScrollable.getDomNode().classList.remove('hidden');
+		this.#terminationMarkdownScrollable.scanDomNode();
 
 		// Toolbar
 		this.#terminationToolbar.replaceChildren();
