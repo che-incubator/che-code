@@ -236,6 +236,17 @@ export interface IProductConfiguration {
 	readonly extensionConfigurationPolicy?: IStringDictionary<IPolicy>;
 
 	readonly embedded?: IEmbeddedProductConfiguration;
+
+	/**
+	 * When running as an embedded app, the parent VS Code's policy
+	 * identity (win32RegValueName / darwinBundleIdentifier) so that
+	 * enterprise policies deployed to the parent also apply here.
+	 */
+	parentPolicyConfig?: {
+		win32RegValueName?: string;
+		darwinBundleIdentifier?: string;
+		urlProtocol?: string;
+	};
 }
 
 export type IEmbeddedProductConfiguration = Pick<IProductConfiguration,
