@@ -2148,11 +2148,11 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 						return false;
 					}
 
-					dom.show(part.domNode);
 					widget.inputPart.addToolToConfirmationCarousel(toolInvocation, factory, undefined, undefined, undefined, part);
 					if (part.domNode.parentElement === inlinePartAnchor.parentElement) {
 						part.domNode.remove();
 					}
+					dom.show(part.domNode);
 					return true;
 				};
 				let hasScheduledCarouselRoute = false;
@@ -2183,6 +2183,7 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 
 					if (isCarouselConfirmation) {
 						if (!routePartToCarousel()) {
+							dom.hide(part.domNode);
 							scheduleRoutePartToCarousel();
 						}
 					} else if (IChatToolInvocation.isEffectivelyHidden(toolInvocation, reader)) {
@@ -2295,8 +2296,7 @@ export class ChatListItemRenderer extends Disposable implements ITreeRenderer<Ch
 			part.addDisposable(autorun(reader => {
 				const currentState = toolInvocation.state.read(reader);
 				if (currentState.type === IChatToolInvocation.StateKind.WaitingForConfirmation && currentState.confirmationMessages?.title) {
-					widget.inputPart.addToolToConfirmationCarousel(toolInvocation, factory);
-					dom.hide(part.domNode);
+					widget.inputPart.addToolToConfirmationCarousel(toolInvocation, factory, undefined, undefined, undefined, part);
 				} else if (IChatToolInvocation.isEffectivelyHidden(toolInvocation, reader)) {
 					dom.hide(part.domNode);
 				} else {
