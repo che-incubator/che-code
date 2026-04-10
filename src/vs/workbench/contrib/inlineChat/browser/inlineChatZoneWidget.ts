@@ -6,6 +6,7 @@ import { addDisposableListener, Dimension, $ } from '../../../../base/browser/do
 import * as aria from '../../../../base/browser/ui/aria/aria.js';
 import { renderMarkdown, renderAsPlaintext } from '../../../../base/browser/markdownRenderer.js';
 import { DomScrollableElement } from '../../../../base/browser/ui/scrollbar/scrollableElement.js';
+import { ActionRunner, IAction } from '../../../../base/common/actions.js';
 import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
 import { autorun } from '../../../../base/common/observable.js';
@@ -211,11 +212,20 @@ export class InlineChatZoneWidget extends ZoneWidget {
 		this.#terminationMarkdownScrollable.getDomNode().classList.remove('hidden');
 		this.#terminationMarkdownScrollable.scanDomNode();
 
-		// Toolbar
+		// Toolbar - focus the owning editor before running any action so that
+		// EditorAction2-based actions resolve the correct editor instance.
+		const editor = this.editor;
+		const actionRunner = this.#terminationStore.add(new class extends ActionRunner {
+			protected override async runAction(action: IAction, context?: unknown): Promise<void> {
+				editor.focus();
+				return super.runAction(action, context);
+			}
+		});
 		this.#terminationToolbar.replaceChildren();
 		this.#terminationStore.add(instaService.createInstance(MenuWorkbenchToolBar, this.#terminationToolbar, MenuId.ChatEditorInlineExecute, {
 			telemetrySource: 'inlineChatZone.terminationToolbar',
 			hiddenItemStrategy: HiddenItemStrategy.Ignore,
+			actionRunner,
 			toolbarOptions: {
 				primaryGroup: () => true,
 				useSeparatorsInPrimaryActions: true
