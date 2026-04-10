@@ -13,9 +13,11 @@ import { ILogService } from '../../../../platform/log/common/logService';
 import { CopilotChatAttr, GenAiAttr, GenAiOperationName, IOTelService, SpanKind, SpanStatusCode, truncateForOTel, type ISpanHandle } from '../../../../platform/otel/common/index';
 import { ServicesAccessor } from '../../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatResponseThinkingProgressPart, type ChatHookType } from '../../../../vscodeTypes';
+import { ExternalEditTracker } from '../../../chatSessions/common/externalEditTracker';
 import { ToolName } from '../../../tools/common/toolNames';
 import { IToolsService } from '../../../tools/common/toolsService';
-import { ClaudeToolNames } from './claudeTools';
+import { ClaudeToolNames, claudeEditTools, getAffectedUrisForEditTool } from './claudeTools';
+import { IClaudeSessionStateService } from './claudeSessionStateService';
 import { completeToolInvocation, createFormattedToolInvocation } from './toolInvocationFormatter';
 
 // #region Types
@@ -25,6 +27,8 @@ export interface MessageHandlerRequestContext {
 	readonly stream: vscode.ChatResponseStream;
 	readonly toolInvocationToken: vscode.ChatParticipantToolToken;
 	readonly token: vscode.CancellationToken;
+	readonly editTracker?: ExternalEditTracker;
+	readonly logToolCall?: (toolUseId: string, toolName: string, toolInput: unknown, resultContent: string) => void;
 }
 
 /** Mutable state shared across handlers within a single _processMessages loop */
@@ -171,6 +175,11 @@ export function handleAssistantMessage(
 			}
 			otelToolSpans.set(item.id, toolSpan);
 
+			if (request.editTracker && claudeEditTools.includes(item.name)) {
+				const uris = getAffectedUrisForEditTool(item.name, item.input);
+				request.editTracker.trackEdit(item.id, uris, stream, request.token);
+			}
+
 			const invocation = createFormattedToolInvocation(item, false);
 			if (invocation) {
 				if (message.parent_tool_use_id) {
@@ -186,6 +195,7 @@ export function handleAssistantMessage(
 export function handleUserMessage(
 	message: SDKUserMessage | SDKUserMessageReplay,
 	accessor: ServicesAccessor,
+	sessionId: string,
 	request: MessageHandlerRequestContext,
 	state: MessageHandlerState,
 ): void {
@@ -194,7 +204,7 @@ export function handleUserMessage(
 	}
 	for (const toolResult of message.message.content) {
 		if (toolResult.type === 'tool_result') {
-			processToolResult(toolResult, accessor, request, state);
+			processToolResult(toolResult, accessor, sessionId, request, state);
 		}
 	}
 }
@@ -202,6 +212,7 @@ export function handleUserMessage(
 function processToolResult(
 	toolResult: Anthropic.Messages.ToolResultBlockParam,
 	accessor: ServicesAccessor,
+	sessionId: string,
 	request: MessageHandlerRequestContext,
 	state: MessageHandlerState,
 ): void {
@@ -251,6 +262,23 @@ function processToolResult(
 
 	if (toolUse.name === ClaudeToolNames.TodoWrite) {
 		processTodoWriteTool(toolUse, accessor, request);
+	}
+
+	if (toolUse.name === ClaudeToolNames.EnterPlanMode) {
+		accessor.get(IClaudeSessionStateService).setPermissionModeForSession(sessionId, 'plan');
+	} else if (toolUse.name === ClaudeToolNames.ExitPlanMode) {
+		accessor.get(IClaudeSessionStateService).setPermissionModeForSession(sessionId, 'acceptEdits');
+	}
+
+	if (claudeEditTools.includes(toolUse.name)) {
+		request.editTracker?.completeEdit(toolUseId);
+	}
+
+	if (request.logToolCall) {
+		const resultContent = typeof toolResult.content === 'string'
+			? toolResult.content
+			: JSON.stringify(toolResult.content, undefined, 2);
+		request.logToolCall(toolUseId, toolUse.name, toolUse.input, resultContent);
 	}
 
 	if (invocation) {
@@ -554,7 +582,7 @@ export function dispatchMessage(
 			handleAssistantMessage(message, accessor, sessionId, request, state);
 			return;
 		case 'user':
-			handleUserMessage(message, accessor, request, state);
+			handleUserMessage(message, accessor, sessionId, request, state);
 			return;
 		case 'result':
 			return handleResultMessage(message, request);

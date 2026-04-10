@@ -27,7 +27,7 @@ import { SSEParser } from '../../../../util/vs/base/common/sseParser';
 import { generateUuid } from '../../../../util/vs/base/common/uuid';
 import { IInstantiationService } from '../../../../util/vs/platform/instantiation/common/instantiation';
 import { IClaudeCodeModels } from './claudeCodeModels';
-import { IClaudeSessionStateService } from './claudeSessionStateService';
+import { IClaudeSessionStateService } from '../common/claudeSessionStateService';
 
 /**
  * A list of known Anthropic betas supported by CAPI. Used to filter incoming `anthropic-beta` header values

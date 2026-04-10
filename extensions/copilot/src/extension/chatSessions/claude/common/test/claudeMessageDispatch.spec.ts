@@ -31,6 +31,7 @@ import {
 	SYNTHETIC_MODEL_ID,
 } from '../claudeMessageDispatch';
 import { ClaudeToolNames } from '../claudeTools';
+import { IClaudeSessionStateService } from '../claudeSessionStateService';
 
 // #region Test helpers
 
@@ -51,6 +52,7 @@ interface TestServices {
 	readonly logService: TestLogService;
 	readonly otelService: IOTelService;
 	readonly toolsService: IToolsService;
+	readonly sessionStateService: { setPermissionModeForSession: ReturnType<typeof vi.fn> };
 }
 
 function createTestServices(): TestServices {
@@ -58,6 +60,7 @@ function createTestServices(): TestServices {
 		logService: new TestLogService(),
 		otelService: { startSpan: () => noopSpan } as Pick<IOTelService, 'startSpan'> as IOTelService,
 		toolsService: { invokeTool: vi.fn() } as Pick<IToolsService, 'invokeTool'> as IToolsService,
+		sessionStateService: { setPermissionModeForSession: vi.fn() },
 	};
 }
 
@@ -68,6 +71,7 @@ function createAccessor(services: TestServices): ServicesAccessor {
 		[ILogService, services.logService],
 		[IOTelService, services.otelService],
 		[IToolsService, services.toolsService],
+		[IClaudeSessionStateService, services.sessionStateService],
 	]);
 	return { get: <T>(id: { toString(): string }): T => serviceMap.get(id) as T };
 }
@@ -446,7 +450,7 @@ describe('handleUserMessage', () => {
 
 		handleUserMessage(
 			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-100', content: 'file contents here' }]),
-			accessor, request, state,
+			accessor, TEST_SESSION_ID, request, state,
 		);
 
 		expect(state.unprocessedToolCalls.has('tool-100')).toBe(false);
@@ -456,7 +460,7 @@ describe('handleUserMessage', () => {
 	it('skips tool_result blocks with no matching tool call', () => {
 		handleUserMessage(
 			makeUserMessage([{ type: 'tool_result', tool_use_id: 'nonexistent-tool', content: 'result' }]),
-			accessor, request, state,
+			accessor, TEST_SESSION_ID, request, state,
 		);
 		expect(request.stream.push).not.toHaveBeenCalled();
 	});
@@ -469,7 +473,7 @@ describe('handleUserMessage', () => {
 			session_id: TEST_SESSION,
 		};
 		// Should not throw
-		handleUserMessage(message, accessor, request, state);
+		handleUserMessage(message, accessor, TEST_SESSION_ID, request, state);
 	});
 
 	it('marks denied tool results with isConfirmed=false', () => {
@@ -480,7 +484,7 @@ describe('handleUserMessage', () => {
 
 		handleUserMessage(
 			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-denied', content: DENY_TOOL_MESSAGE }]),
-			accessor, request, state,
+			accessor, TEST_SESSION_ID, request, state,
 		);
 		expect(request.stream.push).toHaveBeenCalled();
 	});
@@ -501,7 +505,7 @@ describe('handleUserMessage', () => {
 
 		handleUserMessage(
 			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-todo', content: 'success' }]),
-			accessor, request, state,
+			accessor, TEST_SESSION_ID, request, state,
 		);
 
 		expect(services.toolsService.invokeTool).toHaveBeenCalledWith(
@@ -517,6 +521,76 @@ describe('handleUserMessage', () => {
 			}),
 			expect.anything(),
 		);
+	});
+
+	it('sets permission mode to plan on EnterPlanMode tool completion', () => {
+		state.unprocessedToolCalls.set('tool-1', { type: 'tool_use', id: 'tool-1', name: ClaudeToolNames.EnterPlanMode, input: {} });
+		handleUserMessage(
+			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-1', content: 'success' }]),
+			accessor, TEST_SESSION_ID, request, state,
+		);
+
+		expect(services.sessionStateService.setPermissionModeForSession).toHaveBeenCalledWith(TEST_SESSION_ID, 'plan');
+	});
+
+	it('sets permission mode to acceptEdits on ExitPlanMode tool completion', () => {
+		state.unprocessedToolCalls.set('tool-1', { type: 'tool_use', id: 'tool-1', name: ClaudeToolNames.ExitPlanMode, input: {} });
+		handleUserMessage(
+			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-1', content: 'success' }]),
+			accessor, TEST_SESSION_ID, request, state,
+		);
+
+		expect(services.sessionStateService.setPermissionModeForSession).toHaveBeenCalledWith(TEST_SESSION_ID, 'acceptEdits');
+	});
+
+	it('handles EnterPlanMode followed by ExitPlanMode in same message', () => {
+		state.unprocessedToolCalls.set('tool-a', { type: 'tool_use', id: 'tool-a', name: ClaudeToolNames.EnterPlanMode, input: {} });
+		state.unprocessedToolCalls.set('tool-b', { type: 'tool_use', id: 'tool-b', name: ClaudeToolNames.ExitPlanMode, input: {} });
+
+		handleUserMessage(
+			makeUserMessage([
+				{ type: 'tool_result', tool_use_id: 'tool-a', content: 'success' },
+				{ type: 'tool_result', tool_use_id: 'tool-b', content: 'success' },
+			]),
+			accessor, TEST_SESSION_ID, request, state,
+		);
+
+		expect(services.sessionStateService.setPermissionModeForSession).toHaveBeenCalledTimes(2);
+		expect(services.sessionStateService.setPermissionModeForSession).toHaveBeenNthCalledWith(1, TEST_SESSION_ID, 'plan');
+		expect(services.sessionStateService.setPermissionModeForSession).toHaveBeenNthCalledWith(2, TEST_SESSION_ID, 'acceptEdits');
+	});
+
+	it('does not set permission mode for non-plan-mode tools', () => {
+		state.unprocessedToolCalls.set('tool-x', { type: 'tool_use', id: 'tool-x', name: ClaudeToolNames.Read, input: { file_path: '/test.ts' } });
+		handleUserMessage(
+			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-x', content: 'success' }]),
+			accessor, TEST_SESSION_ID, request, state,
+		);
+
+		expect(services.sessionStateService.setPermissionModeForSession).not.toHaveBeenCalled();
+	});
+
+	it('calls logToolCall with tool result content for completed tools', () => {
+		const logToolCall = vi.fn();
+		request = { ...createRequestContext(), logToolCall };
+
+		state.unprocessedToolCalls.set('tool-1', { type: 'tool_use', id: 'tool-1', name: ClaudeToolNames.Read, input: { file_path: '/test.ts' } });
+		handleUserMessage(
+			makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-1', content: 'file contents here' }]),
+			accessor, TEST_SESSION_ID, request, state,
+		);
+
+		expect(logToolCall).toHaveBeenCalledWith('tool-1', ClaudeToolNames.Read, { file_path: '/test.ts' }, 'file contents here');
+	});
+
+	it('does not call logToolCall when not provided on context', () => {
+		state.unprocessedToolCalls.set('tool-1', { type: 'tool_use', id: 'tool-1', name: ClaudeToolNames.Read, input: { file_path: '/test.ts' } });
+		expect(() => {
+			handleUserMessage(
+				makeUserMessage([{ type: 'tool_result', tool_use_id: 'tool-1', content: 'file contents here' }]),
+				accessor, TEST_SESSION_ID, request, state,
+			);
+		}).not.toThrow();
 	});
 });
 
