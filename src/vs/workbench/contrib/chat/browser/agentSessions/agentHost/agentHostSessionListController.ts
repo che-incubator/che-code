@@ -9,8 +9,7 @@ import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { URI } from '../../../../../../base/common/uri.js';
 import { toAgentHostUri } from '../../../../../../platform/agentHost/common/agentHostUri.js';
 import { AgentSession, type IAgentConnection } from '../../../../../../platform/agentHost/common/agentService.js';
-import { isSessionAction } from '../../../../../../platform/agentHost/common/state/sessionActions.js';
-import { SessionStatus, StateComponents, type ISessionFileDiff, type ISessionSummary } from '../../../../../../platform/agentHost/common/state/sessionState.js';
+import { SessionStatus, type ISessionFileDiff, type ISessionSummary } from '../../../../../../platform/agentHost/common/state/sessionState.js';
 import { IProductService } from '../../../../../../platform/product/common/productService.js';
 import { ChatSessionStatus, IChatSessionFileChange2, IChatSessionItem, IChatSessionItemController, IChatSessionItemsDelta } from '../../../common/chatSessionsService.js';
 import { getAgentHostIcon } from '../agentSessions.js';
@@ -53,8 +52,8 @@ export class AgentHostSessionListController extends Disposable implements IChatS
 	readonly onDidChangeChatSessionItems = this._onDidChangeChatSessionItems.event;
 
 	private _items: IChatSessionItem[] = [];
-	/** Last-seen summary per session (by identity) to avoid redundant updates. */
-	private readonly _lastSummary = new Map<string, ISessionSummary>();
+	/** Cached full summaries per session so partial updates can be applied. */
+	private readonly _cachedSummaries = new Map<string, ISessionSummary>();
 
 	constructor(
 		private readonly _sessionType: string,
@@ -70,6 +69,7 @@ export class AgentHostSessionListController extends Disposable implements IChatS
 		this._register(this._connection.onDidNotification(n => {
 			if (n.type === 'notify/sessionAdded' && n.summary.provider === this._provider) {
 				const rawId = AgentSession.id(n.summary.resource);
+				this._cachedSummaries.set(rawId, n.summary);
 				const workingDir = typeof n.summary.workingDirectory === 'string' ? URI.parse(n.summary.workingDirectory) : undefined;
 				const item = this._makeItem(rawId, {
 					title: n.summary.title,
@@ -86,45 +86,27 @@ export class AgentHostSessionListController extends Disposable implements IChatS
 				const idx = this._items.findIndex(item => item.resource.path === `/${removedId}`);
 				if (idx >= 0) {
 					const [removed] = this._items.splice(idx, 1);
-					this._lastSummary.delete(removedId);
+					this._cachedSummaries.delete(removedId);
 					this._onDidChangeChatSessionItems.fire({ removed: [removed.resource] });
 				}
-			}
-		}));
+			} else if (n.type === 'notify/sessionSummaryChanged' && AgentSession.provider(n.session) === this._provider) {
+				const rawId = AgentSession.id(n.session);
+				const cached = this._cachedSummaries.get(rawId);
+				if (!cached) {
+					return;
+				}
+				const updated = { ...cached, ...n.changes };
+				this._cachedSummaries.set(rawId, updated);
 
-		// Update items from live session state when actions arrive
-		this._register(this._connection.onDidAction(e => {
-			if (!isSessionAction(e.action)) {
-				return;
+				const item = this._makeItemFromSummary(rawId, updated, updated.diffs);
+				const idx = this._items.findIndex(i => i.resource.path === `/${rawId}`);
+				if (idx >= 0) {
+					this._items[idx] = item;
+				} else {
+					this._items.unshift(item);
+				}
+				this._onDidChangeChatSessionItems.fire({ addedOrUpdated: [item] });
 			}
-			if (AgentSession.provider(e.action.session) !== this._provider) {
-				return;
-			}
-
-
-			// Peek at the subscription — if nothing is subscribed, skip
-			const state = this._connection.getSubscriptionUnmanaged(StateComponents.Session, URI.parse(e.action.session))?.value;
-			if (!state || state instanceof Error) {
-				return;
-			}
-
-			const rawId = AgentSession.id(e.action.session);
-
-			// Object identity check — the reducer produces new summary
-			// objects only when fields change.
-			if (this._lastSummary.get(rawId) === state.summary) {
-				return;
-			}
-			this._lastSummary.set(rawId, state.summary);
-
-			const item = this._makeItemFromSummary(rawId, state.summary, state.summary.diffs);
-			const idx = this._items.findIndex(i => i.resource.path === `/${rawId}`);
-			if (idx >= 0) {
-				this._items[idx] = item;
-			} else {
-				this._items.unshift(item);
-			}
-			this._onDidChangeChatSessionItems.fire({ addedOrUpdated: [item] });
 		}));
 	}
 
@@ -136,15 +118,32 @@ export class AgentHostSessionListController extends Disposable implements IChatS
 		try {
 			const sessions = await this._connection.listSessions();
 			const filtered = sessions.filter(s => AgentSession.provider(s.session) === this._provider);
-			this._items = filtered.map(s => this._makeItem(AgentSession.id(s.session), {
-				title: s.summary,
-				status: s.status,
-				workingDirectory: s.workingDirectory,
-				createdAt: s.startTime,
-				modifiedAt: s.modifiedTime,
-				diffs: s.diffs,
-			}));
+			this._cachedSummaries.clear();
+			this._items = filtered.map(s => {
+				const rawId = AgentSession.id(s.session);
+				this._cachedSummaries.set(rawId, {
+					resource: s.session.toString(),
+					provider: this._provider,
+					title: s.summary ?? `Session ${rawId.substring(0, 8)}`,
+					status: s.status ?? SessionStatus.Idle,
+					createdAt: s.startTime,
+					modifiedAt: s.modifiedTime,
+					workingDirectory: s.workingDirectory?.toString(),
+					isRead: s.isRead,
+					isDone: s.isDone,
+					diffs: s.diffs?.map(d => ({ uri: d.uri, added: d.added, removed: d.removed })),
+				});
+				return this._makeItem(rawId, {
+					title: s.summary,
+					status: s.status,
+					workingDirectory: s.workingDirectory,
+					createdAt: s.startTime,
+					modifiedAt: s.modifiedTime,
+					diffs: s.diffs,
+				});
+			});
 		} catch {
+			this._cachedSummaries.clear();
 			this._items = [];
 		}
 		this._onDidChangeChatSessionItems.fire({ addedOrUpdated: this._items });
