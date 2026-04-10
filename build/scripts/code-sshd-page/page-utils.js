@@ -18,9 +18,22 @@ function initializePlatformContent() {
     for (var i = 0; i < pathEntries.length; i++) {
       var currText = pathEntries[i].innerHTML;
       currText = currText.replaceAll("/dev/null", "nul");
-      currText = currText.replaceAll("$HOME", "%USERPROFILE%");
+      currText = currText.replaceAll("${HOME}", "%USERPROFILE%");
       currText = currText.replaceAll("/","\\");
       pathEntries[i].innerHTML = currText;
     }
   }
+  syncDocsContent();
+}
+
+function toggleExtensionSwitch () {
+  syncDocsContent();
+}
+
+function syncDocsContent() {
+  var docsElem = document.getElementById("docs-parent");
+  var useExtension = document.getElementById("use-extension").checked;
+  var extensionElem = document.getElementById("docs-extension");
+  var manualElem = document.getElementById("docs-manual");
+  docsElem.innerHTML = useExtension ? extensionElem.innerHTML : manualElem.innerHTML;
 }
