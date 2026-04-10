@@ -1755,7 +1755,7 @@ export class CodeApplication extends Disposable {
 		}
 
 		// appRoot points to Contents/Resources/app on macOS
-		const embeddedAppPath = join(this.environmentMainService.appRoot, '..', '..', 'Applications', `${this.productService.embedded.nameShort}.app`);
+		const embeddedAppPath = join(this.environmentMainService.appRoot, '..', '..', 'Applications', `${this.productService.embedded.nameLong}.app`);
 		const lsregister = '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister';
 		this.logService.trace('Registering embedded app with Launch Services:', embeddedAppPath);
 		const child = execFile(lsregister, ['-f', embeddedAppPath], { timeout: 30_000 }, (error) => {
