@@ -84,6 +84,8 @@ import { ITelemetryServiceConfig, TelemetryService } from '../../platform/teleme
 import { getPiiPathsFromEnvironment, getTelemetryLevel, isInternalTelemetry, NullTelemetryService, supportsTelemetry } from '../../platform/telemetry/common/telemetryUtils.js';
 import { IUpdateService } from '../../platform/update/common/update.js';
 import { UpdateChannel } from '../../platform/update/common/updateIpc.js';
+import { AbstractUpdateService } from '../../platform/update/electron-main/abstractUpdateService.js';
+import { CrossAppUpdateCoordinator } from '../../platform/update/electron-main/crossAppUpdateIpc.js';
 import { DarwinUpdateService } from '../../platform/update/electron-main/updateService.darwin.js';
 import { LinuxUpdateService } from '../../platform/update/electron-main/updateService.linux.js';
 import { SnapUpdateService } from '../../platform/update/electron-main/updateService.snap.js';
@@ -1235,8 +1237,20 @@ export class CodeApplication extends Disposable {
 		mainProcessElectronServer.registerChannel('userDataProfiles', userDataProfilesService);
 		sharedProcessClient.then(client => client.registerChannel('userDataProfiles', userDataProfilesService));
 
-		// Update
-		const updateChannel = new UpdateChannel(accessor.get(IUpdateService));
+		// Update (with cross-app coordination on macOS/Windows where crossAppIPC is available)
+		const localUpdateService = accessor.get(IUpdateService);
+		let effectiveUpdateService: IUpdateService = localUpdateService;
+		const isInsiderOrExploration = this.productService.quality === 'insider' || this.productService.quality === 'exploration';
+		if (isWindows && isInsiderOrExploration) {
+			const updateCoordinator = this._register(new CrossAppUpdateCoordinator(
+				localUpdateService as AbstractUpdateService,
+				this.logService,
+				this.lifecycleMainService,
+			));
+			updateCoordinator.initialize();
+			effectiveUpdateService = updateCoordinator;
+		}
+		const updateChannel = new UpdateChannel(effectiveUpdateService);
 		mainProcessElectronServer.registerChannel('update', updateChannel);
 
 		// Metered Connection

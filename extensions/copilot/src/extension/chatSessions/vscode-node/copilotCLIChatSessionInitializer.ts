@@ -71,13 +71,14 @@ export interface ICopilotCLIChatSessionInitializer {
 		workspace: IWorkspaceInfo,
 		options: { mcpServerMappings: McpServerMappings },
 		token: vscode.CancellationToken
-	): Promise<{ session: IReference<ICopilotCLISession>; model: { model: string; reasoningEffort?: string } | undefined; agent: SweCustomAgent | undefined }>;
+	): Promise<IReference<ICopilotCLISession>>;
 }
 
 export const ICopilotCLIChatSessionInitializer = createServiceIdentifier<ICopilotCLIChatSessionInitializer>('ICopilotCLIChatSessionInitializer');
 
 export class CopilotCLIChatSessionInitializer implements ICopilotCLIChatSessionInitializer {
 	declare readonly _serviceBrand: undefined;
+	private readonly delegatedSessionContext = new Map<string, { model: { model: string; reasoningEffort?: string } | undefined; agent: SweCustomAgent | undefined }>();
 
 	constructor(
 		@ICopilotCLISessionService private readonly sessionService: ICopilotCLISessionService,
@@ -100,11 +101,12 @@ export class CopilotCLIChatSessionInitializer implements ICopilotCLIChatSessionI
 		const sessionId = SessionIdForCLI.parse(chatResource);
 		const isNewSession = this.sessionService.isNewSessionId(sessionId);
 		const { stream } = options;
-
+		const delegatedSessionContext = this.delegatedSessionContext.get(sessionId);
+		this.delegatedSessionContext.delete(sessionId);
 		const [{ workspaceInfo, cancelled, trusted }, model, agent] = await Promise.all([
 			this.initializeWorkingDirectory(chatResource, options, request.toolInvocationToken, token),
-			this.resolveModel(request, token),
-			this.resolveAgent(request, token),
+			delegatedSessionContext?.model ? Promise.resolve(delegatedSessionContext.model) : this.resolveModel(request, token),
+			delegatedSessionContext?.agent ? Promise.resolve(delegatedSessionContext.agent) : this.resolveAgent(request, token),
 		]);
 		const workingDirectory = getWorkingDirectory(workspaceInfo);
 		const worktreeProperties = workspaceInfo.worktreeProperties;
@@ -176,15 +178,15 @@ export class CopilotCLIChatSessionInitializer implements ICopilotCLIChatSessionI
 		workspace: IWorkspaceInfo,
 		options: { mcpServerMappings: McpServerMappings },
 		token: vscode.CancellationToken
-	): Promise<{ session: IReference<ICopilotCLISession>; model: { model: string; reasoningEffort?: string } | undefined; agent: SweCustomAgent | undefined }> {
+	): Promise<IReference<ICopilotCLISession>> {
 		const [model, agent] = await Promise.all([
 			this.resolveModel(request, token),
 			this.resolveAgent(request, token),
 		]);
 
 		const session = await this.sessionService.createSession({ workspace, agent, model: model?.model, reasoningEffort: model?.reasoningEffort, mcpServerMappings: options.mcpServerMappings }, token);
-
-		return { session, model, agent };
+		this.delegatedSessionContext.set(session.object.sessionId, { model, agent });
+		return session;
 	}
 
 	/**
