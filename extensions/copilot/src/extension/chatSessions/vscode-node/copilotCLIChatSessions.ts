@@ -338,15 +338,22 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 		const resource = SessionIdForCLI.getResource(session.id);
 		const item = this.controller.createChatSessionItem(resource, session.label);
 
-		const worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(session.id);
+		let worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(session.id);
 		const workingDirectory = worktreeProperties?.worktreePath ? vscode.Uri.file(worktreeProperties.worktreePath)
 			: session.workingDirectory;
 
 		item.timing = session.timing;
 		item.status = session.status ?? vscode.ChatSessionStatus.Completed;
-		const [badge, changes, metadata] = await Promise.all([
+
+		const changes = await this.buildChanges(session.id, worktreeProperties, workingDirectory);
+
+		// We need to get an updated version of worktree properties here because when the
+		// changes are being computed, the worktree properties are also updated with the
+		// repository state which we are passing along through the metadata
+		worktreeProperties = await this.copilotCLIWorktreeManagerService.getWorktreeProperties(session.id);
+
+		const [badge, metadata] = await Promise.all([
 			this.buildBadge(worktreeProperties, workingDirectory),
-			this.buildChanges(session.id, worktreeProperties, workingDirectory),
 			this.buildMetadata(session.id, worktreeProperties, workingDirectory),
 		]);
 		item.badge = badge;
@@ -420,6 +427,9 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 					? worktreeProperties.baseBranchProtected === true
 					: undefined,
 				branchName: worktreeProperties?.branchName,
+				upstreamBranchName: worktreeProperties.version === 2
+					? worktreeProperties.upstreamBranchName
+					: undefined,
 				isolationMode: IsolationMode.Worktree,
 				repositoryPath: worktreeProperties?.repositoryPath,
 				worktreePath: worktreeProperties?.worktreePath,
@@ -437,6 +447,18 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 					: undefined,
 				lastCheckpointRef: worktreeProperties.version === 2
 					? worktreeProperties.lastCheckpointRef
+					: undefined,
+				hasGitHubRemote: worktreeProperties.version === 2
+					? worktreeProperties.hasGitHubRemote
+					: undefined,
+				incomingChanges: worktreeProperties.version === 2
+					? worktreeProperties.incomingChanges
+					: undefined,
+				outgoingChanges: worktreeProperties.version === 2
+					? worktreeProperties.outgoingChanges
+					: undefined,
+				uncommittedChanges: worktreeProperties.version === 2
+					? worktreeProperties.uncommittedChanges
 					: undefined
 			} satisfies { readonly [key: string]: unknown };
 		}
@@ -464,7 +486,12 @@ export class CopilotCLIChatSessionContentProvider extends Disposable implements 
 			repositoryPath: repositoryProperties?.repositoryPath,
 			branchName: repositoryProperties?.branchName,
 			baseBranchName: repositoryProperties?.baseBranchName,
+			upstreamBranchName: repositoryProperties?.upstreamBranchName,
 			workingDirectoryPath: workingDirectory?.fsPath,
+			hasGitHubRemote: repositoryProperties?.hasGitHubRemote,
+			incomingChanges: repositoryProperties?.incomingChanges,
+			outgoingChanges: repositoryProperties?.outgoingChanges,
+			uncommittedChanges: repositoryProperties?.uncommittedChanges,
 			firstCheckpointRef,
 			lastCheckpointRef
 		} satisfies { readonly [key: string]: unknown };

@@ -135,14 +135,35 @@ export class ChatSessionWorkspaceFolderService extends Disposable implements ICh
 					return cachedChanges;
 				}
 
-				const changes = await this.computeWorkspaceChanges(repositoryProperties, sessionId);
-				this.workspaceFolderChanges.set(repoKey, changes);
-				return changes;
+				const properties = await this.computeWorkspaceChanges(repositoryProperties, sessionId);
+				this.workspaceFolderChanges.set(repoKey, properties.changes);
+
+				if (
+					properties.incomingChanges !== undefined &&
+					properties.outgoingChanges !== undefined &&
+					properties.uncommittedChanges !== undefined
+				) {
+					await this.metadataStore.storeRepositoryProperties(sessionId, {
+						...repositoryProperties,
+						upstreamBranchName: properties.upstreamBranchName,
+						incomingChanges: properties.incomingChanges,
+						outgoingChanges: properties.outgoingChanges,
+						uncommittedChanges: properties.uncommittedChanges
+					});
+				}
+
+				return properties.changes;
 			});
 		});
 	}
 
-	private async computeWorkspaceChanges(repositoryProperties: RepositoryProperties, sessionId: string): Promise<ChatSessionWorktreeFile[]> {
+	private async computeWorkspaceChanges(repositoryProperties: RepositoryProperties, sessionId: string): Promise<{
+		readonly changes: ChatSessionWorktreeFile[];
+		readonly upstreamBranchName?: string;
+		readonly incomingChanges?: number;
+		readonly outgoingChanges?: number;
+		readonly uncommittedChanges?: number;
+	}> {
 		const repository = await this.gitService.getRepository(vscode.Uri.file(repositoryProperties.repositoryPath));
 		if (repository) {
 			const sessionIds = this.sessionsAssociatedWithFolders.get(repository.rootUri) ?? new Set<string>();
@@ -151,7 +172,7 @@ export class ChatSessionWorkspaceFolderService extends Disposable implements ICh
 		}
 		if (!repository?.changes) {
 			this.logService.warn(`[ChatSessionWorkspaceFolderService][getWorkspaceChanges] No repository found for session ${sessionId}`);
-			return [];
+			return { changes: [] };
 		}
 
 		// Check for untracked changes, only if the session branch matches the current branch
@@ -191,7 +212,7 @@ export class ChatSessionWorkspaceFolderService extends Disposable implements ICh
 				diffChanges.push(...parseGitChangesRaw(repository.rootUri.fsPath, result));
 			} catch (error) {
 				this.logService.error(`[ChatSessionWorkspaceFolderService][getWorkspaceChanges] Error while processing workspace changes: ${error}`);
-				return [];
+				return { changes: [] };
 			} finally {
 				try {
 					await fs.rm(path.dirname(diffIndexFile), { recursive: true, force: true });
@@ -208,11 +229,11 @@ export class ChatSessionWorkspaceFolderService extends Disposable implements ICh
 				diffChanges.push(...parseGitChangesRaw(repository.rootUri.fsPath, result));
 			} catch (error) {
 				this.logService.error(`[ChatSessionWorkspaceFolderService][getWorkspaceChanges] Error while processing workspace changes: ${error}`);
-				return [];
+				return { changes: [] };
 			}
 		}
 
-		return diffChanges.map(change => ({
+		const changes = diffChanges.map(change => ({
 			filePath: change.uri.fsPath,
 			originalFilePath: change.status !== 1 /* INDEX_ADDED */
 				? change.originalUri?.fsPath
@@ -225,6 +246,21 @@ export class ChatSessionWorkspaceFolderService extends Disposable implements ICh
 				deletions: change.deletions
 			}
 		} satisfies ChatSessionWorktreeFile));
+
+		const repositoryState = {
+			upstreamBranchName: repository.upstreamRemote && repository.upstreamBranchName
+				? `${repository.upstreamRemote}/${repository.upstreamBranchName}`
+				: undefined,
+			incomingChanges: repository.headIncomingChanges ?? 0,
+			outgoingChanges: repository.headOutgoingChanges ?? 0,
+			uncommittedChanges:
+				(repository.changes?.mergeChanges.length ?? 0) +
+				(repository.changes?.indexChanges.length ?? 0) +
+				(repository.changes?.workingTree.length ?? 0) +
+				(repository.changes?.untrackedChanges.length ?? 0)
+		};
+
+		return { changes, ...repositoryState };
 	}
 
 	clearWorkspaceChanges(sessionId: string): string[];
