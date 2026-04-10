@@ -409,9 +409,15 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 		const productSubJsonStream = embedded
 			? gulp.src(['product.json'], { base: '.' })
 				.pipe(jsonEditor((json: Record<string, unknown>) => {
+					// Preserve the host's mutex name before overlaying embedded properties,
+					// so the embedded app can poll for the correct InnoSetup -ready mutex.
+					const hostMutexName = json['win32MutexName'];
 					Object.keys(embedded).forEach(key => {
 						json[key] = embedded[key as keyof EmbeddedProductInfo];
 					});
+					if (hostMutexName) {
+						json['win32SetupMutexName'] = hostMutexName;
+					}
 					return json;
 				}))
 				.pipe(rename('product.sub.json'))
