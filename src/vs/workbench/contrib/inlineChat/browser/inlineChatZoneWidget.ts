@@ -199,13 +199,14 @@ export class InlineChatZoneWidget extends ZoneWidget {
 	showTerminationCard(message: string | IMarkdownString, instaService: IInstantiationService): void {
 		this.#terminationStore.clear();
 
-		const rawText = typeof message === 'string' ? message : message.value;
+		const markdownMessage = typeof message === 'string'
+			? new MarkdownString(message, { supportThemeIcons: true })
+			: message;
 		const text = renderAsPlaintext(typeof message === 'string' ? new MarkdownString(message) : message);
 
 		// Markdown rendering with $(info) icon prefix in scrollable area
 		this.#terminationMarkdownMessage.replaceChildren();
-		const md = new MarkdownString(rawText, { supportThemeIcons: true });
-		const rendered = this.#terminationStore.add(renderMarkdown(md));
+		const rendered = this.#terminationStore.add(renderMarkdown(markdownMessage));
 		this.#terminationMarkdownMessage.appendChild(rendered.element);
 		this.#terminationMarkdownScrollable.getDomNode().classList.remove('hidden');
 		this.#terminationMarkdownScrollable.scanDomNode();
