@@ -44,7 +44,6 @@ import { PlaceholderTextContribution } from '../../../../editor/contrib/placehol
 import { IInlineChatSession2 } from './inlineChatSessionService.js';
 import { assertType } from '../../../../base/common/types.js';
 import { IInlineChatHistoryService } from './inlineChatHistoryService.js';
-import { IChatToolInvocation, ToolConfirmKind } from '../../chat/common/chatService/chatService.js';
 
 /**
  * Overlay widget that displays a vertical action bar menu.
@@ -610,18 +609,12 @@ export class InlineChatSessionOverlayWidget extends Disposable {
 			}
 		}));
 
-		// Auto-approve when pending confirmation happens - inline chat implicitly
-		// allows editing the current file, even if it qualifies as sensitive
+		// Log when pending confirmation changes
 		this.#showStore.add(autorun(r => {
 			const response = session.chatModel.lastRequestObs.read(r)?.response;
 			const pending = response?.isPendingConfirmation.read(r);
 			if (pending) {
-				this.#logService.info(`[InlineChat] auto-approving: ${pending.detail ?? 'unknown'}`);
-				for (const part of response!.response.value) {
-					if (part.kind === 'toolInvocation') {
-						IChatToolInvocation.confirmWith(part as IChatToolInvocation, { type: ToolConfirmKind.ConfirmationNotNeeded, reason: 'inlineChat' });
-					}
-				}
+				this.#logService.info(`[InlineChat] UNEXPECTED approval needed: ${pending.detail ?? 'unknown'}`);
 			}
 		}));
 
