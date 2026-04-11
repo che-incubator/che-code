@@ -176,8 +176,12 @@ export function handleAssistantMessage(
 			otelToolSpans.set(item.id, toolSpan);
 
 			if (request.editTracker && claudeEditTools.includes(item.name)) {
-				const uris = getAffectedUrisForEditTool(item.name, item.input);
-				request.editTracker.trackEdit(item.id, uris, stream, request.token);
+				try {
+					const uris = getAffectedUrisForEditTool(item.name, item.input);
+					void request.editTracker.trackEdit(item.id, uris, stream, request.token);
+				} catch (e) {
+					logService.warn(`[ClaudeMessageDispatch] Failed to track edit for ${item.name}: ${e}`);
+				}
 			}
 
 			const invocation = createFormattedToolInvocation(item, false);

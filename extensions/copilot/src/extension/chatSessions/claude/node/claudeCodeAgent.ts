@@ -13,7 +13,8 @@ import { ILogService } from '../../../../platform/log/common/logService';
 import { IMcpService } from '../../../../platform/mcp/common/mcpService';
 import { CopilotChatAttr, GenAiAttr, IOTelService, type ISpanHandle, SpanKind, SpanStatusCode, truncateForOTel } from '../../../../platform/otel/common/index';
 import { CapturingToken } from '../../../../platform/requestLogger/common/capturingToken';
-import { IRequestLogger } from '../../../../platform/requestLogger/node/requestLogger';
+import { IRequestLogger } from '../../../../platform/requestLogger/common/requestLogger';
+import { runWithCapturingToken } from '../../../../platform/requestLogger/node/requestLogger';
 import { IWorkspaceService } from '../../../../platform/workspace/common/workspaceService';
 import { DeferredPromise } from '../../../../util/vs/base/common/async';
 import { Disposable, DisposableMap } from '../../../../util/vs/base/common/lifecycle';
@@ -609,7 +610,7 @@ export class ClaudeCodeSession extends Disposable {
 						const response = { content: [new LanguageModelTextPart(resultContent)] };
 						const capturingToken = this.sessionStateService.getCapturingTokenForSession(this.sessionId);
 						if (capturingToken) {
-							this._requestLogger.captureInvocation(capturingToken, async () =>
+							void runWithCapturingToken(capturingToken, async () =>
 								this._requestLogger.logToolCall(toolUseId, toolName, toolInput, response));
 						} else {
 							this._requestLogger.logToolCall(toolUseId, toolName, toolInput, response);
