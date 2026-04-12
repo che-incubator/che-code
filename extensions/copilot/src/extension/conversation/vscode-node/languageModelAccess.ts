@@ -48,7 +48,7 @@ import { LanguageModelAccessPrompt } from './languageModelAccessPrompt';
  * Markers in the autoModelHint experiment variable that indicate the auto model
  * is routing to an experimental or evaluation model.
  */
-const experimentalAutoModelHintMarkers = ['minimax', 'mm-base_', 'mm-ft_'];
+const experimentalAutoModelHintMarkers = ['minimax', 'mp3yn0h7', 'yaqq2gxh'];
 
 /**
  * Builds a configurationSchema for the model picker based on the endpoint's supported capabilities.
