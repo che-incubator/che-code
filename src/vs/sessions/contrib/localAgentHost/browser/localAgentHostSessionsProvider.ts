@@ -347,6 +347,25 @@ export class LocalAgentHostSessionsProvider extends Disposable implements ISessi
 		return sessions;
 	}
 
+	getSessionByResource(resource: URI): ISession | undefined {
+		if (this._currentNewSession?.resource.toString() === resource.toString()) {
+			return this._currentNewSession;
+		}
+
+		if (this._pendingSession?.resource.toString() === resource.toString()) {
+			return this._pendingSession;
+		}
+
+		this._ensureSessionCache();
+		for (const cached of this._sessionCache.values()) {
+			if (cached.resource.toString() === resource.toString()) {
+				return cached;
+			}
+		}
+
+		return undefined;
+	}
+
 	// -- Session Lifecycle --
 
 	createNewSession(workspace: ISessionWorkspace): ISession {

@@ -467,6 +467,12 @@ export class CopilotAgent extends Disposable implements IAgent {
 		const parsedPlugins = await this._plugins.getAppliedPlugins();
 
 		const sessionUri = AgentSession.uri(this.id, sessionId);
+		const storedMetadata = await this._readSessionMetadata(sessionUri);
+		const sessionMetadata = await client.listSessions().then(sessions => sessions.find(session => session.sessionId === sessionId)).catch((err: unknown) => {
+			this._logService.warn(`[Copilot:${sessionId}] listSessions failed while resolving session metadata`, err);
+			return undefined;
+		});
+		const workingDirectory = typeof sessionMetadata?.context?.cwd === 'string' ? URI.file(sessionMetadata.context.cwd) : storedMetadata.workingDirectory;
 		const shellManager = this._instantiationService.createInstance(ShellManager, sessionUri);
 		const sessionConfig = this._buildSessionConfig(parsedPlugins, shellManager);
 
@@ -475,6 +481,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 			try {
 				const raw = await client.resumeSession(sessionId, {
 					...config,
+					workingDirectory: workingDirectory?.fsPath,
 				});
 				return new CopilotSessionWrapper(raw);
 			} catch (err) {
@@ -486,20 +493,19 @@ export class CopilotAgent extends Disposable implements IAgent {
 				}
 
 				this._logService.warn(`[Copilot:${sessionId}] Resume failed (session not found in SDK), recreating`);
-				const metadata = await this._readSessionMetadata(sessionUri);
 				const raw = await client.createSession({
 					...config,
 					sessionId,
 					streaming: true,
-					model: metadata.model,
-					workingDirectory: metadata.workingDirectory?.fsPath,
+					model: storedMetadata.model,
+					workingDirectory: workingDirectory?.fsPath,
 				});
 
 				return new CopilotSessionWrapper(raw);
 			}
 		};
 
-		const agentSession = this._createAgentSession(factory, undefined, sessionId, shellManager);
+		const agentSession = this._createAgentSession(factory, workingDirectory, sessionId, shellManager);
 		this._plugins.setAppliedPlugins(agentSession, parsedPlugins);
 		await agentSession.initializeSession();
 
