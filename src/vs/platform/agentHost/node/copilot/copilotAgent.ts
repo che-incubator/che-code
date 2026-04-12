@@ -471,7 +471,6 @@ export class CopilotAgent extends Disposable implements IAgent {
 			this._logService.warn(`[Copilot:${sessionId}] getSessionMetadata failed`, err);
 			return undefined;
 		});
-		this._logService.info(`[Copilot:${sessionId}] getSessionMetadata returned: ${JSON.stringify(sessionMetadata)}`);
 		const workingDirectory = typeof sessionMetadata?.context?.cwd === 'string' ? URI.file(sessionMetadata.context.cwd) : undefined;
 		const shellManager = this._instantiationService.createInstance(ShellManager, sessionUri);
 		const sessionConfig = this._buildSessionConfig(parsedPlugins, shellManager);

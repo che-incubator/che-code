@@ -238,7 +238,8 @@ export interface IAgentHostSessionHandlerConfig {
 	readonly extensionDisplayName?: string;
 	/**
 	 * Optional callback to resolve a working directory for a new session.
-	 * If not provided, falls back to the first workspace folder.
+	 * If not provided or unresolved, session resource resolvers are consulted before
+	 * falling back to the first workspace folder.
 	 */
 	readonly resolveWorkingDirectory?: (sessionResource: URI) => URI | undefined;
 	/**
