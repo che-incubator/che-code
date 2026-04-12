@@ -468,10 +468,12 @@ export class CopilotAgent extends Disposable implements IAgent {
 
 		const sessionUri = AgentSession.uri(this.id, sessionId);
 		const storedMetadata = await this._readSessionMetadata(sessionUri);
-		const sessionMetadata = await client.listSessions().then(sessions => sessions.find(session => session.sessionId === sessionId)).catch((err: unknown) => {
-			this._logService.warn(`[Copilot:${sessionId}] listSessions failed while resolving session metadata`, err);
-			return undefined;
-		});
+		let sessionMetadata: Awaited<ReturnType<CopilotClient['getSessionMetadata']>>;
+		try {
+			sessionMetadata = await client.getSessionMetadata(sessionId);
+		} catch (err) {
+			this._logService.warn(`[Copilot:${sessionId}] getSessionMetadata failed`, err);
+		}
 		const workingDirectory = typeof sessionMetadata?.context?.cwd === 'string' ? URI.file(sessionMetadata.context.cwd) : storedMetadata.workingDirectory;
 		const shellManager = this._instantiationService.createInstance(ShellManager, sessionUri);
 		const sessionConfig = this._buildSessionConfig(parsedPlugins, shellManager);
