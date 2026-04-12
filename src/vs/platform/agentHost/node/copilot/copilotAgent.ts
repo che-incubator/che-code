@@ -61,7 +61,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 	getDescriptor(): IAgentDescriptor {
 		return {
 			provider: 'copilot',
-			displayName: 'Agent Host - Copilot',
+			displayName: 'Copilot',
 			description: 'Copilot SDK agent running in a dedicated process',
 		};
 	}

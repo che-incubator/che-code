@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable } from '../../../../base/common/lifecycle.js';
+import { Disposable, DisposableMap } from '../../../../base/common/lifecycle.js';
 import { AgentHostEnabledSettingId } from '../../../../platform/agentHost/common/agentService.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
@@ -40,12 +40,28 @@ class LocalAgentHostContribution extends Disposable implements IWorkbenchContrib
 
 		const provider = this._register(instantiationService.createInstance(LocalAgentHostSessionsProvider));
 		this._register(sessionsProvidersService.registerProvider(provider));
-		for (const sessionType of provider.sessionTypes) {
-			this._register(workingDirectoryResolver.registerResolver(sessionType.id, sessionResource => {
-				const repository = provider.getSessionByResource(sessionResource)?.workspace.get()?.repositories[0];
-				return repository?.workingDirectory ?? repository?.uri;
-			}));
-		}
+
+		const resolverRegistrations = this._register(new DisposableMap<string>());
+		const registerResolvers = () => {
+			const sessionTypeIds = new Set(provider.sessionTypes.map(sessionType => sessionType.id));
+			for (const [sessionTypeId] of resolverRegistrations) {
+				if (!sessionTypeIds.has(sessionTypeId)) {
+					resolverRegistrations.deleteAndDispose(sessionTypeId);
+				}
+			}
+
+			for (const sessionType of provider.sessionTypes) {
+				if (resolverRegistrations.has(sessionType.id)) {
+					continue;
+				}
+				resolverRegistrations.set(sessionType.id, workingDirectoryResolver.registerResolver(sessionType.id, sessionResource => {
+					const repository = provider.getSessionByResource(sessionResource)?.workspace.get()?.repositories[0];
+					return repository?.workingDirectory ?? repository?.uri;
+				}));
+			}
+		};
+		registerResolvers();
+		this._register(provider.onDidChangeSessionTypes(registerResolvers));
 	}
 }
 
