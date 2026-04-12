@@ -306,6 +306,29 @@ suite('LocalAgentHostSessionsProvider', () => {
 		assert.strictEqual(session.sessionType, provider.sessionTypes[0].id);
 	});
 
+	test('getSessionByResource resolves current new session without listing it', () => {
+		const provider = createProvider(disposables, agentHost);
+		const workspace = {
+			label: 'my-project',
+			icon: { id: 'folder' },
+			repositories: [{ uri: URI.parse('file:///home/user/project'), workingDirectory: undefined, detail: undefined, baseBranchName: undefined, baseBranchProtected: undefined }],
+			requiresWorkspaceTrust: true,
+		};
+
+		const session = provider.createNewSession(workspace);
+		const resolved = provider.getSessionByResource(session.resource);
+
+		assert.deepStrictEqual({
+			listedSessions: provider.getSessions().length,
+			resolvedResource: resolved?.resource.toString(),
+			resolvedWorkspaceLabel: resolved?.workspace.get()?.label,
+		}, {
+			listedSessions: 0,
+			resolvedResource: session.resource.toString(),
+			resolvedWorkspaceLabel: 'my-project',
+		});
+	});
+
 	test('createNewSession throws when no repository URI', () => {
 		const provider = createProvider(disposables, agentHost);
 		const workspace = { label: 'empty', icon: { id: 'folder' }, repositories: [], requiresWorkspaceTrust: false };

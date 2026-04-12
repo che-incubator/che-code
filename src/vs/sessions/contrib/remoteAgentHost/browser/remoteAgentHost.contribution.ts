@@ -39,7 +39,6 @@ import { createRemoteAgentHarnessDescriptor, RemoteAgentCustomizationItemProvide
 import { RemoteAgentHostSessionsProvider } from './remoteAgentHostSessionsProvider.js';
 import { SyncedCustomizationBundler } from './syncedCustomizationBundler.js';
 import { ISSHRemoteAgentHostService } from '../../../../platform/agentHost/common/sshRemoteAgentHost.js';
-import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 
 /** Per-connection state bundle, disposed when a connection is removed. */
 class ConnectionState extends Disposable {
@@ -86,7 +85,6 @@ export class RemoteAgentHostContribution extends Disposable implements IWorkbenc
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
 		@IDefaultAccountService private readonly _defaultAccountService: IDefaultAccountService,
-		@ISessionsManagementService private readonly _sessionsManagementService: ISessionsManagementService,
 		@ISessionsProvidersService private readonly _sessionsProvidersService: ISessionsProvidersService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IAgentHostFileSystemService private readonly _agentHostFileSystemService: IAgentHostFileSystemService,
@@ -339,6 +337,7 @@ export class RemoteAgentHostContribution extends Disposable implements IWorkbenc
 		connState.store.add(agentStore);
 
 		const sanitized = agentHostAuthority(address);
+		const providerId = `agenthost-${sanitized}`;
 		const sessionType = `remote-${sanitized}-${agent.provider}`;
 		const agentId = sessionType;
 		const vendor = sessionType;
@@ -349,17 +348,20 @@ export class RemoteAgentHostContribution extends Disposable implements IWorkbenc
 		const sessionWorkingDirs = new Map<string, URI>();
 		agentStore.add(toDisposable(() => sessionWorkingDirs.clear()));
 
-		// Capture the working directory from the active session for new sessions
-		const resolveWorkingDirectory = (resourceKey: string): URI | undefined => {
+		// Capture the working directory from the session that is being created.
+		const resolveWorkingDirectory = (sessionResource: URI): URI | undefined => {
+			const resourceKey = sessionResource.toString();
 			const cached = sessionWorkingDirs.get(resourceKey);
 			if (cached) {
 				return cached;
 			}
-			const activeSession = this._sessionsManagementService.activeSession.get();
-			const repoUri = activeSession?.workspace.get()?.repositories[0]?.uri;
-			if (repoUri) {
-				sessionWorkingDirs.set(resourceKey, repoUri);
-				return repoUri;
+			const provider = this._sessionsProvidersService.getProvider<RemoteAgentHostSessionsProvider>(providerId);
+			const session = provider?.getSessionByResource(sessionResource);
+			const repository = session?.workspace.get()?.repositories[0];
+			const workingDirectory = repository?.workingDirectory ?? repository?.uri;
+			if (workingDirectory) {
+				sessionWorkingDirs.set(resourceKey, workingDirectory);
+				return workingDirectory;
 			}
 			return undefined;
 		};
