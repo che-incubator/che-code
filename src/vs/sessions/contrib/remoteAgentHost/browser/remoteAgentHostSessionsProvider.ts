@@ -370,6 +370,25 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 		return sessions;
 	}
 
+	getSessionByResource(resource: URI): ISession | undefined {
+		if (this._currentNewSession?.resource.toString() === resource.toString()) {
+			return this._chatToSession(this._currentNewSession);
+		}
+
+		if (this._pendingSession?.resource.toString() === resource.toString()) {
+			return this._pendingSession;
+		}
+
+		this._ensureSessionCache();
+		for (const cached of this._sessionCache.values()) {
+			if (cached.resource.toString() === resource.toString()) {
+				return this._chatToSession(cached);
+			}
+		}
+
+		return undefined;
+	}
+
 	// -- Session Lifecycle --
 
 	private _currentNewSession: IChatData | undefined;
