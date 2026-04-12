@@ -349,7 +349,7 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 	private _syncSessionTypesFromRootState(rootState: IRootState): void {
 		const next = rootState.agents.map((agent): ISessionType => ({
 			id: remoteAgentHostSessionTypeId(this._connectionAuthority, agent.provider),
-			label: agent.displayName ? `${agent.displayName} [${this.label}]` : this.label,
+			label: this._formatSessionTypeLabel(agent.displayName?.trim() || agent.provider),
 			icon: Codicon.remote,
 		}));
 
@@ -359,6 +359,22 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 		}
 		this._sessionTypes = next;
 		this._onDidChangeSessionTypes.fire();
+	}
+
+	private _formatSessionTypeLabel(agentLabel: string): string {
+		return `${agentLabel} [${this.label}]`;
+	}
+
+	private _sessionTypeById(id: string, agentProvider: string): ISessionType {
+		const advertised = this.sessionTypes.find(t => t.id === id);
+		if (advertised) {
+			return advertised;
+		}
+		const contribution = this._chatSessionsService.getChatSessionContribution(id);
+		if (contribution) {
+			return { id, label: this._formatSessionTypeLabel(contribution.displayName), icon: Codicon.remote };
+		}
+		return { id, label: this._formatSessionTypeLabel(agentProvider), icon: Codicon.remote };
 	}
 
 	/**
@@ -429,8 +445,7 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 		const rawId = this._rawIdFromChatId(sessionId);
 		const cached = rawId ? this._sessionCache.get(rawId) : undefined;
 		if (cached) {
-			const existing = this.sessionTypes.find(t => t.id === cached.sessionType);
-			return existing ? [existing] : [];
+			return [this._sessionTypeById(cached.sessionType, cached.agentProvider)];
 		}
 		return [...this.sessionTypes];
 	}
@@ -538,6 +553,7 @@ export class RemoteAgentHostSessionsProvider extends Disposable implements ISess
 		}
 
 		const rebuilt = this._buildNewSessionData(workspace, newType);
+		this._selectedModelId = undefined;
 		this._currentNewSession = rebuilt.data;
 		this._currentNewSessionStatus = rebuilt.status;
 

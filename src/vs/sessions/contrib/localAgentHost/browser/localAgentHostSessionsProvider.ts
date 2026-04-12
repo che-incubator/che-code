@@ -431,6 +431,7 @@ export class LocalAgentHostSessionsProvider extends Disposable implements ISessi
 		}
 
 		const rebuilt = this._createNewSessionForType(workspace, newType);
+		this._selectedModelId = undefined;
 		this._onDidReplaceSession.fire({ from: prev, to: rebuilt });
 		return rebuilt;
 	}

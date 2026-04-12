@@ -722,6 +722,23 @@ suite('RemoteAgentHostSessionsProvider', () => {
 		assert.strictEqual(types[0].id, remoteAgentHostSessionTypeId('localhost__4321', 'copilot'));
 	});
 
+	test('getSessionTypes synthesizes a stable type for existing sessions whose agent is no longer advertised', () => {
+		connection.setAgents([
+			{ provider: 'copilot', displayName: 'Copilot', description: '', models: [] } as IAgentInfo,
+			{ provider: 'openai', displayName: 'OpenAI', description: '', models: [] } as IAgentInfo,
+		]);
+		const provider = createProvider(disposables, connection);
+		fireSessionAdded(connection, 'existing-openai', { provider: 'openai', title: 'Existing OpenAI' });
+		connection.setAgents([]);
+
+		const existing = provider.getSessions().find(s => s.title.get() === 'Existing OpenAI');
+		assert.ok(existing);
+
+		assert.deepStrictEqual(provider.getSessionTypes(existing!.sessionId).map(t => t.id), [
+			remoteAgentHostSessionTypeId('localhost__4321', 'openai'),
+		]);
+	});
+
 	// ---- sessionType on adapters -------
 
 	test('session adapter uses logical session type, not resource scheme', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {
