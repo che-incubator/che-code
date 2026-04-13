@@ -404,8 +404,8 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		}
 		if (this.nextButton) {
 			if (this.currentStepIndex === 0) {
-				// Sign-in step: tertiary "Continue without Signing In"
-				this.nextButton.className = 'onboarding-a-btn onboarding-a-btn-tertiary';
+				// Sign-in step: secondary "Continue without Signing In"
+				this.nextButton.className = 'onboarding-a-btn onboarding-a-btn-secondary';
 				this.nextButton.textContent = localize('onboarding.continueWithoutSignIn', "Continue without Signing In");
 			} else if (this._isLastStep()) {
 				this.nextButton.className = 'onboarding-a-btn onboarding-a-btn-primary';
@@ -417,8 +417,8 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		}
 		if (this.skipButton && this.footerLeft) {
 			if (this.currentStepIndex === 0) {
-				// Sign-in step: secondary Skip button
-				this.skipButton.className = 'onboarding-a-btn onboarding-a-btn-secondary';
+				// Sign-in step: ghost Skip button
+				this.skipButton.className = 'onboarding-a-btn onboarding-a-btn-ghost';
 			} else {
 				this.skipButton.className = 'onboarding-a-btn onboarding-a-btn-ghost';
 			}
