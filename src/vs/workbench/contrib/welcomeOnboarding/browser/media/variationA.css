@@ -203,6 +203,19 @@
 	color: var(--vscode-editor-foreground);
 }
 
+.onboarding-a-btn-tertiary {
+	background: transparent;
+	color: var(--vscode-descriptionForeground);
+	border: none;
+	padding: 6px 0;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.onboarding-a-btn-tertiary:hover {
+	color: var(--vscode-editor-foreground);
+}
+
 /* Sign-In step */
 .onboarding-a-signin {
 	display: grid;
@@ -826,13 +839,21 @@
 }
 
 .onboarding-a-signin-btn.primary {
-	background: var(--vscode-editor-background);
-	border-color: var(--vscode-focusBorder);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 18%, transparent);
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	border-color: var(--vscode-button-background);
 }
 
 .onboarding-a-signin-btn.primary:hover {
-	background: var(--vscode-list-hoverBackground);
+	background: var(--vscode-button-hoverBackground);
+}
+
+.onboarding-a-signin-btn.primary .onboarding-a-provider-mark.github .codicon {
+	color: var(--vscode-button-foreground);
+}
+
+.onboarding-a-signin-btn.primary .onboarding-a-signin-btn-label {
+	color: var(--vscode-button-foreground);
 }
 
 @media (max-width: 720px) {
