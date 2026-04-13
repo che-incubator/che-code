@@ -132,7 +132,7 @@
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
-	overflow: hidden;
+	overflow: visible;
 }
 
 .onboarding-a-footer {
@@ -492,6 +492,7 @@
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	gap: 10px;
+	padding: 4px;
 }
 
 .onboarding-a-theme-grid.theme-grid-expanded {
@@ -520,6 +521,29 @@
 .onboarding-a-theme-card.selected {
 	border-color: var(--vscode-focusBorder, #007acc);
 	box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc);
+}
+
+.monaco-workbench.hc-black .onboarding-a-theme-card,
+.monaco-workbench.hc-light .onboarding-a-theme-card {
+	border-width: 2px;
+	border-color: var(--vscode-contrastBorder);
+}
+
+.monaco-workbench.hc-black .onboarding-a-theme-card:hover,
+.monaco-workbench.hc-light .onboarding-a-theme-card:hover {
+	border-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
+}
+
+.monaco-workbench.hc-black .onboarding-a-theme-card:focus-visible,
+.monaco-workbench.hc-light .onboarding-a-theme-card:focus-visible {
+	outline: 2px solid var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
+	outline-offset: 2px;
+}
+
+.monaco-workbench.hc-black .onboarding-a-theme-card.selected,
+.monaco-workbench.hc-light .onboarding-a-theme-card.selected {
+	border-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
+	box-shadow: 0 0 0 1px var(--vscode-contrastActiveBorder, var(--vscode-focusBorder));
 }
 
 .onboarding-a-theme-preview {

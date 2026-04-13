@@ -696,8 +696,10 @@ export class OnboardingVariationA extends Disposable implements IOnboardingServi
 		for (const theme of themes) {
 			this._createThemeCard(themeGrid, theme, themeCards);
 		}
-		const selectedThemeIndex = themes.findIndex(t => t.id === this.selectedThemeId);
-		this._setupRadioGroupNavigation(themeCards, Math.max(0, selectedThemeIndex));
+		// Make all theme cards individually tabbable
+		for (const card of themeCards) {
+			card.setAttribute('tabindex', '0');
+		}
 
 		// Keyboard Mapping section — only shown when another editor is detected
 		const keymapOptions = this._detectedEditorIds
