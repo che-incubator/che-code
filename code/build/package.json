@@ -80,6 +80,13 @@
       "jws": "^3.2.3"
     },
     "qs": "6.14.1",
-    "lodash": "^4.17.23"
+    "lodash": "^4.17.23",
+    "fast-xml-parser": "^4.5.4",
+    "@vscode/vsce": {
+      "minimatch": "^3.1.5"
+    },
+    "vscode-universal-bundler": {
+      "minimatch": "^9.0.9"
+    }
   }
 }
