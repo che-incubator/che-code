@@ -100,6 +100,7 @@ export class CompositeTaskBuilder {
 							e.component,
 							this.sanitize(e.command),
 							e.workdir,
+							e.env
 						);
 
 						activePtys.add(pty);
@@ -254,6 +255,7 @@ export class CompositeTaskBuilder {
 					e.component,
 					e.command,
 					e.workdir,
+					e.env
 				),
 			),
 			[],
