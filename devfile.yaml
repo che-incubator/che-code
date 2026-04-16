@@ -129,3 +129,31 @@ commands:
         git stash save --include-untracked
         git fetch upstream-code main
         ./rebase.sh
+
+  - id: install-claude
+    exec:
+      label: Install Claude CLI
+      component: dev
+      env:
+        - name: DISABLE_AUTOUPDATER
+          value: "1"
+      commandLine: |
+        set -euo pipefail
+        # Bump version: https://github.com/anthropics/claude-code/releases
+        CLAUDE_VERSION="2.1.92"
+        GCS_BASE="https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
+        PLATFORM="linux-x64"
+        INSTALL_DIR="$HOME/.local/bin"
+        mkdir -p "$INSTALL_DIR"
+        echo "Installing Claude Code v${CLAUDE_VERSION} for ${PLATFORM}..."
+        MANIFEST=$(curl -fsSL "${GCS_BASE}/${CLAUDE_VERSION}/manifest.json")
+        EXPECTED_SHA=$(echo "$MANIFEST" | python3 -c "import json,sys; print(json.load(sys.stdin)['platforms']['${PLATFORM}']['checksum'])")
+        curl -fSL --progress-bar -o "${INSTALL_DIR}/claude" "${GCS_BASE}/${CLAUDE_VERSION}/${PLATFORM}/claude"
+        ACTUAL_SHA=$(sha256sum "${INSTALL_DIR}/claude" | cut -d' ' -f1)
+        if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+          echo "SHA-256 mismatch! expected=${EXPECTED_SHA} actual=${ACTUAL_SHA}" >&2
+          rm -f "${INSTALL_DIR}/claude"
+          exit 1
+        fi
+        chmod +x "${INSTALL_DIR}/claude"
+        echo "Verified and installed Claude Code v${CLAUDE_VERSION} to ${INSTALL_DIR}/claude"

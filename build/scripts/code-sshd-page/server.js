@@ -46,15 +46,42 @@ const server = http.createServer((req, res) => {
 
     res.end(`
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>${process.env["DEVWORKSPACE_NAME"]}</title>
     <link rel="stylesheet" href="page-style.css">
     <script src="page-utils.js"></script>
   </head>
   <body>
-    <h1>Workspace ${process.env["DEVWORKSPACE_NAME"]} is running</h1>
-    <div class="border">
+    <div class="header-parent">
+    <div class="header-title">
+      <h1>Workspace ${process.env["DEVWORKSPACE_NAME"]} is running</h1>
+    </div>
+    <div class="toggle-label">Use Extension</div>
+    <div class="toggle-input">
+      <label class="switch">
+        <input id="use-extension" type="checkbox" checked onclick="toggleExtensionSwitch()">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    </div>
+    <div id="docs-parent">
+    </div>
+    <div id="docs-extension" hidden>
+      <ol>
+        <li class="extension-li">Install the following VS Code extensions :
+          <ul>
+            <li class="extension-li"><code>Dev Spaces Remote SSH</code> from the <a href="https://marketplace.visualstudio.com/items?itemName=redhat.devspaces-remote-ssh">VS Code Marketplace</a> or the <a href="https://open-vsx.org/extension/redhat/devspaces-remote-ssh">OpenVSX Registry</a></li>
+            <li class="extension-li"><code>Remote - SSH</code> from the <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">VS Code Marketplace</a> <b>OR</b> <code>Open Remote - SSH</code> from the <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">OpenVSX Registry</a></li>
+          </ul>
+        </li>
+        <li class="extension-li">From the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URL of this page.</li>
+          <ul>
+            <li class="extension-li">It should be of the form : <code>https://$\{CLUSTER_URL\}/$\{USER\}/$\{DEVWORKSPACE_NAME\}/3400/</code></li>
+          </ul>
+      </ol>
+    </div>
+    <div id="docs-manual" hidden>
       <ol>
         <li>Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools">oc client</a> is <a href="https://oauth-openshift${getHostURL()}/oauth/token/request">logged in</a> to your OpenShift cluster</li>
         <li><p class="center">Run <code id="port-forward">oc port-forward -n ${process.env["DEVWORKSPACE_NAMESPACE"]} ${process.env["HOSTNAME"]} 2022:2022</code><a href="#"><svg class="clipboard-img-code" onclick="copyToClipboard('port-forward')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
@@ -79,14 +106,14 @@ const server = http.createServer((req, res) => {
         <p>
         <b>&#9888; Please ensure the permissions on the private key used are restricted to allow only the file owner to read/write. The SSH service may fail to correctly authenticate otherwise.</b>
         </p>
-        This can also be configured locally in the client SSH configuration file (eg. <code class="path">$HOME/.ssh/config</code>) with the following :
+        This can also be configured locally in the client SSH configuration file (eg. <code class="path">$\{HOME\}/.ssh/config</code>) with the following :
         <div class="parent">
         <div>
 <pre id="config" class="path">Host localhost
   HostName 127.0.0.1
   User ${username}
   Port 2022
-  IdentityFile $HOME/.ssh/ssh_client_ed25519_key
+  IdentityFile "$\{HOME\}/.ssh/ssh_client_ed25519_key"
   UserKnownHostsFile /dev/null</pre>
         </div>
         <div class="clipboard">
@@ -99,12 +126,12 @@ const server = http.createServer((req, res) => {
         </div>
         </div>
         <p>
-        Where <code class="path">$HOME/.ssh/ssh_client_ed25519_key</code> should be replaced by the absolute path to the private key file on your local system.
+        Where <code class="path">$\{HOME\}/.ssh/ssh_client_ed25519_key</code> should be replaced by the absolute path to the private key file on your local system.
         </p>
         </li>
       </ol>
       <h3>Troubleshooting</h3>
-      <p>If the connection fails with "<code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED</code>", it may be necessary to remove the <code>localhost</code> or <code>127.0.0.1</code> entries from <code class="path">$HOME/.ssh/known_hosts</code>. This is because the SSHD service container (to which <code>oc port-forward</code> is forwarding) may change. This can be bypassed by setting <code>UserKnownHostsFile <span class="path">/dev/null</span></code></p>
+      <p>If the connection fails with "<code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED</code>", it may be necessary to remove the <code>localhost</code> or <code>127.0.0.1</code> entries from <code class="path">$\{HOME\}/.ssh/known_hosts</code>. This is because the SSHD service container (to which <code>oc port-forward</code> is forwarding) may change. This can be bypassed by setting <code>UserKnownHostsFile <span class="path">/dev/null</span></code></p>
       <p>If the connection fails for an unknown reason, consider disabling the setting <code>remote.SSH.useExecServer</code> (set to false)</p>
       <p>For any other issues, relating to the use of a VS Code-based editor and the "Remote - SSH", the "Remote - SSH" logs from the "Output" view are very helpful in diagnosing the issue.</p>
     </div>

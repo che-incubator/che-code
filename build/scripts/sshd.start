@@ -65,11 +65,14 @@ fi
 # Common tools needed to set up service
 mkdir -p $HOME/bin
 cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
-echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
-env | grep -v 'PATH=' | sed 's|^|export |' >> $HOME/.profile
-cat $HOME/.profile >> $HOME/.bashrc
+grep -q 'export DEVWORKSPACE_NAME=' $HOME/.profile
+if [ ! $? -eq 0 ]; then
+  env | sed 's|^|export |' >> $HOME/.profile
+  echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
+  cat $HOME/.profile >> $HOME/.bashrc
+fi
 
 # Configure SSHD as non-root user
 
