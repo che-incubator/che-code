@@ -18,7 +18,10 @@ class MockPty {
 	private writeListeners: Array<(s: string) => void> = [];
 	private closeListeners: Array<(c?: number) => void> = [];
 
-	constructor(private output: string, private exitCode: number) {}
+	constructor(
+		private output: string,
+		private exitCode: number,
+	) {}
 
 	onDidWrite(listener: (s: string) => void) {
 		this.writeListeners.push(listener);
@@ -58,6 +61,7 @@ export class MockTerminalAPI {
 		command: string;
 		cwd: string;
 		output: string;
+		env?: Record<string, string>;
 	}> = [];
 
 	constructor(opts?: MockTerminalOptions) {
@@ -68,10 +72,15 @@ export class MockTerminalAPI {
 		component: string | undefined,
 		command: string,
 		cwd: string,
+		env?: { name: string; value: string }[],
 	) {
 		const output = this.simulateOutput(component, command);
 
-		const record = { component, command, cwd, output };
+		const envMap = env
+			? Object.fromEntries(env.map((e) => [e.name, e.value]))
+			: undefined;
+
+		const record = { component, command, cwd, output, env: envMap };
 		this.calls.push(record);
 
 		if (this.debug) {
@@ -79,6 +88,7 @@ export class MockTerminalAPI {
 			console.log(" component:", component ?? "default");
 			console.log(" cwd:", cwd);
 			console.log(" command:", command);
+			if (envMap) console.log(" env:", envMap);
 			if (output) console.log(" output:", output);
 		}
 

@@ -336,3 +336,150 @@ describe("Composite — task naming", () => {
 		expect(tasks!.some((t) => t.name === "Nice Composite")).toBe(true);
 	});
 });
+
+describe("Composite — env propagation", () => {
+	test("sequential composite passes env to exec commands", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				commands: [
+					{
+						id: "a",
+						exec: {
+							component: "c1",
+							commandLine: "echo A",
+							env: [{ name: "FOO", value: "bar" }],
+						},
+					},
+					{
+						id: "combo",
+						composite: { commands: ["a"] },
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls).toHaveLength(1);
+		expect(term.calls[0].env).toEqual({ FOO: "bar" });
+	});
+
+	test("sequential composite preserves env per command", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				commands: [
+					{
+						id: "a",
+						exec: {
+							component: "c1",
+							commandLine: "A",
+							env: [{ name: "X", value: "1" }],
+						},
+					},
+					{
+						id: "b",
+						exec: {
+							component: "c1",
+							commandLine: "B",
+							env: [{ name: "Y", value: "2" }],
+						},
+					},
+					{
+						id: "combo",
+						composite: { commands: ["a", "b"] },
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls).toHaveLength(2);
+		expect(term.calls[0].env).toEqual({ X: "1" });
+		expect(term.calls[1].env).toEqual({ Y: "2" });
+	});
+
+	test("parallel composite passes env to each task", async () => {
+		let executedTasks: vscode.Task[] = [];
+
+		(vscode as any).tasks = {
+			executeTask: async (task: vscode.Task) => {
+				executedTasks.push(task);
+				return { terminate() {} };
+			},
+		};
+
+		const tasks = await provide({
+			commands: [
+				{
+					id: "a",
+					exec: {
+						component: "c1",
+						commandLine: "echo A",
+						env: [{ name: "A", value: "1" }],
+					},
+				},
+				{
+					id: "b",
+					exec: {
+						component: "c2",
+						commandLine: "echo B",
+						env: [{ name: "B", value: "2" }],
+					},
+				},
+				{
+					id: "combo",
+					composite: { parallel: true, commands: ["a", "b"] },
+				},
+			],
+		});
+
+		await runByName(tasks!, "combo");
+
+		expect(executedTasks).toHaveLength(2);
+
+		const commands = executedTasks.map((t) => (t.definition as any).command);
+
+		expect(commands).toEqual(expect.arrayContaining(["echo A", "echo B"]));
+	});
+
+	test("devfile env scenario", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				commands: [
+					{
+						id: "build",
+						exec: {
+							component: "go",
+							commandLine: "go build",
+							env: [
+								{ name: "GO111MODULE", value: "on" },
+								{ name: "GOPATH", value: "/projects" },
+							],
+						},
+					},
+					{
+						id: "combo",
+						composite: { commands: ["build"] },
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls[0].env).toEqual({
+			GO111MODULE: "on",
+			GOPATH: "/projects",
+		});
+	});
+});
