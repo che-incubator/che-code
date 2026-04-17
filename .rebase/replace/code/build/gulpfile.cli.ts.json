@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import untar from 'gulp-untar';\nimport gunzip from 'gulp-gunzip';",
+        "by": "import decompress from 'gulp-decompress';"
+    },
+    {
+        "from": ".pipe(gunzip())\n\t\t.pipe(untar())",
+        "by": ".pipe(decompress())"
+    }
+]

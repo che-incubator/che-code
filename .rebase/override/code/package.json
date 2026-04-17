@@ -1,6 +1,9 @@
 {
     "name": "che-code",
     "bin": "out/vs/server/main.js",
+    "dependencies": {
+      "undici": "^7.24.0"
+    },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
       "@vscode/test-cli": "^0.0.12",

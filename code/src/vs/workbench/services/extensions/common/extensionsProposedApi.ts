@@ -16,6 +16,7 @@ import { IWorkbenchEnvironmentService } from '../../environment/common/environme
 import { Extensions, IExtensionFeatureMarkdownRenderer, IExtensionFeaturesRegistry, IRenderedData } from '../../extensionManagement/common/extensionFeatures.js';
 import { IMarkdownString, MarkdownString } from '../../../../base/common/htmlContent.js';
 import { Mutable } from '../../../../base/common/types.js';
+import { normalizeAndFilterProposals } from './che/extensions.js';
 
 export class ExtensionsProposedApi {
 
@@ -67,13 +68,7 @@ export class ExtensionsProposedApi {
 
 		// warn about invalid proposal and remove them from the list
 		if (isNonEmptyArray(extension.enabledApiProposals)) {
-			extension.enabledApiProposals = extension.enabledApiProposals.filter(name => {
-				const result = Boolean(allApiProposals[<ApiProposalName>name]);
-				if (!result) {
-					this._logService.error(`Extension '${key}' wants API proposal '${name}' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.`);
-				}
-				return result;
-			});
+			extension.enabledApiProposals = normalizeAndFilterProposals(this._logService, key, extension.enabledApiProposals);
 		}
 
 

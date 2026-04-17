@@ -13,6 +13,9 @@
 	"darwinBundleIdentifier": "org.eclipse.che.code",
 	"linuxIconName": "org.eclipse.che.code",
 	"urlProtocol": "checode",
+	"defaultChatAgent": {
+		"chatExtensionId": "redhat.devspaces-copilot-chat-integration"
+	},
 	"extensionEnabledApiProposals": {
 		"genuitecllc.codetogether": [
 			"fileSearchProvider",
@@ -22,6 +25,16 @@
 			"terminalNameChangeEvent",
 			"testObserver",
 			"textSearchProvider"
+		]
+	},
+	"trustedExtensionAuthAccess": {
+		"github": [
+			"GitHub.copilot-chat",
+			"redhat.devspaces-copilot-chat-integration"
+		],
+		"github-enterprise": [
+			"GitHub.copilot-chat",
+			"redhat.devspaces-copilot-chat-integration"
 		]
 	}
 }

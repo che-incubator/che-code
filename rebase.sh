@@ -100,7 +100,7 @@ apply_multi_line_replace() {
     by=$(jq -n "$replaceCommand" | jq -r '.by')
 
     cp "$filename" "$filename.bak"
-    perl -0777 -pe "s|\Q$from\E|$by|g" "$filename.bak" > "$filename"
+    REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filename.bak" > "$filename"
     if diff "$filename" "$filename.bak" &> /dev/null; then
       echo "Unable to perform the replace. Value is not present in the resulting file"
       echo "Wanted to check ${from}"
@@ -206,30 +206,6 @@ apply_code_extensions_microsoft_authentication_package_lock_changes() {
   git add code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
 }
 
-# Apply changes on code/extensions/vscode-api-tests/package-lock.json file
-apply_code_extensions_vscode_api_tests_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/extensions/vscode-api-tests/package-lock.json..."
-  
-  conflicted_files=$(git diff --name-only --diff-filter=U)
-
-  # Check if code/extensions/vscode-api-tests/package.json is in the list
-  if echo "$conflicted_files" | grep -q "^code/extensions/vscode-api-tests/package.json$"; then
-      echo "Conflict for the code/extensions/vscode-api-tests/package.json should be fixed first!"
-      apply_package_changes_by_path "code/extensions/vscode-api-tests/package.json"
-  fi
-  
-  # reset the file from what is upstream
-  git checkout --ours code/extensions/vscode-api-tests/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions/vscode-api-tests
-
-  # resolve the change
-  git add code/extensions/vscode-api-tests/package-lock.json > /dev/null 2>&1
-}
-
-
 # Apply changes on code/remote/package-lock.json file
 apply_code_remote_package_lock_changes() {
 
@@ -258,20 +234,6 @@ apply_code_product_changes() {
   
   # resolve the change
   git add code/product.json > /dev/null 2>&1
-}
-
-# Apply changes on code/build/lib/mangle/index.js file
-apply_mangle_index_js_changes() {
-  
-  echo "  ⚙️ reworking code/build/lib/mangle/index.js..."
-  # reset the file from what is upstream
-  git checkout --theirs code/build/lib/mangle/index.js > /dev/null 2>&1
-
-  # the actual changes are in the code/build/lib/mangle/index.ts file  
-  npm run compile --prefix code/build
-
-  # resolve the change
-  git add code/build/lib/mangle/index.js > /dev/null 2>&1
 }
 
 # Apply changes on code/build/lib/mangle/index.ts file
@@ -469,22 +431,16 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
       apply_code_extensions_microsoft_authentication_package_lock_changes
-    elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/vscode-api-tests/package-lock.json" ]]; then
-      apply_code_extensions_vscode_api_tests_package_lock_changes
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
+          apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
+          apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/lib/mangle/index.js" ]]; then
-      apply_mangle_index_js_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
@@ -499,6 +455,8 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
       apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_code_src_vs_code_browser_workbench_workbench_changes
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
@@ -539,10 +497,10 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
@@ -559,9 +517,9 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.js" ]]; then
+    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.js" ]]; then
+    elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes "$conflictingFile"
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
@@ -589,7 +547,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.104)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version
