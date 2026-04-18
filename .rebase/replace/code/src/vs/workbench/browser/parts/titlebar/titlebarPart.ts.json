@@ -1,6 +1,6 @@
 [
 	{
-		"from": "this.title.innerText = this.windowTitle.value;",
-		"by": "this.title.innerText = this.windowTitle.getHeader() \\|\\| this.windowTitle.value;"
+		"from": "this.title.textContent = this.windowTitle.value;",
+		"by": "this.title.textContent = this.windowTitle.getHeader() \\|\\| this.windowTitle.value;"
 	}
 ]
