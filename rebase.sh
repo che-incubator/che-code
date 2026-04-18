@@ -310,20 +310,6 @@ apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
   git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/code/browser/workbench/workbench.ts file
-apply_code_src_vs_code_browser_workbench_workbench_changes() {
-
-  echo "  ⚙️ reworking code/src/vs/code/browser/workbench/workbench.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/code/browser/workbench/workbench.ts
-  
-  # resolve the change
-  git add code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
-}
-
 # Apply changes on code/extensions/git/src/ssh-askpass.sh file
 apply_code_extensions_git_src_ssh-askpass_changes() {
 
@@ -432,7 +418,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
-      apply_code_src_vs_code_browser_workbench_workbench_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
       apply_code_extensions_git_src_ssh-askpass_changes
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
