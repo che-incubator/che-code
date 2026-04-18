@@ -254,20 +254,6 @@ apply_mangle_index_ts_changes() {
   git add code/build/lib/mangle/index.js > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
-apply_code_vs_platform_remote_browser_factory_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/platform/remote/browser/browserSocketFactory.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/platform/remote/browser/browserSocketFactory.ts
-  
-  # resolve the change
-  git add code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/server/node/remoteExtensionHostAgentServer.ts file
 apply_code_vs_server_node_remoteExtensionHostAgentServer_changes() {
   
@@ -430,7 +416,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_mangle_index_ts_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
-      apply_code_vs_platform_remote_browser_factory_changes
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
       apply_code_vs_server_web_client_server_changes
     elif [[ "$conflictingFile" == "code/src/server-main.ts" ]]; then
