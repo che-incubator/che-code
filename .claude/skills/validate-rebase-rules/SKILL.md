@@ -150,6 +150,12 @@ Create `rebase-rules-validation.md` in the repository root. Only create this fil
 | Rule file | Key | Issue |
 |-----------|-----|-------|
 | `.rebase/override/code/extensions/npm/package.json` | `dependencies.minimatch` | Upstream already at `^5.2.0` which is ≥ override `^5.1.9` — override may be unnecessary |
+
+## Uncovered Che-specific Changes
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `code/src/vs/.../file.ts` | 173-177 | **ERROR** — Che-specific code block not covered by any rule (will be lost during rebase) |
 ```
 
 ### Severity indicators
@@ -157,6 +163,7 @@ Create `rebase-rules-validation.md` in the repository root. Only create this fil
 Use these prefixes in the Issue/Proposed fix column:
 
 - **ERROR** — `from` or `by` value not found; rule will fail during rebase
+- **ERROR** — Uncovered Che-specific change; code will be lost during rebase
 - **WARNING** — override may be unnecessary or redundant
 - **INFO** — value changed but rule still works
 
@@ -166,8 +173,9 @@ Use these prefixes in the Issue/Proposed fix column:
 2. Extract versions from `rebase.sh`.
 3. Enumerate all files under `.rebase/replace/`, `.rebase/add/`, `.rebase/override/`.
 4. For each rule, perform the checks described above.
-5. Collect all findings.
-6. Generate `rebase-rules-validation.md` if there are findings. Otherwise report success.
+5. For each file with replace rules (where rules are error-free), simulate full rule application and diff against che-code to detect uncovered Che-specific changes.
+6. Collect all findings.
+7. Generate `rebase-rules-validation.md` if there are findings. Otherwise report success.
 
 ## Parallelization guidance
 
@@ -186,6 +194,66 @@ Apply these rules across all steps when a target file cannot be found:
 |--------------|----------|
 | **Upstream file not found** (`git show` fails) | Report as ERROR: the file was likely removed or renamed in VS Code. The entire rule file is suspect and should be reviewed. |
 | **Che-code file not found** in working tree | Report as ERROR: the file is missing. The rule targets a file that does not exist in che-code. |
+
+## Step 6 — Detect uncovered Che-specific changes
+
+This step catches Che-specific code that exists in the working tree but has **no corresponding rebase rule** — changes that would be silently lost during rebase.
+
+### Why this matters
+
+During rebase, `rebase.sh` resets each conflicting file to the upstream version (`git checkout --theirs`) and then applies rules. Any Che-specific modification not covered by a rule is silently discarded.
+
+### How to check
+
+For each file that has a `.rebase/replace/` rule:
+
+1. **Get the upstream file** at `CURRENT_UPSTREAM_VERSION`.
+2. **Apply all rules** from the rule JSON to the upstream content, simulating what `rebase.sh` does:
+   - For sed-based files: apply each `from`→`by` replacement sequentially using the sed encoding pipeline.
+   - For perl-based files: apply each `from`→`by` replacement sequentially using the perl pipeline.
+   - For files with custom functions in `rebase.sh` (e.g. inline perl replacements not in the JSON): also simulate those replacements.
+3. **Diff the result** against the che-code working tree file.
+4. **Analyze the diff:**
+   - If the diff is empty → all Che changes are covered. OK.
+   - If the diff shows remaining differences → those are Che-specific changes with no rule. Report as **ERROR**: "Uncovered Che-specific change — will be lost during rebase".
+   - Include the diff context (line numbers, snippet) in the report so the user knows what's missing.
+
+### What to skip
+
+- Files where existing rules already have errors (stale `from`/`by`). The diff would be unreliable — the rule errors should be fixed first.
+- Files under `code/extensions/che-*/**` (Che-owned extensions are not reset during rebase).
+- Changes that come from `.rebase/add/` or `.rebase/override/` rules for JSON files — those are handled separately.
+
+### Report format
+
+Add a new section to the report:
+
+```markdown
+## Uncovered Che-specific Changes
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `code/src/vs/.../file.ts` | 173-177 | **ERROR** — Che-specific code block not covered by any rule (will be lost during rebase) |
+```
+
+### Custom functions in `rebase.sh`
+
+Some files have custom handler functions in `rebase.sh` that apply replacements beyond what's in the JSON rule file (e.g. inline perl replacements). When simulating rules, also check `rebase.sh` for:
+- Custom `apply_code_*_changes()` functions for the file
+- Inline `perl` or `sed` commands within those functions
+- Include those replacements in the simulation
+
+## Additional checks for replace rules
+
+### Unescaped `&` in sed `by` values
+
+For rules routed through `apply_changes` (sed-based handler), check each `by` value for unescaped `&` characters. In sed replacement strings, `&` means "the entire matched text", so a literal `&` in the target output must be escaped as `\&` (which is `\\&` in JSON).
+
+**How to detect:** Read the raw JSON `by` value (without `jq -r` decoding). If the handler is sed-based and the `by` contains `&` that is not preceded by `\`, report it as **ERROR**: unescaped `&` will produce the matched `from` text instead of a literal `&`.
+
+**Example:** A `by` value containing `&&` will produce `<from-text><from-text>` instead of `&&`. The correct encoding is `\\&\\&`.
+
+To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts` routing for the file. If the file is routed to `apply_changes` (which calls `apply_replace`, which uses `sed`), the sed encoding rules apply. If routed to `apply_changes_multi_line` or `apply_multi_line_replace` (perl-based), `&` has no special meaning and needs no escaping.
 
 ## Edge cases
 
