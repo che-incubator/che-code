@@ -304,44 +304,33 @@ apply_code_vs_extensions_contribution_changes() {
 
 # Apply changes on code/src/vs/workbench/contrib/remote/browser/remote.ts file
 apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/remote/browser/remote.ts..."
+  local filePath="code/src/vs/workbench/contrib/remote/browser/remote.ts"
+
+  echo "  ⚙️ reworking $filePath..."
   # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/remote/browser/remote.ts
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
-}
+  git checkout --theirs "$filePath" > /dev/null 2>&1
 
-# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index.html file
-apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index.html..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index.html
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
-}
+  # apply sed-based replacements from JSON
+  apply_replace "$filePath"
 
-# Apply changes on code/extensions/git/src/ssh-askpass.sh file
-apply_code_extensions_git_src_ssh-askpass_changes() {
+  # apply multiline perl replacement for super() + cheDisconnectionHandler init
+  # sed can't handle this because super() appears in two constructors;
+  # we anchor on 'const connection' (the line after the target super()) to target only the right one
+  local from=$'super();\n\t\tconst connection'
+  local by=$'super();\n\t\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);\n\t\tconst connection'
 
-  echo "  ⚙️ reworking code/extensions/git/src/ssh-askpass.sh..."
-  # reset the file from upstream
-  git checkout --theirs code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
-
-  # apply the changes
-  apply_replace code/extensions/git/src/ssh-askpass.sh
+  cp "$filePath" "$filePath.bak"
+  REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filePath.bak" > "$filePath"
+  if diff "$filePath" "$filePath.bak" &> /dev/null; then
+    echo "Unable to perform the super() cheDisconnectionHandler replace in $filePath"
+    echo "Wanted to check ${from}"
+    cat "$filePath"
+    exit 1
+  fi
+  rm "$filePath.bak"
 
   # resolve the change
-  git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+  git add "$filePath" > /dev/null 2>&1
 }
 
 # Apply changes for the given file
@@ -434,13 +423,13 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
-      apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
-      apply_code_extensions_git_src_ssh-askpass_changes
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
