@@ -16,6 +16,9 @@ pre {
   display: table-cell;
   width: 98%;
   padding: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 /* Inline code */
