@@ -1,38 +1,26 @@
 [
   {
-    "from": "<link rel=\\\"apple-touch-icon\\\" href=\\\"{{WORKBENCH_WEB_BASE_URL}}/resources/server/code-192.png\\\" />",
-    "by": "<link rel=\\\"apple-touch-icon\\\" href=\\\"./oss-dev/static/resources/server/code-192.png\\\" />"
+    "from": "{{WORKBENCH_WEB_BASE_URL}}/resources/server/code-192.png",
+    "by": "./oss-dev/static/resources/server/code-192.png"
   },
   {
-    "from": "<link rel=\\\"icon\\\" href=\\\"{{WORKBENCH_WEB_BASE_URL}}/resources/server/favicon.ico\\\" type=\\\"image/x-icon\\\" />",
-    "by": "<link rel=\\\"icon\\\" href=\\\"./oss-dev/static/resources/server/favicon.ico\\\" type=\\\"image/x-icon\\\" />"
+    "from": "{{WORKBENCH_WEB_BASE_URL}}/resources/server/favicon.ico",
+    "by": "./oss-dev/static/resources/server/favicon.ico"
   },
   {
-    "from": "<link rel=\\\"manifest\\\" href=\\\"{{WORKBENCH_WEB_BASE_URL}}/resources/server/manifest.json\\\" crossorigin=\\\"use-credentials\\\" />",
-    "by": "<link rel=\\\"manifest\\\" href=\\\"./oss-dev/static/resources/server/manifest.json\\\" crossorigin=\\\"use-credentials\\\" />"
+    "from": "{{WORKBENCH_WEB_BASE_URL}}/resources/server/manifest.json",
+    "by": "./oss-dev/static/resources/server/manifest.json"
   },
   {
-    "from": "<link rel=\\\"stylesheet\\\" href=\\\"{{WORKBENCH_WEB_BASE_URL}}/out/vs/code/browser/workbench/workbench.css\\\"\\\">",
-    "by": "<link rel=\\\"stylesheet\\\" href=\\\"./oss-dev/static/out/vs/code/browser/workbench/workbench.css\\\">"
+    "from": "{{WORKBENCH_WEB_BASE_URL}}/out/vs/code/browser/workbench/workbench.css",
+    "by": "./oss-dev/static/out/vs/code/browser/workbench/workbench.css"
   },
   {
     "from": "const baseUrl = new URL('{{WORKBENCH_WEB_BASE_URL}}', window.location.origin).toString();",
     "by": "const baseUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}oss-dev/static`;"
   },
   {
-    "from": "<script src=\\\"{{WORKBENCH_NLS_FALLBACK_URL}}\\\"></script>",
-    "by": ""
-  },
-  {
-    "from": "<!-- attempt to load NLS messages in case non-english -->",
-    "by": "<script src=\\\"./oss-dev/static/out/nls.messages.js\\\"></script>"
-  },
-  {
-    "from": "<script src=\\\"{{WORKBENCH_NLS_URL}}\\\"></script>",
-    "by": ""
-  },
-  {
-    "from": "<script src=\\\"{{WORKBENCH_WEB_BASE_URL}}/out/vs/code/browser/workbench/workbench.js\\\"></script>",
-    "by": "<script src=\\\"./oss-dev/static/out/vs/code/browser/workbench/workbench.js\\\"></script>"
+    "from": "\t<script type=\"module\" src=\"{{WORKBENCH_NLS_FALLBACK_URL}}\"></script>\n\t<!-- attempt to load NLS messages in case non-english -->\n\t<script type=\"module\" src=\"{{WORKBENCH_NLS_URL}}\"></script>\n\t<script type=\"module\" src=\"{{WORKBENCH_WEB_BASE_URL}}/out/vs/code/browser/workbench/workbench.js\"></script>",
+    "by": "\t<script type=\"module\" src=\"./oss-dev/static/out/nls.messages.js\"></script>\n\t<script type=\"module\" src=\"./oss-dev/static/out/vs/code/browser/workbench/workbench.js\"></script>"
   }
 ]
