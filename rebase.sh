@@ -13,6 +13,9 @@
 set -e
 set -u
 
+PREVIOUS_UPSTREAM_VERSION="release/1.104"
+CURRENT_UPSTREAM_VERSION="release/1.108"
+
 # update $1 json file
 # $2 is the formatting option
 override_json_file() {
@@ -493,7 +496,7 @@ do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/${CURRENT_UPSTREAM_VERSION})
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version
