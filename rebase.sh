@@ -268,20 +268,6 @@ apply_code_vs_platform_remote_browser_factory_changes() {
   git add code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
 }
 
-# Apply changes on code/src/server-main.js file
-apply_code_server-main_changes() {
-  
-  echo "  ⚙️ reworking code/src/server-main.js..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/server-main.js > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/server-main.js
-  
-  # resolve the change
-  git add code/src/server-main.js > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/server/node/remoteExtensionHostAgentServer.ts file
 apply_code_vs_server_node_remoteExtensionHostAgentServer_changes() {
   
@@ -447,8 +433,8 @@ resolve_conflicts() {
       apply_code_vs_platform_remote_browser_factory_changes
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
       apply_code_vs_server_web_client_server_changes
-    elif [[ "$conflictingFile" == "code/src/server-main.js" ]]; then
-      apply_code_server-main_changes
+    elif [[ "$conflictingFile" == "code/src/server-main.ts" ]]; then
+      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
       apply_code_vs_server_node_remoteExtensionHostAgentServer_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
