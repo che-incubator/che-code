@@ -435,6 +435,8 @@ resolve_conflicts() {
       apply_code_vs_server_web_client_server_changes
     elif [[ "$conflictingFile" == "code/src/server-main.ts" ]]; then
       apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/product/common/product.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
       apply_code_vs_server_node_remoteExtensionHostAgentServer_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
