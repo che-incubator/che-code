@@ -9,7 +9,7 @@
 
 function copyToClipboard(id) {
   var copyText = document.getElementById(id);
-  navigator.clipboard.writeText(copyText.innerHTML);
+  navigator.clipboard.writeText(copyText.innerText);
 }
 
 function initializePlatformContent() {
@@ -36,4 +36,9 @@ function syncDocsContent() {
   var extensionElem = document.getElementById("docs-extension");
   var manualElem = document.getElementById("docs-manual");
   docsElem.innerHTML = useExtension ? extensionElem.innerHTML : manualElem.innerHTML;
+}
+
+function openDevspacesURI(namespace, podName, userName, dwName, encodedKeyMessage, encodedUrl) {
+  const gatewayLink = `vscode://redhat.devspaces-remote-ssh?namespace=${namespace}&podName=${podName}&userName=${userName}&dwName=${dwName}&key=${encodedKeyMessage}&url=${encodedUrl}`;
+  window.open(gatewayLink, "_self");
 }

@@ -16,7 +16,7 @@ const port = 3400;
 
 let username = "UNKNOWN";
 try {
-  username = fs.readFileSync(`/sshd/username`, 'utf8');
+  username = fs.readFileSync('/sshd/username', 'utf8');
 } catch (error) {
   // continue
 }
@@ -28,21 +28,30 @@ const server = http.createServer((req, res) => {
 
     let hasUserPrefSSHKey = fs.existsSync('/etc/ssh/dwo_ssh_key.pub');
 
-    let pubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
+    let userPubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
     try {
-      pubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
+      userPubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
+    } catch (err) {
+     // continue
+    }
+
+    let userKey = '';
+    try {
+      userKey = fs.readFileSync('/etc/ssh/dwo_ssh_key', 'utf8');
     } catch (err) {
      // continue
     }
 
     let genKey = "PRIVATE KEY NOT FOUND";
     try {
-      genKey = fs.readFileSync(`/sshd/ssh_client_key`, 'utf8');
+      genKey = fs.readFileSync('/sshd/ssh_client_key', 'utf8');
     } catch (err) {
      // continue
     }
 
-    let keyMessage = hasUserPrefSSHKey ? pubKey : genKey;
+    let keyMessage = hasUserPrefSSHKey ? userPubKey : genKey;
+    let encodedKeyMessage = Buffer.from(hasUserPrefSSHKey ? userKey : genKey).toString('base64url');
+    let encodedUrl = encodeURIComponent(process.env["CHE_DASHBOARD_URL"]);
 
     res.end(`
 <!DOCTYPE html>
@@ -75,10 +84,22 @@ const server = http.createServer((req, res) => {
             <li class="extension-li"><code>Remote - SSH</code> from the <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">VS Code Marketplace</a> <b>OR</b> <code>Open Remote - SSH</code> from the <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">OpenVSX Registry</a></li>
           </ul>
         </li>
-        <li class="extension-li">From the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URL of this page.</li>
-          <ul>
-            <li class="extension-li">It should be of the form : <code>https://$\{CLUSTER_URL\}/$\{USER\}/$\{DEVWORKSPACE_NAME\}/3400/</code></li>
-          </ul>
+        <li class="extension-li">Click the URI below (you may need to accept the prompt allowing this page to open the link with your VS Code-based editor) <b>OR</b> from the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URI below.</li>
+        <div class="parent">
+          <div>
+            <a href="vscode://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}">
+              <pre id="uri-connection">vscode://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}</pre>
+            </a>
+          </div>
+          <div class="clipboard">
+            <a href="#">
+            <svg class="clipboard-img-pre" onclick="copyToClipboard('uri-connection')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
+              <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
+              <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
+            </svg>
+            </a>
+          </div>
+        </div>
       </ol>
     </div>
     <div id="docs-manual" hidden>
@@ -136,7 +157,10 @@ const server = http.createServer((req, res) => {
       <p>If the connection fails for an unknown reason, consider disabling the setting <code>remote.SSH.useExecServer</code> (set to false)</p>
       <p>For any other issues, relating to the use of a VS Code-based editor and the "Remote - SSH", the "Remote - SSH" logs from the "Output" view are very helpful in diagnosing the issue.</p>
     </div>
-    <script>initializePlatformContent();</script>
+    <script>
+      initializePlatformContent();
+      openDevspacesURI("${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedKeyMessage}", "${encodedUrl}");
+    </script>
   </body>
 </html>
     `);
