@@ -271,6 +271,37 @@ apply_code_vs_server_node_remoteExtensionHostAgentServer_changes() {
   git add code/src/vs/server/node/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts file
+apply_code_vs_extensions_contribution_changes() {
+  local filePath="code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts"
+
+  echo "  ⚙️ reworking $filePath..."
+  # reset the file from what is upstream
+  git checkout --theirs "$filePath" > /dev/null 2>&1
+
+  # apply sed-based replacements (entries 0-3 from JSON)
+  apply_replace "$filePath"
+
+  # apply multiline perl replacement for CommandPalette when clause
+  # sed can't handle this because the same when pattern appears on multiple lines;
+  # we use multiline context (id: MenuId.CommandPalette) to target only the right one
+  local from=$'\t\t\t\tid: MenuId.CommandPalette,\n\t\t\t\twhen: ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\n\t\t\t}, {'
+  local by=$'\t\t\t\tid: MenuId.CommandPalette,\n\t\t\t\twhen: ContextKeyExpr.and(\n\t\t\t\t\tContextKeyExpr.or(ContextKeyExpr.equals(\'extensions.install-from-vsix-enabled\', true),\n\t\t\t\t\t\tContextKeyExpr.equals(\'extensions.install-from-vsix-enabled\', undefined)),\n\t\t\t\t\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\n\t\t\t\t),\n\t\t\t}, {'
+
+  cp "$filePath" "$filePath.bak"
+  REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filePath.bak" > "$filePath"
+  if diff "$filePath" "$filePath.bak" &> /dev/null; then
+    echo "Unable to perform the CommandPalette when clause replace in $filePath"
+    echo "Wanted to check ${from}"
+    cat "$filePath"
+    exit 1
+  fi
+  rm "$filePath.bak"
+
+  # resolve the change
+  git add "$filePath" > /dev/null 2>&1
+}
+
 # Apply changes on code/src/vs/workbench/contrib/remote/browser/remote.ts file
 apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
   
@@ -437,7 +468,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_code_vs_extensions_contribution_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionManagement.ts" ]]; then
