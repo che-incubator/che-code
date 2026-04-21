@@ -150,9 +150,11 @@ apply_code_remote_package_changes() {
 }
 
 # Apply changes on $1 package.json file
-# A path to the file should be passed, for example: code/build/package.json 
+# A path to the file should be passed, for example: code/build/package.json
+# $2 is an optional formatting option passed to override_json_file (e.g. "tab")
 apply_package_changes_by_path() {
   local filePath="$1"
+  local formattingOption="${2:-}"
   
   if [ -z "$filePath" ]; then
      echo "Can not apply changes for package.json file - the path was not passed"
@@ -165,7 +167,7 @@ apply_package_changes_by_path() {
   git checkout --theirs $filePath > /dev/null 2>&1
   
   # now apply again the changes
-  override_json_file $filePath
+  override_json_file $filePath $formattingOption
   
   # resolve the change
   git add $filePath > /dev/null 2>&1
@@ -411,7 +413,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
       apply_github_auth_package_changes
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
-          apply_package_changes_by_path "$conflictingFile"
+      apply_package_changes_by_path "$conflictingFile" "tab"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
