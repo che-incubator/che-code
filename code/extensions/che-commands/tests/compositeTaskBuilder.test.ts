@@ -364,7 +364,7 @@ describe("Composite — env propagation", () => {
 		await runByName(tasks!, "combo");
 
 		expect(term.calls).toHaveLength(1);
-		expect(term.calls[0].env).toEqual({ FOO: "bar" });
+		expect(term.calls[0].command).toContain('FOO="bar"');
 	});
 
 	test("sequential composite preserves env per command", async () => {
@@ -401,8 +401,8 @@ describe("Composite — env propagation", () => {
 		await runByName(tasks!, "combo");
 
 		expect(term.calls).toHaveLength(2);
-		expect(term.calls[0].env).toEqual({ X: "1" });
-		expect(term.calls[1].env).toEqual({ Y: "2" });
+		expect(term.calls[0].command).toContain('X="1"');
+		expect(term.calls[1].command).toContain('Y="2"');
 	});
 
 	test("parallel composite passes env to each task", async () => {
@@ -446,7 +446,12 @@ describe("Composite — env propagation", () => {
 
 		const commands = executedTasks.map((t) => (t.definition as any).command);
 
-		expect(commands).toEqual(expect.arrayContaining(["echo A", "echo B"]));
+		expect(commands).toEqual(
+			expect.arrayContaining([
+				expect.stringContaining("echo A"),
+				expect.stringContaining("echo B"),
+			]),
+		);
 	});
 
 	test("devfile env scenario", async () => {
@@ -477,9 +482,7 @@ describe("Composite — env propagation", () => {
 
 		await runByName(tasks!, "combo");
 
-		expect(term.calls[0].env).toEqual({
-			GO111MODULE: "on",
-			GOPATH: "/projects",
-		});
+		expect(term.calls[0].command).toContain('GO111MODULE="on"');
+		expect(term.calls[0].command).toContain('GOPATH="/projects"');
 	});
 });
