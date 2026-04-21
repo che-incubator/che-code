@@ -278,13 +278,9 @@ apply_mangle_index_ts_changes() {
   
   # now apply again the changes
   apply_replace code/build/lib/mangle/index.ts
-
-  # apply changes for the code/build/lib/mangle/index.js file
-  npm run compile --prefix code/build
   
   # resolve the change
   git add code/build/lib/mangle/index.ts > /dev/null 2>&1
-  git add code/build/lib/mangle/index.js > /dev/null 2>&1
 }
 
 # Apply changes on code/src/vs/server/node/remoteExtensionHostAgentServer.ts file
