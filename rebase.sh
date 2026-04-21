@@ -269,6 +269,18 @@ insert_before("extensionsGallery"; "defaultChatAgent")
   git add code/product.json > /dev/null 2>&1
 }
 
+# Apply changes on code/extensions/github-authentication/package.json file
+apply_github_auth_package_changes() {
+  local filePath="code/extensions/github-authentication/package.json"
+  echo "  ⚙️ reworking $filePath..."
+  git checkout --theirs "$filePath" > /dev/null 2>&1
+  override_json_file "$filePath"
+  jq --indent 2 'del(.contributes)' "$filePath" > "$filePath.tmp"
+  cat "$filePath.tmp" > "$filePath"
+  rm "$filePath.tmp"
+  git add "$filePath" > /dev/null 2>&1
+}
+
 # Apply changes on code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts file
 apply_code_vs_extensions_contribution_changes() {
   local filePath="code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts"
@@ -397,7 +409,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
       apply_code_extensions_microsoft_authentication_package_lock_changes
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
-          apply_package_changes_by_path "$conflictingFile"
+      apply_github_auth_package_changes
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
           apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
