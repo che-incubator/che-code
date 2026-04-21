@@ -96,11 +96,14 @@ export class CompositeTaskBuilder {
 				open: async () => {
 					const run = async (e: ResolvedExec): Promise<number> => {
 						if (isCancelled) return 130;
+
+						const commandWithEnv =
+							this.buildEnvPrefix(e.env) + this.sanitize(e.command);
+
 						const pty = await this.terminalExtAPI.getMachineExecPTY(
 							e.component,
-							this.sanitize(e.command),
-							e.workdir,
-							e.env
+							commandWithEnv,
+							e.workdir
 						);
 
 						activePtys.add(pty);
@@ -183,6 +186,11 @@ export class CompositeTaskBuilder {
 			[],
 		);
 	}
+	
+	buildEnvPrefix(env: any[] | undefined) {
+		if (!env?.length) return "";
+		return env.map(e => `${e.name}="${e.value}"`).join(" ") + " ";
+	}
 
 	private buildParallelTasks(
 		command: any,
@@ -197,7 +205,14 @@ export class CompositeTaskBuilder {
 
 				open: () => {
 					execs.forEach((e, index) => {
-						const childTask = this.buildExecTask(e, index === 0);
+						const childTask = this.buildExecTask(
+							{
+								...e,
+								command: this.buildEnvPrefix(e.env) + e.command
+							},
+							index === 0
+						);
+
 						vscode.tasks.executeTask(childTask);
 					});
 
@@ -253,9 +268,8 @@ export class CompositeTaskBuilder {
 			new vscode.CustomExecution(() =>
 				this.terminalExtAPI.getMachineExecPTY(
 					e.component,
-					e.command,
-					e.workdir,
-					e.env
+					this.buildEnvPrefix(e.env) + e.command,
+					e.workdir
 				),
 			),
 			[],
