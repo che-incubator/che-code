@@ -269,20 +269,6 @@ insert_before("extensionsGallery"; "defaultChatAgent")
   git add code/product.json > /dev/null 2>&1
 }
 
-# Apply changes on code/build/lib/mangle/index.ts file
-apply_mangle_index_ts_changes() {
-  
-  echo "  ⚙️ reworking code/build/lib/mangle/index.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/build/lib/mangle/index.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/build/lib/mangle/index.ts
-  
-  # resolve the change
-  git add code/build/lib/mangle/index.ts > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts file
 apply_code_vs_extensions_contribution_changes() {
   local filePath="code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts"
@@ -421,7 +407,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
-      apply_mangle_index_ts_changes
+      apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
