@@ -30,7 +30,6 @@ import { GithubService } from './api/github-service';
 import { GithubServiceImpl } from './impl/github-service-impl';
 import { TelemetryService } from './api/telemetry-service';
 import { K8sTelemetryServiceImpl } from './impl/k8s-telemetry-service-impl';
-import * as axios from 'axios';
 import { Logger } from './logger';
 
 
@@ -43,7 +42,6 @@ export async function activate(_extensionContext: vscode.ExtensionContext): Prom
     container.bind(K8SServiceImpl).toSelf().inSingletonScope();
     container.bind(K8SService).to(K8SServiceImpl).inSingletonScope();
     container.bind(K8sDevWorkspaceEnvVariables).toSelf().inSingletonScope();
-    container.bind(Symbol.for('AxiosInstance')).toConstantValue(axios);
     container.bind(GithubServiceImpl).toSelf().inSingletonScope();
     container.bind(GithubService).to(GithubServiceImpl).inSingletonScope();
     container.bind(TelemetryService).to(K8sTelemetryServiceImpl).inSingletonScope();

@@ -12,6 +12,7 @@ FROM docker.io/node:22-alpine3.22 as linux-musl-builder
 RUN apk add --update --no-cache \
     # Download some files
     curl \
+    patch \
     # compile some javascript native stuff (node-gyp)
     make gcc g++ python3 py3-pip \
     # git 

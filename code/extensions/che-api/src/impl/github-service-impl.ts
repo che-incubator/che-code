@@ -11,7 +11,6 @@
 /* eslint-disable header/header */
 
 import * as k8s from '@kubernetes/client-node';
-import { AxiosInstance } from 'axios';
 import * as fs from 'fs-extra';
 import { inject, injectable } from 'inversify';
 import * as path from 'path';
@@ -39,8 +38,7 @@ export class GithubServiceImpl implements GithubService {
 
   constructor(
     @inject(Logger) private logger: Logger,
-    @inject(K8SServiceImpl) private readonly k8sService: K8SServiceImpl,
-    @inject(Symbol.for('AxiosInstance')) private readonly axiosInstance: AxiosInstance
+    @inject(K8SServiceImpl) private readonly k8sService: K8SServiceImpl
   ) {
     this.initializeToken();
   }
@@ -58,18 +56,31 @@ export class GithubServiceImpl implements GithubService {
 
   async getUser(): Promise<GithubUser> {
     this.checkToken();
-    const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
-      headers: { Authorization: `Bearer ${this.token}` },
-    });
-    return result.data;
+    const result = await this.fetchGithubUser(this.token!);
+    return result.user;
   }
 
   async getTokenScopes(token: string): Promise<string[]> {
     this.checkToken();
-    const result = await this.axiosInstance.get<GithubUser>('https://api.github.com/user', {
+    const result = await this.fetchGithubUser(token);
+    return result.scopes;
+  }
+
+  private async fetchGithubUser(token: string): Promise<{ user: GithubUser; scopes: string[] }> {
+    const response = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    return result.headers['x-oauth-scopes'].split(', ');
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(`GitHub user request failed: ${response.status} ${response.statusText} - ${message}`);
+    }
+    const user = await response.json() as GithubUser;
+    const scopesHeader = response.headers.get('x-oauth-scopes') ?? '';
+    const scopes = scopesHeader
+      .split(', ')
+      .map(scope => scope.trim())
+      .filter(scope => scope.length > 0);
+    return { user, scopes };
   }
 
   async persistDeviceAuthToken(token: string): Promise<void> {

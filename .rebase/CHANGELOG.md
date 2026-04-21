@@ -2,6 +2,25 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @vitaliy-guliy
+https://github.com/che-incubator/che-code/commit/a26b43847e5afd707ebffbddef712893fb77a379
+
+- code/product.json
+---
+
+#### @RomanNikitenko
+https://github.com/RomanNikitenko/che-code/commit/199009d7def5f11925978911f4a1715797d3144e
+
+- code/product.json
+- code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/commit/8409a0167c3cd4ca3555c9c6fc32f2fce87923e9
+
+- code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/677
 
@@ -20,10 +39,16 @@ https://github.com/che-incubator/che-code/pull/659
 - code/extensions/json-language-features/package.json
 - code/extensions/markdown-language-features/package.json
 - code/extensions/npm/package.json
-- code/test/mcp/package.json
 - code/test/automation/package.json
 - code/test/integration/browser/package.json
-- code/test/smoke/package.json
+---
+
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/668 \
+https://github.com/che-incubator/che-code/commit/c1cb30760472ea262b0c59cacae32bb398a40cdd
+
+- code/package.json
+- code/remote/package.json
 ---
 
 #### @sbouchet
@@ -68,15 +93,18 @@ https://github.com/che-incubator/che-code/pull/655
 - code/src/vs/server/node/extensionHostConnection.ts
 ---
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/654
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/654 \
+https://github.com/che-incubator/che-code/pull/646/changes/eebf4d4db208a1fc9c1ac056f613a5385471c892
 
 - code/test/mcp/package.json
 - code/package.json
+- code/build/package.json
 ---
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/648
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/648 \
+https://github.com/che-incubator/che-code/pull/646/changes/c22ae74ef707862afdb29f9a9f343be912cb05f8
 
 - code/package.json
 - code/build/npm/gyp/package.json
@@ -129,12 +157,6 @@ https://github.com/che-incubator/che-code/pull/611
 
 - code/package.json
 - code/build/npm/gyp/package.json
----
-
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/607
-
-- code/extensions/vscode-api-tests/package.json
 ---
 
 #### @sbouchet
@@ -216,12 +238,6 @@ https://github.com/che-incubator/che-code/pull/557
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/549
-
-- code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/540 \
 https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394 \
 https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d
@@ -282,12 +298,6 @@ https://github.com/che-incubator/che-code/pull/482
 https://github.com/che-incubator/che-code/pull/476
 
 - code/extensions/package.json
----
-
-#### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/478
-
-- code/package.json
 ---
 
 #### @RomanNikitenko
