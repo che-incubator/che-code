@@ -234,6 +234,36 @@ apply_code_product_changes() {
   
   # now apply again the changes
   override_json_file code/product.json "tab"
+
+  # jq's * operator replaces arrays entirely, so builtInExtensions must be
+  # appended separately instead of going through the add rule
+  local cheExtensions=".rebase/add/code/product.builtInExtensions.json"
+  if [ -f "$cheExtensions" ]; then
+    jq --tab --slurpfile ext "$cheExtensions" '.builtInExtensions += $ext[0]' code/product.json > code/product.json.tmp
+    cat code/product.json.tmp > code/product.json
+    rm code/product.json.tmp
+  fi
+
+  # jq's * merge appends new keys at the end; reorder Che-specific keys
+  # to their expected positions
+  local reorder='
+def insert_before(src_key; before_key):
+  to_entries |
+  (map(select(.key == src_key))[0]) as $src |
+  if $src then
+    map(select(.key != src_key)) |
+    (map(.key) | index(before_key)) as $idx |
+    (if $idx then .[:$idx] + [$src] + .[$idx:] else . + [$src] end) |
+    from_entries
+  else . | from_entries end;
+insert_before("linuxIconName"; "darwinBundleIdentifier") |
+insert_before("extensionEnabledApiProposals"; "defaultChatAgent") |
+insert_before("sendASmile"; "defaultChatAgent") |
+insert_before("extensionsGallery"; "defaultChatAgent")
+'
+  jq --tab "$reorder" code/product.json > code/product.json.tmp
+  cat code/product.json.tmp > code/product.json
+  rm code/product.json.tmp
   
   # resolve the change
   git add code/product.json > /dev/null 2>&1
