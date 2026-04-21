@@ -461,7 +461,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/windowTitle.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts" ]]; then
