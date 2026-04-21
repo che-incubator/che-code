@@ -51,11 +51,10 @@ bash .claude/skills/test-rebase-rules/test-rebase-handler.sh apply_changes code/
 |-------------|---------|
 | Empty diff | Rules produce the exact expected output. **PASS** |
 | Only whitespace/trailing newline differences | Cosmetic difference from jq formatting. **PASS** (noted) |
+| JSON key ordering or indentation differences | jq `*` merge puts added keys at end of objects, or `override_json_file` uses wrong formatting option. Both are cosmetic — JSON semantics unchanged. **WARN** |
 | Missing content in output | Rules don't add something they should. **FAIL** — a rule is missing or broken |
 | Extra content in output | Rules add something unexpected. **FAIL** — a rule is wrong or stale |
 | Wrong values | Override/add/replace rule has incorrect values. **FAIL** |
-| JSON key ordering differences | jq `*` merge puts added keys at end of objects. Known limitation. **FAIL** (cosmetic — JSON semantics unchanged) |
-| Indentation mismatch (spaces vs tabs) | Handler's `override_json_file` uses wrong formatting option. **FAIL** |
 
 When failures occur, diff files are saved at `/tmp/diff-<safe_name>` and error output at `/tmp/error-<safe_name>`.
 
@@ -77,17 +76,15 @@ After running the tests, create `.rebase/rebase-rules-test-report.md` with the f
 
 **Date:** YYYY-MM-DD
 **Upstream version:** release/X.YYY (from CURRENT_UPSTREAM_VERSION in rebase.sh)
-**Summary:** N passed, N failed, N skipped
-
-## Results
-
-| File | Result | Details |
-|------|--------|---------|
-| `code/product.json` | PASS | Exact match |
-| `code/src/server-main.ts` | FAIL | Missing import on line 12 |
-| ... | ... | ... |
+**Summary:** N passed, N warnings, N failed, N skipped
 
 ## Failures
+
+(omit section if count is 0)
+
+| File | Handler | Details |
+|------|---------|---------|
+| `code/some/file.ts` | apply_changes | Diff: 5 lines |
 
 ### `code/some/file.ts`
 
@@ -100,9 +97,23 @@ After running the tests, create `.rebase/rebase-rules-test-report.md` with the f
 
 (repeat for each failure)
 
+## Warnings
+
+(omit section if count is 0)
+
+| File | Details |
+|------|---------|
+| `code/package.json` | JSON key ordering or indentation |
+| `code/some/file.html` | Whitespace or blank line difference |
+
 ## Skipped
 
 - `code/extensions/package-lock.json` — Requires npm install
+
+## Passed
+
+- `code/product.json`
+- `code/src/server-main.ts`
 - ...
 ```
 

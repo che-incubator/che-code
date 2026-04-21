@@ -33,7 +33,8 @@ if [ -z "$UPSTREAM_VERSION" ]; then
 fi
 
 # --- Parse resolve_conflicts to build file→handler mapping ---
-# Output format: file_path|handler_func|arg  (arg is empty or the file_path)
+# Output format: file_path|handler_func|args
+# args is space-separated; $conflictingFile is replaced with the actual file path
 parse_handlers() {
   local in_func=0
   local current_file=""
@@ -50,54 +51,70 @@ parse_handlers() {
       break
     fi
 
-    # Match: "$conflictingFile" == "some/path"
     if [[ "$line" =~ \"\$conflictingFile\"[[:space:]]*==[[:space:]]*\"([^\"]+)\" ]]; then
       current_file="${BASH_REMATCH[1]}"
       continue
     fi
 
-    # Match handler call on the line after the file match
-    if [[ -n "$current_file" && "$line" =~ ^[[:space:]]+(apply_[a-zA-Z_]+) ]]; then
+    if [[ -n "$current_file" && "$line" =~ ^[[:space:]]+(apply_[a-zA-Z_]+)(.*) ]]; then
       local handler="${BASH_REMATCH[1]}"
-      if [[ "$line" =~ \$conflictingFile ]]; then
-        echo "$current_file|$handler|$current_file"
-      else
-        echo "$current_file|$handler|"
-      fi
+      local raw_args="${BASH_REMATCH[2]}"
+      # Replace $conflictingFile with actual path; strip quotes and extra whitespace
+      raw_args="${raw_args//\"\$conflictingFile\"/$current_file}"
+      raw_args="${raw_args//\$conflictingFile/$current_file}"
+      raw_args=$(echo "$raw_args" | sed 's/"//g; s/^[[:space:]]*//; s/[[:space:]]*$//')
+      echo "$current_file|$handler|$raw_args"
       current_file=""
     fi
   done < rebase.sh
 }
 
+# --- Cosmetic diff detection ---
+# Returns 0 if the diff between two JSON files is only key reordering
+# (same keys/values, different order) or indentation changes.
+is_cosmetic_json_diff() {
+  local file_a="$1"
+  local file_b="$2"
+  # If both files are valid JSON and parse to identical objects, the diff is cosmetic
+  local sorted_a sorted_b
+  sorted_a=$(jq -S '.' "$file_a" 2>/dev/null) || return 1
+  sorted_b=$(jq -S '.' "$file_b" 2>/dev/null) || return 1
+  [ "$sorted_a" = "$sorted_b" ]
+}
+
 # --- Test a single file ---
 PASS=0
+WARN=0
 FAIL=0
 SKIP=0
-RESULTS=""
+RESULTS_PASS=""
+RESULTS_WARN=""
+RESULTS_FAIL=""
+RESULTS_SKIP=""
 
 test_file() {
   local file_path="$1"
   local handler="$2"
-  local handler_arg="$3"
+  local handler_args_str="$3"
 
   local upstream_path="${file_path#code/}"
   local safe_name=$(echo "$file_path" | tr '/' '_')
 
   # Skip handlers that require npm install
   if [[ "$handler" =~ package_lock ]]; then
-    RESULTS+="| \`$file_path\` | SKIP | Requires npm install |\n"
+    RESULTS_SKIP+="- \`$file_path\` — Requires npm install\n"
     ((SKIP++))
     return
   fi
 
   if [ ! -f "$file_path" ]; then
-    RESULTS+="| \`$file_path\` | SKIP | File not in working tree |\n"
+    RESULTS_SKIP+="- \`$file_path\` — File not in working tree\n"
     ((SKIP++))
     return
   fi
 
   if ! command git show "upstream-code/$UPSTREAM_VERSION:$upstream_path" > /dev/null 2>&1; then
-    RESULTS+="| \`$file_path\` | SKIP | File not in upstream |\n"
+    RESULTS_SKIP+="- \`$file_path\` — File not in upstream\n"
     ((SKIP++))
     return
   fi
@@ -106,27 +123,31 @@ test_file() {
   command git show "upstream-code/$UPSTREAM_VERSION:$upstream_path" > "$file_path"
 
   local output handler_ok
-  if [ -n "$handler_arg" ]; then
-    output=$(bash "$HANDLER_SCRIPT" "$handler" "$handler_arg" 2>&1) && handler_ok=true || handler_ok=false
+  if [ -n "$handler_args_str" ]; then
+    # shellcheck disable=SC2086
+    output=$(bash "$HANDLER_SCRIPT" "$handler" $handler_args_str 2>&1) && handler_ok=true || handler_ok=false
   else
     output=$(bash "$HANDLER_SCRIPT" "$handler" 2>&1) && handler_ok=true || handler_ok=false
   fi
 
   if [ "$handler_ok" = true ]; then
     if diff "$file_path" "/tmp/expected-$safe_name" > "/tmp/diff-$safe_name" 2>&1; then
-      RESULTS+="| \`$file_path\` | PASS | Exact match |\n"
+      RESULTS_PASS+="- \`$file_path\`\n"
       ((PASS++))
-    elif diff -Z -B "$file_path" "/tmp/expected-$safe_name" > /dev/null 2>&1; then
-      RESULTS+="| \`$file_path\` | PASS | Match (whitespace-only diff) |\n"
-      ((PASS++))
+    elif diff -w -B "$file_path" "/tmp/expected-$safe_name" > /dev/null 2>&1; then
+      RESULTS_WARN+="| \`$file_path\` | Whitespace or blank line difference |\n"
+      ((WARN++))
+    elif is_cosmetic_json_diff "$file_path" "/tmp/expected-$safe_name"; then
+      RESULTS_WARN+="| \`$file_path\` | JSON key ordering or indentation |\n"
+      ((WARN++))
     else
       local diff_lines
       diff_lines=$(wc -l < "/tmp/diff-$safe_name" | tr -d ' ')
-      RESULTS+="| \`$file_path\` | **FAIL** | Diff: ${diff_lines} lines (see /tmp/diff-$safe_name) |\n"
+      RESULTS_FAIL+="| \`$file_path\` | $handler | Diff: ${diff_lines} lines (see /tmp/diff-$safe_name) |\n"
       ((FAIL++))
     fi
   else
-    RESULTS+="| \`$file_path\` | **FAIL** | Handler error: $(echo "$output" | tail -3 | tr '\n' ' ') |\n"
+    RESULTS_FAIL+="| \`$file_path\` | $handler | Handler error: $(echo "$output" | tail -3 | tr '\n' ' ') |\n"
     ((FAIL++))
     echo "$output" > "/tmp/error-$safe_name"
   fi
@@ -173,8 +194,36 @@ echo ""
 echo "========================================="
 echo "## Rebase Rules Test Results"
 echo ""
-echo "| File | Result | Details |"
-echo "|------|--------|---------|"
-echo -e "$RESULTS"
-echo ""
-echo "**Summary: $PASS passed, $FAIL failed, $SKIP skipped**"
+echo "**Summary: $PASS passed, $WARN warnings, $FAIL failed, $SKIP skipped**"
+
+if [ $FAIL -gt 0 ]; then
+  echo ""
+  echo "### Failures"
+  echo ""
+  echo "| File | Handler | Details |"
+  echo "|------|---------|---------|"
+  echo -e "$RESULTS_FAIL"
+fi
+
+if [ $WARN -gt 0 ]; then
+  echo ""
+  echo "### Warnings"
+  echo ""
+  echo "| File | Details |"
+  echo "|------|---------|"
+  echo -e "$RESULTS_WARN"
+fi
+
+if [ $SKIP -gt 0 ]; then
+  echo ""
+  echo "### Skipped"
+  echo ""
+  echo -e "$RESULTS_SKIP"
+fi
+
+if [ $PASS -gt 0 ]; then
+  echo ""
+  echo "### Passed"
+  echo ""
+  echo -e "$RESULTS_PASS"
+fi
