@@ -283,20 +283,6 @@ apply_mangle_index_ts_changes() {
   git add code/build/lib/mangle/index.ts > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/server/node/remoteExtensionHostAgentServer.ts file
-apply_code_vs_server_node_remoteExtensionHostAgentServer_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/server/node/remoteExtensionHostAgentServer.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/server/node/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/server/node/remoteExtensionHostAgentServer.ts
-  
-  # resolve the change
-  git add code/src/vs/server/node/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
-}
-
 # Apply changes on code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts file
 apply_code_vs_extensions_contribution_changes() {
   local filePath="code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts"
@@ -445,7 +431,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/platform/product/common/product.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
-      apply_code_vs_server_node_remoteExtensionHostAgentServer_changes
+      apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
