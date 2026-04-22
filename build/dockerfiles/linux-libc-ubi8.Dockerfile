@@ -71,6 +71,9 @@ RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-m
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
 
+# Run tests for che-commands extension
+RUN npm --prefix extensions/che-commands test
+
 # Compile
 RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \

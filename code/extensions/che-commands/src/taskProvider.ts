@@ -12,6 +12,7 @@
 
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands, V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv } from '@devfile/api';
 import * as vscode from 'vscode';
+import { CompositeTaskBuilder } from './compositeTaskBuilder';
 
 interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
@@ -35,14 +36,30 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 	private async computeTasks(): Promise<vscode.Task[]> {
 		const devfileCommands = await this.fetchDevfileCommands();
 
+		const compositeBuilder = new CompositeTaskBuilder(
+			this.channel,
+			this.terminalExtAPI,
+		);
+
 		const cheTasks: vscode.Task[] = devfileCommands!
-			.filter(command => command.exec?.commandLine)
 			.filter(command => {
 				const importedByAttribute = (command.attributes as any)?.['controller.devfile.io/imported-by'];
 				return !command.attributes || importedByAttribute === undefined || importedByAttribute === 'parent';
 			})
 			.filter(command => !/^init-ssh-agent-command-\d+$/.test(command.id))
-			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env));
+			.map((command) => {
+				if (command.composite?.commands?.length) {
+					return compositeBuilder.build(command, devfileCommands);
+				}
+
+				if (command.exec?.commandLine) {
+					return this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env)
+				}
+
+				return undefined;
+			})
+			.filter((t): t is vscode.Task => !!t);
+
 		return cheTasks;
 	}
 
@@ -82,7 +99,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			let initialVariables = '';
 			if (env) {
 				for (const e of env) {
-					let value = e.value.replaceAll('"', '\\"');
+					let value = e.value.replace(/"/g, '\\"');
 					initialVariables += `export ${e.name}="${value}"; `;
 				}
 			}
