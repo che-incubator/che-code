@@ -388,7 +388,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
@@ -398,7 +398,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/platform/product/common/product.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
@@ -446,7 +446,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
@@ -468,7 +468,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     else
