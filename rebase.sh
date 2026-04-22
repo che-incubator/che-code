@@ -467,6 +467,8 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes
       local upstream_path="${conflictingFile#code/}"
