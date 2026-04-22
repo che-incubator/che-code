@@ -268,3 +268,12 @@ Versions in `.rebase/add/` and `.rebase/override/` rules (`overrides`, `dependen
 - **Do NOT recommend removing or downgrading a version pin** just because upstream now has a different (even newer-looking) version. The pin may enforce a security minimum.
 - If an add-rule override conflicts with an upstream direct dependency (e.g. npm EOVERRIDE), report it as a **conflict requiring user review**, not as "redundant" or "unnecessary".
 - The correct resolution is usually to bump the direct dependency (via `.rebase/override/`) to match the override pin — never the reverse.
+
+## Upstream file protection policy
+
+**NEVER recommend editing vanilla VS Code files** to fix build or type errors. If a compilation error occurs in a file that exists identically in upstream VS Code, upstream compiles successfully — so the error has a deeper root cause in our fork's build environment. Common causes:
+
+- A Che-specific dependency version pin (in `.rebase/add/` or `.rebase/override/`) that overrides a version upstream code depends on (e.g. pinning `@types/ws` to an old version while upstream code uses newer API).
+- A rebase rule that incorrectly strips a needed import or symbol from a modified file.
+
+When the validation report or build errors point to upstream files, flag them as **requiring deeper investigation** — not as files to patch. Needing to edit a non-Che-specific file is a strong signal that the root cause lies elsewhere (dependency pins, rebase rules, or build configuration).

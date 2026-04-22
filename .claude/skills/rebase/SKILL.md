@@ -170,6 +170,8 @@ npm run watch
 
 Wait for compilation to complete. Check for TypeScript errors.
 
+**CRITICAL — Do NOT edit vanilla VS Code files.** If a compilation error occurs in a file that is NOT Che-specific (i.e. it exists identically in upstream VS Code), do NOT fix it by modifying that file. Upstream VS Code compiles successfully, so the error indicates a deeper root cause — typically a Che-specific dependency version pin (in `.rebase/add/` or `.rebase/override/`) that conflicts with what upstream expects, or a Che rebase rule that incorrectly strips a needed import/type. Investigate why the error occurs only in our build before changing any code. Always ask the user before modifying upstream files.
+
 ### Step 13: Run tests (optional but recommended)
 
 ```bash
