@@ -47,16 +47,29 @@ echo "Target upstream SHA:   ${UPSTREAM_SHA}"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Save current branch, create temp branch, set up cleanup trap
+# Save current branch, stash changes, create temp branch, set up cleanup trap
 # ---------------------------------------------------------------------------
 ORIGINAL_BRANCH=$(git branch --show-current 2>/dev/null || git rev-parse HEAD)
+STASH_NEEDED=false
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Stashing uncommitted changes..."
+  git stash push -m "pre-rebase-check-stash" --include-untracked
+  STASH_NEEDED=true
+fi
 
 cleanup() {
   echo ""
   echo "Cleaning up trial merge..."
   git merge --abort 2>/dev/null || true
+  git reset --hard 2>/dev/null || true
+  git clean -fd code/ 2>/dev/null || true
   git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
   git branch -D _pre_rebase_check 2>/dev/null || true
+  if [ "$STASH_NEEDED" = true ]; then
+    echo "Restoring stashed changes..."
+    git stash pop 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
@@ -74,9 +87,12 @@ set -e
 if [ $merge_exit -eq 0 ]; then
   echo "No conflicts detected! Rebase should be clean."
   git reset --hard HEAD~1
-  mkdir -p .rebase
-  cat > .rebase/pre-rebase-report.md << 'REPORT_EOF'
+  local_upstream_short=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
+  mkdir -p .rebase/reports
+  cat > ".rebase/reports/pre-rebase-report-${local_upstream_short}.md" << REPORT_EOF
 # Pre-Rebase Report
+
+> Previous: ${PREVIOUS_UPSTREAM_VERSION} -> Target: ${CURRENT_UPSTREAM_VERSION}
 > No conflicts detected. Rebase should be clean.
 REPORT_EOF
   exit 0
@@ -86,6 +102,32 @@ fi
 # Collect conflicting files
 # ---------------------------------------------------------------------------
 CONFLICTS=$(git diff --name-only --diff-filter=U)
+
+if [ -z "$CONFLICTS" ]; then
+  echo "git subtree pull failed (exit code $merge_exit) but no file-level conflicts found."
+  echo ""
+  echo "Merge output:"
+  echo "$merge_output"
+  echo ""
+  echo "This may indicate a subtree merge strategy issue. Try running rebase.sh directly."
+  UPSTREAM_SHORT=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
+  mkdir -p .rebase/reports
+  cat > ".rebase/reports/pre-rebase-report-${UPSTREAM_SHORT}.md" << REPORT_EOF
+# Pre-Rebase Report
+
+> Previous: ${PREVIOUS_UPSTREAM_VERSION} -> Target: ${CURRENT_UPSTREAM_VERSION}
+> git subtree pull failed (exit $merge_exit) but no file-level conflicts detected.
+> This may indicate a subtree merge strategy issue. Try running rebase.sh directly.
+
+## Merge output
+
+\`\`\`
+${merge_output}
+\`\`\`
+REPORT_EOF
+  exit 1
+fi
+
 CONFLICT_COUNT=$(echo "$CONFLICTS" | wc -l | tr -d ' ')
 
 echo "Found ${CONFLICT_COUNT} conflicting files"
@@ -166,8 +208,9 @@ fi
 # ---------------------------------------------------------------------------
 # Generate report
 # ---------------------------------------------------------------------------
-mkdir -p .rebase
-REPORT=".rebase/pre-rebase-report.md"
+UPSTREAM_SHORT=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
+mkdir -p .rebase/reports
+REPORT=".rebase/reports/pre-rebase-report-${UPSTREAM_SHORT}.md"
 
 cat > "$REPORT" << HEADER_EOF
 # Pre-Rebase Report
@@ -175,7 +218,14 @@ cat > "$REPORT" << HEADER_EOF
 > Previous: ${PREVIOUS_UPSTREAM_VERSION} -> Target: ${CURRENT_UPSTREAM_VERSION}
 > Conflicts found: ${CONFLICT_COUNT}
 
+## All conflicting files (raw list)
+
 HEADER_EOF
+
+for f in $CONFLICTS; do
+  echo "- \`$f\`" >> "$REPORT"
+done
+echo "" >> "$REPORT"
 
 # RULED
 echo "## RULED - has rebase rules and elif entry (${#RULED_FILES[@]} files)" >> "$REPORT"

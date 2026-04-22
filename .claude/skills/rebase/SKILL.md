@@ -61,7 +61,7 @@ Run `pre-rebase.sh` to discover all conflicts and classify them:
 bash pre-rebase.sh
 ```
 
-This performs a trial subtree merge on a temp branch, classifies every conflicting file, and writes `.rebase/pre-rebase-report.md`. The report categorizes files as:
+This performs a trial subtree merge on a temp branch, classifies every conflicting file, and writes `.rebase/reports/pre-rebase-report-<version>.md` (e.g. `pre-rebase-report-1.120.md`). The report starts with a raw list of all conflicting files, then categorizes them as:
 
 - **RULED** — has `.rebase/` rules and an `elif` entry in `resolve_conflicts()`. Ready.
 - **LOCK** — `package-lock.json` files. Auto-handled by the generic `resolve_package_lock` function.
