@@ -216,7 +216,7 @@ export class CompositeTaskBuilder {
 						vscode.tasks.executeTask(childTask);
 					});
 
-					closeEmitter.fire(0);
+					Promise.resolve().then(() => closeEmitter.fire(0));
 				},
 
 				close: () => closeEmitter.fire(0),
@@ -244,7 +244,7 @@ export class CompositeTaskBuilder {
 
 		task.presentationOptions = {
 			reveal: vscode.TaskRevealKind?.Never ?? 0,
-			panel: vscode.TaskPanelKind?.New ?? 3,
+			panel: vscode.TaskPanelKind?.Dedicated ?? 2,
 			close: true,
 			clear: true,
 			focus: false,
