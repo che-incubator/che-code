@@ -263,11 +263,12 @@ To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts()` if/el
 
 ## Version pinning policy
 
-Versions in `.rebase/add/` and `.rebase/override/` rules (`overrides`, `dependencies`, `devDependencies`) are often pinned intentionally for CVE fixes or compatibility reasons. When validating:
+See `.claude/skills/dependency-rebase-rules/SKILL.md` for full dependency handling guidelines. Key points:
 
-- **Do NOT recommend removing or downgrading a version pin** just because upstream now has a different (even newer-looking) version. The pin may enforce a security minimum.
-- If an add-rule override conflicts with an upstream direct dependency (e.g. npm EOVERRIDE), report it as a **conflict requiring user review**, not as "redundant" or "unnecessary".
-- The correct resolution is usually to bump the direct dependency (via `.rebase/override/`) to match the override pin — never the reverse.
+- **Do NOT change any dependency version without asking the user.** Pins exist for CVE fixes or compatibility.
+- Run the dependency pin audit (described in the dependency skill) to classify each pin as ACTIVE, REDUNDANT, or OUTDATED against the target upstream.
+- Report REDUNDANT and OUTDATED pins as findings, but do not auto-remove. Present to the user for confirmation.
+- If an add-rule override conflicts with an upstream direct dependency (npm EOVERRIDE), report it as a **conflict requiring user review**.
 
 ## Upstream file protection policy
 

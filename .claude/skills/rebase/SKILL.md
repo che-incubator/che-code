@@ -71,6 +71,18 @@ This performs a trial subtree merge on a temp branch, classifies every conflicti
 
 If `pre-rebase.sh` exits with code 1, there are NEEDS_RULE files to address.
 
+### Step 3b: Audit dependency pins
+
+**Before proceeding with rule fixes**, audit all dependency version pins in `.rebase/add/` and `.rebase/override/` files against the new upstream. Follow the process in `.claude/skills/dependency-rebase-rules/SKILL.md`:
+
+1. Compare every pinned version against what upstream uses at the target release
+2. Classify each pin as ACTIVE, REDUNDANT, or OUTDATED
+3. Add a "Dependency Pin Audit" section to the pre-rebase report
+4. Present findings to the user and get confirmation before removing/updating any pins
+5. After removing redundant pins, verify lock file stability (`npm install` should produce no changes)
+
+This step prevents build failures caused by outdated pins (e.g. old `@types/*` versions breaking upstream code) and avoids committing unstable lock files.
+
 ### Step 4: Create missing rules (if NEEDS_RULE files exist)
 
 For each NEEDS_RULE file in the report, use the `fix-rebase-rules` skill (read `.claude/skills/fix-rebase-rules/SKILL.md`), specifically its "Handling uncovered Che-specific changes" workflow. This approach works directly from the current file state — no commit SHA needed:
@@ -187,11 +199,17 @@ bash .claude/skills/test-rebase-rules/run-all-tests.sh
 
 This verifies that the rules still produce the correct output against the now-current upstream. All tests should pass.
 
-### Step 15: Update artifacts lock (if applicable)
+### Step 15: Update artifacts lock
+
+After all conflicts are resolved, rules are applied, and the build is verified, regenerate `build/artifacts/artifacts.lock.yaml`. This file pins the download URLs and SHA256 checksums for built-in extensions and tools (ripgrep, js-debug, etc.) and must match what the new upstream ships.
 
 ```bash
 ./build/artifacts/generate.sh
 ```
+
+This updates versions and checksums in `artifacts.lock.yaml` to reflect the new upstream release.
+
+**This must be a separate commit** containing only `build/artifacts/artifacts.lock.yaml` (and any lock files that change as a side effect, like `code/test/mcp/package-lock.json`). Do not mix it with other changes.
 
 ## Troubleshooting
 
