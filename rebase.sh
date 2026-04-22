@@ -13,8 +13,8 @@
 set -e
 set -u
 
-PREVIOUS_UPSTREAM_VERSION="release/1.104"
-CURRENT_UPSTREAM_VERSION="release/1.108"
+PREVIOUS_UPSTREAM_VERSION="release/1.108"
+CURRENT_UPSTREAM_VERSION="release/1.116"
 
 # update $1 json file
 # $2 is the formatting option
@@ -527,6 +527,8 @@ continue_merge() {
 do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
+  # fetch the target upstream branch
+  git fetch upstream-code ${CURRENT_UPSTREAM_VERSION}
   # grab current upstream version
   UPSTREAM_VERSION=$(git rev-parse upstream-code/${CURRENT_UPSTREAM_VERSION})
   #UPSTREAM_VERSION=1.62.2
