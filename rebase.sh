@@ -128,7 +128,7 @@ apply_code_package_changes() {
   override_json_file code/package.json
 
   # apply the replace
-  apply_replace code/package.json
+  apply_multi_line_replace code/package.json
   
   # resolve the change
   git add code/package.json > /dev/null 2>&1
@@ -252,8 +252,8 @@ apply_code_vs_extensions_contribution_changes() {
   # reset the file from what is upstream
   git checkout --theirs "$filePath" > /dev/null 2>&1
 
-  # apply sed-based replacements (entries 0-3 from JSON)
-  apply_replace "$filePath"
+  # apply replacements from JSON
+  apply_multi_line_replace "$filePath"
 
   # apply multiline perl replacement for CommandPalette when clause
   # sed can't handle this because the same when pattern appears on multiple lines;
@@ -283,8 +283,8 @@ apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
   # reset the file from what is upstream
   git checkout --theirs "$filePath" > /dev/null 2>&1
 
-  # apply sed-based replacements from JSON
-  apply_replace "$filePath"
+  # apply replacements from JSON
+  apply_multi_line_replace "$filePath"
 
   # apply multiline perl replacement for super() + cheDisconnectionHandler init
   # sed can't handle this because super() appears in two constructors;
@@ -390,11 +390,11 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/server-main.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/product/common/product.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
@@ -402,27 +402,27 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/web.main.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/serverServices.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/serverEnvironmentService.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/shell/node/shellEnv.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteTerminalChannel.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
@@ -430,17 +430,17 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/windowTitle.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
       apply_code_vs_extensions_contribution_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionManagement.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionGalleryService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then

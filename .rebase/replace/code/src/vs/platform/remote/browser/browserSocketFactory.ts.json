@@ -1,8 +1,6 @@
 [
-
     {
-        "from": "${webSocketSchema}://${(/:/.test(host) && !/\\\\[/.test(host)) ? `[${host}]` : host}:${port}${path}?${query}",
-        "by": "${webSocketSchema}://${window.location.host}${window.location.pathname}?${query}"
+        "from": "${webSocketSchema}://${(/:/.test(host) && !/\\[/.test(host)) ? `[${host}]` : host}:${port}${path}?${query}&skipWebSocketFrames=false",
+        "by": "${webSocketSchema}://${window.location.host}${window.location.pathname}?${query}&skipWebSocketFrames=false"
     }
 ]
-
