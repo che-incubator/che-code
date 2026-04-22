@@ -150,16 +150,18 @@ for file in $CONFLICTS; do
 done
 
 # Check lock files: warn if corresponding package.json is in NEEDS_RULE
-for lockFile in "${LOCK_FILES[@]}"; do
-  dir=$(dirname "$lockFile")
-  pkg_json="$dir/package.json"
-  for nr_file in "${NEEDS_RULE_FILES[@]}"; do
-    if [ "$nr_file" = "$pkg_json" ]; then
-      LOCK_WARNINGS+=("$lockFile -- corresponding $pkg_json has che-specific changes without rules!")
-      break
-    fi
+if [ ${#LOCK_FILES[@]} -gt 0 ] && [ ${#NEEDS_RULE_FILES[@]} -gt 0 ]; then
+  for lockFile in "${LOCK_FILES[@]}"; do
+    dir=$(dirname "$lockFile")
+    pkg_json="$dir/package.json"
+    for nr_file in "${NEEDS_RULE_FILES[@]}"; do
+      if [ "$nr_file" = "$pkg_json" ]; then
+        LOCK_WARNINGS+=("$lockFile -- corresponding $pkg_json has che-specific changes without rules!")
+        break
+      fi
+    done
   done
-done
+fi
 
 # ---------------------------------------------------------------------------
 # Generate report
