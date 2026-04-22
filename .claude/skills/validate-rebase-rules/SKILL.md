@@ -260,3 +260,11 @@ To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts()` if/el
 - Some replace rules use multiline `from`/`by` values with `\\\n` and `\\\t` escapes. Always decode before matching.
 - `code/package.json` can have both replace, add, and override rules simultaneously. Check each independently.
 - `product.json` uses tab indentation (see `override_json_file` call with `"tab"` parameter in `rebase.sh`).
+
+## Version pinning policy
+
+Versions in `.rebase/add/` and `.rebase/override/` rules (`overrides`, `dependencies`, `devDependencies`) are often pinned intentionally for CVE fixes or compatibility reasons. When validating:
+
+- **Do NOT recommend removing or downgrading a version pin** just because upstream now has a different (even newer-looking) version. The pin may enforce a security minimum.
+- If an add-rule override conflicts with an upstream direct dependency (e.g. npm EOVERRIDE), report it as a **conflict requiring user review**, not as "redundant" or "unnecessary".
+- The correct resolution is usually to bump the direct dependency (via `.rebase/override/`) to match the override pin — never the reverse.

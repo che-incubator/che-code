@@ -141,6 +141,9 @@ The smart fallback in `resolve_conflicts()` detects che-specific changes by comp
 **c) npm install failure during package-lock resolution:**
 Network issues or incompatible dependencies. Fix manually and `git add` the resolved file, then `GIT_EDITOR=: git merge --continue`.
 
+**d) npm EOVERRIDE — override conflicts with direct dependency:**
+npm requires that overrides for direct dependencies use the exact same version spec. If an add-rule override (e.g. `overrides.tar: "^7.5.11"`) conflicts with an upstream direct dependency (e.g. `devDependencies.tar: "^7.5.9"`), **do NOT downgrade the override** — it was likely pinned for a CVE fix. Instead, add the override version to `.rebase/override/` for the same dependency section (e.g. `devDependencies.tar: "^7.5.11"` in `.rebase/override/code/package.json`) so the direct dependency matches the override. Always ask the user before changing pinned dependency versions.
+
 ### Step 11: Verify no remaining conflicts
 
 ```bash
