@@ -122,5 +122,5 @@ The report file should be self-contained so it can be reviewed later without re-
 ## Edge cases
 
 - **Package-lock.json handlers** (containing `package_lock` in the name) are automatically skipped — they require `npm install` with network access.
-- **Files not in `resolve_conflicts()`** won't be tested even if they have `.rebase/` rules. The parser only discovers files routed through that function.
+- **Files with `.rebase/` rules** are auto-discovered and tested even if they don't have a dedicated `elif` branch in `resolve_conflicts()`. The parser discovers handlers from the elif chain, `.rebase/replace/` rules, and `.rebase/add/`/`.rebase/override/` package.json files.
 - **Custom handler functions** (e.g. `apply_code_vs_extensions_contribution_changes`) with inline perl/sed are tested as-is — the whole point is testing the real code path.

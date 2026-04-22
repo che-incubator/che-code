@@ -18,6 +18,8 @@ git() {
 }
 export -f git
 
-eval "$(sed -n '1,/^# perform rebase/p' rebase.sh)"
+# Source function definitions from rebase.sh, stripping set -e/-u
+# so the test harness controls error handling.
+eval "$(sed -n '1,/^# perform rebase/p' rebase.sh | grep -v '^set -[eu]$')"
 
 "$@"

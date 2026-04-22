@@ -32,41 +32,86 @@ if [ -z "$UPSTREAM_VERSION" ]; then
   exit 1
 fi
 
-# --- Parse resolve_conflicts to build file→handler mapping ---
+# --- Parse rebase.sh to build file→handler mapping ---
+# Discovers mappings from two sources:
+#   1. elif entries in resolve_conflicts() — parses the if/elif chain
+#   2. .rebase/ rule files not covered by elif entries
 # Output format: file_path|handler_func|args
-# args is space-separated; $conflictingFile is replaced with the actual file path
 parse_handlers() {
-  local in_func=0
-  local current_file=""
+  local elif_list=""
 
+  # 1. Parse resolve_conflicts() elif chain from rebase.sh
+  #    Matches patterns like:  elif [[ "$conflictingFile" == "code/foo.ts" ]]; then
+  #    followed by:              handler_func "$conflictingFile"
+  #    or:                        handler_func_no_args
+  local prev_file=""
   while IFS= read -r line; do
-    if [[ "$line" =~ ^resolve_conflicts\(\) ]]; then
-      in_func=1
+    # Match elif (or if) with file path
+    if [[ "$line" =~ \[\[.*==.*\"([^\"]+)\".*\]\] ]]; then
+      prev_file="${BASH_REMATCH[1]}"
       continue
     fi
-    if [[ $in_func -eq 0 ]]; then
-      continue
+    # Match handler call on the next line
+    if [ -n "$prev_file" ]; then
+      # Strip leading whitespace
+      local trimmed="${line#"${line%%[![:space:]]*}"}"
+      if [ -n "$trimmed" ] && [[ "$trimmed" != elif* ]] && [[ "$trimmed" != fi* ]] && [[ "$trimmed" != else* ]]; then
+        # Extract function name (first word)
+        local handler="${trimmed%% *}"
+        # Extract args: replace $conflictingFile with the actual file path
+        local args="${trimmed#* }"
+        if [ "$args" = "$handler" ]; then
+          args=""
+        else
+          args="${args//\"\$conflictingFile\"/$prev_file}"
+          args="${args//\$conflictingFile/$prev_file}"
+          args="${args//\"/}"
+          args=$(echo $args)
+        fi
+        if ! echo "$elif_list" | grep -qxF "$prev_file"; then
+          echo "$prev_file|$handler|$args"
+          elif_list="${elif_list}${prev_file}"$'\n'
+        fi
+      fi
+      prev_file=""
     fi
-    if [[ "$line" =~ ^\} ]]; then
-      break
-    fi
+  done < <(sed -n '/^resolve_conflicts()/,/^}/p' rebase.sh)
 
-    if [[ "$line" =~ \"\$conflictingFile\"[[:space:]]*==[[:space:]]*\"([^\"]+)\" ]]; then
-      current_file="${BASH_REMATCH[1]}"
+  # 2. Files with .rebase/replace/ rules not in the elif chain
+  find .rebase/replace -name '*.json' -type f 2>/dev/null | sort | while IFS= read -r rule_file; do
+    local code_path="${rule_file#.rebase/replace/}"
+    code_path="${code_path%.json}"
+    if echo "$elif_list" | grep -qxF "$code_path"; then
       continue
     fi
-
-    if [[ -n "$current_file" && "$line" =~ ^[[:space:]]+(apply_[a-zA-Z_]+)(.*) ]]; then
-      local handler="${BASH_REMATCH[1]}"
-      local raw_args="${BASH_REMATCH[2]}"
-      # Replace $conflictingFile with actual path; strip quotes and extra whitespace
-      raw_args="${raw_args//\"\$conflictingFile\"/$current_file}"
-      raw_args="${raw_args//\$conflictingFile/$current_file}"
-      raw_args=$(echo "$raw_args" | sed 's/"//g; s/^[[:space:]]*//; s/[[:space:]]*$//')
-      echo "$current_file|$handler|$raw_args"
-      current_file=""
+    # Determine handler: multiline rules use perl, single-line use sed
+    if jq -r '.[].from' "$rule_file" 2>/dev/null | grep -q $'\n'; then
+      echo "$code_path|apply_changes_multi_line|$code_path"
+    else
+      echo "$code_path|apply_changes|$code_path"
     fi
-  done < rebase.sh
+  done
+
+  # 3. Package.json files with add/override rules not covered above
+  {
+    find .rebase/add -name 'package.json' -type f 2>/dev/null
+    find .rebase/override -name 'package.json' -type f 2>/dev/null
+  } | sort -u | while IFS= read -r rule_file; do
+    local code_path="${rule_file#.rebase/add/}"
+    code_path="${code_path#.rebase/override/}"
+    if echo "$elif_list" | grep -qxF "$code_path"; then
+      continue
+    fi
+    if [ -f ".rebase/replace/${code_path}.json" ]; then
+      continue
+    fi
+    # Detect tab formatting from rebase.sh elif chain or default to empty
+    local fmt=""
+    if grep -q "\"$code_path\"" rebase.sh && grep -A1 "\"$code_path\"" rebase.sh | grep -q '"tab"'; then
+      fmt="tab"
+    fi
+    echo "$code_path|apply_package_changes_by_path|$code_path $fmt"
+  done
 }
 
 # --- Cosmetic diff detection ---
@@ -122,6 +167,12 @@ test_file() {
   cp "$file_path" "/tmp/expected-$safe_name"
   command git show "upstream-code/$UPSTREAM_VERSION:$upstream_path" > "$file_path"
 
+  cleanup_test_file() {
+    cp "/tmp/expected-$safe_name" "$file_path"
+    rm -f "$file_path.bak"
+  }
+  trap cleanup_test_file EXIT
+
   local output handler_ok
   if [ -n "$handler_args_str" ]; then
     # shellcheck disable=SC2086
@@ -152,7 +203,8 @@ test_file() {
     echo "$output" > "/tmp/error-$safe_name"
   fi
 
-  cp "/tmp/expected-$safe_name" "$file_path"
+  cleanup_test_file
+  trap - EXIT
 }
 
 # --- Main ---

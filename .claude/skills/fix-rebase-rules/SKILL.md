@@ -76,7 +76,7 @@ For each rule file to fix, gather context in parallel:
    ```bash
    git show upstream-code/PREVIOUS_UPSTREAM_VERSION:<path-without-code-prefix>
    ```
-5. **Check routing** in `rebase.sh` — grep for the file path in the `resolve_conflicts` function.
+5. **Check routing** in `rebase.sh` — check the `resolve_conflicts()` if/elif chain for a dedicated handler function (e.g. `apply_changes`, `apply_changes_multi_line`, or a custom function like `apply_code_vs_extensions_contribution_changes`).
 
 ### Path mapping
 
@@ -195,17 +195,17 @@ Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / l
 ## Step 7 — Write the fix
 
 1. Update the rule JSON file with corrected `from`/`by` values.
-2. If handler changed, update the routing in `rebase.sh`'s `resolve_conflicts` function.
+2. If handler changed, update the routing in `rebase.sh`'s `resolve_conflicts()` if/elif chain (for custom handlers) or add a `.rebase/replace/` JSON file (for files handled by the smart fallback).
 3. Keep JSON formatting consistent: 2-space indentation, array of objects.
 
 ## Step 8 — Fix routing in `rebase.sh` (if needed)
 
-Check the `resolve_conflicts` function in `rebase.sh`:
+Check `rebase.sh`'s `resolve_conflicts()` function:
 
-- If the file has **no** `elif` branch, add one using the appropriate handler.
-- If switching handler (e.g., sed → perl), update the existing branch.
-- Match the style of neighboring entries.
-- Do not add duplicate branches.
+- For files needing special logic (jq merges, inline perl), add an `elif` branch with a dedicated handler function.
+- For standard replace-rule files, add an `elif` branch calling `apply_changes "$conflictingFile"` (sed, single-line) or `apply_changes_multi_line "$conflictingFile"` (perl, multiline). Create the `.rebase/replace/<path>.json` rule file.
+- The smart fallback in the `else` branch handles files with no che-specific changes automatically (takes upstream), but files WITH che-specific changes need an explicit elif entry or a `.rebase/` rule.
+- Do not add duplicate entries.
 
 ## Step 9 — Validate every fix
 

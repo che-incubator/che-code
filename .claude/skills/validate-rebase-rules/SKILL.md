@@ -253,7 +253,7 @@ For rules routed through `apply_changes` (sed-based handler), check each `by` va
 
 **Example:** A `by` value containing `&&` will produce `<from-text><from-text>` instead of `&&`. The correct encoding is `\\&\\&`.
 
-To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts` routing for the file. If the file is routed to `apply_changes` (which calls `apply_replace`, which uses `sed`), the sed encoding rules apply. If routed to `apply_changes_multi_line` or `apply_multi_line_replace` (perl-based), `&` has no special meaning and needs no escaping.
+To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts()` if/elif chain for the file. If the file is routed to `apply_changes` (which calls `apply_replace`, which uses `sed`), the sed encoding rules apply. If routed to `apply_changes_multi_line` or `apply_multi_line_replace` (perl-based), `&` has no special meaning and needs no escaping. For files not explicitly in the elif chain, check if the `.rebase/replace/` rule JSON contains multiline values (`\n` or `\t`): if yes, the handler will use perl; if no, it will use sed.
 
 ## Edge cases
 

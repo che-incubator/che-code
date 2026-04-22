@@ -173,58 +173,19 @@ apply_package_changes_by_path() {
   git add $filePath > /dev/null 2>&1
 }
 
-# Apply changes on code/extensions/package.json file
-apply_code_extensions_package_lock_changes() {
+# Generic handler for any package-lock.json conflict.
+# Takes upstream lock as base, runs npm install to regenerate.
+# Always runs npm install unconditionally -- safe regardless of whether
+# the package.json has che modifications or not.
+resolve_package_lock() {
+  local lockFile="$1"
+  local dir
+  dir=$(dirname "$lockFile")
 
-  echo "  ⚙️ reworking code/extensions/package-lock.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/extensions/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions
-
-  # resolve the change
-  git add code/extensions/package-lock.json > /dev/null 2>&1
-}
-
-# Apply changes on code/extensions/microsoft-authentication/package-lock.json file
-apply_code_extensions_microsoft_authentication_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/extensions/microsoft-authentication/package-lock.json..."
-  
-  conflicted_files=$(git diff --name-only --diff-filter=U)
-
-  # Check if code/extensions/microsoft-authentication/package.json is in the list
-  if echo "$conflicted_files" | grep -q "^code/extensions/microsoft-authentication/package.json$"; then
-      echo "Conflict for the code/extensions/microsoft-authentication/package.json should be fixed first!"
-      apply_package_changes_by_path "code/extensions/microsoft-authentication/package.json"
-  fi
-  
-  # reset the file from what is upstream
-  git checkout --ours code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions/microsoft-authentication
-
-  # resolve the change
-  git add code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
-}
-
-# Apply changes on code/remote/package-lock.json file
-apply_code_remote_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/remote/package-lock.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/remote/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/remote
-
-  # resolve the change
-  git add code/remote/package-lock.json > /dev/null 2>&1
-
+  echo "  ⚙️ reworking $lockFile..."
+  git checkout --theirs "$lockFile" > /dev/null 2>&1
+  npm install --ignore-scripts --prefix "$dir"
+  git add "$lockFile" > /dev/null 2>&1
 }
 
 # Apply changes on code/product.json file
@@ -389,11 +350,19 @@ apply_changes_multi_line() {
 resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
   local -r conflictingFiles=$(git diff --name-only --diff-filter=U)
+  local lockFiles=()
   
-  # iterate on all conflicting files
+  # iterate on all conflicting files (package-lock.json deferred to second pass)
   IFS=$'\n'
   for conflictingFile in $conflictingFiles; do
     echo " ➡️  Analyzing conflict for $conflictingFile"
+
+    # Defer all package-lock.json to after package.json files are resolved
+    if [[ "$conflictingFile" == *package-lock.json ]]; then
+      lockFiles+=("$conflictingFile")
+      continue
+    fi
+
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
@@ -402,14 +371,10 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/package-lock.json" ]]; then
-      apply_code_extensions_package_lock_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
-      apply_code_extensions_microsoft_authentication_package_lock_changes
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
       apply_github_auth_package_changes
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
@@ -503,9 +468,30 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_multi_line_replace "$conflictingFile"
     else
-      echo "$conflictingFile file cannot be automatically rebased. Aborting"
-      exit 1
+      # Smart fallback: check if the file has che-specific changes
+      local upstream_path="${conflictingFile#code/}"
+      local prev_content
+      local our_content
+      prev_content=$(git show "upstream-code/${PREVIOUS_UPSTREAM_VERSION}:${upstream_path}" 2>/dev/null || echo "")
+      our_content=$(git show "HEAD:${conflictingFile}" 2>/dev/null || echo "")
+
+      if [ "$prev_content" = "$our_content" ]; then
+        echo "  ⚙️ No che-specific changes detected, taking upstream version"
+        git checkout --theirs "$conflictingFile" > /dev/null 2>&1
+        git add "$conflictingFile" > /dev/null 2>&1
+      else
+        echo "$conflictingFile has che-specific changes but no rebase rule!"
+        echo "Run pre-rebase.sh first to identify and fix missing rules."
+        exit 1
+      fi
     fi
+  done
+
+  # Second pass: resolve all package-lock.json files
+  # (all package.json files are now resolved, so npm install sees correct dependencies)
+  for lockFile in "${lockFiles[@]}"; do
+    echo " ➡️  Resolving deferred lock file: $lockFile"
+    resolve_package_lock "$lockFile"
   done
 }
 
