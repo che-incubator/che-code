@@ -371,6 +371,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
+      apply_code_remote_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package.json" ]]; then
