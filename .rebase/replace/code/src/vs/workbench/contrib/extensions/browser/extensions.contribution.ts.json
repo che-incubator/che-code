@@ -5,7 +5,7 @@
   },
   {
     "from": "\t\t\t\tincluded: isNative\n",
-    "by": "\t\t\t\tincluded: isNative \\&\\& !isLinux\n"
+    "by": "\t\t\t\tincluded: isNative && !isLinux\n"
   },
   {
     "from": "\t\t\t\twhen: ContextKeyExpr.and(ResourceContextKey.Extension.isEqualTo('.vsix'), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),\n",
