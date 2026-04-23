@@ -17,7 +17,7 @@
 	},
 	{
 		"from": "import { ServerConnectionToken, ServerConnectionTokenType } from './serverConnectionToken.js';",
-		"by": "import { ServerConnectionToken } from './serverConnectionToken.js';\nimport { DefaultExtensionsInstaller } from './che/defaultExtensionsInstaller.js';"
+		"by": "import { ServerConnectionToken, ServerConnectionTokenType } from './serverConnectionToken.js';\nimport { DefaultExtensionsInstaller } from './che/defaultExtensionsInstaller.js';"
 	},
 	{
 		"from": "\t\tconst extensionGalleryService = accessor.get(IExtensionGalleryService);",
