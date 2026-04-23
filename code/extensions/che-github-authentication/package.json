@@ -46,9 +46,7 @@
   "main": "./out/extension.js",
   "scripts": {
     "compile": "gulp compile-extension:che-github-authentication",
-    "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
     "watch": "gulp watch-extension:che-github-authentication",
-    "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose",
     "vscode:prepublish": "npm run compile",
     "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
   },
@@ -64,8 +62,7 @@
   "devDependencies": {
     "@types/node": "22.x",
     "@types/node-fetch": "^2.5.7",
-    "@types/uuid": "8.0.0",
-    "webpack-node-externals": "^3.0.0"
+    "@types/uuid": "8.0.0"
   },
   "repository": {
     "type": "git",
