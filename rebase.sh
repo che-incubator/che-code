@@ -155,7 +155,7 @@ apply_code_remote_package_changes() {
 apply_package_changes_by_path() {
   local filePath="$1"
   local formattingOption="${2:-}"
-  
+
   if [ -z "$filePath" ]; then
      echo "Can not apply changes for package.json file - the path was not passed"
      exit 1;
@@ -227,7 +227,7 @@ insert_before("extensionsGallery"; "defaultChatAgent")
   jq --tab "$reorder" code/product.json > code/product.json.tmp
   cat code/product.json.tmp > code/product.json
   rm code/product.json.tmp
-  
+
   # resolve the change
   git add code/product.json > /dev/null 2>&1
 }
@@ -351,7 +351,7 @@ resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
   local -r conflictingFiles=$(git diff --name-only --diff-filter=U)
   local lockFiles=()
-  
+
   # iterate on all conflicting files (package-lock.json deferred to second pass)
   IFS=$'\n'
   for conflictingFile in $conflictingFiles; do
@@ -446,6 +446,10 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/resources/server/bin/helpers/browser-linux.sh" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/resources/server/bin/remote-cli/code-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes
