@@ -45,7 +45,7 @@ override_json_file() {
   fi
   
   # delete previous file
-  rm "$filename.tmp"
+  rm -f "$filename.tmp"
 }
 
 escape_litteral() {
@@ -367,8 +367,6 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
@@ -379,14 +377,6 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
       apply_github_auth_package_changes
-    elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile" "tab"
-    elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
@@ -449,21 +439,7 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/npm/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/integration/browser/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
