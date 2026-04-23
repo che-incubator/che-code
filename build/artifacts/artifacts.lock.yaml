@@ -7,9 +7,9 @@ artifacts:
     filename: ms-vscode.js-debug-companion.1.1.3.vsix
     checksum: sha256:7380a890787452f14b2db7835dfa94de538caf358ebc263f9d46dd68ac52de93
   # ms-vscode.js-debug
-  - download_url: https://open-vsx.org/api/ms-vscode/js-debug/1.105.0/file/ms-vscode.js-debug-1.105.0.vsix
-    filename: ms-vscode.js-debug.1.105.0.vsix
-    checksum: sha256:0c45b90342e8aafd4ff2963b4006de64208ca58c2fd01fea7a710fe61dcfd12a
+  - download_url: https://open-vsx.org/api/ms-vscode/js-debug/1.112.0/file/ms-vscode.js-debug-1.112.0.vsix
+    filename: ms-vscode.js-debug.1.112.0.vsix
+    checksum: sha256:c24322931434940938f8cf76ebc3dac1e95a5539b9625b165b6672d7f7eafea8
   # ms-vscode.vscode-js-profile-table
   - download_url: https://open-vsx.org/api/ms-vscode/vscode-js-profile-table/1.0.10/file/ms-vscode.vscode-js-profile-table-1.0.10.vsix
     filename: ms-vscode.vscode-js-profile-table.1.0.10.vsix
@@ -27,10 +27,10 @@ artifacts:
     filename: ripgrep-v13.0.0-4-s390x-unknown-linux-gnu.tar.gz
     checksum: sha256:61fa877688b721897cee33d572b64d8217ef16fe2cecf5f6f899f5ce55870e28
   # ripgrep-x86_64
-  - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-13/ripgrep-v13.0.0-13-x86_64-unknown-linux-musl.tar.gz
-    filename: ripgrep-v13.0.0-13-x86_64-unknown-linux-musl.tar.gz
-    checksum: sha256:324cd645481db1ceda8621409c9151fc58d182b90cc5c428db80edb21fb26df3
+  - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v15.0.1/ripgrep-v15.0.1-x86_64-unknown-linux-musl.tar.gz
+    filename: ripgrep-v15.0.1-x86_64-unknown-linux-musl.tar.gz
+    checksum: sha256:4499958bfd5252df3d9e7504127fd448e4a14fbf2805ef4f14baaa1bcf775188
   # ripgrep-aarch64
-  - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v13.0.0-13/ripgrep-v13.0.0-13-aarch64-unknown-linux-musl.tar.gz
-    filename: ripgrep-v13.0.0-13-aarch64-unknown-linux-musl.tar.gz
-    checksum: sha256:0f308620a428f56fe871fcc5d7c668c461dfed3244f717b698f3e9e92aca037a
+  - download_url: https://github.com/microsoft/ripgrep-prebuilt/releases/download/v15.0.1/ripgrep-v15.0.1-aarch64-unknown-linux-musl.tar.gz
+    filename: ripgrep-v15.0.1-aarch64-unknown-linux-musl.tar.gz
+    checksum: sha256:dd3738a4b6e8df0fb3bc3edc5af352c4c39e0d97ad118a23e5176bdc5d48ba08
