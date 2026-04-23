@@ -13,6 +13,6 @@
     },
     {
         "from": "\t\t\t[AllowedExtensionsConfigKey]: {",
-        "by": "...getCheConfigurationProperties(),\n\t\t\t[AllowedExtensionsConfigKey]: {"
+        "by": "\t\t\t...getCheConfigurationProperties(),\n\t\t\t[AllowedExtensionsConfigKey]: {"
     }
 ]
