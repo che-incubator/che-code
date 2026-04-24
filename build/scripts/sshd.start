@@ -94,6 +94,7 @@ sed -i \
 -e 's|#StrictModes yes|StrictModes=no|' \
 -e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
 -e 's|#LogLevel INFO|LogLevel DEBUG1|' \
+-e 's|/usr/libexec/openssh/sftp-server|internal-sftp|' \
   /sshd/sshd_config
 
 # Provide new path containing host keys
