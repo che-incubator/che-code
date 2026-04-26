@@ -88,8 +88,8 @@ if [ $merge_exit -eq 0 ]; then
   echo "No conflicts detected! Rebase should be clean."
   git reset --hard HEAD~1
   local_upstream_short=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
-  mkdir -p .rebase/reports
-  cat > ".rebase/reports/pre-rebase-report-${local_upstream_short}.md" << REPORT_EOF
+  mkdir -p ".rebase/${local_upstream_short}"
+  cat > ".rebase/${local_upstream_short}/pre-rebase-report.md" << REPORT_EOF
 # Pre-Rebase Report
 
 > Previous: ${PREVIOUS_UPSTREAM_VERSION} -> Target: ${CURRENT_UPSTREAM_VERSION}
@@ -111,8 +111,8 @@ if [ -z "$CONFLICTS" ]; then
   echo ""
   echo "This may indicate a subtree merge strategy issue. Try running rebase.sh directly."
   UPSTREAM_SHORT=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
-  mkdir -p .rebase/reports
-  cat > ".rebase/reports/pre-rebase-report-${UPSTREAM_SHORT}.md" << REPORT_EOF
+  mkdir -p ".rebase/${UPSTREAM_SHORT}"
+  cat > ".rebase/${UPSTREAM_SHORT}/pre-rebase-report.md" << REPORT_EOF
 # Pre-Rebase Report
 
 > Previous: ${PREVIOUS_UPSTREAM_VERSION} -> Target: ${CURRENT_UPSTREAM_VERSION}
@@ -209,8 +209,8 @@ fi
 # Generate report
 # ---------------------------------------------------------------------------
 UPSTREAM_SHORT=$(echo "$CURRENT_UPSTREAM_VERSION" | sed 's|release/||')
-mkdir -p .rebase/reports
-REPORT=".rebase/reports/pre-rebase-report-${UPSTREAM_SHORT}.md"
+mkdir -p ".rebase/${UPSTREAM_SHORT}"
+REPORT=".rebase/${UPSTREAM_SHORT}/pre-rebase-report.md"
 
 cat > "$REPORT" << HEADER_EOF
 # Pre-Rebase Report

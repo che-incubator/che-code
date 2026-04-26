@@ -169,7 +169,7 @@ If upstream's resolved tree already uses a version >= the pin, the override is r
 
 #### Step 4 — Generate a report
 
-Create a standalone audit report at `.rebase/reports/dependency-pin-audit-<version>.md`. This is a separate file (not a section in the pre-rebase report) because it can be large.
+Create a standalone audit report at `.rebase/<version>/dependency-audit.md`. This is a separate file (not a section in the pre-rebase report) because it can be large.
 
 **Report structure:**
 
@@ -179,7 +179,7 @@ Create a standalone audit report at `.rebase/reports/dependency-pin-audit-<versi
 
 For transitive overrides that require `npm ls`, initially mark them as **NEEDS MANUAL CHECK** in the report. After running the checks, update each entry with the actual resolved version and classification. Include the full dependency chain in the Reason column (e.g. `@azure/msal-node→jsonwebtoken@9.0.0→jws@3.2.3`).
 
-For an example of a completed report, see `.rebase/reports/dependency-pin-audit-1.116.md`.
+For an example of a completed report, see `.rebase/1.116/dependency-audit.md` (or the older path `.rebase/reports/dependency-pin-audit-1.116.md`).
 
 #### Step 5 — Present to the user
 

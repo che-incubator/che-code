@@ -1,0 +1,33 @@
+# Configuration for the rebase skill and PR creation.
+# Values here are not version-specific; version-specific settings
+# (PREVIOUS_UPSTREAM_VERSION, CURRENT_UPSTREAM_VERSION) stay in rebase.sh.
+
+# Remote to push the alignment branch and create the PR against
+target_remote: "https://github.com/che-incubator/che-code"
+
+# PR testing configuration
+testing:
+  instance_url: "https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com"
+  sample_repo: "https://github.com/RomanNikitenko/web-nodejs-sample"
+  editor_image_base: "quay.io/che-incubator-pull-requests/che-code"
+  images:
+    - label: "udi"
+      entries:
+        - name: "quay.io/devfile/universal-developer-image:ubi8-latest"
+        - name: "quay.io/devfile/universal-developer-image:ubi9-latest"
+        - name: "quay.io/devfile/universal-developer-image:ubi10-latest"
+    - label: "ubi-8"
+      entries:
+        - name: "registry.access.redhat.com/ubi8-minimal:latest"
+        - name: "registry.access.redhat.com/ubi8-minimal:8.10"
+        - name: "registry.access.redhat.com/ubi8-minimal:8.9"
+    - label: "ubi-9"
+      entries:
+        - name: "registry.access.redhat.com/ubi9-minimal:latest"
+        - name: "registry.access.redhat.com/ubi9-minimal:9.7"
+        - name: "registry.access.redhat.com/ubi9-minimal:9.6"
+    - label: "ubi-10"
+      entries:
+        - name: "registry.access.redhat.com/ubi10-minimal:latest"
+        - name: "registry.access.redhat.com/ubi10-minimal:10.1"
+        - name: "registry.access.redhat.com/ubi10-minimal:10.0"
