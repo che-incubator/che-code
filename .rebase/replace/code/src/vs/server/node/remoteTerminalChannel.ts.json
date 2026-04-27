@@ -1,18 +1,18 @@
 [
     {
         "from": "import { shouldUseEnvironmentVariableCollection } from '../../platform/terminal/common/terminalEnvironment.js';",
-        "by": "import { shouldUseEnvironmentVariableCollection } from '../../platform/terminal/common/terminalEnvironment.js';\\\nimport { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForTerminal } from '../../platform/che/utils.js';"
+        "by": "import { shouldUseEnvironmentVariableCollection } from '../../platform/terminal/common/terminalEnvironment.js';\nimport { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForTerminal } from '../../platform/che/utils.js';"
     },
     {
         "from": "const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, this._environmentService, this._logService, this._configurationService);",
-        "by": "const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, this._environmentService, this._logService, this._configurationService);\\\n\t\tif (shouldStripLdLibraryPathForTerminal()) {\\\n\t\t\tsanitizeLdLibraryPathInEnvironment(baseEnv, message => this._logService.trace(message), 'remoteTerminalChannel:baseEnv');\\\n\t\t}"
+        "by": "const baseEnv = await buildUserEnvironment(args.resolverEnv, !!args.shellLaunchConfig.useShellEnvironment, platform.language, this._environmentService, this._logService, this._configurationService);\n\t\tif (shouldStripLdLibraryPathForTerminal()) {\n\t\t\tsanitizeLdLibraryPathInEnvironment(baseEnv, message => this._logService.trace(message), 'remoteTerminalChannel:baseEnv');\n\t\t}"
     },
     {
-        "from": "// Apply extension environment variable collections to the environment",
-        "by": "if (shouldStripLdLibraryPathForTerminal()) {\\\n\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:terminalEnv');\\\n\t\t}\\\n\\\n\t\t// Apply extension environment variable collections to the environment"
+        "from": "\n\n\t\t// Apply extension environment variable collections to the environment",
+        "by": "\n\t\tif (shouldStripLdLibraryPathForTerminal()) {\n\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:terminalEnv');\n\t\t}\n\n\t\t// Apply extension environment variable collections to the environment"
     },
     {
         "from": "return { ...process.env };",
-        "by": "const env: platform.IProcessEnvironment = { ...process.env };\\\n\t\tif (shouldStripLdLibraryPathForTerminal()) {\\\n\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:getEnvironment');\\\n\t\t}\\\n\t\treturn env;"
+        "by": "const env: platform.IProcessEnvironment = { ...process.env };\n\t\tif (shouldStripLdLibraryPathForTerminal()) {\n\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => this._logService.trace(message), 'remoteTerminalChannel:getEnvironment');\n\t\t}\n\t\treturn env;"
     }
 ]

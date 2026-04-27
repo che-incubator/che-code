@@ -19,8 +19,10 @@ import { IChatSessionsService } from '../../common/chatSessionsService.js';
 import { ChatStatusDashboard } from './chatStatusDashboard.js';
 import { mainWindow } from '../../../../../base/browser/window.js';
 import { disposableWindowInterval } from '../../../../../base/browser/dom.js';
-import { isNewUser, isCompletionsEnabled } from './chatStatus.js';
+import { isNewUser } from './chatStatus.js';
 import product from '../../../../../platform/product/common/product.js';
+import { isCompletionsEnabled } from '../../../../../editor/common/services/completionsEnablement.js';
+import { ChatConfiguration } from '../../common/constants.js';
 
 export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribution {
 
@@ -83,7 +85,7 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 		this._register(this.editorService.onDidActiveEditorChange(() => this.onDidActiveEditorChange()));
 
 		this._register(this.configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration(product.defaultChatAgent.completionsEnablementSetting)) {
+			if (e.affectsConfiguration(product.defaultChatAgent?.completionsEnablementSetting) || e.affectsConfiguration(ChatConfiguration.SignInTitleBarEnabled)) {
 				this.update();
 			}
 		}));
@@ -146,11 +148,17 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 
 			// Signed out
 			else if (this.chatEntitlementService.entitlement === ChatEntitlement.Unknown) {
-				const signedOutWarning = localize('notSignedIn', "Signed out");
-
-				text = `${this.chatEntitlementService.anonymous ? '$(copilot)' : '$(copilot-not-connected)'} ${signedOutWarning}`;
-				ariaLabel = signedOutWarning;
-				kind = 'prominent';
+				const signInExperiment = this.configurationService.getValue<boolean>(ChatConfiguration.SignInTitleBarEnabled);
+				if (signInExperiment) {
+					const signIn = localize('signIn', "Sign In");
+					text = `$(copilot) ${signIn}`;
+					ariaLabel = signIn;
+				} else {
+					const signedOut = localize('notSignedIn', "Signed out");
+					text = `${this.chatEntitlementService.anonymous ? '$(copilot)' : '$(copilot-not-connected)'} ${signedOut}`;
+					ariaLabel = signedOut;
+					kind = 'prominent';
+				}
 			}
 
 			// Free Quota Exceeded
@@ -195,7 +203,7 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 					store.add(token.onCancellationRequested(() => {
 						store.dispose();
 					}));
-					const elem = ChatStatusDashboard.instantiateInContents(this.instantiationService, store);
+					const elem = ChatStatusDashboard.instantiateInContents(this.instantiationService, store, undefined);
 
 					// todo@connor4312/@benibenj: workaround for #257923
 					store.add(disposableWindowInterval(mainWindow, () => {

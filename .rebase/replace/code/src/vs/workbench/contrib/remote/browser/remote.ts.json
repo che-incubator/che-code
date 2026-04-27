@@ -1,34 +1,30 @@
 [
     {
-        "from": "import { getVirtualWorkspaceLocation } from 'vs/platform/workspace/common/virtualWorkspace';",
-        "by": "import { getVirtualWorkspaceLocation } from 'vs/platform/workspace/common/virtualWorkspace';\\\nimport { IRequestService } from 'vs/platform/request/common/request';\\\nimport { CheDisconnectionHandler } from 'vs/workbench/contrib/remote/browser/che/remote';\\\nimport { INotificationService } from 'vs/platform/notification/common/notification';\\\nimport { IEnvironmentVariableService } from 'vs/workbench/contrib/terminal/common/environmentVariable';"
+        "from": "import { getVirtualWorkspaceLocation } from '../../../../platform/workspace/common/virtualWorkspace.js';\n",
+        "by": "import { getVirtualWorkspaceLocation } from '../../../../platform/workspace/common/virtualWorkspace.js';\nimport { IRequestService } from '../../../../platform/request/common/request.js';\nimport { CheDisconnectionHandler } from './che/remote.js';\nimport { INotificationService } from '../../../../platform/notification/common/notification.js';\nimport { IEnvironmentVariableService } from '../../terminal/common/environmentVariable.js';\n"
     },
     {
-        "from": "private _reloadWindowShown: boolean = false;",
-        "by": "private _reloadWindowShown: boolean = false;\\\n\\\tprivate cheDisconnectionHandler: CheDisconnectionHandler;"
+        "from": "\tprivate _reloadWindowShown: boolean = false;\n",
+        "by": "\tprivate _reloadWindowShown: boolean = false;\n\tprivate cheDisconnectionHandler: CheDisconnectionHandler;\n"
     },
     {
-        "from": "\\@IProgressService progressService: IProgressService,",
-        "by": "\\@IProgressService progressService: IProgressService,\\\n\\\t\\\t\\@IRequestService requestService: IRequestService,\\\n\\\t\\\t\\@INotificationService notificationService: INotificationService,\\\n\\\t\\\t\\@IEnvironmentVariableService environmentVariableService: IEnvironmentVariableService,"
+        "from": "\t\t@IProgressService progressService: IProgressService,\n",
+        "by": "\t\t@IProgressService progressService: IProgressService,\n\t\t@IRequestService requestService: IRequestService,\n\t\t@INotificationService notificationService: INotificationService,\n\t\t@IEnvironmentVariableService environmentVariableService: IEnvironmentVariableService,\n"
     },
-	{
-		"from": "super();",
-		"by": "super();\\\n\\\t\\\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);"
-	},
-	{
-		"from": "case PersistentConnectionEventType.ConnectionLost:",
-		"by": "case PersistentConnectionEventType.ConnectionLost:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
-	},
-	{
-		"from": "case PersistentConnectionEventType.ReconnectionWait:",
-		"by": "case PersistentConnectionEventType.ReconnectionWait:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
-	},
-	{
-		"from": "case PersistentConnectionEventType.ReconnectionRunning:",
-		"by": "case PersistentConnectionEventType.ReconnectionRunning:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
-	},
-	{
-		"from": "case PersistentConnectionEventType.ReconnectionPermanentFailure:",
-		"by": "case PersistentConnectionEventType.ReconnectionPermanentFailure:\\\n\\\t\\\t\\\t\\\t\\\t\\\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tbreak;\\\n\\\t\\\t\\\t\\\t\\\t\\\t}"
-	}
+    {
+        "from": "\t\t\t\t\tcase PersistentConnectionEventType.ConnectionLost:\n",
+        "by": "\t\t\t\t\tcase PersistentConnectionEventType.ConnectionLost:\n\t\t\t\t\t\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n"
+    },
+    {
+        "from": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionWait:\n",
+        "by": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionWait:\n\t\t\t\t\t\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n"
+    },
+    {
+        "from": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionRunning:\n",
+        "by": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionRunning:\n\t\t\t\t\t\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n"
+    },
+    {
+        "from": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionPermanentFailure:\n",
+        "by": "\t\t\t\t\tcase PersistentConnectionEventType.ReconnectionPermanentFailure:\n\t\t\t\t\t\tif (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {\n\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t}\n"
+    }
 ]

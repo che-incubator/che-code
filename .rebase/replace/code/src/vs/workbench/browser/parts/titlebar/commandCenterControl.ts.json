@@ -1,6 +1,6 @@
 [
-	{
-		"from": "if (that._windowTitle.isCustomTitleFormat()) {",
-		"by": "const header = that._windowTitle.getHeader();\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\tif (header) {\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\t\\\tlabel = header;\\\n\\\t\\\t\\\t\\\t\\\t\\\t\\\t} else if (that._windowTitle.isCustomTitleFormat()) {"
-	}
+  {
+    "from": "\t\t\t\t\t\t\tif (that._windowTitle.isCustomTitleFormat()) {",
+    "by": "\t\t\t\t\t\t\tconst header = that._windowTitle.getHeader();\n\t\t\t\t\t\t\tif (header) {\n\t\t\t\t\t\t\t\tlabel = header;\n\t\t\t\t\t\t\t} else if (that._windowTitle.isCustomTitleFormat()) {"
+  }
 ]

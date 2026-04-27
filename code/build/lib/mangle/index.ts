@@ -312,6 +312,10 @@ const skippedExportMangledFiles = [
     'telemetry-service',
     'workspace-service',
 
+	// Dynamic imports whose destructuring is not found by findRenameLocations
+	'runInTerminalConfirmationTool',
+	'mockAgent',
+
 	// Module passed around as type
 	'pfs',
 

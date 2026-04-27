@@ -1,14 +1,10 @@
 [
     {
-        "from": "import \\* as http from 'http';",
-        "by": "import { getCheRedirectLocation } from 'vs/server/node/che/webClientServer';\\\nimport \\* as http from 'http';"
+        "from": "import type * as http from 'http';",
+        "by": "import * as http from 'http';\nimport { getCheRedirectLocation } from './che/webClientServer.js';"
     },
     {
-        "from": "responseHeaders['Location'] = newLocation;",
-        "by": "responseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
-    },
-    {
-        "from": "const newLocation = url.format({ pathname: basePath, query: newQuery });",
-        "by": ""
+        "from": "\t\t\tconst newLocation = url.format({ pathname: basePath, query: newQuery });\n\t\t\tresponseHeaders['Location'] = newLocation;",
+        "by": "\t\t\tresponseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
     }
 ]

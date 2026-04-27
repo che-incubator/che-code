@@ -11,11 +11,7 @@
 
 /* eslint-disable header/header */
 
-if (Reflect.metadata === undefined) {
-    // tslint:disable-next-line:no-require-imports no-var-requires
-    require('reflect-metadata');
-}
-
+import 'reflect-metadata';
 import { Container } from 'inversify';
 import * as vscode from 'vscode';
 import { Api } from './api/api';

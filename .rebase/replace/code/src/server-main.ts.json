@@ -1,0 +1,14 @@
+[
+    {
+        "from": "import { product } from './bootstrap-meta.js';",
+        "by": "import { product } from './bootstrap-meta.js';\nimport * as url from 'url';"
+    },
+    {
+        "from": "\t\tif (firstRequest) {\n\t\t\tfirstRequest = false;\n\t\t\tperf.mark('code/server/firstRequest');\n\t\t}\n\t\tconst remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();",
+        "by": "\t\tif (firstRequest) {\n\t\t\tfirstRequest = false;\n\t\t\tperf.mark('code/server/firstRequest');\n\t\t}\n\t\tif (!_remoteExtensionHostAgentServer && req.url && url.parse(req.url, true).pathname === '/healthz') {\n\t\t\tres.writeHead(503, { 'Content-Type': 'text/plain' });\n\t\t\tres.end('Service Unavailable');\n\t\t\treturn;\n\t\t}\n\t\tconst remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();"
+    },
+    {
+        "from": "\t\tif (_remoteExtensionHostAgentServer) {\n\t\t\t_remoteExtensionHostAgentServer.dispose();\n\t\t}",
+        "by": "\t\tif (_remoteExtensionHostAgentServer) {\n\t\t\t_remoteExtensionHostAgentServer.dispose();\n\t\t\t_remoteExtensionHostAgentServer = null;\n\t\t}"
+    }
+]

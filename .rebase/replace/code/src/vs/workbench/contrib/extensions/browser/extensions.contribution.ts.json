@@ -3,20 +3,20 @@
     "from": "import { isNative, isWeb } from '../../../../base/common/platform.js';",
     "by": "import { isLinux, isNative, isWeb } from '../../../../base/common/platform.js';"
   },
-	{
-    "from": "\\\t\\\t\\\t\\\tincluded: isNative",
-    "by": "\\\t\\\t\\\t\\\tincluded: isNative && !isLinux"
+  {
+    "from": "\t\t\t\tincluded: isNative\n",
+    "by": "\t\t\t\tincluded: isNative && !isLinux\n"
   },
   {
-    "from": "\\\t\\\t\\\t\\\twhen: ContextKeyExpr.and(ResourceContextKey.Extension.isEqualTo('.vsix'), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),",
-    "by": "\\\t\\\t\\\t\\\twhen: ContextKeyExpr.and(\\\n\\\t\\\t\\\t\\\t\\\tResourceContextKey.Extension.isEqualTo('.vsix'),\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),\\\n\\\t\\\t\\\t\\\t\\\t\\\tContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),"
+    "from": "\t\t\t\twhen: ContextKeyExpr.and(ResourceContextKey.Extension.isEqualTo('.vsix'), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),\n",
+    "by": "\t\t\t\twhen: ContextKeyExpr.and(\n\t\t\t\t\tResourceContextKey.Extension.isEqualTo('.vsix'),\n\t\t\t\t\tContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),\n\t\t\t\t\t\tContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),\n\t\t\t\t\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),\n"
   },
   {
-    "from": "\\\t\\\t\\\t\\\twhen: ContextKeyExpr.and(ContextKeyExpr.equals('viewContainer', VIEWLET_ID), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),",
-    "by": "\\\t\\\t\\\t\\\twhen: ContextKeyExpr.and(\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.equals('viewContainer', VIEWLET_ID),\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),\\\n\\\t\\\t\\\t\\\t\\\t\\\tContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\\\n\\\t\\\t\\\t\\\t),"
+    "from": "\t\t\t\twhen: ContextKeyExpr.and(ContextKeyExpr.equals('viewContainer', VIEWLET_ID), ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)),\n",
+    "by": "\t\t\t\twhen: ContextKeyExpr.and(\n\t\t\t\t\tContextKeyExpr.equals('viewContainer', VIEWLET_ID),\n\t\t\t\t\tContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),\n\t\t\t\t\t\tContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),\n\t\t\t\t\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\n\t\t\t\t),\n"
   },
   {
-    "from": "//see https://github.com/che-incubator/che-code/pull/528",
-    "by": "\\\t\\\t\\\t\\\twhen: ContextKeyExpr.and(\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(ContextKeyExpr.equals('extensions.install-from-vsix-enabled', true),\\\n\\\t\\\t\\\t\\\t\\\t\\\tContextKeyExpr.equals('extensions.install-from-vsix-enabled', undefined)),\\\n\\\t\\\t\\\t\\\t\\\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\\\n\\\t\\\t\\\t\\\t),"
+    "from": "\t\t\t'extensions.closeExtensionDetailsOnViewChange': {\n",
+    "by": "\t\t\t'extensions.autoInstallRecommendations': {\n\t\t\t\ttype: 'boolean',\n\t\t\t\tdescription: localize('extensionsAutoInstallRecommendations', \"When enabled, the extension recommendations will be installed automatically.\"),\n\t\t\t\tdefault: true\n\t\t\t},\n\t\t\t'extensions.closeExtensionDetailsOnViewChange': {\n"
   }
 ]

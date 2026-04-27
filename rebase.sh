@@ -13,6 +13,9 @@
 set -e
 set -u
 
+PREVIOUS_UPSTREAM_VERSION="release/1.108"
+CURRENT_UPSTREAM_VERSION="release/1.116"
+
 # update $1 json file
 # $2 is the formatting option
 override_json_file() {
@@ -42,7 +45,7 @@ override_json_file() {
   fi
   
   # delete previous file
-  rm "$filename.tmp"
+  rm -f "$filename.tmp"
 }
 
 escape_litteral() {
@@ -125,7 +128,7 @@ apply_code_package_changes() {
   override_json_file code/package.json
 
   # apply the replace
-  apply_replace code/package.json
+  apply_multi_line_replace code/package.json
   
   # resolve the change
   git add code/package.json > /dev/null 2>&1
@@ -147,10 +150,12 @@ apply_code_remote_package_changes() {
 }
 
 # Apply changes on $1 package.json file
-# A path to the file should be passed, for example: code/build/package.json 
+# A path to the file should be passed, for example: code/build/package.json
+# $2 is an optional formatting option passed to override_json_file (e.g. "tab")
 apply_package_changes_by_path() {
   local filePath="$1"
-  
+  local formattingOption="${2:-}"
+
   if [ -z "$filePath" ]; then
      echo "Can not apply changes for package.json file - the path was not passed"
      exit 1;
@@ -162,64 +167,25 @@ apply_package_changes_by_path() {
   git checkout --theirs $filePath > /dev/null 2>&1
   
   # now apply again the changes
-  override_json_file $filePath
+  override_json_file $filePath $formattingOption
   
   # resolve the change
   git add $filePath > /dev/null 2>&1
 }
 
-# Apply changes on code/extensions/package.json file
-apply_code_extensions_package_lock_changes() {
+# Generic handler for any package-lock.json conflict.
+# Takes upstream lock as base, runs npm install to regenerate.
+# Always runs npm install unconditionally -- safe regardless of whether
+# the package.json has che modifications or not.
+resolve_package_lock() {
+  local lockFile="$1"
+  local dir
+  dir=$(dirname "$lockFile")
 
-  echo "  ⚙️ reworking code/extensions/package-lock.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/extensions/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions
-
-  # resolve the change
-  git add code/extensions/package-lock.json > /dev/null 2>&1
-}
-
-# Apply changes on code/extensions/microsoft-authentication/package-lock.json file
-apply_code_extensions_microsoft_authentication_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/extensions/microsoft-authentication/package-lock.json..."
-  
-  conflicted_files=$(git diff --name-only --diff-filter=U)
-
-  # Check if code/extensions/microsoft-authentication/package.json is in the list
-  if echo "$conflicted_files" | grep -q "^code/extensions/microsoft-authentication/package.json$"; then
-      echo "Conflict for the code/extensions/microsoft-authentication/package.json should be fixed first!"
-      apply_package_changes_by_path "code/extensions/microsoft-authentication/package.json"
-  fi
-  
-  # reset the file from what is upstream
-  git checkout --ours code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/extensions/microsoft-authentication
-
-  # resolve the change
-  git add code/extensions/microsoft-authentication/package-lock.json > /dev/null 2>&1
-}
-
-# Apply changes on code/remote/package-lock.json file
-apply_code_remote_package_lock_changes() {
-
-  echo "  ⚙️ reworking code/remote/package-lock.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/remote/package-lock.json > /dev/null 2>&1
-
-  # update package-lock.json
-  npm install --ignore-scripts --prefix code/remote
-
-  # resolve the change
-  git add code/remote/package-lock.json > /dev/null 2>&1
-
+  echo "  ⚙️ reworking $lockFile..."
+  git checkout --theirs "$lockFile" > /dev/null 2>&1
+  npm install --ignore-scripts --prefix "$dir"
+  git add "$lockFile" > /dev/null 2>&1
 }
 
 # Apply changes on code/product.json file
@@ -231,139 +197,113 @@ apply_code_product_changes() {
   
   # now apply again the changes
   override_json_file code/product.json "tab"
-  
+
+  # jq's * operator replaces arrays entirely, so builtInExtensions must be
+  # appended separately instead of going through the add rule
+  local cheExtensions=".rebase/add/code/product.builtInExtensions.json"
+  if [ -f "$cheExtensions" ]; then
+    jq --tab --slurpfile ext "$cheExtensions" '.builtInExtensions += $ext[0]' code/product.json > code/product.json.tmp
+    cat code/product.json.tmp > code/product.json
+    rm code/product.json.tmp
+  fi
+
+  # jq's * merge appends new keys at the end; reorder Che-specific keys
+  # to their expected positions
+  local reorder='
+def insert_before(src_key; before_key):
+  to_entries |
+  (map(select(.key == src_key))[0]) as $src |
+  if $src then
+    map(select(.key != src_key)) |
+    (map(.key) | index(before_key)) as $idx |
+    (if $idx then .[:$idx] + [$src] + .[$idx:] else . + [$src] end) |
+    from_entries
+  else . | from_entries end;
+insert_before("linuxIconName"; "darwinBundleIdentifier") |
+insert_before("extensionEnabledApiProposals"; "defaultChatAgent") |
+insert_before("sendASmile"; "defaultChatAgent") |
+insert_before("extensionsGallery"; "defaultChatAgent")
+'
+  jq --tab "$reorder" code/product.json > code/product.json.tmp
+  cat code/product.json.tmp > code/product.json
+  rm code/product.json.tmp
+
   # resolve the change
   git add code/product.json > /dev/null 2>&1
 }
 
-# Apply changes on code/build/lib/mangle/index.ts file
-apply_mangle_index_ts_changes() {
-  
-  echo "  ⚙️ reworking code/build/lib/mangle/index.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/build/lib/mangle/index.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/build/lib/mangle/index.ts
-
-  # apply changes for the code/build/lib/mangle/index.js file
-  npm run compile --prefix code/build
-  
-  # resolve the change
-  git add code/build/lib/mangle/index.ts > /dev/null 2>&1
-  git add code/build/lib/mangle/index.js > /dev/null 2>&1
+# Apply changes on code/extensions/github-authentication/package.json file
+apply_github_auth_package_changes() {
+  local filePath="code/extensions/github-authentication/package.json"
+  echo "  ⚙️ reworking $filePath..."
+  git checkout --theirs "$filePath" > /dev/null 2>&1
+  override_json_file "$filePath"
+  jq --indent 2 'del(.contributes)' "$filePath" > "$filePath.tmp"
+  cat "$filePath.tmp" > "$filePath"
+  rm "$filePath.tmp"
+  git add "$filePath" > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/platform/remote/browser/browserSocketFactory.ts file
-apply_code_vs_platform_remote_browser_factory_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/platform/remote/browser/browserSocketFactory.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/platform/remote/browser/browserSocketFactory.ts
-  
-  # resolve the change
-  git add code/src/vs/platform/remote/browser/browserSocketFactory.ts > /dev/null 2>&1
-}
+# Apply changes on code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts file
+apply_code_vs_extensions_contribution_changes() {
+  local filePath="code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts"
 
-# Apply changes on code/src/server-main.js file
-apply_code_server-main_changes() {
-  
-  echo "  ⚙️ reworking code/src/server-main.js..."
+  echo "  ⚙️ reworking $filePath..."
   # reset the file from what is upstream
-  git checkout --theirs code/src/server-main.js > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/server-main.js
-  
-  # resolve the change
-  git add code/src/server-main.js > /dev/null 2>&1
-}
+  git checkout --theirs "$filePath" > /dev/null 2>&1
 
-# Apply changes on code/src/vs/server/node/remoteExtensionHostAgentServer.ts file
-apply_code_vs_server_node_remoteExtensionHostAgentServer_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/server/node/remoteExtensionHostAgentServer.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/server/node/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/server/node/remoteExtensionHostAgentServer.ts
-  
-  # resolve the change
-  git add code/src/vs/server/node/remoteExtensionHostAgentServer.ts > /dev/null 2>&1
-}
+  # apply replacements from JSON
+  apply_multi_line_replace "$filePath"
 
-# Apply changes on code/src/vs/server/node/webClientServer.ts file
-apply_code_vs_server_web_client_server_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/server/node/webClientServer.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/server/node/webClientServer.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/server/node/webClientServer.ts
-  
+  # apply multiline perl replacement for CommandPalette when clause
+  # sed can't handle this because the same when pattern appears on multiple lines;
+  # we use multiline context (id: MenuId.CommandPalette) to target only the right one
+  local from=$'\t\t\t\tid: MenuId.CommandPalette,\n\t\t\t\twhen: ContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\n\t\t\t}, {'
+  local by=$'\t\t\t\tid: MenuId.CommandPalette,\n\t\t\t\twhen: ContextKeyExpr.and(\n\t\t\t\t\tContextKeyExpr.or(ContextKeyExpr.equals(\'extensions.install-from-vsix-enabled\', true),\n\t\t\t\t\t\tContextKeyExpr.equals(\'extensions.install-from-vsix-enabled\', undefined)),\n\t\t\t\t\tContextKeyExpr.or(CONTEXT_HAS_LOCAL_SERVER, CONTEXT_HAS_REMOTE_SERVER)\n\t\t\t\t),\n\t\t\t}, {'
+
+  cp "$filePath" "$filePath.bak"
+  REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filePath.bak" > "$filePath"
+  if diff "$filePath" "$filePath.bak" &> /dev/null; then
+    echo "Unable to perform the CommandPalette when clause replace in $filePath"
+    echo "Wanted to check ${from}"
+    cat "$filePath"
+    exit 1
+  fi
+  rm "$filePath.bak"
+
   # resolve the change
-  git add code/src/vs/server/node/webClientServer.ts > /dev/null 2>&1
+  git add "$filePath" > /dev/null 2>&1
 }
 
 # Apply changes on code/src/vs/workbench/contrib/remote/browser/remote.ts file
 apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/remote/browser/remote.ts..."
+  local filePath="code/src/vs/workbench/contrib/remote/browser/remote.ts"
+
+  echo "  ⚙️ reworking $filePath..."
   # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/remote/browser/remote.ts
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/remote/browser/remote.ts > /dev/null 2>&1
-}
+  git checkout --theirs "$filePath" > /dev/null 2>&1
 
-# Apply changes on code/src/vs/workbench/contrib/webview/browser/pre/index.html file
-apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes() {
-  
-  echo "  ⚙️ reworking code/src/vs/workbench/contrib/webview/browser/pre/index.html..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/workbench/contrib/webview/browser/pre/index.html
-  
-  # resolve the change
-  git add code/src/vs/workbench/contrib/webview/browser/pre/index.html > /dev/null 2>&1
-}
+  # apply replacements from JSON
+  apply_multi_line_replace "$filePath"
 
-# Apply changes on code/src/vs/code/browser/workbench/workbench.ts file
-apply_code_src_vs_code_browser_workbench_workbench_changes() {
+  # apply multiline perl replacement for super() + cheDisconnectionHandler init
+  # sed can't handle this because super() appears in two constructors;
+  # we anchor on 'const connection' (the line after the target super()) to target only the right one
+  local from=$'super();\n\t\tconst connection'
+  local by=$'super();\n\t\tthis.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);\n\t\tconst connection'
 
-  echo "  ⚙️ reworking code/src/vs/code/browser/workbench/workbench.ts..."
-  # reset the file from what is upstream
-  git checkout --theirs code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
-  
-  # now apply again the changes
-  apply_replace code/src/vs/code/browser/workbench/workbench.ts
-  
-  # resolve the change
-  git add code/src/vs/code/browser/workbench/workbench.ts > /dev/null 2>&1
-}
-
-# Apply changes on code/extensions/git/src/ssh-askpass.sh file
-apply_code_extensions_git_src_ssh-askpass_changes() {
-
-  echo "  ⚙️ reworking code/extensions/git/src/ssh-askpass.sh..."
-  # reset the file from upstream
-  git checkout --theirs code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
-
-  # apply the changes
-  apply_replace code/extensions/git/src/ssh-askpass.sh
+  cp "$filePath" "$filePath.bak"
+  REPLACE_FROM="$from" REPLACE_BY="$by" perl -0777 -pe 'BEGIN { $from = $ENV{"REPLACE_FROM"}; $by = $ENV{"REPLACE_BY"}; } s|\Q$from\E|$by|g' "$filePath.bak" > "$filePath"
+  if diff "$filePath" "$filePath.bak" &> /dev/null; then
+    echo "Unable to perform the super() cheDisconnectionHandler replace in $filePath"
+    echo "Wanted to check ${from}"
+    cat "$filePath"
+    exit 1
+  fi
+  rm "$filePath.bak"
 
   # resolve the change
-  git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
+  git add "$filePath" > /dev/null 2>&1
 }
 
 # Apply changes for the given file
@@ -410,125 +350,132 @@ apply_changes_multi_line() {
 resolve_conflicts() {
   echo "⚠️  There are conflicting files, trying to solve..."
   local -r conflictingFiles=$(git diff --name-only --diff-filter=U)
-  
-  # iterate on all conflicting files
+  local lockFiles=()
+
+  # iterate on all conflicting files (package-lock.json deferred to second pass)
   IFS=$'\n'
   for conflictingFile in $conflictingFiles; do
     echo " ➡️  Analyzing conflict for $conflictingFile"
+
+    # Defer all package-lock.json to after package.json files are resolved
+    if [[ "$conflictingFile" == *package-lock.json ]]; then
+      lockFiles+=("$conflictingFile")
+      continue
+    fi
+
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/package-lock.json" ]]; then
-      apply_code_extensions_package_lock_changes
+    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
+      apply_code_remote_package_changes
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package-lock.json" ]]; then
-      apply_code_extensions_microsoft_authentication_package_lock_changes
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
-          apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
-          apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
+      apply_github_auth_package_changes
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
-      apply_mangle_index_ts_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
-      apply_code_vs_platform_remote_browser_factory_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/webClientServer.ts" ]]; then
-      apply_code_vs_server_web_client_server_changes
-    elif [[ "$conflictingFile" == "code/src/server-main.js" ]]; then
-      apply_code_server-main_changes
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/server-main.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/product/common/product.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteExtensionHostAgentServer.ts" ]]; then
-      apply_code_vs_server_node_remoteExtensionHostAgentServer_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/remote/browser/remote.ts" ]]; then
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
-      apply_code_vs_workbench_contrib_webview_browser_pre_index_html_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
-      apply_code_src_vs_code_browser_workbench_workbench_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
-      apply_code_extensions_git_src_ssh-askpass_changes
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/web.main.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/serverServices.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/serverEnvironmentService.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/shell/node/shellEnv.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/extensionHostConnection.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteTerminalChannel.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/windowTitle.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_code_vs_extensions_contribution_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionManagement.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/extensionGalleryService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/common/abstractExtensionManagementService.ts" ]]; then
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts" ]]; then
-      apply_multi_line_replace "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/npm/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/integration/browser/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
-      apply_changes "$conflictingFile"
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/helpers/browser-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/remote-cli/code-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
     else
-      echo "$conflictingFile file cannot be automatically rebased. Aborting"
-      exit 1
+      # Smart fallback: check if the file has che-specific changes
+      local upstream_path="${conflictingFile#code/}"
+      local prev_content
+      local our_content
+      prev_content=$(git show "upstream-code/${PREVIOUS_UPSTREAM_VERSION}:${upstream_path}" 2>/dev/null || echo "")
+      our_content=$(git show "HEAD:${conflictingFile}" 2>/dev/null || echo "")
+
+      if [ "$prev_content" = "$our_content" ]; then
+        echo "  ⚙️ No che-specific changes detected, taking upstream version"
+        git checkout --theirs "$conflictingFile" > /dev/null 2>&1
+        git add "$conflictingFile" > /dev/null 2>&1
+      else
+        echo "$conflictingFile has che-specific changes but no rebase rule!"
+        echo "Run pre-rebase.sh first to identify and fix missing rules."
+        exit 1
+      fi
     fi
+  done
+
+  # Second pass: resolve all package-lock.json files
+  # (all package.json files are now resolved, so npm install sees correct dependencies)
+  for lockFile in "${lockFiles[@]}"; do
+    echo " ➡️  Resolving deferred lock file: $lockFile"
+    resolve_package_lock "$lockFile"
   done
 }
 
@@ -550,8 +497,10 @@ continue_merge() {
 do_rebase() {
   
   echo "Using git $(which git) $(git --version)"
+  # fetch the target upstream branch
+  git fetch upstream-code ${CURRENT_UPSTREAM_VERSION}
   # grab current upstream version
-  UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)
+  UPSTREAM_VERSION=$(git rev-parse upstream-code/${CURRENT_UPSTREAM_VERSION})
   #UPSTREAM_VERSION=1.62.2
   
   # Grab current version

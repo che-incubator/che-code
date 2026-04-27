@@ -1,6 +1,6 @@
 [
-	{
-		"from": "this.title.innerText = this.windowTitle.value;",
-		"by": "this.title.innerText = this.windowTitle.getHeader() \\|\\| this.windowTitle.value;"
-	}
+  {
+    "from": "\t\t\t\tthis.title.textContent = this.windowTitle.value;\n\t\t\t\tthis.titleDisposables.add(this.windowTitle.onDidChange(() => {\n\t\t\t\t\tthis.title.textContent = this.windowTitle.value;",
+    "by": "\t\t\t\tthis.title.textContent = this.windowTitle.getHeader() || this.windowTitle.value;\n\t\t\t\tthis.titleDisposables.add(this.windowTitle.onDidChange(() => {\n\t\t\t\t\tthis.title.textContent = this.windowTitle.getHeader() || this.windowTitle.value;"
+  }
 ]

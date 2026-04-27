@@ -77,6 +77,31 @@ export function sanitizeTerminalOutput(output: string): string {
 	return sanitized;
 }
 
+/**
+ * Normalizes command text for UI display by removing unnecessary quote and forward slash
+ * escaping artifacts (for example: \" \' \/) commonly produced in streamed tool-call JSON.
+ */
+export function normalizeTerminalCommandForDisplay(commandLine: string): string {
+	return commandLine.replace(/\\(["'\/])/g, '$1');
+}
+
+/**
+ * Builds a single-line display string for a terminal command, suitable for UI messages.
+ * Normalizes escape artifacts, collapses newlines to spaces, and truncates to 80 characters.
+ */
+export function buildCommandDisplayText(command: string): string {
+	const normalized = normalizeTerminalCommandForDisplay(command).replace(/\r\n|\r|\n/g, ' ');
+	return normalized.length > 80 ? normalized.substring(0, 77) + '...' : normalized;
+}
+
+/**
+ * Normalizes a terminal command for execution by collapsing newlines to spaces.
+ * This prevents multi-line input from being sent as multiple commands via sendText.
+ */
+export function normalizeCommandForExecution(command: string): string {
+	return command.replace(/\r\n|\r|\n/g, ' ').trim();
+}
+
 export function generateAutoApproveActions(commandLine: string, subCommands: string[], autoApproveResult: { subCommandResults: ICommandApprovalResultWithReason[]; commandLineResult: ICommandApprovalResultWithReason }): ToolConfirmationAction[] {
 	const actions: ToolConfirmationAction[] = [];
 
@@ -299,4 +324,36 @@ export function dedupeRules(rules: ICommandApprovalResultWithReason[]): ICommand
 		const sourceText = result.rule.sourceText;
 		return array.findIndex(r => isAutoApproveRule(r.rule) && r.rule.sourceText === sourceText) === index;
 	});
+}
+
+export interface IExtractedCdPrefix {
+	/** The directory path that was extracted from the cd command */
+	directory: string;
+	/** The command to run after the cd */
+	command: string;
+}
+
+/**
+ * Extracts a cd prefix from a command line, returning the directory and remaining command.
+ * Does not check if the directory matches the current cwd - just extracts the pattern.
+ */
+export function extractCdPrefix(commandLine: string, shell: string, os: OperatingSystem): IExtractedCdPrefix | undefined {
+	const isPwsh = isPowerShell(shell, os);
+
+	const cdPrefixMatch = commandLine.match(
+		isPwsh
+			? /^(?:cd(?: \/d)?|Set-Location(?: -Path)?) (?<dir>[^\s]+) ?(?:&&|;)\s+(?<suffix>.+)$/i
+			: /^cd (?<dir>[^\s]+) &&\s+(?<suffix>.+)$/
+	);
+	const cdDir = cdPrefixMatch?.groups?.dir;
+	const cdSuffix = cdPrefixMatch?.groups?.suffix;
+	if (cdDir && cdSuffix) {
+		// Remove any surrounding quotes
+		let cdDirPath = cdDir;
+		if (cdDirPath.startsWith('"') && cdDirPath.endsWith('"')) {
+			cdDirPath = cdDirPath.slice(1, -1);
+		}
+		return { directory: cdDirPath, command: cdSuffix };
+	}
+	return undefined;
 }

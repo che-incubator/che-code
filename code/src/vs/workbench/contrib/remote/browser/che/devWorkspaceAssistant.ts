@@ -66,7 +66,8 @@ export class DevWorkspaceAssistant {
 		const context = await this.requestService.request({
 			type: 'get',
 			url,
-			timeout: 5000
+			timeout: 5000,
+			callSite: 'che-remote.devWorkspaceAssistant',
 		}, CancellationToken.None);
 		const result = await asJson(context);
 		return result as DevWorkspaceLike;

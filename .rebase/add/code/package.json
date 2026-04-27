@@ -1,10 +1,8 @@
 {
     "dependencies": {
-        "ws": "8.2.3",
         "js-yaml": "^4.1.0"
     },
     "devDependencies": {
-        "@types/ws": "8.2.0",
         "@types/js-yaml": "^4.0.5",
         "@types/minimatch": "^3.0.5"
     },
@@ -12,56 +10,9 @@
         "@gulp-sourcemaps/identity-map": {
             "postcss": "8.4.33"
         },
-        "@vscode/test-web": {
-            "path-to-regexp": "8.4.0"
-        },
-        "prebuild-install": {
-            "tar-fs": "2.1.4"
-        },
+        "tar": "^7.5.11",
         "micromatch": "4.0.8",
         "braces": "3.0.3",
-        "@types/node-fetch": {
-            "form-data": "3.0.4"
-        },
-        "@azure/core-http": {
-            "form-data": "4.0.4"
-        },
-        "lodash": "^4.17.23",
-        "ajv": "6.14.0",
-        "ajv-formats": {
-            "ajv": "^8.18.0"
-        },
-        "schema-utils@3": {
-           "ajv": "6.14.0"
-        },
-        "schema-utils@4": {
-           "ajv": "^8.18.0"
-        },
-        "ajv-keywords@3": {
-           "ajv": "6.14.0"
-        },
-        "tar": "^7.5.11",
-        "undici": "^7.24.0",
-        "svgo": "^2.8.1",
-        "@vscode/test-cli": {
-            "minimatch": "^9.0.9"
-        },
-        "@ts-morph/common": {
-            "minimatch": "^7.4.9"
-        },
-        "@vscode/l10n-dev": {
-            "minimatch": "^5.1.9"
-        },
-        "tsec": {
-            "minimatch": "^3.1.5"
-        },
-        "@typescript-eslint/typescript-estree": {
-            "minimatch": "^9.0.9"
-        },
-        "mocha": {
-            "glob": {
-                "minimatch": "^5.1.9"
-            }
-        }
+        "lodash": "^4.17.23"
     }
 }
