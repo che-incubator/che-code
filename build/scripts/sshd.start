@@ -79,11 +79,10 @@ fi
 mkdir /var/tmp/ssh
 chmod 755 /var/tmp/ssh
 
-# Generate SSH Host keys
-$sshd_libdir/ssh-keygen -q -N "" -t dsa -f /var/tmp/ssh/ssh_host_dsa_key && \
-$sshd_libdir/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key && \
-$sshd_libdir/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key && \
-$sshd_libdir/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key
+echo 'Generating SSH host keys ..'
+$sshd_libdir/ssh-keygen -q -N "" -t rsa -b 4096 -f /var/tmp/ssh/ssh_host_rsa_key || true
+$sshd_libdir/ssh-keygen -q -N "" -t ecdsa -f /var/tmp/ssh/ssh_host_ecdsa_key || true
+$sshd_libdir/ssh-keygen -q -N "" -t ed25519 -f /var/tmp/ssh/ssh_host_ed25519_key || true
 
 # Ensure appropriate permissions
 chmod 600 /var/tmp/ssh/ssh_host_* /sshd/sshd_config
@@ -107,10 +106,12 @@ sed -i \
 # Use keys that have been configured, and generate them otherwise
 mkdir -p $HOME/.ssh
 if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
+  echo 'Using pre-configured SSH client key.'
   cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
 else
-  $sshd_libdir/ssh-keygen -q -N '' -t ed25519 -f /sshd/ssh_client_ed25519_key
-  cp /sshd/ssh_client_ed25519_key.pub $HOME/.ssh/authorized_keys
+  echo 'Generating SSH client key..'
+  $sshd_libdir/ssh-keygen -q -N '' -t ecdsa -f /sshd/ssh_client_key
+  cp /sshd/ssh_client_key.pub $HOME/.ssh/authorized_keys
 fi
 
 cp /sshd/sshd_config /var/tmp/ssh/
