@@ -50,7 +50,18 @@ if (process.platform === 'win32') {
 	}
 }
 
-installHeaders();
+installGypDeps();
+
+if (process.env['VSCODE_SKIP_HEADER_INSTALL']) {
+	console.log('Skipping header install (VSCODE_SKIP_HEADER_INSTALL is set).');
+} else {
+	try {
+		installHeaders();
+	} catch (error) {
+		console.warn(`\x1b[33m*** Header installation failed: ${(error as Error).message}\x1b[0m`);
+		console.warn('\x1b[33m*** Continuing without pre-cached headers. Native modules will resolve headers during their own build.\x1b[0m');
+	}
+}
 
 if (process.arch !== os.arch()) {
 	console.error(`\x1b[1;31m*** ARCHITECTURE MISMATCH: The node.js process is ${process.arch}, but your OS architecture is ${os.arch()}. ***\x1b[0;0m`);
@@ -96,17 +107,18 @@ function hasSupportedVisualStudioVersion() {
 	return availableVersions.length;
 }
 
-function installHeaders() {
+function installGypDeps() {
 	const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 	child_process.execSync(`${npm} ${process.env.npm_command || 'ci'}`, {
 		env: process.env,
 		cwd: path.join(import.meta.dirname, 'gyp'),
 		stdio: 'inherit'
 	});
+}
 
-	// The node gyp package got installed using the above npm command using the gyp/package.json
-	// file checked into our repository. So from that point it is safe to construct the path
-	// to that executable
+function installHeaders() {
+	// The node gyp package got installed using installGypDeps() above.
+	// So from that point it is safe to construct the path to that executable.
 	const node_gyp = process.platform === 'win32'
 		? path.join(import.meta.dirname, 'gyp', 'node_modules', '.bin', 'node-gyp.cmd')
 		: path.join(import.meta.dirname, 'gyp', 'node_modules', '.bin', 'node-gyp');
