@@ -54,7 +54,8 @@
     "handlebars": "4.7.9",
     "@eclipse-che/workspace-telemetry-client": {
       "axios": "^0.31.1"
-    }
+    },
+    "follow-redirects": "^1.16.0"
   },
   "repository": {
     "type": "git",
