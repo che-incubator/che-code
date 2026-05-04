@@ -114,7 +114,8 @@ const server = http.createServer((req, res) => {
   User ${username}
   Port 2022
   IdentityFile "$\{HOME\}/.ssh/ssh_client_key"
-  UserKnownHostsFile /dev/null</pre>
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no</pre>
         </div>
         <div class="clipboard">
           <a href="#">
