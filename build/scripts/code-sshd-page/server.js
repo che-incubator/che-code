@@ -37,7 +37,7 @@ const server = http.createServer((req, res) => {
 
     let genKey = "PRIVATE KEY NOT FOUND";
     try {
-      genKey = fs.readFileSync(`/sshd/ssh_client_ed25519_key`, 'utf8');
+      genKey = fs.readFileSync(`/sshd/ssh_client_key`, 'utf8');
     } catch (err) {
      // continue
     }
@@ -113,8 +113,9 @@ const server = http.createServer((req, res) => {
   HostName 127.0.0.1
   User ${username}
   Port 2022
-  IdentityFile "$\{HOME\}/.ssh/ssh_client_ed25519_key"
-  UserKnownHostsFile /dev/null</pre>
+  IdentityFile "$\{HOME\}/.ssh/ssh_client_key"
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no</pre>
         </div>
         <div class="clipboard">
           <a href="#">
@@ -126,7 +127,7 @@ const server = http.createServer((req, res) => {
         </div>
         </div>
         <p>
-        Where <code class="path">$\{HOME\}/.ssh/ssh_client_ed25519_key</code> should be replaced by the absolute path to the private key file on your local system.
+        Where <code class="path">$\{HOME\}/.ssh/ssh_client_key</code> should be replaced by the absolute path to the private key file on your local system.
         </p>
         </li>
       </ol>
