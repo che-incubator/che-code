@@ -286,7 +286,8 @@
       "glob": {
         "minimatch": "^5.1.9"
       }
-    }
+    },
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
   },
   "repository": {
     "type": "git",
