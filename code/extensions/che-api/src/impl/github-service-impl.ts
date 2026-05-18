@@ -10,6 +10,7 @@
 
 /* eslint-disable header/header */
 
+import * as https from 'https';
 import * as k8s from '@kubernetes/client-node';
 import * as fs from 'fs-extra';
 import { inject, injectable } from 'inversify';
@@ -67,6 +68,28 @@ export class GithubServiceImpl implements GithubService {
   }
 
   private async fetchGithubUser(token: string): Promise<{ user: GithubUser; scopes: string[] }> {
+    try {
+      this.logger.info('Github Service: fetching GitHub user using fetch...');
+      const result = await this.fetchGithubUserWithFetch(token);
+      this.logger.info('Github Service: successfully fetched GitHub user using fetch');
+      
+      return result;
+    } catch (fetchError: any) {
+      this.logger.warn(`Github Service: fetch failed: ${fetchError.message}${fetchError.cause ? ` (cause: ${fetchError.cause.message})` : ''}`);
+      try {
+        this.logger.info('Github Service: falling back to https module...');
+        const result = await this.fetchGithubUserWithHttps(token);
+        this.logger.info('Github Service: successfully fetched GitHub user using https fallback');
+        
+        return result;
+      } catch (httpsError: any) {
+        this.logger.error(`Github Service: https fallback also failed: ${httpsError.message}`);
+        throw httpsError;
+      }
+    }
+  }
+
+  private async fetchGithubUserWithFetch(token: string): Promise<{ user: GithubUser; scopes: string[] }> {
     const response = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -81,6 +104,44 @@ export class GithubServiceImpl implements GithubService {
       .map(scope => scope.trim())
       .filter(scope => scope.length > 0);
     return { user, scopes };
+  }
+
+  private fetchGithubUserWithHttps(token: string): Promise<{ user: GithubUser; scopes: string[] }> {
+    return new Promise((resolve, reject) => {
+      const req = https.request('https://api.github.com/user', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'che-code',
+          'Accept': 'application/json',
+        },
+      }, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks).toString();
+          if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`GitHub user request failed: ${res.statusCode} ${res.statusMessage} - ${body}`));
+            return;
+          }
+          try {
+            const user = JSON.parse(body) as GithubUser;
+            const scopesHeader = res.headers['x-oauth-scopes'] ?? '';
+            const scopes = (Array.isArray(scopesHeader) ? scopesHeader[0] : scopesHeader)
+              .split(', ')
+              .map(scope => scope.trim())
+              .filter(scope => scope.length > 0);
+            resolve({ user, scopes });
+          } catch (err) {
+            reject(err);
+          }
+        });
+        res.on('error', reject);
+      });
+      req.setTimeout(60 * 1000);
+      req.on('error', reject);
+      req.end();
+    });
   }
 
   async persistDeviceAuthToken(token: string): Promise<void> {
