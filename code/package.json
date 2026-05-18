@@ -118,7 +118,7 @@
     "vscode-textmate": "^9.3.0",
     "yauzl": "^3.0.0",
     "yazl": "^2.4.3",
-    "ws": "8.2.3",
+    "ws": "8.17.1",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
@@ -224,7 +224,7 @@
     "webpack-stream": "^7.0.0",
     "xml2js": "^0.5.0",
     "yaserver": "^0.4.0",
-    "@types/ws": "8.2.0",
+    "@types/ws": "8.5.14",
     "@types/js-yaml": "^4.0.5",
     "zx": "^8.8.5"
   },

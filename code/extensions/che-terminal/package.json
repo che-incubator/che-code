@@ -42,12 +42,12 @@
     "fs-extra": "^11.2.0",
     "js-yaml": "^4.1.0",
     "vscode-nls": "^5.2.0",
-    "ws": "8.2.3"
+    "ws": "8.17.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
     "@types/js-yaml": "^4.0.5",
-    "@types/ws": "8.2.0"
+    "@types/ws": "8.5.14"
   },
   "repository": {
     "type": "git",
