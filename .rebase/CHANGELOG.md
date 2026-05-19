@@ -433,3 +433,9 @@ https://github.com/che-incubator/che-code/pull/400
 
 - code/extensions/git/src/ssh-askpass.sh
 ---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/695
+
+- code/build/npm/preinstall.ts
+---
