@@ -75,6 +75,10 @@ export class GithubServiceImpl implements GithubService {
       
       return result;
     } catch (fetchError: any) {
+      if (fetchError.httpStatus) {
+        this.logger.warn(`Github Service: fetch failed with HTTP ${fetchError.httpStatus}: ${fetchError.message}`);
+        throw fetchError;
+      }
       this.logger.warn(`Github Service: fetch failed: ${fetchError.message}${fetchError.cause ? ` (cause: ${fetchError.cause.message})` : ''}`);
       try {
         this.logger.info('Github Service: falling back to https module...');
@@ -92,10 +96,13 @@ export class GithubServiceImpl implements GithubService {
   private async fetchGithubUserWithFetch(token: string): Promise<{ user: GithubUser; scopes: string[] }> {
     const response = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(60_000),
     });
     if (!response.ok) {
       const message = await response.text();
-      throw new Error(`GitHub user request failed: ${response.status} ${response.statusText} - ${message}`);
+      const err: any = new Error(`GitHub user request failed: ${response.status} ${response.statusText} - ${message}`);
+      err.httpStatus = response.status;
+      throw err;
     }
     const user = await response.json() as GithubUser;
     const scopesHeader = response.headers.get('x-oauth-scopes') ?? '';
@@ -138,7 +145,9 @@ export class GithubServiceImpl implements GithubService {
         });
         res.on('error', reject);
       });
-      req.setTimeout(60 * 1000);
+      req.setTimeout(60_000, () => {
+        req.destroy(new Error('GitHub user request timed out after 60000ms'));
+      });
       req.on('error', reject);
       req.end();
     });
