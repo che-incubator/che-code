@@ -7,6 +7,11 @@ https://github.com/che-incubator/che-code/pull/711
 
 - code/package.json
 - code/remote/package.json
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/708
+
+- code/package.json
 ---
 
 #### @sbouchet
