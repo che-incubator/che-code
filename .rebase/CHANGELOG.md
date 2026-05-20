@@ -2,6 +2,19 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/698
+
+- code/package.json
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/689
+
+- code/resources/server/bin/helpers/browser-linux.sh
+- code/resources/server/bin/remote-cli/code-linux.sh
+---
+
 #### @vitaliy-guliy
 https://github.com/che-incubator/che-code/commit/a26b43847e5afd707ebffbddef712893fb77a379
 
@@ -409,4 +422,10 @@ https://github.com/che-incubator/che-code/pull/353
 https://github.com/che-incubator/che-code/pull/400
 
 - code/extensions/git/src/ssh-askpass.sh
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/695
+
+- code/build/npm/preinstall.ts
 ---
