@@ -287,7 +287,8 @@
         "minimatch": "^5.1.9"
       }
     },
-    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
+    "flatted": "^3.4.2"
   },
   "repository": {
     "type": "git",
