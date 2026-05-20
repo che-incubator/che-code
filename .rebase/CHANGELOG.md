@@ -3,6 +3,7 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+<<<<<<< CVE-2026-41240
 https://github.com/che-incubator/che-code/pull/705
 
 - code/extensions/markdown-language-features/package.json
@@ -10,6 +11,11 @@ https://github.com/che-incubator/che-code/pull/705
 - code/src/vs/base/browser/dompurify/cgmanifest.json
 - code/src/vs/base/browser/dompurify/dompurify.d.ts
 - code/src/vs/base/browser/dompurify/dompurify.js
+=======
+https://github.com/che-incubator/che-code/pull/708
+
+- code/package.json
+>>>>>>> main
 ---
 
 #### @sbouchet
