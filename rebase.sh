@@ -131,21 +131,6 @@ apply_code_package_changes() {
   git add code/package.json > /dev/null 2>&1
 }
 
-# Apply changes on code/remote/package.json file
-apply_code_remote_package_changes() {
-  
-  echo "  ⚙️ reworking code/remote/package.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/remote/package.json > /dev/null 2>&1
-  
-  # now apply again the changes
-  override_json_file code/remote/package.json
-  
-  # resolve the change
-  git add code/remote/package.json > /dev/null 2>&1
-}
-
 # Apply changes on $1 package.json file
 # A path to the file should be passed, for example: code/build/package.json 
 apply_package_changes_by_path() {
@@ -417,6 +402,8 @@ resolve_conflicts() {
     echo " ➡️  Analyzing conflict for $conflictingFile"
     if [[ "$conflictingFile" == "code/package.json" ]]; then
       apply_code_package_changes
+    elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
