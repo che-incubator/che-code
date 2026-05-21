@@ -351,6 +351,34 @@ apply_code_extensions_git_src_ssh-askpass_changes() {
   git add code/extensions/git/src/ssh-askpass.sh > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/base/browser/dompurify/dompurify.d.ts file
+apply_code_vs_base_browser_dompurify_d_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.d.ts..."
+
+  # reset the file from what is upstream
+  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
+  
+  # don't apply changes, keep ours version totally
+  
+  # resolve the change
+  git add code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
+}
+
+# Apply changes on code/src/vs/base/browser/dompurify/dompurify.js file
+apply_code_vs_base_browser_dompurify_changes() {
+  
+  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.js..."
+
+  # reset the file from what is upstream
+  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
+  
+  # don't apply changes, keep ours version totally
+  
+  # resolve the change
+  git add code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
+}
+
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -496,6 +524,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/mermaid-chat-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/npm/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
@@ -514,6 +544,12 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/remote-cli/code-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/cgmanifest.json" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.d.ts" ]]; then
+      apply_code_vs_base_browser_dompurify_d_changes
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.js" ]]; then
+      apply_code_vs_base_browser_dompurify_changes
     else
       echo "$conflictingFile file cannot be automatically rebased. Aborting"
       exit 1

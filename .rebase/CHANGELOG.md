@@ -3,6 +3,15 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/705
+
+- code/extensions/markdown-language-features/package.json
+- code/extensions/mermaid-chat-features/package.json
+- code/src/vs/base/browser/dompurify/cgmanifest.json
+- code/src/vs/base/browser/dompurify/dompurify.d.ts
+- code/src/vs/base/browser/dompurify/dompurify.js
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/711
 
 - code/package.json
