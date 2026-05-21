@@ -16,7 +16,7 @@ RUN microdnf -y install libsecret openssh-server nss_wrapper-libs \
     microdnf -y clean all --enablerepo='*'
 
 # UBI 9/10
-FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.7
 
 USER 0
 

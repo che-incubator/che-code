@@ -134,21 +134,6 @@ apply_code_package_changes() {
   git add code/package.json > /dev/null 2>&1
 }
 
-# Apply changes on code/remote/package.json file
-apply_code_remote_package_changes() {
-  
-  echo "  ⚙️ reworking code/remote/package.json..."
-  
-  # reset the file from what is upstream
-  git checkout --theirs code/remote/package.json > /dev/null 2>&1
-  
-  # now apply again the changes
-  override_json_file code/remote/package.json
-  
-  # resolve the change
-  git add code/remote/package.json > /dev/null 2>&1
-}
-
 # Apply changes on $1 package.json file
 # A path to the file should be passed, for example: code/build/package.json
 # $2 is an optional formatting option passed to override_json_file (e.g. "tab")
@@ -306,6 +291,34 @@ apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
   git add "$filePath" > /dev/null 2>&1
 }
 
+# Apply changes on code/src/vs/base/browser/dompurify/dompurify.d.ts file
+apply_code_vs_base_browser_dompurify_d_changes() {
+
+  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.d.ts..."
+
+  # reset the file from what is upstream
+  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
+
+  # don't apply changes, keep ours version totally
+
+  # resolve the change
+  git add code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
+}
+
+# Apply changes on code/src/vs/base/browser/dompurify/dompurify.js file
+apply_code_vs_base_browser_dompurify_changes() {
+
+  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.js..."
+
+  # reset the file from what is upstream
+  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
+
+  # don't apply changes, keep ours version totally
+
+  # resolve the change
+  git add code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
+}
+
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -370,7 +383,7 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/remote/package.json" ]]; then
-      apply_code_remote_package_changes
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/product.json" ]]; then
       apply_code_product_changes
     elif [[ "$conflictingFile" == "code/extensions/microsoft-authentication/package.json" ]]; then
@@ -451,6 +464,18 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/remote-cli/code-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/npm/preinstall.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/cgmanifest.json" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.d.ts" ]]; then
+      apply_code_vs_base_browser_dompurify_d_changes
+    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.js" ]]; then
+      apply_code_vs_base_browser_dompurify_changes
+    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/mermaid-chat-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes
       local upstream_path="${conflictingFile#code/}"

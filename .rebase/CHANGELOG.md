@@ -3,6 +3,27 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/705
+
+- code/extensions/markdown-language-features/package.json
+- code/extensions/mermaid-chat-features/package.json
+- code/src/vs/base/browser/dompurify/cgmanifest.json
+- code/src/vs/base/browser/dompurify/dompurify.d.ts
+- code/src/vs/base/browser/dompurify/dompurify.js
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/711
+
+- code/package.json
+- code/remote/package.json
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/708
+
+- code/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/698
 
 - code/package.json
@@ -422,4 +443,10 @@ https://github.com/che-incubator/che-code/pull/353
 https://github.com/che-incubator/che-code/pull/400
 
 - code/extensions/git/src/ssh-askpass.sh
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/695
+
+- code/build/npm/preinstall.ts
 ---
