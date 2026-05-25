@@ -71,10 +71,6 @@ const server = http.createServer((req, res) => {
 
     <div class="border">
       <h4 class="center">Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools" target="_blank">oc client</a> is <a href="https://oauth-openshift${getHostURL()}/oauth/token/request" target="_blank">logged in</a> to your OpenShift cluster</h4>
-      <p class="center">Run <code id="port-forward">oc port-forward -n ${process.env["DEVWORKSPACE_NAMESPACE"]} ${process.env["HOSTNAME"]} 2022:2022</code><a href="#"><svg class="clipboard-img-code" onclick="copyToClipboard('port-forward')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
-            <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
-            <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
-          </svg></a>. This establishes a connection to the workspace.</p>
     </div>
 
     <h4 class="center">Can't open the workspace?</h4>
