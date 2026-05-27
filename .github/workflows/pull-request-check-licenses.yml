@@ -18,7 +18,7 @@ jobs:
     if: ${{ github.base_ref == 'main' }}
     steps:
       - name: Checkout che-code source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Check che-activity-tracker dependencies usage restrictions
         run: |
           docker run --rm -t \

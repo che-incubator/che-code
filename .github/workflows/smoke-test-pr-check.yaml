@@ -28,7 +28,7 @@ jobs:
     steps:
 
       - name: Checkout che-code source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
@@ -174,14 +174,14 @@ jobs:
 
       - name: Store e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: e2e-artifacts
           path: /tmp/tests
       
       - name: Store k8s logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: k8s-logs
           path: /tmp/devworkspace-happy-path-artifacts/admin-che-info
