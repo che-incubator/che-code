@@ -27,7 +27,7 @@ RUN mkdir -p /sshd-staging/ubi8 /sshd-staging/ubi9
 # UBI 8
 COPY --from=sshd-ubi8 /usr/sbin/sshd /usr/bin/ssh-keygen /usr/bin/tar /usr/bin/gzip /usr/bin/which /usr/lib64/libnss_wrapper.so /usr/lib64/libpam.so.0 /sshd-staging/ubi8/
 # UBI 9/10
-RUN cp /usr/sbin/sshd /usr/bin/ssh-keygen /usr/bin/tar /usr/bin/gzip /usr/bin/which /usr/lib64/libnss_wrapper.so /usr/lib64/libpam.so.0 /usr/lib64/libeconf.so.0 /usr/lib64/libcrypt.so.2 /sshd-staging/ubi9/
+RUN cp /usr/sbin/sshd /usr/libexec/openssh/sshd-session /usr/bin/ssh-keygen /usr/bin/tar /usr/bin/gzip /usr/bin/which /usr/lib64/libnss_wrapper.so /usr/lib64/libpam.so.0 /usr/lib64/libeconf.so.0 /usr/lib64/libcrypt.so.2 /sshd-staging/ubi9/
 
 # sshd_config is root:root 600
 RUN chmod 644 /etc/ssh/sshd_config
