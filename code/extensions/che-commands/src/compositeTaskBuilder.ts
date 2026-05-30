@@ -12,6 +12,8 @@
 
 import * as vscode from "vscode";
 import { V1alpha2DevWorkspaceSpecTemplateCommands } from "@devfile/api";
+import { DevfileVariableResolver } from "./devfileVariableResolver";
+import { DevfileVariableContextBuilder } from "./DevfileVariableContextBuilder";
 
 
 type ResolvedExec = {
@@ -26,6 +28,8 @@ export class CompositeTaskBuilder {
 	constructor(
 		private channel: vscode.OutputChannel,
 		private terminalExtAPI: any,
+		private devfile: any,
+		private resolver: DevfileVariableResolver,
 	) {}
 
 	build(
@@ -59,12 +63,24 @@ export class CompositeTaskBuilder {
 			stack.add(cmd.id);
 
 			if (cmd.exec?.commandLine) {
+				const component = this.devfile.components?.find(
+					(c: any) => c.name === cmd.exec.component,
+				);
+
+				const context = DevfileVariableContextBuilder.build(
+					this.devfile,
+					cmd,
+					component,
+				);
+
+				const resolvedExec = this.resolver.resolveObject(cmd.exec, context);
+
 				result.push({
-					command: cmd.exec.commandLine,
-					workdir: cmd.exec.workingDir || "${PROJECT_SOURCE}",
-					component: cmd.exec.component,
-					env: cmd.exec.env,
-					label: cmd.exec.label,
+					command: resolvedExec.commandLine,
+					workdir: resolvedExec.workingDir ?? context.PROJECT_SOURCE ?? "${PROJECT_SOURCE}",
+					component: resolvedExec.component,
+					env: resolvedExec.env,
+					label: resolvedExec.label,
 				});
 				return;
 			}
@@ -186,10 +202,10 @@ export class CompositeTaskBuilder {
 			[],
 		);
 	}
-	
-	buildEnvPrefix(env: any[] | undefined) {
+
+	private buildEnvPrefix(env: any[] | undefined) {
 		if (!env?.length) return "";
-		return env.map(e => `${e.name}="${e.value}"`).join(" ") + " ";
+		return env.map((e) => `${e.name}="${e.value}"`).join(" ") + " ";
 	}
 
 	private buildParallelTasks(
@@ -205,13 +221,7 @@ export class CompositeTaskBuilder {
 
 				open: () => {
 					execs.forEach((e, index) => {
-						const childTask = this.buildExecTask(
-							{
-								...e,
-								command: this.buildEnvPrefix(e.env) + e.command
-							},
-							index === 0
-						);
+						const childTask = this.buildExecTask(e, index === 0);
 
 						vscode.tasks.executeTask(childTask);
 					});

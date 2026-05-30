@@ -486,3 +486,140 @@ describe("Composite — env propagation", () => {
 		expect(term.calls[0].command).toContain('GOPATH="/projects"');
 	});
 });
+
+describe("Composite — variable resolution", () => {
+	test("resolves workingDir from component env in composite commands", async () => {
+		const term = new MockTerminalAPI();
+
+		process.env.PROJECT_SOURCE = "/projects/sample";
+
+		const tasks = await provide(
+			{
+				components: [
+					{
+						name: "tools",
+						container: {
+							env: [
+								{
+									name: "BUILD_ROOT",
+									value: "${PROJECT_SOURCE}/app",
+								},
+							],
+						},
+					},
+				],
+				commands: [
+					{
+						id: "build",
+						exec: {
+							component: "tools",
+							commandLine: "pwd",
+							workingDir: "${BUILD_ROOT}",
+						},
+					},
+					{
+						id: "combo",
+						composite: {
+							commands: ["build"],
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls).toHaveLength(1);
+		expect(term.calls[0].cwd).toBe("/projects/sample/app");
+	});
+
+	test("resolves nested variables in workingDir", async () => {
+		const term = new MockTerminalAPI();
+
+		process.env.PROJECT_SOURCE = "/projects/sample";
+
+		const tasks = await provide(
+			{
+				components: [
+					{
+						name: "tools",
+						container: {
+							env: [
+								{
+									name: "BUILD_ROOT",
+									value: "${PROJECT_SOURCE}/app",
+								},
+								{
+									name: "CACHE_ROOT",
+									value: "${BUILD_ROOT}/cache",
+								},
+							],
+						},
+					},
+				],
+				commands: [
+					{
+						id: "build",
+						exec: {
+							component: "tools",
+							commandLine: "pwd",
+							workingDir: "${CACHE_ROOT}",
+						},
+					},
+					{
+						id: "combo",
+						composite: {
+							commands: ["build"],
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls[0].cwd).toBe("/projects/sample/app/cache");
+	});
+
+	test("resolves workingDir for regular commands", async () => {
+		const term = new MockTerminalAPI();
+
+		process.env.PROJECT_SOURCE = "/projects/sample";
+
+		const tasks = await provide(
+			{
+				components: [
+					{
+						name: "tools",
+						container: {
+							env: [
+								{
+									name: "BUILD_ROOT",
+									value: "${PROJECT_SOURCE}/app",
+								},
+							],
+						},
+					},
+				],
+				commands: [
+					{
+						id: "build",
+						exec: {
+							component: "tools",
+							commandLine: "pwd",
+							workingDir: "${BUILD_ROOT}",
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "build");
+
+		expect(term.calls).toHaveLength(1);
+		expect(term.calls[0].cwd).toBe("/projects/sample/app");
+	});
+});
