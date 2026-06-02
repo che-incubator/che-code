@@ -265,7 +265,7 @@
     "tar": "^7.5.11",
     "micromatch": "4.0.8",
     "braces": "3.0.3",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
     "flatted": "^3.4.2"
   },
