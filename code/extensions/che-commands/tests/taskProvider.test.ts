@@ -261,3 +261,34 @@ describe("Exec command filtering behavior", () => {
 		expect(tasks).toHaveLength(0);
 	});
 });
+
+describe("Runtime variable preservation", () => {
+	test.each(["HOME", "PATH", "USER", "PWD", "SHELL"])(
+		"does not pre-resolve %s from host environment",
+		async (variable) => {
+			process.env[variable] = `/host/${variable.toLowerCase()}`;
+
+			const term = new MockTerminalAPI();
+
+			const tasks = await provide(
+				{
+					commands: [
+						{
+							id: "x",
+							exec: {
+								commandLine: `echo resolved=\${${variable}} actual=$${variable}`,
+							},
+						},
+					],
+				},
+				term,
+			);
+
+			await runFirst(tasks!);
+
+			expect(term.calls[0].command).toBe(
+				`echo resolved=${process.env[variable]} actual=/host/${variable.toLowerCase()}`,
+			);
+		},
+	);
+});

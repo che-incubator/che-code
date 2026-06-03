@@ -15,7 +15,10 @@ export interface VariableContext {
 }
 
 export class DevfileVariableResolver {
-	private static readonly VARIABLE_PATTERN = /\$\{([^}]+)\}/g;
+	private static readonly BRACED_VARIABLE_PATTERN = /\$\{([^}]+)\}/g;
+
+	private static readonly SIMPLE_VARIABLE_PATTERN =
+		/\$([A-Za-z_][A-Za-z0-9_]*)/g;
 
 	public resolve(
 		value: string | undefined,
@@ -27,15 +30,36 @@ export class DevfileVariableResolver {
 
 		let resolved = value;
 
-		for (let i = 0; i < 20; i++) {
+		const maxIterations = Object.keys(context).length || 1;
+		for (let i = 0; i < maxIterations; i++) {
 			let changed = false;
 
 			resolved = resolved.replace(
-				DevfileVariableResolver.VARIABLE_PATTERN,
+				DevfileVariableResolver.BRACED_VARIABLE_PATTERN,
 				(match, variableName) => {
 					const replacement = context[variableName];
 
-					if (replacement === undefined) {
+					if (
+						replacement === undefined ||
+						replacement === match
+					) {
+						return match;
+					}
+
+					changed = true;
+					return replacement;
+				},
+			);
+
+			resolved = resolved.replace(
+				DevfileVariableResolver.SIMPLE_VARIABLE_PATTERN,
+				(match, variableName) => {
+					const replacement = context[variableName];
+
+					if (
+						replacement === undefined ||
+						replacement === match
+					) {
 						return match;
 					}
 
@@ -52,10 +76,7 @@ export class DevfileVariableResolver {
 		return resolved;
 	}
 
-	public resolveObject<T>(
-		value: T,
-		context: VariableContext = {},
-	): T {
+	public resolveObject<T>(value: T, context: VariableContext = {}): T {
 		if (value === null || value === undefined) {
 			return value;
 		}
@@ -65,19 +86,14 @@ export class DevfileVariableResolver {
 		}
 
 		if (Array.isArray(value)) {
-			return value.map(v =>
-				this.resolveObject(v, context),
-			) as T;
+			return value.map((v) => this.resolveObject(v, context)) as T;
 		}
 
 		if (typeof value === "object") {
 			const result: Record<string, unknown> = {};
 
 			for (const [key, val] of Object.entries(value)) {
-				result[key] = this.resolveObject(
-					val,
-					context,
-				);
+				result[key] = this.resolveObject(val, context);
 			}
 
 			return result as T;

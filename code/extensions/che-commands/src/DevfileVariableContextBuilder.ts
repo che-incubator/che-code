@@ -10,50 +10,48 @@
 
 /* eslint-disable header/header */
 
+import { VariableContext } from "./devfileVariableResolver";
+
 export class DevfileVariableContextBuilder {
 	public static build(
 		devfile: any,
 		command?: any,
 		component?: any,
-	): Record<string, string> {
+	): VariableContext {
+		const context: VariableContext = {};
 
-		const context: Record<string, string> = {};
+		// Lowest priority
+		Object.entries(process.env).forEach(([key, value]) => {
+			if (value !== undefined) {
+				context[key] = String(value);
+			}
+		});
 
-		// Process environment variables
-		Object.entries(process.env).forEach(
-			([key, value]) => {
-				if (value !== undefined) {
-					context[key] = String(value);
-				}
-			},
-		);
-
-		// Devfile variables
-		for (const [key, value] of Object.entries(
-			devfile?.variables ?? {},
-		)) {
+		// Devfile variables override process.env
+		for (const [key, value] of Object.entries(devfile?.variables ?? {})) {
 			context[key] = String(value);
 		}
 
-		// Component env
+		// Component env overrides devfile variables
 		for (const env of component?.container?.env ?? []) {
 			context[env.name] = String(env.value);
 		}
 
-		// Command env
+		// Command env overrides component env
 		for (const env of command?.exec?.env ?? []) {
 			context[env.name] = String(env.value);
 		}
 
 		// Resolve nested variables
-		for (let i = 0; i < 20; i++) {
+		const maxIterations = Object.keys(context).length || 1;
+
+		for (let i = 0; i < maxIterations; i++) {
 			let changed = false;
 
 			for (const [key, value] of Object.entries(context)) {
 				const resolved = value.replace(
 					/\$\{([^}]+)\}/g,
-					(match, variableName) =>
-						context[variableName] ?? match,
+					(match, variableName) => context[variableName] ?? match,
 				);
 
 				if (resolved !== value) {

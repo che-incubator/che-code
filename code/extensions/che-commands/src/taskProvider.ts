@@ -36,10 +36,9 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 	}
 
 	private async computeTasks(): Promise<vscode.Task[]> {
-		const devfileCommands = await this.fetchDevfileCommands();
+		const devfile: V1alpha2DevWorkspaceSpecTemplate = await this.cheAPI.getDevfileService().get();
 
-		const devfileService = this.cheAPI.getDevfileService();
-		const devfile = await devfileService.get();
+		const devfileCommands = await this.fetchDevfileCommands(devfile);
 
 		const resolver = new DevfileVariableResolver();
 
@@ -100,9 +99,7 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return cheTasks;
 	}
 
-	private async fetchDevfileCommands(): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
-		const devfileService = this.cheAPI.getDevfileService();
-		const devfile: V1alpha2DevWorkspaceSpecTemplate = await devfileService.get();
+	private async fetchDevfileCommands(devfile: V1alpha2DevWorkspaceSpecTemplate): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
 		if (devfile.commands && devfile.commands.length) {
 			this.channel.appendLine(`Detected ${devfile.commands.length} Command(s) in the flattened Devfile.`);
 			return devfile.commands;
