@@ -11,6 +11,7 @@
 USER_ID=$(id -u)
 
 sshd_libdir=
+use_sshd_session_path=0
 . /etc/os-release
 case $VERSION_ID in
   "8"*)
@@ -20,14 +21,17 @@ case $VERSION_ID in
   "9"*)
   sshd_libdir=/sshd/ubi9
   export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  use_sshd_session_path=1
   ;;
   "10"*)
   sshd_libdir=/sshd/ubi9
   export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  use_sshd_session_path=1
   ;;
   *)
   sshd_libdir=/sshd/ubi9
   export LD_PRELOAD=$sshd_libdir/libeconf.so.0:$sshd_libdir/libpam.so.0:$sshd_libdir/libcrypt.so.2
+  use_sshd_session_path=1
   ;;
 esac
 
@@ -95,6 +99,16 @@ sed -i \
 -e 's|#LogLevel INFO|LogLevel DEBUG1|' \
 -e 's|/usr/libexec/openssh/sftp-server|internal-sftp|' \
   /sshd/sshd_config
+
+# OpenSSH 9.8+
+if [ $use_sshd_session_path -eq 1 ]; then
+  grep -q 'SshdSessionPath' /sshd/sshd_config
+  if [ $? -eq 0 ]; then
+    sed -i "s|SshdSessionPath .*|SshdSessionPath $sshd_libdir/sshd-session|" /sshd/sshd_config
+  else
+    echo "SshdSessionPath $sshd_libdir/sshd-session" >> /sshd/sshd_config
+  fi
+fi
 
 # Provide new path containing host keys
 sed -i \

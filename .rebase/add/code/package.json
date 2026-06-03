@@ -26,7 +26,7 @@
         "@azure/core-http": {
             "form-data": "4.0.4"
         },
-        "lodash": "^4.17.23",
+        "lodash": "^4.18.1",
         "ajv": "6.14.0",
         "ajv-formats": {
             "ajv": "^8.18.0"
