@@ -1,0 +1,14 @@
+[
+  {
+    "from": "\tcolor: var(--vscode-titleBar-activeForeground);\n\tbackground-color: var(--vscode-titleBar-activeBackground);\n\tborder-bottom: 1px solid var(--vscode-titleBar-border, transparent);",
+    "by": "\tcolor: var(--vscode-editorGroupHeader-tabsForeground, var(--vscode-foreground));\n\tbackground-color: var(--vscode-editorGroupHeader-tabsBackground);\n\tborder-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, transparent);"
+  },
+  {
+    "from": "\t\tcolor: var(--vscode-titleBar-activeForeground);\n\t\toverflow: hidden;",
+    "by": "\t\tcolor: inherit;\n\t\toverflow: hidden;"
+  },
+  {
+    "from": "\t\t\tbackground-color: var(--vscode-titleBar-activeForeground);\n\t\t\topacity: 0.3;",
+    "by": "\t\t\tbackground-color: currentColor;\n\t\t\topacity: 0.3;"
+  }
+]

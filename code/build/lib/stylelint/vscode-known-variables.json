@@ -26,6 +26,7 @@
 		"--vscode-agentSessionSelectedBadge-border",
 		"--vscode-agentSessionSelectedUnfocusedBadge-border",
 		"--vscode-agentStatusIndicator-background",
+		"--vscode-agentStatusIndicator-labelForeground",
 		"--vscode-badge-background",
 		"--vscode-badge-foreground",
 		"--vscode-banner-background",

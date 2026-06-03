@@ -1388,7 +1388,10 @@ export class AgentTitleBarStatusWidget extends BaseActionViewItem {
 
 		// Base label: custom title, workspace name, or file name when tabs are hidden
 		let label = this._windowTitle.workspaceName;
-		if (this._windowTitle.isCustomTitleFormat()) {
+		const header = this._windowTitle.getHeader();
+		if (header) {
+			label = header;
+		} else if (this._windowTitle.isCustomTitleFormat()) {
 			label = this._windowTitle.getWindowTitle();
 		} else if (!label && this.editorGroupsService.partOptions.showTabs === 'none') {
 			label = this._windowTitle.fileName ?? '';

@@ -438,6 +438,16 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/agentSessions/experiments/agentTitleBarStatusWidget.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/agentSessions/experiments/media/agenttitlebarstatuswidget.css" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/common/theme.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/lib/stylelint/vscode-known-variables.json" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/editor/media/modalEditorPart.css" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/extensions/browser/extensions.contribution.ts" ]]; then
       apply_code_vs_extensions_contribution_changes
     elif [[ "$conflictingFile" == "code/src/vs/platform/extensionManagement/node/extensionManagementService.ts" ]]; then

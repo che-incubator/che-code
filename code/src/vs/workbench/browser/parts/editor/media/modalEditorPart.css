@@ -90,9 +90,9 @@
 	height: 32px;
 	min-height: 32px;
 	padding: 0 8px 0 10px;
-	color: var(--vscode-titleBar-activeForeground);
-	background-color: var(--vscode-titleBar-activeBackground);
-	border-bottom: 1px solid var(--vscode-titleBar-border, transparent);
+	color: var(--vscode-editorGroupHeader-tabsForeground, var(--vscode-foreground));
+	background-color: var(--vscode-editorGroupHeader-tabsBackground);
+	border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, transparent);
 
 	/* Modal Editor Sidebar Toggle */
 	.modal-editor-sidebar-toggle {
@@ -107,7 +107,7 @@
 		grid-column: 2;
 		font-size: 12px;
 		font-weight: 500;
-		color: var(--vscode-titleBar-activeForeground);
+		color: inherit;
 		overflow: hidden;
 
 		.monaco-icon-label {
@@ -185,7 +185,7 @@
 			width: 1px;
 			height: 16px;
 			margin: 0 4px;
-			background-color: var(--vscode-titleBar-activeForeground);
+			background-color: currentColor;
 			opacity: 0.3;
 		}
 	}

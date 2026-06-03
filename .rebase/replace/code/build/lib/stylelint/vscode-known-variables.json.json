@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\t\t\"--vscode-agentStatusIndicator-background\",\n\t\t\"--vscode-badge-background\",",
+    "by": "\t\t\"--vscode-agentStatusIndicator-background\",\n\t\t\"--vscode-agentStatusIndicator-labelForeground\",\n\t\t\"--vscode-badge-background\","
+  }
+]

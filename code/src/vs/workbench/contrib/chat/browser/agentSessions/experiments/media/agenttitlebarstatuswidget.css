@@ -113,7 +113,7 @@
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	opacity: 0.6;
+	color: var(--vscode-agentStatusIndicator-labelForeground);
 }
 
 /* Compact mode: left-aligned label, no icon */

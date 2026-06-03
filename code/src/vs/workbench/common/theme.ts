@@ -717,6 +717,12 @@ export const COMMAND_CENTER_FOREGROUND = registerColor(
 	localize('commandCenter-foreground', "Foreground color of the command center"),
 	false
 );
+export const AGENT_STATUS_INDICATOR_LABEL_FOREGROUND = registerColor(
+	'agentStatusIndicator.labelForeground',
+	transparent(COMMAND_CENTER_FOREGROUND, 0.6),
+	localize('agentStatusIndicator-labelForeground', "Foreground color of the agent status indicator label in the titlebar. Defaults to a muted version of the command center foreground."),
+	false
+);
 export const COMMAND_CENTER_ACTIVEFOREGROUND = registerColor(
 	'commandCenter.activeForeground',
 	MENUBAR_SELECTION_FOREGROUND,

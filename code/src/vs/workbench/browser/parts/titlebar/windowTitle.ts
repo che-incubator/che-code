@@ -140,6 +140,10 @@ export class WindowTitle extends Disposable {
 		if (affectsTitleConfiguration || event.affectsConfiguration(WindowSettingNames.titleSeparator)) {
 			this.titleUpdater.schedule();
 		}
+
+		if (event.affectsConfiguration(WindowSettingNames.header)) {
+			this.onDidChangeEmitter.fire();
+		}
 	}
 
 	private checkTitleVariables(): void {
@@ -409,8 +413,7 @@ export class WindowTitle extends Disposable {
 	}
 
 	getHeader(): string | undefined{
-		const header = this.configurationService.inspect<string>(WindowSettingNames.header);
-		return header.value;
+		return this.configurationService.getValue<string>(WindowSettingNames.header);
 	}
 
 	isCustomTitleFormat(): boolean {
