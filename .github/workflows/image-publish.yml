@@ -45,7 +45,7 @@ jobs:
       - name: Compress image to a file
         run: docker save linux-${{matrix.dist}}-${{env.arch}} | gzip > linux-${{matrix.dist}}-${{env.arch}}.tgz
       - name: Upload image artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: linux-${{matrix.dist}}-${{env.arch}}
           path: linux-${{matrix.dist}}-${{env.arch}}.tgz
@@ -81,7 +81,7 @@ jobs:
             echo "tag_suffix=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
           fi
       - name: Download image artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           # Downloads all platform-specific images: linux-{dist}-{arch}.tgz
           # Matches artifacts uploaded by the 'build' job above

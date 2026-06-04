@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
 
       - name: Download Pull Request Number artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: pull-request-number
           run-id: ${{ github.event.workflow_run.id }}
@@ -56,7 +56,7 @@ jobs:
           docker system prune -af
 
       - name: Download che-code docker image artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: che-*
           merge-multiple: true

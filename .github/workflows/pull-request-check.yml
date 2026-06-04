@@ -68,7 +68,7 @@ jobs:
       - name: Compress image to a file
         run: docker save linux-${{matrix.dist}}-${{env.arch}} | gzip > linux-${{matrix.dist}}-${{env.arch}}.tgz
       - name: Upload image artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: linux-${{matrix.dist}}-${{env.arch}}
           path: linux-${{matrix.dist}}-${{env.arch}}.tgz
@@ -94,7 +94,7 @@ jobs:
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Download editor artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: linux-*
           merge-multiple: true
@@ -125,7 +125,7 @@ jobs:
       - name: Compress image to a file
         run: docker save che-code-${{env.arch}} | gzip > che-code-${{env.arch}}.tgz
       - name: Upload image artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: che-code-${{env.arch}}
           path: che-code-${{env.arch}}.tgz
@@ -133,7 +133,7 @@ jobs:
         run: echo "${{ github.event.number }}" > PR_NUMBER
       # Upload PR number artifact only once
       - name: Upload PR Number artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ env.arch == 'amd64' }}
         with:
           name: pull-request-number
@@ -172,7 +172,7 @@ jobs:
           docker save che-dev | gzip > che-dev.tgz
 
       - name: Upload che-dev docker image artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: che-dev
           path: che-dev.tgz
