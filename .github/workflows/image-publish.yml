@@ -83,6 +83,8 @@ jobs:
       - name: Download image artifacts
         uses: actions/download-artifact@v6
         with:
+          # Downloads all platform-specific images: linux-{dist}-{arch}.tgz
+          # Matches artifacts uploaded by the 'build' job above
           pattern: linux-*-${{env.arch}}
           merge-multiple: true
           path: .
