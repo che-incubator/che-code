@@ -34,7 +34,7 @@ jobs:
         name: "Setup Node"
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version-file: 'code/.nvmrc'
       -
         name: Check existing tags
         run: |
