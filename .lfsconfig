@@ -1,0 +1,2 @@
+[lfs]
+	fetchexclude = code/extensions/copilot/test/simulation/cache/**
