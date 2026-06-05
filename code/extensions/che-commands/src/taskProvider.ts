@@ -15,6 +15,7 @@ import * as vscode from 'vscode';
 import { CompositeTaskBuilder } from './compositeTaskBuilder';
 import { DevfileVariableResolver } from './devfileVariableResolver';
 import { DevfileVariableContextBuilder } from './DevfileVariableContextBuilder';
+import { EnvUtils } from './envUtils';
 
 interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
@@ -126,22 +127,9 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			new vscode.CustomExecution(
 				async (): Promise<vscode.Pseudoterminal> => {
 
-					let initialVariables = '';
-
-					if (env) {
-						for (const e of env) {
-							const value =
-								String(e.value)
-									.replace(/"/g, '\\"');
-
-							initialVariables +=
-								`export ${e.name}="${value}"; `;
-						}
-					}
-
 					return this.terminalExtAPI.getMachineExecPTY(
 						component,
-						initialVariables + command,
+						EnvUtils.buildExportStatements(env) + command,
 						workdir,
 					);
 				},

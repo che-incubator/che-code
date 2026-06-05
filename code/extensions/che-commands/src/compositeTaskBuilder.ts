@@ -14,6 +14,7 @@ import * as vscode from "vscode";
 import { V1alpha2DevWorkspaceSpecTemplateCommands } from "@devfile/api";
 import { DevfileVariableResolver } from "./devfileVariableResolver";
 import { DevfileVariableContextBuilder } from "./DevfileVariableContextBuilder";
+import { EnvUtils } from "./envUtils";
 
 
 type ResolvedExec = {
@@ -203,9 +204,8 @@ export class CompositeTaskBuilder {
 		);
 	}
 
-	private buildEnvPrefix(env: any[] | undefined) {
-		if (!env?.length) return "";
-		return env.map((e) => `${e.name}="${e.value}"`).join(" ") + " ";
+	private buildEnvPrefix(env: any[] | undefined): string {
+		return EnvUtils.buildExportStatements(env);
 	}
 
 	private buildParallelTasks(

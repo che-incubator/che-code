@@ -1,6 +1,10 @@
 /**********************************************************************
  * Copyright (c) 2026 Red Hat, Inc.
  *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
  * SPDX-License-Identifier: EPL-2.0
  ***********************************************************************/
 
@@ -338,23 +342,30 @@ describe("Composite — task naming", () => {
 });
 
 describe("Composite — env propagation", () => {
-	test("sequential composite passes env to exec commands", async () => {
+	test("sequential composite preserves command env variables", async () => {
 		const term = new MockTerminalAPI();
 
 		const tasks = await provide(
 			{
 				commands: [
 					{
-						id: "a",
+						id: "build",
 						exec: {
-							component: "c1",
-							commandLine: "echo A",
-							env: [{ name: "FOO", value: "bar" }],
+							component: "go",
+							commandLine: "go build main.go",
+							env: [
+								{
+									name: "GOCACHE",
+									value: "/projects/devfile-stack-go/.cache",
+								},
+							],
 						},
 					},
 					{
 						id: "combo",
-						composite: { commands: ["a"] },
+						composite: {
+							commands: ["build"],
+						},
 					},
 				],
 			},
@@ -364,7 +375,10 @@ describe("Composite — env propagation", () => {
 		await runByName(tasks!, "combo");
 
 		expect(term.calls).toHaveLength(1);
-		expect(term.calls[0].command).toContain('FOO="bar"');
+		expect(term.calls[0].command).toContain("GOCACHE");
+		expect(term.calls[0].command).toBe(
+			'export GOCACHE="/projects/devfile-stack-go/.cache"; go build main.go',
+		);
 	});
 
 	test("sequential composite preserves env per command", async () => {
