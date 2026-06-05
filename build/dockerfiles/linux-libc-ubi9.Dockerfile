@@ -22,29 +22,29 @@ RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
       libsecret \
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libsecret-devel-0.20.4-4.el9.ppc64le.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/ppc64le/os/Packages/libsecret-devel-0.20.4-4.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
       libsecret"; \
     else \
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
     && { if [[ $(uname -m) == "x86_64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libxkbfile-1.1.0-8.el9.ppc64le.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/ppc64le/os/Packages/libxkbfile-devel-1.1.0-8.el9.ppc64le.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/ppc64le/os/Packages/libxkbfile-1.1.0-8.el9.ppc64le.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/ppc64le/os/Packages/libxkbfile-devel-1.1.0-8.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
@@ -118,9 +118,9 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then npm run playwright-install; fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
       yum install --nobest -y procps \
-        https://rpmfind.net/linux/epel/9/Everything/x86_64/Packages/e/epel-release-9-10.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
+        https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/e/epel-release-9-10.el9.noarch.rpm \
+        https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
+        https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
     fi
 
 RUN if [ "$(uname -m)" = "x86_64" ]; then \

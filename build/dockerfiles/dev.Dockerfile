@@ -11,10 +11,10 @@ FROM quay.io/devfile/universal-developer-image:latest
 USER 0
 
 RUN dnf -y install patch libsecret libX11-devel libxkbcommon \
-    "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm" \
-    "https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm" \
-    "https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm" \
-    "https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/zsh-5.8-9.el9.x86_64.rpm" \
+    "https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm" \
+    "https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm" \
+    "https://mirror.stream.centos.org/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm" \
+    "https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/zsh-5.8-9.el9.x86_64.rpm" \
     util-linux-user && \
     dnf -y clean all --enablerepo='*'
 
