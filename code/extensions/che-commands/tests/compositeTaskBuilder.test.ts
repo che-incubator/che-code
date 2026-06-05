@@ -501,109 +501,15 @@ describe("Composite — env propagation", () => {
 	});
 });
 
-describe("Composite — variable resolution", () => {
-	test("resolves workingDir from component env in composite commands", async () => {
+describe("Composite — variable resolution", () => {	
+	test("resolves workingDir from component env", async () => {
 		const term = new MockTerminalAPI();
-
-		process.env.PROJECT_SOURCE = "/projects/sample";
 
 		const tasks = await provide(
 			{
-				components: [
-					{
-						name: "tools",
-						container: {
-							env: [
-								{
-									name: "BUILD_ROOT",
-									value: "${PROJECT_SOURCE}/app",
-								},
-							],
-						},
-					},
-				],
-				commands: [
-					{
-						id: "build",
-						exec: {
-							component: "tools",
-							commandLine: "pwd",
-							workingDir: "${BUILD_ROOT}",
-						},
-					},
-					{
-						id: "combo",
-						composite: {
-							commands: ["build"],
-						},
-					},
-				],
-			},
-			term,
-		);
-
-		await runByName(tasks!, "combo");
-
-		expect(term.calls).toHaveLength(1);
-		expect(term.calls[0].cwd).toBe("/projects/sample/app");
-	});
-
-	test("resolves nested variables in workingDir", async () => {
-		const term = new MockTerminalAPI();
-
-		process.env.PROJECT_SOURCE = "/projects/sample";
-
-		const tasks = await provide(
-			{
-				components: [
-					{
-						name: "tools",
-						container: {
-							env: [
-								{
-									name: "BUILD_ROOT",
-									value: "${PROJECT_SOURCE}/app",
-								},
-								{
-									name: "CACHE_ROOT",
-									value: "${BUILD_ROOT}/cache",
-								},
-							],
-						},
-					},
-				],
-				commands: [
-					{
-						id: "build",
-						exec: {
-							component: "tools",
-							commandLine: "pwd",
-							workingDir: "${CACHE_ROOT}",
-						},
-					},
-					{
-						id: "combo",
-						composite: {
-							commands: ["build"],
-						},
-					},
-				],
-			},
-			term,
-		);
-
-		await runByName(tasks!, "combo");
-
-		expect(term.calls[0].cwd).toBe("/projects/sample/app/cache");
-	});
-
-	test("resolves workingDir for regular commands", async () => {
-		const term = new MockTerminalAPI();
-
-		process.env.PROJECT_SOURCE = "/projects/sample";
-
-		const tasks = await provide(
-			{
+				variables: {
+					PROJECT_SOURCE: "/projects/sample",
+				},
 				components: [
 					{
 						name: "tools",
@@ -633,7 +539,128 @@ describe("Composite — variable resolution", () => {
 
 		await runByName(tasks!, "build");
 
-		expect(term.calls).toHaveLength(1);
 		expect(term.calls[0].cwd).toBe("/projects/sample/app");
+	});
+
+	test("resolves nested variables in component env", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				variables: {
+					PROJECT_SOURCE: "/projects/sample",
+				},
+				components: [
+					{
+						name: "tools",
+						container: {
+							env: [
+								{
+									name: "BUILD_ROOT",
+									value: "${PROJECT_SOURCE}/app",
+								},
+								{
+									name: "CACHE_ROOT",
+									value: "${BUILD_ROOT}/cache",
+								},
+							],
+						},
+					},
+				],
+				commands: [
+					{
+						id: "build",
+						exec: {
+							component: "tools",
+							commandLine: "pwd",
+							workingDir: "${CACHE_ROOT}",
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "build");
+
+		expect(term.calls[0].cwd).toBe(
+			"/projects/sample/app/cache",
+		);
+	});
+	
+	test("resolves cache path using component HOME", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				components: [
+					{
+						name: "ubi",
+						container: {
+							env: [
+								{
+									name: "HOME",
+									value: "/opt/app-root/src",
+								},
+							],
+						},
+					},
+					{
+						name: "alpine",
+						container: {
+							env: [
+								{
+									name: "HOME",
+									value: "/",
+								},
+							],
+						},
+					},
+				],
+				commands: [
+					{
+						id: "ubi",
+						exec: {
+							component: "ubi",
+							env: [
+								{
+									name: "CACHE",
+									value: "${HOME}/.cache",
+								},
+							],
+							commandLine: "echo ${CACHE}",
+						},
+					},
+					{
+						id: "alpine",
+						exec: {
+							component: "alpine",
+							env: [
+								{
+									name: "CACHE",
+									value: "${HOME}/.cache",
+								},
+							],
+							commandLine: "echo ${CACHE}",
+						},
+					},
+					{
+						id: "combo",
+						composite: {
+							commands: ["ubi", "alpine"],
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runByName(tasks!, "combo");
+
+		expect(term.calls[0].command)
+			.toContain("/opt/app-root/src/.cache");
+
+		expect(term.calls[1].command)
+			.toContain("/.cache");
 	});
 });

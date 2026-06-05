@@ -138,15 +138,74 @@ describe("Exec environment variable handling", () => {
 		await runFirst(tasks!);
 		expect(term.calls[0].command).toBe("echo hi");
 	});
-});
 
-describe("Exec working directory expansion", () => {
-	test("expands ${VAR} placeholders from process.env", async () => {
-		process.env.TEST_DIR = "/tmp/demo";
+	test("does not pre-resolve shell variables in quoted strings", async () => {
 		const term = new MockTerminalAPI();
 
 		const tasks = await provide(
 			{
+				commands: [
+					{
+						id: "quote",
+						exec: {
+							commandLine: 'echo "TEST=$TEST"',
+							env: [
+								{
+									name: "TEST",
+									value: 'the quote"',
+								},
+							],
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runFirst(tasks!);
+
+		expect(term.calls[0].command).toBe(
+			'export TEST="the quote\\""; echo "TEST=$TEST"',
+		);
+	});
+
+	test("does not resolve runtime HOME from host environment", async () => {
+		process.env.HOME = "/opt/app-root/src";
+
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				commands: [
+					{
+						id: "show-home",
+						exec: {
+							commandLine:
+								"echo resolved=${HOME} actual=$HOME",
+						},
+					},
+				],
+			},
+			term,
+		);
+
+		await runFirst(tasks!);
+
+		expect(term.calls[0].command).toBe(
+			"echo resolved=${HOME} actual=$HOME",
+		);
+	});
+});
+
+describe("Exec working directory expansion", () => {
+	test("expands working directory from devfile variables", async () => {
+		const term = new MockTerminalAPI();
+
+		const tasks = await provide(
+			{
+				variables: {
+					TEST_DIR: "/tmp/demo",
+				},
 				commands: [
 					{
 						id: "wd",
@@ -264,7 +323,7 @@ describe("Exec command filtering behavior", () => {
 
 describe("Runtime variable preservation", () => {
 	test.each(["HOME", "PATH", "USER", "PWD", "SHELL"])(
-		"does not pre-resolve %s from host environment",
+		"preserves shell variable %s for runtime resolution",
 		async (variable) => {
 			process.env[variable] = `/host/${variable.toLowerCase()}`;
 
@@ -287,7 +346,7 @@ describe("Runtime variable preservation", () => {
 			await runFirst(tasks!);
 
 			expect(term.calls[0].command).toBe(
-				`echo resolved=${process.env[variable]} actual=/host/${variable.toLowerCase()}`,
+				`echo resolved=\${${variable}} actual=$${variable}`,
 			);
 		},
 	);

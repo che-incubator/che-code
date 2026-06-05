@@ -23,7 +23,7 @@ export class EnvUtils {
 		let initialVariables = "";
 
 		for (const e of env) {
-			const value = String(e.value).replace(/"/g, '\\"');
+			let value = e.value.replaceAll('"', '\\"');
 			initialVariables += `export ${e.name}="${value}"; `;
 		}
 

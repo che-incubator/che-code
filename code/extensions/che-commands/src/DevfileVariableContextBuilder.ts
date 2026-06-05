@@ -20,15 +20,10 @@ export class DevfileVariableContextBuilder {
 	): VariableContext {
 		const context: VariableContext = {};
 
-		// Lowest priority
-		Object.entries(process.env).forEach(([key, value]) => {
-			if (value !== undefined) {
-				context[key] = String(value);
-			}
-		});
-
-		// Devfile variables override process.env
-		for (const [key, value] of Object.entries(devfile?.variables ?? {})) {
+		// Devfile variables
+		for (const [key, value] of Object.entries(
+			devfile?.variables ?? {},
+		)) {
 			context[key] = String(value);
 		}
 

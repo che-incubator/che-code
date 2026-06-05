@@ -17,9 +17,6 @@ export interface VariableContext {
 export class DevfileVariableResolver {
 	private static readonly BRACED_VARIABLE_PATTERN = /\$\{([^}]+)\}/g;
 
-	private static readonly SIMPLE_VARIABLE_PATTERN =
-		/\$([A-Za-z_][A-Za-z0-9_]*)/g;
-
 	public resolve(
 		value: string | undefined,
 		context: VariableContext = {},
@@ -39,27 +36,7 @@ export class DevfileVariableResolver {
 				(match, variableName) => {
 					const replacement = context[variableName];
 
-					if (
-						replacement === undefined ||
-						replacement === match
-					) {
-						return match;
-					}
-
-					changed = true;
-					return replacement;
-				},
-			);
-
-			resolved = resolved.replace(
-				DevfileVariableResolver.SIMPLE_VARIABLE_PATTERN,
-				(match, variableName) => {
-					const replacement = context[variableName];
-
-					if (
-						replacement === undefined ||
-						replacement === match
-					) {
+					if (replacement === undefined || replacement === match) {
 						return match;
 					}
 
