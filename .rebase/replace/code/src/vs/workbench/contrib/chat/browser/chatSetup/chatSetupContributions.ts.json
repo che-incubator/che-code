@@ -1,0 +1,6 @@
+[
+	{
+		"from": "\t\t\t\t\t\t}));\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Inline Agents",
+		"by": "\t\t\t\t\t\t}));\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Proactively clear panel agents when Copilot reports GitHub login failure\n\t\t\t\t\t\t// (e.g. workspace PAT cannot be exchanged for a Copilot token)\n\t\t\t\t\t\tconst gitHubLoginFailedKey = 'github.copilot.interactiveSession.gitHubLoginFailed';\n\t\t\t\t\t\tconst checkGitHubLoginFailed = () => {\n\t\t\t\t\t\t\tif (this.contextKeyService.getContextKeyValue<boolean>(gitHubLoginFailedKey)) {\n\t\t\t\t\t\t\t\tconst panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));\n\t\t\t\t\t\t\t\tif (panelAgentHasGuidance) {\n\t\t\t\t\t\t\t\t\tthis.logService.error('[chat setup] GitHub login failed detected, clearing panel agent registration to show welcome view.');\n\t\t\t\t\t\t\t\t\tpanelAgentDisposables.dispose();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t};\n\t\t\t\t\t\tpanelAgentDisposables.add(this.contextKeyService.onDidChangeContext(e => {\n\t\t\t\t\t\t\tif (e.affectsSome(new Set([gitHubLoginFailedKey]))) {\n\t\t\t\t\t\t\t\tcheckGitHubLoginFailed();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}));\n\t\t\t\t\t\tcheckGitHubLoginFailed();\n\n\t\t\t\t\t\t// Inline Agents"
+	}
+]

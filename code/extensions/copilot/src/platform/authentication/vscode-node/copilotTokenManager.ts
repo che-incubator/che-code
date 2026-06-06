@@ -85,6 +85,12 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				this._logService.info(`Got Copilot token for ${session.account.label}`);
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
 			}
+
+			if (tokenResult.kind === 'failure' && tokenResult.reason === 'NotAuthorized' && !tokenResult.notification_id) {
+				this._logService.info('Copilot token exchange failed (workspace token cannot be exchanged for Copilot token), triggering sign-in flow');
+				return { kind: 'failure', reason: 'GitHubLoginFailed' };
+			}
+
 			return tokenResult;
 		} else {
 			this._logService.info(`Allowing anonymous access with devDeviceId`);

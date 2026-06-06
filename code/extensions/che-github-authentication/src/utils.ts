@@ -33,3 +33,42 @@ export function createLabelsSelector(labels: { [key: string]: string; }): string
     .map(([key, value]) => `${key}=${value}`)
     .join(',');
 }
+
+export function hasAllScopes(existingScopes: string[], requestedScopes: string[]): boolean {
+  return requestedScopes.every(scope => existingScopes.includes(scope));
+}
+
+export function sessionMatchesRequestedScopes(sessionScopes: readonly string[], requestedScopes: readonly string[]): boolean {
+  return hasAllScopes([...sessionScopes], [...requestedScopes]);
+}
+
+/** Matches product.json defaultChatAgent.providerScopes[0] and Copilot GITHUB_SCOPE_ALIGNED. */
+export const DEVICE_AUTH_SCOPES = ['read:user', 'user:email', 'repo', 'workflow'] as const;
+
+/** Scope bundles used by Copilot / github / GHPRI / Agent Host — session keys match vanilla createSession. */
+export const HYDRATION_SCOPE_BUNDLES: readonly string[][] = [
+  ['read:user', 'user:email', 'repo', 'workflow', 'project', 'read:org'],
+  ['read:user', 'user:email', 'repo', 'workflow'],
+  ['read:user', 'user:email', 'repo'],
+  ['read:user', 'user:email'],
+  ['user:email'],
+];
+
+export function getMatchingHydrationScopeBundles(tokenScopes: string[]): string[][] {
+  return HYDRATION_SCOPE_BUNDLES
+    .filter(bundle => hasAllScopes(tokenScopes, bundle))
+    .map(bundle => [...bundle]);
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  if ('httpStatus' in error && (error as { httpStatus: number }).httpStatus === 401) {
+    return true;
+  }
+  if ('response' in error && (error as { response?: { status?: number } }).response?.status === 401) {
+    return true;
+  }
+  return false;
+}

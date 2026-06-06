@@ -35,6 +35,10 @@ export class Logger {
     this.outputChannel.error(message);
   }
 
+  debug(message: string): void {
+    this.outputChannel.debug(message);
+  }
+
   trace(message: string): void {
     this.outputChannel.trace(message);
   }
