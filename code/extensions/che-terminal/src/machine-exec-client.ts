@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2022 Red Hat, Inc.
+ * Copyright (c) 2022-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -20,58 +20,86 @@ import { getOutputChannel } from './extension';
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
 
-	/** WebSocket connection to the machine-exec server. */
-	private connection: WebSocket;
+	private static readonly MAX_RETRIES = 30;
+	private static readonly RETRY_DELAY_MS = 1000;
 
-	private initPromise: Promise<void>;
+	/** WebSocket connection to the machine-exec server. */
+	private connection: WebSocket | undefined;
 
 	private onExitEmitter = new vscode.EventEmitter<TerminalExitEvent>();
 
 	private LIST_CONTAINERS_MESSAGE_ID = -5;
 
-	constructor() {
-		let resolveInit: () => void;
-		let rejectInit: (reason: any) => void;
-
-		this.connection = new WebSocket('ws://localhost:3333/connect');
-		this.connection
-			.on('message', async (data: WS.Data) => {
-				// By default, VS Code communicates over WebSocket in a binary format (exchanging data frames).
-				// For easier debugging, let's log all incoming messages in a text format to the output channel.
-				getOutputChannel().appendLine(`[WebSocket] <<< ${data.toString()}`);
-
-				const message = JSON.parse(data.toString());
-				if (message.method === 'connected') {
-					// the machine-exec server responds `connected` once it's ready to serve the clients
-					resolveInit();
-				} else if (message.method === 'onExecExit') {
-					this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 0 }); // normal exit
-				} else if (message.method === 'onExecError') {
-					this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 1 });// the process failed
+	/**
+	 * Connects to the machine-exec server with retry logic.
+	 * Resolves once the server sends the `connected` message.
+	 * Rejects if all retry attempts are exhausted.
+	 */
+	async init(): Promise<void> {
+		for (let attempt = 1; attempt <= MachineExecClient.MAX_RETRIES; attempt++) {
+			try {
+				await this.tryConnect();
+				return;
+			} catch (err: any) {
+				getOutputChannel().appendLine(`[machine-exec] Connection attempt ${attempt}/${MachineExecClient.MAX_RETRIES} failed: ${err.message}`);
+				if (attempt === MachineExecClient.MAX_RETRIES) {
+					throw new Error(`Failed to connect to machine-exec after ${MachineExecClient.MAX_RETRIES} attempts: ${err.message}`);
 				}
-			})
-			.on('error', (err: Error) => {
-				getOutputChannel().appendLine(`[WebSocket] error: ${err.message}`);
+				await new Promise(resolve => setTimeout(resolve, MachineExecClient.RETRY_DELAY_MS));
+			}
+		}
+	}
 
-				rejectInit(err.message);
-			});
+	private tryConnect(): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			let settled = false;
 
-		this.initPromise = new Promise<void>((resolve, reject) => {
-			resolveInit = resolve;
-			rejectInit = reject;
+			const ws = new WebSocket('ws://localhost:3333/connect');
+			ws
+				.on('message', async (data: WS.Data) => {
+					getOutputChannel().appendLine(`[WebSocket] <<< ${data.toString()}`);
+
+					const message = JSON.parse(data.toString());
+					if (message.method === 'connected') {
+						settled = true;
+						this.connection = ws;
+						this.setupMessageHandler(ws);
+						resolve();
+					}
+				})
+				.on('close', (code: number, reason: Buffer) => {
+					const msg = reason.toString() || `code ${code}`;
+					getOutputChannel().appendLine(`[WebSocket] closed: ${msg}`);
+					if (!settled) {
+						settled = true;
+						ws.removeAllListeners();
+						reject(new Error(`WebSocket closed before ready: ${msg}`));
+					}
+				})
+				.on('error', (err: Error) => {
+					getOutputChannel().appendLine(`[WebSocket] error: ${err.message}`);
+					if (!settled) {
+						settled = true;
+						ws.removeAllListeners();
+						reject(new Error(err.message));
+					}
+				});
 		});
 	}
 
-	/**
-	 * Resolves once the machine-exec server is ready to serve the clients.
-	 * Rejects if an error occurred while establishing the WebSocket connection to machine-exec server.
-	 */
-	init(): Promise<void> {
-		return this.initPromise;
+	private setupMessageHandler(ws: WebSocket): void {
+		ws.on('message', (data: WS.Data) => {
+			const message = JSON.parse(data.toString());
+			if (message.method === 'onExecExit') {
+				this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 0 });
+			} else if (message.method === 'onExecError') {
+				this.onExitEmitter.fire({ sessionId: message.params.id, exitCode: 1 });
+			}
+		});
 	}
 
 	dispose() {
-		this.connection.terminate();
+		this.connection?.terminate();
 	}
 
 	/**
@@ -89,10 +117,10 @@ export class MachineExecClient implements vscode.Disposable {
 
 		const command = JSON.stringify(jsonCommand);
 		getOutputChannel().appendLine(`[WebSocket] >>> ${command}`);
-		this.connection.send(command);
+		this.connection!.send(command);
 
 		return new Promise(resolve => {
-			this.connection.once('message', (data: WS.Data) => {
+			this.connection!.once('message', (data: WS.Data) => {
 				const message = JSON.parse(data.toString());
 				if (message.id === this.LIST_CONTAINERS_MESSAGE_ID) {
 					const remoteContainers: string[] = message.result.map((containerInfo: any) => containerInfo.container);
@@ -160,10 +188,10 @@ export class MachineExecClient implements vscode.Disposable {
 
 		const command = JSON.stringify(jsonCommand);
 		getOutputChannel().appendLine(`[WebSocket] >>> ${command}`);
-		this.connection.send(command);
+		this.connection!.send(command);
 
 		return new Promise(resolve => {
-			this.connection.once('message', (data: WS.Data) => {
+			this.connection!.once('message', (data: WS.Data) => {
 				const message = JSON.parse(data.toString());
 				const sessionID = message.result;
 				if (Number.isFinite(sessionID)) {
@@ -196,7 +224,7 @@ export class MachineExecClient implements vscode.Disposable {
 
 		const command = JSON.stringify(jsonCommand);
 		getOutputChannel().appendLine(`[WebSocket] >>> ${command}`);
-		this.connection.send(command);
+		this.connection!.send(command);
 	}
 
 	get onExit(): vscode.Event<TerminalExitEvent> {
