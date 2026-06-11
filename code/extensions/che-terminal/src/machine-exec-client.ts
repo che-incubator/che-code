@@ -20,7 +20,7 @@ import { getOutputChannel } from './extension';
 /** Client for the machine-exec server. */
 export class MachineExecClient implements vscode.Disposable {
 
-	private static readonly MAX_RETRIES = 30;
+	private static readonly MAX_RETRIES = Number(process.env.MACHINE_EXEC_MAX_RETRIES) || 30;
 	private static readonly RETRY_DELAY_MS = 1000;
 
 	/** WebSocket connection to the machine-exec server. */

@@ -106,6 +106,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 # Run integration tests (Browser)
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+      MACHINE_EXEC_MAX_RETRIES=1 \
       retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
     fi
 

@@ -135,6 +135,7 @@ RUN chmod u+x /opt/app-root/src/retry.sh
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       NODE_ARCH=$(echo "console.log(process.arch)" | node) \
       VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
+      MACHINE_EXEC_MAX_RETRIES=1 \
       /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium; \
     fi
 
