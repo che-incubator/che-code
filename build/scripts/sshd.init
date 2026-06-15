@@ -9,7 +9,7 @@
 #
 
 # copy provisioned data (from che-code-sshd) to shared volume
-cp -rp /sshd-staging/. /sshd/
+cp -r /sshd-staging/. /sshd/
 
 # wait for main container to set up sshd (will indicate username)
 while [ ! -e /sshd/username ]; do
@@ -21,7 +21,11 @@ ide_provider="$1"
 if [ "$ide_provider" = "jetbrains" ]; then
   pushd /opt/www/jetbrains
 else # default to landing page for Code
+  uri_scheme="$2"
   pushd /opt/www/code
 fi
 
-exec node server.js
+echo "IDE Provider : ${ide_provider}"
+echo "URI Scheme : ${uri_scheme}"
+
+exec node server.js ${uri_scheme}

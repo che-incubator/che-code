@@ -38,7 +38,7 @@ function syncDocsContent() {
   docsElem.innerHTML = useExtension ? extensionElem.innerHTML : manualElem.innerHTML;
 }
 
-function openDevspacesURI(namespace, podName, userName, dwName, encodedKeyMessage, encodedUrl) {
-  const gatewayLink = `vscode://redhat.devspaces-remote-ssh?namespace=${namespace}&podName=${podName}&userName=${userName}&dwName=${dwName}&key=${encodedKeyMessage}&url=${encodedUrl}`;
+function openDevspacesURI(scheme, namespace, podName, userName, dwName, encodedKeyMessage, encodedUrl) {
+  const gatewayLink = `${scheme}://redhat.devspaces-remote-ssh?namespace=${namespace}&podName=${podName}&userName=${userName}&dwName=${dwName}&key=${encodedKeyMessage}&url=${encodedUrl}`;
   window.open(gatewayLink, "_self");
 }
