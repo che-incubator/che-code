@@ -16,6 +16,16 @@ https://github.com/che-incubator/che-code/pull/720
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/722
+
+- code/package.json
+- code/remote/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/copilot/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/716
 
 - code/package.json
