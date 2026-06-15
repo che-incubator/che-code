@@ -54,7 +54,8 @@
     "@eclipse-che/workspace-telemetry-client": {
       "axios": "^0.32.0"
     },
-    "follow-redirects": "^1.16.0"
+    "follow-redirects": "^1.16.0",
+    "ip-address": "^10.2.0"
   },
   "repository": {
     "type": "git",
