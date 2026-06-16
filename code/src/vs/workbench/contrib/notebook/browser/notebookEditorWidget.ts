@@ -29,7 +29,7 @@ import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Color, RGBA } from '../../../../base/common/color.js';
 import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
-import { combinedDisposable, Disposable, DisposableStore, dispose } from '../../../../base/common/lifecycle.js';
+import { combinedDisposable, Disposable, DisposableStore, dispose, MutableDisposable } from '../../../../base/common/lifecycle.js';
 import { setTimeout0 } from '../../../../base/common/platform.js';
 import { extname, isEqual } from '../../../../base/common/resources.js';
 import { URI } from '../../../../base/common/uri.js';
@@ -1516,16 +1516,17 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		}));
 
 		let hasPendingChangeContentHeight = false;
+		const renderScrollHeightDisposable = this._localStore.add(new MutableDisposable());
 		this._localStore.add(this._list.onDidChangeContentHeight(() => {
 			if (hasPendingChangeContentHeight) {
 				return;
 			}
 			hasPendingChangeContentHeight = true;
 
-			this._localStore.add(DOM.scheduleAtNextAnimationFrame(DOM.getWindow(this.getDomNode()), () => {
+			renderScrollHeightDisposable.value = DOM.scheduleAtNextAnimationFrame(DOM.getWindow(this.getDomNode()), () => {
 				hasPendingChangeContentHeight = false;
 				this._updateScrollHeight();
-			}, 100));
+			}, 100);
 		}));
 
 		this._localStore.add(this._list.onDidRemoveOutputs(outputs => {
@@ -3057,20 +3058,20 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 				return;
 			}
 
-			this.viewModel?.viewCells.find(cell => cell.handle === value.cellInfo.cellHandle);
 			const viewIndex = this._list.getViewIndex(cell);
 
 			if (viewIndex === undefined) {
 				return;
 			}
 
-			if (cell.outputsViewModels.indexOf(key) < 0) {
+			const outputIndex = cell.outputsViewModels.indexOf(key);
+			if (outputIndex < 0) {
 				// output is already gone
 				removedItems.push(key);
+				return;
 			}
 
 			const cellTop = this._list.getCellViewScrollTop(cell);
-			const outputIndex = cell.outputsViewModels.indexOf(key);
 			const outputOffset = cell.getOutputOffset(outputIndex);
 			updateItems.push({
 				cell,

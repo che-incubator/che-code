@@ -14,6 +14,7 @@ import product from '../product.json' with { type: 'json' };
 import { getVersion } from './lib/getVersion.ts';
 import * as task from './lib/task.ts';
 import * as util from './lib/util.ts';
+import type { EmbeddedProductInfo } from './lib/embeddedType.ts';
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -72,17 +73,13 @@ function buildWin32Setup(arch: string, target: string): task.CallbackTask {
 		fs.mkdirSync(outputPath, { recursive: true });
 
 		const quality = (product as typeof product & { quality?: string }).quality || 'dev';
-		let versionedResourcesFolder = '';
-		let issPath = path.join(import.meta.dirname, 'win32', 'code.iss');
-		if (quality && quality === 'insider') {
-			versionedResourcesFolder = commit!.substring(0, 10);
-			issPath = path.join(import.meta.dirname, 'win32', 'code-insider.iss');
-		}
+		const useVersionedUpdate = (product as typeof product & { win32VersionedUpdate?: boolean })?.win32VersionedUpdate;
+		const versionedResourcesFolder = useVersionedUpdate ? commit!.substring(0, 10) : '';
+		const issPath = path.join(import.meta.dirname, 'win32', 'code.iss');
 		const originalProductJsonPath = path.join(sourcePath, versionedResourcesFolder, 'resources/app/product.json');
 		const productJsonPath = path.join(outputPath, 'product.json');
 		const productJson = JSON.parse(fs.readFileSync(originalProductJsonPath, 'utf8'));
 		productJson['target'] = target;
-		fs.writeFileSync(productJsonPath, JSON.stringify(productJson, undefined, '\t'));
 
 		const definitions: Record<string, unknown> = {
 			NameLong: product.nameLong,
@@ -115,11 +112,32 @@ function buildWin32Setup(arch: string, target: string): task.CallbackTask {
 			Quality: quality
 		};
 
+		const isInsiderOrExploration = quality === 'insider' || quality === 'exploration';
+		const embedded = isInsiderOrExploration
+			? (product as typeof product & { embedded?: EmbeddedProductInfo }).embedded
+			: undefined;
+
+		if (embedded) {
+			// VS Code's sibling is the embedded app.
+			productJson['win32SiblingExeBasename'] = embedded.nameShort;
+			// The embedded app's sibling is VS Code.
+			if (productJson['embedded']) {
+				productJson['embedded']['win32SiblingExeBasename'] = product.nameShort;
+			}
+			definitions['ProxyExeBasename'] = embedded.nameShort;
+			definitions['ProxyAppUserId'] = embedded.win32AppUserModelId;
+			definitions['ProxyNameLong'] = embedded.nameLong;
+			definitions['ProxyExeUrlProtocol'] = embedded.urlProtocol;
+			definitions['ProxyMutex'] = embedded.win32MutexName;
+		}
+
 		if (quality === 'stable' || quality === 'insider') {
 			definitions['AppxPackage'] = `${quality === 'stable' ? 'code' : 'code_insider'}_${arch}.appx`;
 			definitions['AppxPackageDll'] = `${quality === 'stable' ? 'code' : 'code_insider'}_explorer_command_${arch}.dll`;
 			definitions['AppxPackageName'] = `${product.win32AppUserModelId}`;
 		}
+
+		fs.writeFileSync(productJsonPath, JSON.stringify(productJson, undefined, '\t'));
 
 		packageInnoSetup(issPath, { definitions }, cb as (err?: Error | null) => void);
 	};

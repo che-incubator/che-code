@@ -1,0 +1,6 @@
+[
+  {
+    "from": "/* Label - styled as placeholder text */\n.agent-status-label {\n\tflex: 1;\n\ttext-align: center;\n\twhite-space: nowrap;\n\toverflow: hidden;\n\ttext-overflow: ellipsis;\n\topacity: 0.6;\n}",
+    "by": "/* Label - styled as placeholder text */\n.agent-status-label {\n\tflex: 1;\n\ttext-align: center;\n\twhite-space: nowrap;\n\toverflow: hidden;\n\ttext-overflow: ellipsis;\n\tcolor: var(--vscode-agentStatusIndicator-labelForeground);\n}"
+  }
+]

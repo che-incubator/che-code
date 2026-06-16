@@ -11,12 +11,13 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { Range } from '../../../../../../editor/common/core/range.js';
 import { IInstantiationService } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { ResourceLabels } from '../../../../../browser/labels.js';
-import { IChatRequestVariableEntry, isElementVariableEntry, isImageVariableEntry, isNotebookOutputVariableEntry, isPasteVariableEntry, isPromptFileVariableEntry, isPromptTextVariableEntry, isSCMHistoryItemChangeRangeVariableEntry, isSCMHistoryItemChangeVariableEntry, isSCMHistoryItemVariableEntry, isTerminalVariableEntry, isWorkspaceVariableEntry, OmittedState } from '../../../common/attachments/chatVariableEntries.js';
+import { IChatRequestVariableEntry, isElementVariableEntry, isImageVariableEntry, isNotebookOutputVariableEntry, isPasteVariableEntry, isPromptFileVariableEntry, isPromptTextVariableEntry, isSCMHistoryItemChangeRangeVariableEntry, isSCMHistoryItemChangeVariableEntry, isSCMHistoryItemVariableEntry, isTerminalVariableEntry, isWorkspaceVariableEntry, MAX_IMAGES_PER_REQUEST, OmittedState } from '../../../common/attachments/chatVariableEntries.js';
 import { ChatResponseReferencePartStatusKind, IChatContentReference } from '../../../common/chatService/chatService.js';
 import { DefaultChatAttachmentWidget, ElementChatAttachmentWidget, FileAttachmentWidget, ImageAttachmentWidget, NotebookCellOutputChatAttachmentWidget, PasteAttachmentWidget, PromptFileAttachmentWidget, PromptTextAttachmentWidget, SCMHistoryItemAttachmentWidget, SCMHistoryItemChangeAttachmentWidget, SCMHistoryItemChangeRangeAttachmentWidget, TerminalCommandAttachmentWidget, ToolSetOrToolItemAttachmentWidget } from '../../attachments/chatAttachmentWidgets.js';
+import { IChatAttachmentWidgetRegistry } from '../../attachments/chatAttachmentWidgetRegistry.js';
 
 export interface IChatAttachmentsContentPartOptions {
-	readonly variables: IChatRequestVariableEntry[];
+	readonly variables: readonly IChatRequestVariableEntry[];
 	readonly contentReferences?: ReadonlyArray<IChatContentReference>;
 	readonly domNode?: HTMLElement;
 	readonly limit?: number;
@@ -29,7 +30,7 @@ export class ChatAttachmentsContentPart extends Disposable {
 	private readonly _contextResourceLabels: ResourceLabels;
 	private _showingAll = false;
 
-	private readonly variables: IChatRequestVariableEntry[];
+	private _variables: readonly IChatRequestVariableEntry[];
 	private readonly contentReferences: ReadonlyArray<IChatContentReference>;
 	private readonly limit?: number;
 	public readonly domNode: HTMLElement | undefined;
@@ -39,9 +40,10 @@ export class ChatAttachmentsContentPart extends Disposable {
 	constructor(
 		options: IChatAttachmentsContentPartOptions,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IChatAttachmentWidgetRegistry private readonly chatAttachmentWidgetRegistry: IChatAttachmentWidgetRegistry,
 	) {
 		super();
-		this.variables = options.variables;
+		this._variables = options.variables;
 		this.contentReferences = options.contentReferences ?? [];
 		this.limit = options.limit;
 		this.domNode = options.domNode ?? dom.$('.chat-attached-context');
@@ -54,12 +56,24 @@ export class ChatAttachmentsContentPart extends Disposable {
 		}
 	}
 
+	/**
+	 * Update the variables and re-render the attachments in place.
+	 */
+	public updateVariables(variables: readonly IChatRequestVariableEntry[]): void {
+		this._variables = variables;
+		if (this.domNode) {
+			this.initAttachedContext(this.domNode);
+		}
+	}
+
 	private initAttachedContext(container: HTMLElement) {
 		dom.clearNode(container);
 		this.attachedContextDisposables.clear();
 
 		const visibleAttachments = this.getVisibleAttachments();
-		const hasMoreAttachments = this.limit && this.variables.length > this.limit && !this._showingAll;
+		const hasMoreAttachments = this.limit && this._variables.length > this.limit && !this._showingAll;
+
+		this.markImageLimitExceeded(this._variables);
 
 		for (const attachment of visibleAttachments) {
 			this.renderAttachment(attachment, container);
@@ -70,15 +84,36 @@ export class ChatAttachmentsContentPart extends Disposable {
 		}
 	}
 
-	private getVisibleAttachments(): IChatRequestVariableEntry[] {
+	private getVisibleAttachments(): readonly IChatRequestVariableEntry[] {
 		if (!this.limit || this._showingAll) {
-			return this.variables;
+			return this._variables;
 		}
-		return this.variables.slice(0, this.limit);
+		return this._variables.slice(0, this.limit);
+	}
+
+	/**
+	 * When the total number of image attachments exceeds the per-request limit,
+	 * mark the oldest images (those that will be dropped by the backend) with
+	 * {@link OmittedState.ImageLimitExceeded}.
+	 */
+	private markImageLimitExceeded(attachments: readonly IChatRequestVariableEntry[]): void {
+		const imageAttachments = attachments.filter(isImageVariableEntry);
+		if (imageAttachments.length <= MAX_IMAGES_PER_REQUEST) {
+			return;
+		}
+
+		// The backend keeps the most-recent images, so mark the oldest ones as exceeded.
+		// Only overwrite NotOmitted or ImageLimitExceeded to avoid clobbering other states (e.g. Partial for GIFs).
+		const excessCount = imageAttachments.length - MAX_IMAGES_PER_REQUEST;
+		for (let i = 0; i < excessCount; i++) {
+			if (imageAttachments[i].omittedState === OmittedState.NotOmitted || imageAttachments[i].omittedState === OmittedState.ImageLimitExceeded) {
+				imageAttachments[i].omittedState = OmittedState.ImageLimitExceeded;
+			}
+		}
 	}
 
 	private renderShowMoreButton(container: HTMLElement) {
-		const remainingCount = this.variables.length - (this.limit ?? 0);
+		const remainingCount = this._variables.length - (this.limit ?? 0);
 
 		// Create a button that looks like the attachment pills
 		const showMoreButton = dom.$('div.chat-attached-context-attachment.chat-attachments-show-more-button');
@@ -157,7 +192,8 @@ export class ChatAttachmentsContentPart extends Disposable {
 			// skip workspace attachments
 			return;
 		} else {
-			widget = this.instantiationService.createInstance(DefaultChatAttachmentWidget, resource, range, attachment, correspondingContentReference, undefined, { shouldFocusClearButton: false, supportsDeletion: false }, container, this._contextResourceLabels);
+			widget = this.chatAttachmentWidgetRegistry.createWidget(attachment, { shouldFocusClearButton: false, supportsDeletion: false }, container)
+				?? this.instantiationService.createInstance(DefaultChatAttachmentWidget, resource, range, attachment, correspondingContentReference, undefined, { shouldFocusClearButton: false, supportsDeletion: false }, container, this._contextResourceLabels);
 		}
 
 		let ariaLabel: string | null = null;
@@ -170,7 +206,7 @@ export class ChatAttachmentsContentPart extends Disposable {
 			ariaLabel = `${ariaLabel}${description ? ` ${description}` : ''}`;
 			for (const selector of ['.monaco-icon-suffix-container', '.monaco-icon-name-container']) {
 				// eslint-disable-next-line no-restricted-syntax
-				const element = widget.label.element.querySelector(selector);
+				const element = widget.label?.element.querySelector(selector);
 				if (element) {
 					element.classList.add('warning');
 				}

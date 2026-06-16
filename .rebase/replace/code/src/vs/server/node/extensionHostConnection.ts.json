@@ -1,10 +1,10 @@
 [
     {
         "from": "import { getNLSConfiguration } from './remoteLanguagePacks.js';",
-        "by": "import { getNLSConfiguration } from './remoteLanguagePacks.js';\\\nimport { getResolvedPathEnvVar } from '../../platform/che/utils.js';"
+        "by": "import { getNLSConfiguration } from './remoteLanguagePacks.js';\nimport { getResolvedPathEnvVar } from '../../platform/che/utils.js';"
     },
     {
         "from": "setCaseInsensitive(env, 'PATH', PATH);",
-        "by": "PATH = getResolvedPathEnvVar(PATH, processEnv.PATH);\\\n\\\tsetCaseInsensitive(env, 'PATH', PATH);"
+        "by": "PATH = getResolvedPathEnvVar(PATH, processEnv.PATH);\n\tsetCaseInsensitive(env, 'PATH', PATH);"
     }
 ]

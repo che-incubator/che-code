@@ -1,7 +1,9 @@
 build/**
+src/**
 tests/**
 coverage/**
 out/**
 tsconfig.json
-extension.webpack.config.js
+esbuild*
+package-lock.json
 yarn.lock

@@ -1,6 +1,6 @@
 [
     {
-        "from": "\"gulp-untar\": \"^0.0.7\",",
-        "by": "\"gulp-decompress\": \"^3.0.0\","
+        "from": "    \"gulp-buffer\": \"0.0.2\",\n    \"gulp-filter\": \"^5.1.0\",",
+        "by": "    \"gulp-buffer\": \"0.0.2\",\n    \"gulp-decompress\": \"^3.0.0\",\n    \"gulp-filter\": \"^5.1.0\","
     }
 ]

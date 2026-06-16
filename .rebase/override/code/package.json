@@ -1,14 +1,11 @@
 {
     "name": "che-code",
     "bin": "out/vs/server/main.js",
-    "dependencies": {
-      "undici": "^7.24.0"
-    },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
       "@vscode/test-cli": "^0.0.12",
       "@vscode/test-web": "^0.0.77",
-      "minimatch": "^3.1.5",
-      "eslint": "^9.39.3"
+      "eslint": "^9.39.3",
+      "tar": "^7.5.11"
     }
 }

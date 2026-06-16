@@ -71,6 +71,7 @@ export interface IEnvironmentService {
 	debugExtensionHost: IExtensionHostDebugParams;
 	isExtensionDevelopment: boolean;
 	disableExtensions: boolean | string[];
+	skipBuiltinExtensions?: readonly string[];
 	enableExtensions?: readonly string[];
 	extensionDevelopmentLocationURI?: URI[];
 	extensionDevelopmentKind?: ExtensionKind[];
@@ -87,6 +88,9 @@ export interface IEnvironmentService {
 	disableTelemetry: boolean;
 	disableExperiments: boolean;
 	serviceMachineIdResource: URI;
+
+	// --- agent sessions workspace
+	agentSessionsWorkspace?: URI;
 
 	// --- Policy
 	policyFile?: URI;
@@ -146,6 +150,7 @@ export interface INativeEnvironmentService extends IEnvironmentService {
 
 	crossOriginIsolated?: boolean;
 	exportPolicyData?: string;
+	exportDefaultKeybindings?: string;
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//
