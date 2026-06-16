@@ -3,6 +3,15 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+dd082146741 fix: override shell-quote to 1.8.4 (GHSA-w7jw-789q-3m8p)
+
+- code/build/rspack/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/720
 
 - code/package.json
