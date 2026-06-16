@@ -1,10 +1,26 @@
 [
     {
-        "from": "import flatmap from 'gulp-flatmap';\nimport gunzip from 'gulp-gunzip';\nimport untar from 'gulp-untar';",
+        "from": "import product from '../product.json' with { type: 'json' };",
+        "by": "import product from '../product.json' with { type: 'json' };\nimport workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };"
+    },
+    {
+        "from": "import flatmap from 'gulp-flatmap';\nimport gunzip from 'gulp-gunzip';\nimport { untar } from './lib/util.ts';",
         "by": "import decompress from 'gulp-decompress';"
     },
     {
-        "from": "flatmap(stream => stream.pipe(gunzip()).pipe(untar()))",
-        "by": "decompress()"
+        "from": "\t\t\t\tfetchUrls(`/dist/v${nodeVersion}/node-v${nodeVersion}-${platform}-${arch}.tar.gz`, { base: 'https://nodejs.org', checksumSha256 })\n\t\t\t).pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))\n\t\t\t\t.pipe(filter('**/node'))",
+        "by": "\t\t\t\tfetchUrls(`/dist/v${nodeVersion}/node-v${nodeVersion}-${platform}-${arch}.tar.gz`, { base: 'https://nodejs.org', checksumSha256 })\n\t\t\t).pipe(decompress())\n\t\t\t\t.pipe(filter('**/node'))"
+    },
+    {
+        "from": "\t\t\t\tfetchGithub(product.nodejsRepository, { version: `${nodeVersion}-${internalNodeVersion}`, name: expectedName!, checksumSha256 })\n\t\t\t\t\t.pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))\n\t\t\t\t\t.pipe(filter('**/node'))",
+        "by": "\t\t\t\tfetchGithub(product.nodejsRepository, { version: `${nodeVersion}-${internalNodeVersion}`, name: expectedName!, checksumSha256 })\n\t\t\t\t\t.pipe(decompress())\n\t\t\t\t\t.pipe(filter('**/node'))"
+    },
+    {
+        "from": "{ platform: 'linux', arch: 'x64' },\n\t{ platform: 'linux', arch: 'armhf' },",
+        "by": "{ platform: 'linux', arch: 'x64' },\n\t{ platform: 'linux', arch: 'ppc64' },\n\t{ platform: 'linux', arch: 's390x' },\n\t{ platform: 'linux', arch: 'armhf' },"
+    },
+    {
+        "from": "createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product)",
+        "by": "createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product, workbenchConfig)"
     }
 ]

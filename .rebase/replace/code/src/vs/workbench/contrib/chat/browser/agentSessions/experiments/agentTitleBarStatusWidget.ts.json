@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\t\tlet label = this._windowTitle.workspaceName;\n\t\tif (this._windowTitle.isCustomTitleFormat()) {",
+    "by": "\t\tlet label = this._windowTitle.workspaceName;\n\t\tconst header = this._windowTitle.getHeader();\n\t\tif (header) {\n\t\t\tlabel = header;\n\t\t} else if (this._windowTitle.isCustomTitleFormat()) {"
+  }
+]

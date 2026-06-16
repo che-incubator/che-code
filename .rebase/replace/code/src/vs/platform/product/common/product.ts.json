@@ -1,10 +1,14 @@
 [
     {
-        "from": "import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';",
-        "by": "import { ISandboxConfiguration } from 'vs/base/parts/sandbox/common/sandboxTypes';\\\nimport { loadFromFileSystem } from 'vs/platform/product/common/che/product';"
+        "from": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';\n\n/**",
+        "by": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';\nimport { loadFromFileSystem } from './che/product.js';\n/**"
     },
     {
-        "from": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as any;",
-        "by": "product = { /\\*BUILD->INSERT_PRODUCT_CONFIGURATION\\*/ } as any;\\\n\\\tproduct = loadFromFileSystem();"
+        "from": "\tproduct = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as unknown as IProductConfiguration;\n\n\t// Running out of sources",
+        "by": "\tproduct = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as unknown as IProductConfiguration;\n\tproduct = loadFromFileSystem();\n\n\t// Running out of sources"
+    },
+    {
+        "from": "\t\t\tserverLicenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',\n\t\t\tdefaultChatAgent: {\n\t\t\t\textensionId: 'GitHub.copilot',\n\t\t\t\tchatExtensionId: 'GitHub.copilot-chat',\n\t\t\t\tprovider: {\n\t\t\t\t\tdefault: {\n\t\t\t\t\t\tid: 'github',\n\t\t\t\t\t\tname: 'GitHub',\n\t\t\t\t\t},\n\t\t\t\t\tenterprise: {\n\t\t\t\t\t\tid: 'github-enterprise',\n\t\t\t\t\t\tname: 'GitHub Enterprise',\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\tproviderScopes: []\n\t\t\t}",
+        "by": "\t\t\tserverLicenseUrl: 'https://github.com/microsoft/vscode/blob/main/LICENSE.txt',\n\t\t\textensionsGallery: {\n\t\t\t\tserviceUrl: 'https://open-vsx.org/vscode/gallery',\n\t\t\t\titemUrl: 'https://open-vsx.org/vscode/item',\n\t\t\t},"
     }
 ]

@@ -5,26 +5,26 @@
 	},
 	{
 		"from": "import { McpGalleryManifestIPCService } from '../../platform/mcp/common/mcpGalleryManifestServiceIpc.js';",
-		"by": "import { McpGalleryManifestIPCService } from '../../platform/mcp/common/mcpGalleryManifestServiceIpc.js';\\\nimport { getPolicyService } from './che/serverServices.js';"
+		"by": "import { McpGalleryManifestIPCService } from '../../platform/mcp/common/mcpGalleryManifestServiceIpc.js';\nimport { getPolicyService } from './che/serverServices.js';"
 	},
-    {
-		"from": "const configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, new NullPolicyService(), logService);",
-		"by": "const policyService = getPolicyService(environmentService, fileService, logService, disposables);\\\n\\\tconst configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, policyService, logService);"
+	{
+		"from": "\tconst configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, new NullPolicyService(), logService);",
+		"by": "\tconst policyService = getPolicyService(environmentService, fileService, logService, disposables);\n\tconst configurationService = new ConfigurationService(environmentService.machineSettingsResource, fileService, policyService, logService);"
 	},
 	{
 		"from": "socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));",
-		"by": "socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));\\\n\\\t\\\tsocketServer.registerChannel('policy', new PolicyChannel(policyService));"
+		"by": "socketServer.registerChannel('mcpManagement', new McpManagementChannel(mcpManagementService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));\n\t\tsocketServer.registerChannel('policy', new PolicyChannel(policyService));"
 	},
 	{
-		"from": "import { ServerConnectionToken } from './serverConnectionToken.js';",
-		"by": "import { ServerConnectionToken } from './serverConnectionToken.js';\\\nimport { DefaultExtensionsInstaller } from './che/defaultExtensionsInstaller.js';"
+		"from": "import { ServerConnectionToken, ServerConnectionTokenType } from './serverConnectionToken.js';",
+		"by": "import { ServerConnectionToken, ServerConnectionTokenType } from './serverConnectionToken.js';\nimport { DefaultExtensionsInstaller } from './che/defaultExtensionsInstaller.js';"
 	},
 	{
-		"from": "const extensionGalleryService = accessor.get(IExtensionGalleryService);",
-		"by": "const extensionGalleryService = accessor.get(IExtensionGalleryService);\\\n\\\t\\\tconst extensionGalleryManifestService = accessor.get(IExtensionGalleryManifestService);"
+		"from": "\t\tconst extensionGalleryService = accessor.get(IExtensionGalleryService);",
+		"by": "\t\tconst extensionGalleryService = accessor.get(IExtensionGalleryService);\n\t\tconst extensionGalleryManifestService = accessor.get(IExtensionGalleryManifestService);"
 	},
 	{
 		"from": "disposables.add(new ErrorTelemetry(accessor.get(ITelemetryService)));",
-		"by": "disposables.add(new ErrorTelemetry(accessor.get(ITelemetryService)));\\\n\\\t\\\tdisposables.add(new DefaultExtensionsInstaller(extensionManagementService, logService, fileService, userDataProfilesService, extensionGalleryService, extensionGalleryManifestService, remoteExtensionsScanner));"
+		"by": "disposables.add(new ErrorTelemetry(accessor.get(ITelemetryService)));\n\t\tdisposables.add(new DefaultExtensionsInstaller(extensionManagementService, logService, fileService, userDataProfilesService, extensionGalleryService, extensionGalleryManifestService, remoteExtensionsScanner));"
 	}
 ]

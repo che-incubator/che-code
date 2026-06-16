@@ -1,14 +1,26 @@
 [
   {
-    "from": "return URI.parse(mainWindow.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });",
-    "by": "const windowURI = URI.parse(mainWindow.location.href);\\\n\\\t\\\tconst callback = this._callbackRoute.replace(', ', '');\\\n\\\t\\\treturn windowURI.with({ path: callback, query: queryParams.join('\\&') });"
+    "from": "import { create } from '../../../workbench/workbench.web.main.internal.js';",
+    "by": "import { create } from '../../../workbench/workbench.web.main.internal.js';\nimport { getCheConfig } from './che/workbench-che-config.js';"
   },
   {
-    "from": "private serverKey: Uint8Array \\| undefined;",
-    "by": "private serverKey: Uint8Array \\| undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');"
+    "from": "return URI.parse(mainWindow.location.href).with({ path: this._callbackRoute, query: queryParams.join('&') });",
+    "by": "const windowURI = URI.parse(mainWindow.location.href);\n\t\tconst callback = this._callbackRoute.replace(', ', '');\n\t\treturn windowURI.with({ path: callback, query: queryParams.join('&') });"
+  },
+  {
+    "from": "{\n\n\tprivate serverKey: Uint8Array | undefined;\n\n\t/**",
+    "by": "{\n\tprivate serverKey: Uint8Array | undefined = new TextEncoder().encode('{{LOCAL-STORAGE}}/{{SECURE-KEY}}');\n\n\t/**"
+  },
+  {
+    "from": "}\n\tconst config: IWorkbenchConstructionOptions",
+    "by": "}\n\n\tconst cheConfig = getCheConfig();\n\tconst config: IWorkbenchConstructionOptions"
   },
   {
     "from": "const secretStorageKeyPath = readCookie('vscode-secret-key-path');",
-    "by": "const secretStorageKeyPath = readCookie('vscode-secret-key-path') \\|\\| '/';"
+    "by": "const secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';"
+  },
+  {
+    "from": "...config,",
+    "by": "...config,\n\t\t...cheConfig,"
   }
 ]

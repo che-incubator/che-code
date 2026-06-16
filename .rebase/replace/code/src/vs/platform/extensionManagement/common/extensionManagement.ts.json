@@ -1,18 +1,18 @@
 [
     {
-        "from": "queryAllVersions?: boolean;",
-        "by": "queryAllVersions?: boolean;\\\n\\\tpreferResourceApi?: boolean;"
+        "from": "\tqueryAllVersions?: boolean;\n\tsource?: string;",
+        "by": "\tqueryAllVersions?: boolean;\n\tpreferResourceApi?: boolean;\n\tsource?: string;"
     },
     {
         "from": "import { IExtensionGalleryManifest } from './extensionGalleryManifest.js';",
-        "by": "import { IExtensionGalleryManifest } from './extensionGalleryManifest.js';\\\nimport { getCheConfigurationProperties } from './che/extensionManagement.js';"
+        "by": "import { IExtensionGalleryManifest } from './extensionGalleryManifest.js';\nimport { getCheConfigurationProperties } from './che/extensionManagement.js';"
     },
     {
-        "from": "downloadExtensionsLocally?: boolean;",
-        "by": "downloadExtensionsLocally?: boolean;\\\n\\\tisDefault?: boolean; // Indicates that this extension is from DEFAULT_EXTENSIONS env variable"
+        "from": "\tdownloadExtensionsLocally?: boolean;\n\t/**\n\t * Context passed through to InstallExtensionResult\n\t */\n\tcontext?: IStringDictionary<unknown>;",
+        "by": "\tdownloadExtensionsLocally?: boolean;\n\tisDefault?: boolean; // Indicates that this extension is from DEFAULT_EXTENSIONS env variable\n\t/**\n\t * Context passed through to InstallExtensionResult\n\t */\n\tcontext?: IStringDictionary<unknown>;"
     },
     {
-        "from": "[AllowedExtensionsConfigKey]: {",
-        "by": "...getCheConfigurationProperties(),\\\n\\\t\\\t\\\t[AllowedExtensionsConfigKey]: {"
+        "from": "\t\t\t[AllowedExtensionsConfigKey]: {",
+        "by": "\t\t\t...getCheConfigurationProperties(),\n\t\t\t[AllowedExtensionsConfigKey]: {"
     }
 ]

@@ -14,8 +14,5 @@
     "tmp": "0.2.4",
     "tree-kill": "1.2.2",
     "vscode-uri": "^3.0.2"
-  },
-  "overrides": {
-    "minimatch": "^3.1.5"
   }
 }
