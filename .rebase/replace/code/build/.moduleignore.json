@@ -1,0 +1,6 @@
+[
+    {
+        "from": "# @github/copilot - strip unneeded binaries and files\n@github/copilot/sdk/index.js\n@github/copilot/prebuilds/**",
+        "by": "# @github/copilot - strip unneeded binaries and files\n@github/copilot/prebuilds/**"
+    }
+]

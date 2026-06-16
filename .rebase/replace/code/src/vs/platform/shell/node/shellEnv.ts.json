@@ -1,14 +1,14 @@
 [
     {
         "from": "import { clamp } from '../../../base/common/numbers.js';",
-        "by": "import { clamp } from '../../../base/common/numbers.js';\\\nimport { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForShellEnv } from '../../che/utils.js';"
+        "by": "import { clamp } from '../../../base/common/numbers.js';\nimport { sanitizeLdLibraryPathInEnvironment, shouldStripLdLibraryPathForShellEnv } from '../../che/utils.js';"
     },
     {
         "from": "const env = {",
         "by": "const env: NodeJS.ProcessEnv = {"
     },
     {
-        "from": "delete env['VSCODE_RESOLVING_ENVIRONMENT'];",
-        "by": "delete env['VSCODE_RESOLVING_ENVIRONMENT'];\\\n\t\t\t\tif (shouldStripLdLibraryPathForShellEnv()) {\\\n\t\t\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => logService.trace(message), 'shellEnv');\\\n\t\t\t\t}"
+        "from": "\t\t\t\tdelete env['VSCODE_RESOLVING_ENVIRONMENT'];",
+        "by": "\t\t\t\tdelete env['VSCODE_RESOLVING_ENVIRONMENT'];\n\t\t\t\tif (shouldStripLdLibraryPathForShellEnv()) {\n\t\t\t\t\tsanitizeLdLibraryPathInEnvironment(env, message => logService.trace(message), 'shellEnv');\n\t\t\t\t}"
     }
 ]

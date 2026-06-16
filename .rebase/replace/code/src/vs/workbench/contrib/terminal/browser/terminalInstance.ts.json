@@ -1,0 +1,18 @@
+[
+  {
+    "from": "import { IEnvironmentVariableInfo } from '../common/environmentVariable.js';",
+    "by": "import { IEnvironmentVariableInfo, IEnvironmentVariableService } from '../common/environmentVariable.js';"
+  },
+  {
+    "from": "import { TerminalIconPicker } from './terminalIconPicker.js';\nimport { TerminalResizeDebouncer }",
+    "by": "import { TerminalIconPicker } from './terminalIconPicker.js';\nimport { EnvironmentVariableService } from '../common/environmentVariableService.js';\nimport { TerminalResizeDebouncer }"
+  },
+  {
+    "from": "@IAccessibilitySignalService private readonly _accessibilitySignalService: IAccessibilitySignalService,\n\t\t@IViewDescriptorService private readonly _viewDescriptorService: IViewDescriptorService,\n\t) {",
+    "by": "@IAccessibilitySignalService private readonly _accessibilitySignalService: IAccessibilitySignalService,\n\t\t@IViewDescriptorService private readonly _viewDescriptorService: IViewDescriptorService,\n\t\t@IEnvironmentVariableService private readonly _environmentVariableService: EnvironmentVariableService,\n\t) {"
+  },
+  {
+    "from": "\t\tif (!this._workspaceFolder) {\n\t\t\tconst activeWorkspaceRootUri = this._historyService.getLastActiveWorkspaceRoot();\n\t\t\tthis._workspaceFolder = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;\n\t\t}\n\n\t\tconst scopedContextKeyService",
+    "by": "\t\tif (!this._workspaceFolder) {\n\t\t\tconst activeWorkspaceRootUri = this._historyService.getLastActiveWorkspaceRoot();\n\t\t\tthis._workspaceFolder = activeWorkspaceRootUri ? this._workspaceContextService.getWorkspaceFolder(activeWorkspaceRootUri) ?? undefined : undefined;\n\t\t}\n\n\t\tif (!this._workspaceFolder && !this.shellLaunchConfig.cwd) {\n\t\t\tconst envs = this._environmentVariableService.collections.get('eclipse-che.api');\n\t\t\tif (envs) {\n\t\t\t\tconst projectsRoot = envs.map.get('PROJECTS_ROOT');\n\t\t\t\tif (projectsRoot) {\n\t\t\t\t\tthis.shellLaunchConfig.cwd = projectsRoot.value\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tconst scopedContextKeyService"
+  }
+]

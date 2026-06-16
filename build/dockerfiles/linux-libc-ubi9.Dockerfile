@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1773809184 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1776735844 as linux-libc-ubi9-builder
 
 USER root
 
@@ -135,6 +135,7 @@ RUN chmod u+x /opt/app-root/src/retry.sh
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       NODE_ARCH=$(echo "console.log(process.arch)" | node) \
       VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
+      MACHINE_EXEC_MAX_RETRIES=1 \
       /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium; \
     fi
 

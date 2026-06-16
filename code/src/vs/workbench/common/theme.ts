@@ -549,6 +549,11 @@ export const PANEL_STICKY_SCROLL_BORDER = registerColor('panelStickyScroll.borde
 export const PANEL_STICKY_SCROLL_SHADOW = registerColor('panelStickyScroll.shadow', scrollbarShadow, localize('panelStickyScrollShadow', "Shadow color of sticky scroll in the panel."));
 
 
+// < --- Browser --- >
+
+export const BROWSER_BORDER = registerColor('browser.border', TAB_BORDER, localize('browserBorder', "Border color for integrated browser pages."));
+
+
 // < --- Profiles --- >
 
 export const PROFILE_BADGE_BACKGROUND = registerColor('profileBadge.background', {
@@ -710,6 +715,12 @@ export const COMMAND_CENTER_FOREGROUND = registerColor(
 	'commandCenter.foreground',
 	TITLE_BAR_ACTIVE_FOREGROUND,
 	localize('commandCenter-foreground', "Foreground color of the command center"),
+	false
+);
+export const AGENT_STATUS_INDICATOR_LABEL_FOREGROUND = registerColor(
+	'agentStatusIndicator.labelForeground',
+	transparent(COMMAND_CENTER_FOREGROUND, 0.6),
+	localize('agentStatusIndicator-labelForeground', "Foreground color of the agent status indicator label in the titlebar. Defaults to a muted version of the command center foreground."),
 	false
 );
 export const COMMAND_CENTER_ACTIVEFOREGROUND = registerColor(
