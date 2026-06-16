@@ -342,7 +342,7 @@ function configureCommandlineSwitchesSync(cliArgs: NativeParsedArgs) {
 	app.commandLine.appendSwitch('disable-blink-features', blinkFeaturesToDisable);
 
 	// Support JS Flags
-	const jsFlags = getJSFlags(cliArgs);
+	const jsFlags = getJSFlags(cliArgs, argvConfig);
 	if (jsFlags) {
 		app.commandLine.appendSwitch('js-flags', jsFlags);
 	}
@@ -378,6 +378,7 @@ interface IArgvConfig {
 	readonly 'use-inmemory-secretstorage'?: boolean;
 	readonly 'enable-rdp-display-tracking'?: boolean;
 	readonly 'remote-debugging-port'?: string;
+	readonly 'js-flags'?: string;
 }
 
 function readArgvConfigSync(): IArgvConfig {
@@ -541,12 +542,17 @@ function configureCrashReporter(): void {
 	});
 }
 
-function getJSFlags(cliArgs: NativeParsedArgs): string | null {
+function getJSFlags(cliArgs: NativeParsedArgs, argvConfig: IArgvConfig): string | null {
 	const jsFlags: string[] = [];
 
 	// Add any existing JS flags we already got from the command line
 	if (cliArgs['js-flags']) {
 		jsFlags.push(cliArgs['js-flags']);
+	}
+
+	// Add JS flags from runtime arguments (argv.json)
+	if (typeof argvConfig['js-flags'] === 'string' && argvConfig['js-flags']) {
+		jsFlags.push(argvConfig['js-flags']);
 	}
 
 	if (process.platform === 'linux') {

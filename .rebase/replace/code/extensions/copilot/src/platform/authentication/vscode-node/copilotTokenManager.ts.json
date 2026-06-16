@@ -1,0 +1,6 @@
+[
+	{
+		"from": "\t\t\tif (tokenResult.kind === 'success') {\n\t\t\t\tthis._logService.info(`Got Copilot token for ${session.account.label}`);\n\t\t\t\tthis._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);\n\t\t\t}\n\t\t\treturn tokenResult;",
+		"by": "\t\t\tif (tokenResult.kind === 'success') {\n\t\t\t\tthis._logService.info(`Got Copilot token for ${session.account.label}`);\n\t\t\t\tthis._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);\n\t\t\t}\n\n\t\t\tif (tokenResult.kind === 'failure' && tokenResult.reason === 'NotAuthorized' && !tokenResult.notification_id) {\n\t\t\t\tthis._logService.info('Copilot token exchange failed (workspace token cannot be exchanged for Copilot token), triggering sign-in flow');\n\t\t\t\treturn { kind: 'failure', reason: 'GitHubLoginFailed' };\n\t\t\t}\n\n\t\t\treturn tokenResult;"
+	}
+]

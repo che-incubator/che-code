@@ -20,6 +20,9 @@ export interface GithubUser {
 export const GithubService = Symbol('GithubService');
 
 export interface GithubService {
+    /** Resolves when the initial token extraction is complete (token may or may not be available). */
+    readonly whenReady: Promise<void>;
+
     getToken(): Promise<string>;
 
     /**
@@ -34,4 +37,7 @@ export interface GithubService {
 
     getUser(): Promise<GithubUser>;
     getTokenScopes(token: string): Promise<string[]>;
+
+    /** True when the active token comes from the device-authentication secret (OAuth), not a workspace PAT. */
+    isDeviceAuthToken(): Promise<boolean>;
 }

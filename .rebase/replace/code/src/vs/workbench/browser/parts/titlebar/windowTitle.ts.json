@@ -1,10 +1,14 @@
 [
-	{
-		"from": "title = 'window.title'",
-		"by": "title = 'window.title',\\\n\\\theader = 'window.header'"
-	},
-	{
-		"from": "isCustomTitleFormat(): boolean {",
-		"by": "getHeader(): string \\| undefined{\\\n\\\t\\\tconst header = this.configurationService.inspect<string>(WindowSettingNames.header);\\\n\\\t\\\treturn header.value;\\\n\\\t}\\\n\\\n\\\tisCustomTitleFormat(): boolean {"
-	}
+  {
+    "from": "\ttitle = 'window.title',\n}",
+    "by": "\ttitle = 'window.title',\n\theader = 'window.header',\n}"
+  },
+  {
+    "from": "\tisCustomTitleFormat(): boolean {",
+    "by": "\tgetHeader(): string | undefined{\n\t\treturn this.configurationService.getValue<string>(WindowSettingNames.header);\n\t}\n\n\tisCustomTitleFormat(): boolean {"
+  },
+  {
+    "from": "\t\tif (affectsTitleConfiguration || event.affectsConfiguration(WindowSettingNames.titleSeparator)) {\n\t\t\tthis.titleUpdater.schedule();\n\t\t}\n\t}",
+    "by": "\t\tif (affectsTitleConfiguration || event.affectsConfiguration(WindowSettingNames.titleSeparator)) {\n\t\t\tthis.titleUpdater.schedule();\n\t\t}\n\n\t\tif (event.affectsConfiguration(WindowSettingNames.header)) {\n\t\t\tthis.onDidChangeEmitter.fire();\n\t\t}\n\t}"
+  }
 ]

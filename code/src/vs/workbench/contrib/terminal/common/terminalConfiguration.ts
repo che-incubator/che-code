@@ -288,6 +288,11 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 		type: 'boolean',
 		default: false
 	},
+	[TerminalSettingId.TextBlinking]: {
+		description: localize('terminal.integrated.textBlinking', "Controls whether text blinking is enabled in the terminal."),
+		type: 'boolean',
+		default: false
+	},
 	[TerminalSettingId.CursorStyle]: {
 		description: localize('terminal.integrated.cursorStyle', "Controls the style of terminal cursor when the terminal is focused."),
 		enum: ['block', 'line', 'underline'],
@@ -471,7 +476,7 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 	},
 	[TerminalSettingId.WindowsUseConptyDll]: {
 		restricted: true,
-		markdownDescription: localize('terminal.integrated.windowsUseConptyDll', "Whether to use the experimental conpty.dll (v1.23.251008001) shipped with VS Code, instead of the one bundled with Windows."),
+		markdownDescription: localize('terminal.integrated.windowsUseConptyDll', "Whether to use the experimental conpty.dll (v1.25.260303002) shipped with VS Code, instead of the one bundled with Windows."),
 		type: 'boolean',
 		tags: ['preview'],
 		default: false,
@@ -489,11 +494,6 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 			localize('terminal.integrated.splitCwd.inherited', "On macOS and Linux, a new split terminal will use the working directory of the parent terminal. On Windows, this behaves the same as initial."),
 		],
 		default: 'inherited'
-	},
-	[TerminalSettingId.WindowsEnableConpty]: {
-		description: localize('terminal.integrated.windowsEnableConpty', "Whether to use ConPTY for Windows terminal process communication (requires Windows 10 build number 18309+). Winpty will be used if this is false."),
-		type: 'boolean',
-		default: true
 	},
 	[TerminalSettingId.WordSeparators]: {
 		markdownDescription: localize('terminal.integrated.wordSeparators', "A string containing all characters to be considered word separators when double-clicking to select word and in the fallback 'word' link detection. Since this is used for link detection, including characters such as `:` that are used when detecting links will cause the line and column part of links like `file:10:5` to be ignored."),
@@ -562,7 +562,7 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 			localize('hideOnStartup.whenEmpty', "Only hide the terminal when there are no persistent sessions restored."),
 			localize('hideOnStartup.always', "Always hide the terminal, even when there are persistent sessions restored.")
 		],
-		default: 'never'
+		default: 'never',
 	},
 	[TerminalSettingId.HideOnLastClosed]: {
 		description: localize('terminal.integrated.hideOnLastClosed', "Whether to hide the terminal view when the last terminal is closed. This will only happen when the terminal is the only visible view in the view container."),
@@ -587,6 +587,23 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 		type: 'boolean',
 		default: true
 	},
+	[TerminalSettingId.EnableKittyKeyboardProtocol]: {
+		restricted: true,
+		markdownDescription: localize('terminal.integrated.enableKittyKeyboardProtocol', "Whether to enable the kitty keyboard protocol, which allows a program in the terminal to request more detailed keyboard input reporting. This can, for example, enable `Shift+Enter` to be handled by the program."),
+		type: 'boolean',
+		default: true,
+		tags: ['advanced']
+	},
+	[TerminalSettingId.EnableWin32InputMode]: {
+		restricted: true,
+		markdownDescription: localize('terminal.integrated.enableWin32InputMode', "Whether to enable the win32 input mode, which provides enhanced keyboard input support on Windows."),
+		type: 'boolean',
+		default: false,
+		tags: ['experimental', 'advanced'],
+		experiment: {
+			mode: 'auto'
+		}
+	},
 	[TerminalSettingId.ShellIntegrationEnabled]: {
 		restricted: true,
 		markdownDescription: localize('terminal.integrated.shellIntegration.enabled', "Determines whether or not shell integration is auto-injected to support features like enhanced command tracking and current working directory detection. \n\nShell integration works by injecting the shell with a startup script. The script gives VS Code insight into what is happening within the terminal.\n\nSupported shells:\n\n- Linux/macOS: bash, fish, pwsh, zsh\n - Windows: pwsh, git bash\n\nThis setting applies only when terminals are created, so you will need to restart your terminals for it to take effect.\n\n Note that the script injection may not work if you have custom arguments defined in the terminal profile, have enabled {1}, have a [complex bash `PROMPT_COMMAND`](https://code.visualstudio.com/docs/editor/integrated-terminal#_complex-bash-promptcommand), or other unsupported setup. To disable decorations, see {0}", '`#terminal.integrated.shellIntegration.decorationsEnabled#`', '`#editor.accessibilitySupport#`'),
@@ -608,7 +625,7 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 	},
 	[TerminalSettingId.ShellIntegrationTimeout]: {
 		restricted: true,
-		markdownDescription: localize('terminal.integrated.shellIntegration.timeout', "Configures the duration in milliseconds to wait for shell integration after launch before declaring it's not there. Set to {0} to wait the minimum time (500ms), the default value {1} means the wait time is variable based on whether shell integration injection is enabled and whether it's a remote window. Consider setting this to a small value if you intentionally disabled shell integration, or a large value if your shell starts very slowly.", '`0`', '`-1`'),
+		markdownDescription: localize('terminal.integrated.shellIntegration.timeout', "Configures the duration in milliseconds to wait for shell integration after launch before declaring it's not there. The default value {0} uses a variable wait time based on whether shell integration injection is enabled and whether it's a remote window. Values between 1 and 499 are clamped to 500ms. Consider setting this to a large value if your shell starts very slowly.", '`-1`'),
 		type: 'integer',
 		minimum: -1,
 		maximum: 60000,
@@ -637,7 +654,7 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 	},
 	[TerminalSettingId.EnableImages]: {
 		restricted: true,
-		markdownDescription: localize('terminal.integrated.enableImages', "Enables image support in the terminal, this will only work when {0} is enabled. Both sixel and iTerm's inline image protocol are supported on Linux and macOS. This will only work on Windows for versions of ConPTY >= v2 which is shipped with Windows itself, see also {1}. Images will currently not be restored between window reloads/reconnects.", `\`#${TerminalSettingId.GpuAcceleration}#\``, `\`#${TerminalSettingId.WindowsUseConptyDll}#\``),
+		markdownDescription: localize('terminal.integrated.enableImages', "Enables image support in the terminal, this will only work when {0} is enabled. Sixel and iTerm's inline image protocol are supported on Linux and macOS. The kitty graphics protocol is supported on all platforms. On Windows, all image protocols will only work for versions of ConPTY >= v2 which is shipped with Windows itself, see also {1}. Images will currently not be restored between window reloads/reconnects. When enabled, transparency mode is also turned on in the terminal.", `\`#${TerminalSettingId.GpuAcceleration}#\``, `\`#${TerminalSettingId.WindowsUseConptyDll}#\``),
 		type: 'boolean',
 		default: false
 	},
@@ -651,6 +668,12 @@ const terminalConfiguration: IStringDictionary<IConfigurationPropertySchema> = {
 			localize('terminal.integrated.focusAfterRun.accessible-buffer', "Always focus the accessible buffer."),
 			localize('terminal.integrated.focusAfterRun.none', "Do nothing."),
 		]
+	},
+	[TerminalSettingId.AllowInUntrustedWorkspace]: {
+		restricted: true,
+		markdownDescription: localize('terminal.integrated.allowInUntrustedWorkspace', "Controls whether terminals can be created in an untrusted workspace.\n\n**This feature bypasses a security protection that prevents terminals from launching in untrusted workspaces. The reason this is a security risk is because shells are often set up to potentially execute code automatically based on the contents of the current working directory. This should be safe to use provided your shell is set up in such a way that code execution in the folder never happens.**"),
+		type: 'boolean',
+		default: false
 	},
 	[TerminalSettingId.DeveloperPtyHostLatency]: {
 		description: localize('terminal.integrated.developer.ptyHost.latency', "Simulated latency in milliseconds applied to all calls made to the pty host. This is useful for testing terminal behavior under high latency conditions."),
@@ -689,6 +712,36 @@ export async function registerTerminalConfiguration(getFontSnippets: () => Promi
 
 Registry.as<IConfigurationMigrationRegistry>(WorkbenchExtensions.ConfigurationMigration)
 	.registerConfigurationMigrations([{
+		key: TerminalContribSettingId.DeprecatedAgentSandboxEnabled,
+		migrateFn: (value: boolean, valueAccessor) => {
+			const configurationKeyValuePairs: ConfigurationKeyValuePairs = [];
+			if (value !== undefined && valueAccessor(TerminalContribSettingId.AgentSandboxEnabled) === undefined) {
+				configurationKeyValuePairs.push([TerminalContribSettingId.AgentSandboxEnabled, { value: value ? 'on' : 'off' }]);
+			}
+			configurationKeyValuePairs.push([TerminalContribSettingId.DeprecatedAgentSandboxEnabled, { value: undefined }]);
+			return configurationKeyValuePairs;
+		}
+	}, {
+		key: TerminalContribSettingId.DeprecatedAgentSandboxLinuxFileSystem,
+		migrateFn: (value: { denyRead?: string[]; allowWrite?: string[]; denyWrite?: string[] }, valueAccessor) => {
+			const configurationKeyValuePairs: ConfigurationKeyValuePairs = [];
+			if (value !== undefined && valueAccessor(TerminalContribSettingId.AgentSandboxLinuxFileSystem) === undefined) {
+				configurationKeyValuePairs.push([TerminalContribSettingId.AgentSandboxLinuxFileSystem, { value }]);
+			}
+			configurationKeyValuePairs.push([TerminalContribSettingId.DeprecatedAgentSandboxLinuxFileSystem, { value: undefined }]);
+			return configurationKeyValuePairs;
+		}
+	}, {
+		key: TerminalContribSettingId.DeprecatedAgentSandboxMacFileSystem,
+		migrateFn: (value: { denyRead?: string[]; allowWrite?: string[]; denyWrite?: string[] }, valueAccessor) => {
+			const configurationKeyValuePairs: ConfigurationKeyValuePairs = [];
+			if (value !== undefined && valueAccessor(TerminalContribSettingId.AgentSandboxMacFileSystem) === undefined) {
+				configurationKeyValuePairs.push([TerminalContribSettingId.AgentSandboxMacFileSystem, { value }]);
+			}
+			configurationKeyValuePairs.push([TerminalContribSettingId.DeprecatedAgentSandboxMacFileSystem, { value: undefined }]);
+			return configurationKeyValuePairs;
+		}
+	}, {
 		key: TerminalSettingId.EnableBell,
 		migrateFn: (enableBell, accessor) => {
 			const configurationKeyValuePairs: ConfigurationKeyValuePairs = [];

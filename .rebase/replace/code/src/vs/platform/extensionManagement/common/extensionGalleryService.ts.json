@@ -1,6 +1,6 @@
 [
     {
-        "from": "const resourceApi = await this.getResourceApi(extensionGalleryManifest);",
-        "by": "const resourceApi = options.preferResourceApi ? await this.getResourceApi(extensionGalleryManifest) : undefined;"
+        "from": "const resourceApi = this.getResourceApi(extensionGalleryManifest);",
+        "by": "const resourceApi = options.preferResourceApi ? this.getResourceApi(extensionGalleryManifest) : undefined;"
     }
 ]
