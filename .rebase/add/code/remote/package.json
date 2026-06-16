@@ -2,5 +2,8 @@
     "dependencies": {
         "js-yaml": "^4.1.0",
         "@kubernetes/client-node": "^1.4.0"
+    },
+    "overrides": {
+        "shell-quote": "^1.8.4"
     }
 }
