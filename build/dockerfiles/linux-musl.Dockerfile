@@ -6,25 +6,32 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:22-alpine3.22 as linux-musl-builder
+# Use Debian-based Node.js image for all architectures (amd64, arm64, ppc64le)
+FROM docker.io/node:22-bookworm as linux-musl-builder
 
-RUN apk add --update --no-cache \
+# Set architecture variable for later use
+ARG TARGETARCH
+ENV BUILD_ARCH=${TARGETARCH}
+
+# Install dependencies using apt-get (Debian package manager)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     # Download some files
     curl \
     patch \
     # compile some javascript native stuff (node-gyp)
-    make gcc g++ python3 py3-pip \
-    # git 
+    make gcc g++ python3 python3-pip \
+    # git
     git \
     # bash shell
     bash \
-    # some lib to compile 'native-keymap' npm mpdule
+    # some lib to compile 'native-keymap' npm module
     libx11-dev libxkbfile-dev \
     # requirements for keytar
-    libsecret libsecret-dev \
+    libsecret-1-dev \
     # kerberos authentication
-    krb5-dev
+    libkrb5-dev \
+    ca-certificates procps \
+    && rm -rf /var/lib/apt/lists/*
 
 #########################################################
 #
@@ -33,6 +40,7 @@ RUN apk add --update --no-cache \
 #########################################################
 COPY code /checode-compilation
 WORKDIR /checode-compilation
+
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV VSCODE_SKIP_HEADER_INSTALL=1
@@ -52,28 +60,61 @@ RUN rm -rf /checode-compilation/node_modules && npm install --force
 # Rebuild platform specific dependencies
 RUN npm rebuild
 
+# @vscode/vsce-sign has no binary for ppc64le/s390x and its postinstall exits with code 1.
+# Disable the postinstall on unsupported architectures — the module is never included in the
+# final runtime bundle, so this has no effect on the running product.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
+        /checode-compilation/package-lock.json; \
+    fi
+
+# Cache node binary with architecture-specific path
 RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
-    # cache node from this image to avoid to grab it from within the build
-    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node" \
-    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine \
-    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-alpine/node \
-    # workaround to fix build
+    && if [ "${TARGETARCH}" = "ppc64le" ]; then \
+         PLATFORM_DIR="linux-ppc64"; \
+       elif [ "${TARGETARCH}" = "arm64" ]; then \
+         PLATFORM_DIR="linux-arm64"; \
+       else \
+         PLATFORM_DIR="linux-x64"; \
+       fi \
+    && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM_DIR}/node" \
+    && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM_DIR} \
+    && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM_DIR}/node \
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
-RUN cp -r ../vscode-reh-web-linux-alpine /checode
+# Build with architecture-specific gulp target
+RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
+      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
+        ./node_modules/.bin/gulp vscode-reh-web-linux-ppc64-min; \
+    elif [ "${TARGETARCH}" = "arm64" ]; then \
+      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
+        ./node_modules/.bin/gulp vscode-reh-web-linux-arm64-min; \
+    else \
+      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
+        ./node_modules/.bin/gulp vscode-reh-web-linux-x64-min; \
+    fi
+
+# Copy output to /checode with architecture-specific source
+RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
+      cp -r ../vscode-reh-web-linux-ppc64 /checode; \
+    elif [ "${TARGETARCH}" = "arm64" ]; then \
+      cp -r ../vscode-reh-web-linux-arm64 /checode; \
+    else \
+      cp -r ../vscode-reh-web-linux-x64 /checode; \
+    fi
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
 # Compile tests
 RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
-	compile-extension:markdown-language-features \
-	compile-extension:typescript-language-features \
-	compile-extension:emmet \
-	compile-extension:git \
-	compile-extension:ipynb \
-	compile-extension-media \
+    compile-extension:markdown-language-features \
+    compile-extension:typescript-language-features \
+    compile-extension:emmet \
+    compile-extension:git \
+    compile-extension:ipynb \
+    compile-extension-media \
     compile-extension:configuration-editing
 
 # Compile test suites
@@ -81,6 +122,7 @@ RUN ./node_modules/.bin/gulp compile-extension:vscode-api-tests \
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       npm --prefix test/smoke run compile && npm --prefix test/integration/browser run compile; \
     fi
+
 # use of retry and timeout
 COPY /build/scripts/helper/retry.sh /usr/bin/retry
 RUN chmod u+x /usr/bin/retry
@@ -88,32 +130,58 @@ RUN chmod u+x /usr/bin/retry
 # install test dependencies
 # chromium for tests and procps as tests are using kill commands and it does not work with busybox implementation
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      apk add --update --no-cache chromium procps; \
+      apt-get update && apt-get install -y --no-install-recommends chromium \
+      && rm -rf /var/lib/apt/lists/*; \
     fi
+
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       npm run playwright-install; \
     fi
+
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux) && \
       echo "Found headless_shell path: $PLAYWRIGHT_HEADLESS_PATH" && \
       rm -f "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/chrome" && \
+      if command -v chromium-browser > /dev/null; then \
+        ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
+        ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/chrome"; \
+      elif command -v chromium > /dev/null; then \
+        ln -sf /usr/bin/chromium "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
+        ln -sf /usr/bin/chromium "$PLAYWRIGHT_HEADLESS_PATH/chrome"; \
+      fi && \
       ls -la "$PLAYWRIGHT_HEADLESS_PATH"; \
     fi
 
-# Run integration tests (Browser)
+# Run integration tests (Browser) with architecture-specific path
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-      MACHINE_EXEC_MAX_RETRIES=1 \
-      retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
+      if [ "${TARGETARCH}" = "ppc64le" ]; then \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-ppc64" \
+        retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
+      elif [ "${TARGETARCH}" = "arm64" ]; then \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-arm64" \
+        MACHINE_EXEC_MAX_RETRIES=1 \
+        retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
+      else \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
+        MACHINE_EXEC_MAX_RETRIES=1 \
+        retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
+      fi \
     fi
 
-# Run smoke tests (Browser)
+# Run smoke tests (Browser) with architecture-specific path
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
-      retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      if [ "${TARGETARCH}" = "ppc64le" ]; then \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-ppc64" \
+        retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      elif [ "${TARGETARCH}" = "arm64" ]; then \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-arm64" \
+        retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      else \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
+        retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
+      fi \
     fi
 
 #########################################################
@@ -123,6 +191,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 #########################################################
 COPY launcher /checode-launcher
 WORKDIR /checode-launcher
+
 RUN npm install \
     && mkdir /checode/launcher \
     && cp -r out/src/*.js /checode/launcher \
