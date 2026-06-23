@@ -35,31 +35,45 @@ jobs:
             echo "[ERROR] Run './build/artifacts/generate.sh' and include file into the commit."
             exit 1
           fi
-
   build:
     name: build
     strategy:
       fail-fast: false
       matrix:
-        dist: ['libc-ubi8', 'libc-ubi9', 'musl']
-        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
-    runs-on: ${{matrix.runners}}
+        arch:
+         - name: amd64-build
+           runner: ubuntu-22.04
+           arch: amd64
+         - name: arm64-build
+           runner: ubuntu-22.04-arm
+           arch: arm64
+         - name: ppc64le-build
+           runner: ubuntu-22.04
+           arch: ppc64le
+        dist:
+         - libc-ubi8
+         - libc-ubi9
+         - musl
+    runs-on: ${{ matrix.arch.runner }}
     steps:
       - name: Set arch environment variable
-        run: |
-          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
-            echo arch="amd64" >> $GITHUB_ENV
-          else
-            echo arch="arm64" >> $GITHUB_ENV
-          fi
+        run: echo "arch=${{ matrix.arch.arch }}" >> $GITHUB_ENV
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Compile che-code
         run: |
           docker buildx build \
             --platform linux/${{env.arch}} \
+            --load \
             --progress=plain \
             -f build/dockerfiles/linux-${{matrix.dist}}.Dockerfile \
             -t linux-${{matrix.dist}}-${{env.arch}} .
@@ -79,18 +93,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
-    runs-on: ${{matrix.runners}}
+        include:
+          - name: amd64-build
+            runner: ubuntu-22.04
+            arch: amd64
+          - name: arm64-build
+            runner: ubuntu-22.04-arm
+            arch: arm64
+          - name: ppc64le-build
+            runner: ubuntu-22.04
+            arch: ppc64le
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Set arch environment variable
-        run: |
-          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
-            echo arch="amd64" >> $GITHUB_ENV
-          else
-            echo arch="arm64" >> $GITHUB_ENV
-          fi
+        run: echo "arch=${{ matrix.arch }}" >> $GITHUB_ENV
       - name: Checkout che-code source code
         uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Download editor artifacts
@@ -117,6 +142,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/${{env.arch}} \
+            --load \
             --progress=plain \
             -f build/dockerfiles/assembly.Dockerfile \
             -t che-code-${{env.arch}} .
@@ -159,6 +185,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64 \
+            --load \
             --progress=plain \
             -f build/dockerfiles/dev.Dockerfile \
             -t che-dev .

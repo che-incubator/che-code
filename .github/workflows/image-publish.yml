@@ -23,19 +23,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [ 'musl', 'libc-ubi8', 'libc-ubi9' ]
-        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
-    runs-on: ${{matrix.runners}}
+        arch:
+         - name: amd64-build
+           runner: ubuntu-22.04
+           arch: amd64
+         - name: arm64-build
+           runner: ubuntu-22.04-arm
+           arch: arm64
+         - name: ppc64le-build
+           runner: ubuntu-22.04
+           arch: ppc64le
+        dist:
+         - libc-ubi8
+         - libc-ubi9
+         - musl
+    runs-on: ${{ matrix.arch.runner }}
     steps:
       - name: Set arch environment variable
-        run: |
-          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
-            echo arch="amd64" >> $GITHUB_ENV
-          else
-            echo arch="arm64" >> $GITHUB_ENV
-          fi
+        run: echo "arch=${{ matrix.arch.arch }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
       - name: Docker Build
         env:
           # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
@@ -53,8 +67,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runners: ['ubuntu-22.04', 'ubuntu-22.04-arm']
-    runs-on: ${{matrix.runners}}
+        include:
+          - name: amd64-build
+            runner: ubuntu-22.04
+            arch: amd64
+          - name: arm64-build
+            runner: ubuntu-22.04-arm
+            arch: arm64
+          - name: ppc64le-build
+            runner: ubuntu-22.04
+            arch: ppc64le
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,12 +86,7 @@ jobs:
           BRANCH_NAME=${{ github.ref }}
           echo "BRANCH_NAME=${BRANCH_NAME##*/}" >> $GITHUB_ENV
       - name: Set arch environment variable
-        run: |
-          if [[ ${{matrix.runners}} == 'ubuntu-22.04' ]]; then
-            echo arch="amd64" >> $GITHUB_ENV
-          else
-            echo arch="arm64" >> $GITHUB_ENV
-          fi
+        run: echo "arch=${{ matrix.arch }}" >> $GITHUB_ENV
       - name: Set tag suffix environment variable
         run: |
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
@@ -139,33 +157,58 @@ jobs:
       - name: publish
         run: | 
           SHORT_SHA1=$(git rev-parse --short=7 HEAD)
-          if [[ ${{env.BRANCH_NAME}} == main ]]; then         
-            docker manifest create quay.io/che-incubator/che-code:next --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
+          if [[ ${{env.BRANCH_NAME}} == main ]]; then
+            docker manifest create quay.io/che-incubator/che-code:next \
+              --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}}
+
             docker manifest annotate quay.io/che-incubator/che-code:next quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
             docker manifest annotate quay.io/che-incubator/che-code:next quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
-            docker manifest push quay.io/che-incubator/che-code:next          
-          
-            docker manifest create quay.io/che-incubator/che-code:insiders --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
+            docker manifest annotate quay.io/che-incubator/che-code:next quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}} --os linux --arch ppc64le
+            docker manifest push quay.io/che-incubator/che-code:next
+
+            docker manifest create quay.io/che-incubator/che-code:insiders \
+              --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}}
+
             docker manifest annotate quay.io/che-incubator/che-code:insiders quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
             docker manifest annotate quay.io/che-incubator/che-code:insiders quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
-            docker manifest push quay.io/che-incubator/che-code:insiders          
-          
-            docker manifest create quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
+            docker manifest annotate quay.io/che-incubator/che-code:insiders quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}} --os linux --arch ppc64le
+            docker manifest push quay.io/che-incubator/che-code:insiders
+
+            docker manifest create quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} \
+              --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}}
+
             docker manifest annotate quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
             docker manifest annotate quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
-            docker manifest push quay.io/che-incubator/che-code:insiders-${SHORT_SHA1}          
-          elif [[ ${{env.BRANCH_NAME}} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then         
-            docker manifest create quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
+            docker manifest annotate quay.io/che-incubator/che-code:insiders-${SHORT_SHA1} quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}} --os linux --arch ppc64le
+            docker manifest push quay.io/che-incubator/che-code:insiders-${SHORT_SHA1}
+
+          elif [[ ${{env.BRANCH_NAME}} =~ ^7\.[0-9]+\.[0-9]+$ ]]; then
+            docker manifest create quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} \
+              --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}}
+
             docker manifest annotate quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
             docker manifest annotate quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
-            docker manifest push quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}     
-          
-            docker manifest create quay.io/che-incubator/che-code:latest --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}}
+            docker manifest annotate quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }} quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}} --os linux --arch ppc64le
+            docker manifest push quay.io/che-incubator/che-code:${{ env.BRANCH_NAME }}
+
+            docker manifest create quay.io/che-incubator/che-code:latest \
+              --amend quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} \
+              --amend quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}}
+
             docker manifest annotate quay.io/che-incubator/che-code:latest quay.io/che-incubator/che-code:amd64-${{env.tag_suffix}} --os linux --arch amd64
             docker manifest annotate quay.io/che-incubator/che-code:latest quay.io/che-incubator/che-code:arm64-${{env.tag_suffix}} --os linux --arch arm64
-            docker manifest push quay.io/che-incubator/che-code:latest     
-          fi          
-
+            docker manifest annotate quay.io/che-incubator/che-code:latest quay.io/che-incubator/che-code:ppc64le-${{env.tag_suffix}} --os linux --arch ppc64le
+            docker manifest push quay.io/che-incubator/che-code:latest
+          fi
   release-finish:
     name: release-finish
     needs: [build, assemble, publish]
