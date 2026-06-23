@@ -55,11 +55,8 @@
     "minimatch": "^3.1.5",
     "handlebars": "4.7.9",
     "flatted": "^3.4.2",
-<<<<<<< Upstream, based on main
-    "ip-address": "^10.2.0"
-=======
+    "ip-address": "^10.2.0",
     "ws": "^8.21.0"
->>>>>>> 8ebd41a fix: override ws to patched versions (CVE-2026-48779)
   },
   "jest": {
     "collectCoverage": true,
