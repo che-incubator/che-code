@@ -142,7 +142,7 @@
     "vscode-oniguruma": "1.7.0",
     "vscode-regexpp": "^3.1.0",
     "vscode-textmate": "^9.3.2",
-    "ws": "^8.19.0",
+    "ws": "^8.21.0",
     "yauzl": "^3.0.0",
     "yazl": "^2.4.3",
     "js-yaml": "^4.1.0"
@@ -269,7 +269,13 @@
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
     "flatted": "^3.4.2",
     "shell-quote": "^1.8.4",
+<<<<<<< Upstream, based on main
     "ip-address": "^10.2.0"
+=======
+    "chrome-remote-interface": {
+      "ws": "^7.5.11"
+    }
+>>>>>>> 8ebd41a fix: override ws to patched versions (CVE-2026-48779)
   },
   "repository": {
     "type": "git",

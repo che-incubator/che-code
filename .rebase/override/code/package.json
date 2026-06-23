@@ -7,5 +7,10 @@
       "@vscode/test-web": "^0.0.77",
       "eslint": "^9.39.3",
       "tar": "^7.5.11"
+    },
+    "overrides": {
+      "chrome-remote-interface": {
+        "ws": "^7.5.11"
+      }
     }
 }
