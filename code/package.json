@@ -272,7 +272,8 @@
     "ip-address": "^10.2.0",
     "chrome-remote-interface": {
       "ws": "^7.5.11"
-    }
+    },
+    "undici@6": "^6.27.0"
   },
   "repository": {
     "type": "git",
