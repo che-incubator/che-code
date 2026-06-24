@@ -12,6 +12,10 @@
 
 import { V1alpha2DevWorkspaceSpecTemplate, V1alpha2DevWorkspaceSpecTemplateCommands, V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv } from '@devfile/api';
 import * as vscode from 'vscode';
+import { CompositeTaskBuilder } from './compositeTaskBuilder';
+import { DevfileVariableResolver } from './devfileVariableResolver';
+import { DevfileVariableContextBuilder } from './DevfileVariableContextBuilder';
+import { EnvUtils } from './envUtils';
 
 interface DevfileTaskDefinition extends vscode.TaskDefinition {
 	command: string;
@@ -33,22 +37,70 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 	}
 
 	private async computeTasks(): Promise<vscode.Task[]> {
-		const devfileCommands = await this.fetchDevfileCommands();
+		const devfile: V1alpha2DevWorkspaceSpecTemplate = await this.cheAPI.getDevfileService().get();
+
+		const devfileCommands = await this.fetchDevfileCommands(devfile);
+
+		const resolver = new DevfileVariableResolver();
+
+		const compositeBuilder = new CompositeTaskBuilder(
+			this.channel,
+			this.terminalExtAPI,
+			devfile,
+			resolver,
+		);
 
 		const cheTasks: vscode.Task[] = devfileCommands!
-			.filter(command => command.exec?.commandLine)
 			.filter(command => {
 				const importedByAttribute = (command.attributes as any)?.['controller.devfile.io/imported-by'];
 				return !command.attributes || importedByAttribute === undefined || importedByAttribute === 'parent';
 			})
 			.filter(command => !/^init-ssh-agent-command-\d+$/.test(command.id))
-			.map(command => this.createCheTask(command.exec?.label || command.id, command.exec?.commandLine!, command.exec?.workingDir || '${PROJECT_SOURCE}', command.exec?.component!, command.exec?.env));
+			.map((command) => {
+				if (command.composite?.commands?.length) {
+					return compositeBuilder.build(command, devfileCommands);
+				}
+
+				if (command.exec?.commandLine) {
+
+					const component =
+						devfile.components?.find(
+							(c: any) =>
+								c.name === command.exec?.component,
+						);
+
+					const context =
+						DevfileVariableContextBuilder.build(
+							devfile,
+							command,
+							component,
+						);
+
+					const resolvedExec =
+						resolver.resolveObject(
+							command.exec,
+							context,
+						);
+
+					return this.createCheTask(
+						resolvedExec.label || command.id,
+						resolvedExec.commandLine,
+						resolvedExec.workingDir ??
+							context.PROJECT_SOURCE ??
+							'${PROJECT_SOURCE}',
+						resolvedExec.component,
+						resolvedExec.env,
+					);
+				}
+
+				return undefined;
+			})
+			.filter((t): t is vscode.Task => !!t);
+
 		return cheTasks;
 	}
 
-	private async fetchDevfileCommands(): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
-		const devfileService = this.cheAPI.getDevfileService();
-		const devfile: V1alpha2DevWorkspaceSpecTemplate = await devfileService.get();
+	private async fetchDevfileCommands(devfile: V1alpha2DevWorkspaceSpecTemplate): Promise<V1alpha2DevWorkspaceSpecTemplateCommands[]> {
 		if (devfile.commands && devfile.commands.length) {
 			this.channel.appendLine(`Detected ${devfile.commands.length} Command(s) in the flattened Devfile.`);
 			return devfile.commands;
@@ -56,20 +108,13 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 		return [];
 	}
 
-	private createCheTask(name: string, command: string, workdir: string, component: string, env?: Array<V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv>): vscode.Task {
-		function expandEnvVariables(line: string): string {
-			const regex = /\${[a-zA-Z_][a-zA-Z0-9_]*}/g;
-			const envArray = line.match(regex);
-			if (envArray && envArray.length) {
-				for (const envName of envArray) {
-					const envValue = process.env[envName.slice(2, -1)];
-					if (envValue) {
-						line = line.replace(envName, envValue);
-					}
-				}
-			}
-			return line;
-		}
+	private createCheTask(
+		name: string,
+		command: string,
+		workdir: string,
+		component: string,
+		env?: Array<V1alpha2DevWorkspaceSpecTemplateCommandsItemsExecEnv>,
+	): vscode.Task {
 
 		const kind: DevfileTaskDefinition = {
 			type: 'devfile',
@@ -78,18 +123,25 @@ export class DevfileTaskProvider implements vscode.TaskProvider {
 			component
 		};
 
-		const execution = new vscode.CustomExecution(async (): Promise<vscode.Pseudoterminal> => {
-			let initialVariables = '';
-			if (env) {
-				for (const e of env) {
-					let value = e.value.replaceAll('"', '\\"');
-					initialVariables += `export ${e.name}="${value}"; `;
-				}
-			}
+		const execution =
+			new vscode.CustomExecution(
+				async (): Promise<vscode.Pseudoterminal> => {
 
-			return this.terminalExtAPI.getMachineExecPTY(component, initialVariables + command, expandEnvVariables(workdir));
-		});
-		const task = new vscode.Task(kind, vscode.TaskScope.Workspace, name, 'devfile', execution, []);
-		return task;
+					return this.terminalExtAPI.getMachineExecPTY(
+						component,
+						EnvUtils.buildExportStatements(env) + command,
+						workdir,
+					);
+				},
+			);
+
+		return new vscode.Task(
+			kind,
+			vscode.TaskScope.Workspace,
+			name,
+			'devfile',
+			execution,
+			[],
+		);
 	}
 }

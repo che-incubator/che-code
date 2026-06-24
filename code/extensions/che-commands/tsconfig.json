@@ -4,14 +4,17 @@
 		"outDir": "./out",
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
+		"declaration": true,
 		"skipLibCheck": true,
 		"types": [
 			"node",
+			"jest",
 			"reflect-metadata"
 		]
 	},
 	"include": [
 		"src/**/*",
-		"../../src/vscode-dts/vscode.d.ts",
+		"tests/**/*.ts",
+		"../../src/vscode-dts/vscode.d.ts"
 	]
 }
