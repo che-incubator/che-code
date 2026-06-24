@@ -43,7 +43,8 @@
     "@types/node": "22.x"
   },
   "overrides": {
-    "ip-address": "^10.2.0"
+    "ip-address": "^10.2.0",
+    "ws": "^8.21.0"
   },
   "repository": {
     "type": "git",
