@@ -1,0 +1,6 @@
+[
+    {
+        "from": "\"url\": \"https://github.com/microsoft/vscode.git\"\n\t}\n}",
+        "by": "\"url\": \"https://github.com/microsoft/vscode.git\"\n\t},\n\t\"overrides\": {\n\t\t\"undici\": \"^7.28.0\"\n\t}\n}"
+    }
+]
