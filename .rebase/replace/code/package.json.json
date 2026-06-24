@@ -2,5 +2,9 @@
     {
         "from": "    \"gulp-buffer\": \"0.0.2\",\n    \"gulp-filter\": \"^5.1.0\",",
         "by": "    \"gulp-buffer\": \"0.0.2\",\n    \"gulp-decompress\": \"^3.0.0\",\n    \"gulp-filter\": \"^5.1.0\","
+    },
+    {
+        "from": "\"undici\": \"^7.24.0\"",
+        "by": "\"undici\": \"^7.28.0\""
     }
 ]
