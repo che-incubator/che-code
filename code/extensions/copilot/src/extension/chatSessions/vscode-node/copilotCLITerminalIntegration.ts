@@ -105,6 +105,16 @@ powershell -ExecutionPolicy Bypass -File "${this.powershellScriptPath}" %*
 		} else {
 			const copilotShellScript = `#!/bin/sh
 unset NODE_OPTIONS
+NODE_DIR=$(dirname "${process.execPath}")
+if [ -d "$NODE_DIR/ld_libs/core" ]; then
+  LD_LIBRARY_PATH="$NODE_DIR/ld_libs/core\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  if [ -d "$NODE_DIR/ld_libs/openssl" ]; then
+    LD_LIBRARY_PATH="$NODE_DIR/ld_libs/openssl:$LD_LIBRARY_PATH"
+  fi
+elif [ -d "$NODE_DIR/ld_libs" ]; then
+  LD_LIBRARY_PATH="$NODE_DIR/ld_libs\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH
 ELECTRON_RUN_AS_NODE=1 "${process.execPath}" "${path.join(storageLocation, COPILOT_CLI_SHIM_JS)}" "$@"`;
 			await fs.copyFile(path.join(__dirname, COPILOT_CLI_SHIM_JS), path.join(storageLocation, COPILOT_CLI_SHIM_JS));
 			this.shellScriptPath = path.join(storageLocation, COPILOT_CLI_COMMAND);

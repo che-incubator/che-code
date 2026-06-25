@@ -498,6 +498,10 @@ resolve_conflicts() {
       apply_code_vs_base_browser_dompurify_changes
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/chat-lib/package.json" ]]; then

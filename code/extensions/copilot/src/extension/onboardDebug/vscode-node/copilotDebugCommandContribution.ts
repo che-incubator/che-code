@@ -301,6 +301,16 @@ export class CopilotDebugCommandContribution extends Disposable implements vscod
 
 const makeShellScript = (remoteCommand: string, dir: string, callbackUri: vscode.Uri) => `#!/bin/sh
 unset NODE_OPTIONS
+NODE_DIR=$(dirname "${process.execPath}")
+if [ -d "$NODE_DIR/ld_libs/core" ]; then
+  LD_LIBRARY_PATH="$NODE_DIR/ld_libs/core\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  if [ -d "$NODE_DIR/ld_libs/openssl" ]; then
+    LD_LIBRARY_PATH="$NODE_DIR/ld_libs/openssl:$LD_LIBRARY_PATH"
+  fi
+elif [ -d "$NODE_DIR/ld_libs" ]; then
+  LD_LIBRARY_PATH="$NODE_DIR/ld_libs\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH
 ELECTRON_RUN_AS_NODE=1 "${process.execPath}" "${path.join(dir, DEBUG_COMMAND_JS)}" "${callbackUri}" "${remoteCommand}" "$@"`;
 
 const makeBatScript = (ps1Path: string) => `@echo off
