@@ -65,7 +65,8 @@
     "@types/uuid": "8.0.0"
   },
   "overrides": {
-    "ip-address": "^10.2.0"
+    "ip-address": "^10.2.0",
+    "ws": "^8.21.0"
   },
   "repository": {
     "type": "git",

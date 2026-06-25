@@ -6400,7 +6400,8 @@
 		"node-gyp": "npm:node-gyp@10.3.1",
 		"zod": "3.25.76",
 		"shell-quote": "^1.8.4",
-		"ip-address": "^10.2.0"
+		"ip-address": "^10.2.0",
+		"ws": "^8.21.0"
 	},
 	"vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",
 	"__metadata": {
