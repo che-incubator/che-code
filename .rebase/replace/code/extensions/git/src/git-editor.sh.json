@@ -1,0 +1,6 @@
+[
+  {
+    "from": "#!/bin/sh\n\nELECTRON_RUN_AS_NODE=\"1\" \\\n\"$VSCODE_GIT_EDITOR_NODE\"",
+    "by": "#!/bin/sh\n# The following block was generated with AI assistance (Cursor AI)\n# and reviewed by the maintainers.\n#\n# Ensure the bundled node can find its shared libraries (e.g. libnode.so).\n# In Che, LD_LIBRARY_PATH may be sanitized in terminal sessions to avoid\n# library version conflicts with user containers; restore the paths needed\n# for the node binary scoped to this script only.\nif [ -n \"$VSCODE_GIT_EDITOR_NODE\" ]; then\n  EDITOR_NODE_DIR=$(dirname \"$VSCODE_GIT_EDITOR_NODE\")\n  if [ -d \"$EDITOR_NODE_DIR/ld_libs/core\" ]; then\n    LD_LIBRARY_PATH=\"$EDITOR_NODE_DIR/ld_libs/core${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\n    if [ -d \"$EDITOR_NODE_DIR/ld_libs/openssl\" ]; then\n      LD_LIBRARY_PATH=\"$EDITOR_NODE_DIR/ld_libs/openssl:$LD_LIBRARY_PATH\"\n    fi\n  elif [ -d \"$EDITOR_NODE_DIR/ld_libs\" ]; then\n    LD_LIBRARY_PATH=\"$EDITOR_NODE_DIR/ld_libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\n  fi\n  export LD_LIBRARY_PATH\nfi\n\nELECTRON_RUN_AS_NODE=\"1\" \\\n\"$VSCODE_GIT_EDITOR_NODE\""
+  }
+]
