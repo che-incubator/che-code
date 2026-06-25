@@ -325,6 +325,11 @@ async function main() {
 	if (process.env['BUILD_SOURCEVERSION']) {
 		console.log('Running in CI environment, applying package.json patch for correct versioning and pre-release status...');
 		applyPackageJsonPatch();
+	} else if (!isWatch && !isDev) {
+		const packageJsonPath = path.join(import.meta.dirname, './package.json');
+		const pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+		pkgJson.buildType = 'prod';
+		fs.writeFileSync(packageJsonPath, JSON.stringify(pkgJson, null, '\t'));
 	}
 
 	await typeScriptServerPluginPackageJsonInstall();
