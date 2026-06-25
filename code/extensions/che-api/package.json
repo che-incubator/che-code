@@ -55,7 +55,8 @@
       "axios": "^0.32.0"
     },
     "follow-redirects": "^1.16.0",
-    "ip-address": "^10.2.0"
+    "ip-address": "^10.2.0",
+    "ws": "^8.21.0"
   },
   "repository": {
     "type": "git",
