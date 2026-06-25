@@ -2,7 +2,8 @@
     "name": "che-code",
     "bin": "out/vs/server/main.js",
     "dependencies": {
-      "ws": "^8.21.0"
+      "ws": "^8.21.0",
+      "undici": "^7.28.0"
     },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
