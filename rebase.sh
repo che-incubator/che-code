@@ -414,7 +414,11 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/git/src/askpass.sh" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/git/src/git-editor.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -493,6 +497,10 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.js" ]]; then
       apply_code_vs_base_browser_dompurify_changes
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"

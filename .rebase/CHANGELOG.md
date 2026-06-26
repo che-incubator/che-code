@@ -2,6 +2,16 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/736
+
+- code/extensions/git/src/askpass.sh
+- code/extensions/git/src/ssh-askpass.sh
+- code/extensions/git/src/git-editor.sh
+- code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts
+- code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/728
 
