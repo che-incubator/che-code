@@ -58,6 +58,7 @@
       "cpu-features": "0.0.0"
     },
     "shell-quote": "^1.8.4",
-    "ip-address": "^10.2.0"
+    "ip-address": "^10.2.0",
+    "undici": "^7.28.0"
   }
 }
