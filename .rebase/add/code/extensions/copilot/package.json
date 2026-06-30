@@ -2,6 +2,9 @@
     "overrides": {
         "shell-quote": "^1.8.4",
         "ip-address": "^10.2.0",
-        "ws": "^8.21.0"
+        "ws": "^8.21.0",
+        "webdriver": {
+            "undici@6": "^6.27.0"
+        }
     }
 }

@@ -19,6 +19,16 @@ https://github.com/che-incubator/che-code/pull/736
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/739
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/728
 
 - code/package.json
