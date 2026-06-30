@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout che-code source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install jq
         uses: dcarbone/install-jq-action@v3
         with:
@@ -53,7 +53,7 @@ jobs:
             echo arch="arm64" >> $GITHUB_ENV
           fi
       - name: Checkout che-code source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Compile che-code
@@ -90,7 +90,7 @@ jobs:
             echo arch="arm64" >> $GITHUB_ENV
           fi
       - name: Checkout che-code source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Download editor artifacts
@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout che-code source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Free up disk space
         run: |
