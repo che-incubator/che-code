@@ -1,0 +1,6 @@
+[
+	{
+		"from": "\tif (process.env['BUILD_SOURCEVERSION']) {\n\t\tconsole.log('Running in CI environment, applying package.json patch for correct versioning and pre-release status...');\n\t\tapplyPackageJsonPatch();\n\t}",
+		"by": "\tif (process.env['BUILD_SOURCEVERSION']) {\n\t\tconsole.log('Running in CI environment, applying package.json patch for correct versioning and pre-release status...');\n\t\tapplyPackageJsonPatch();\n\t} else if (!isWatch && !isDev) {\n\t\tconst packageJsonPath = path.join(import.meta.dirname, './package.json');\n\t\tconst pkgJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));\n\t\tpkgJson.buildType = 'prod';\n\t\tfs.writeFileSync(packageJsonPath, JSON.stringify(pkgJson, null, '\\t'));\n\t}"
+	}
+]

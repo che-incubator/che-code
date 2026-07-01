@@ -56,10 +56,39 @@ Important:
    - File path: `.rebase/replace/<original-path>.json`
    - Format: JSON array of objects with `from` and `by`.
    - Add one rule per changed hunk, using stable and unique snippets.
-   - Prefer the smallest safe snippet that is unlikely to change accidentally.
+   - **Ensure `from` appears exactly once in the upstream file.** Both sed and perl handlers replace **all** occurrences — if `from` matches multiple places, all will be replaced, which is almost always wrong. Extend the snippet with more surrounding context to make it unique.
+   - Prefer the smallest safe snippet that is unlikely to change accidentally, but large enough to be unique in the file.
    - If replacement is multiline, encode using escaped newlines/tabs in JSON consistently with existing files.
    - For multiline `from` snippets, start at the first non-whitespace token (avoid anchoring on leading indentation only).
    - Prefer replacing the whole logical block (`if (...) { ... }`) rather than only an inner line fragment, so closing braces remain structurally correct.
+   - **Encode special characters correctly** for the handler used in `rebase.sh`. See the encoding tables below.
+
+### Sed encoding (`apply_changes`)
+
+Values go through: JSON parse → `jq -r` → `escape_litteral` → sed.
+
+| Character in target | `from` encoding | `by` encoding |
+|---------------------|----------------|---------------|
+| Newline | `\\\n` | `\\\n` |
+| Tab | `\\\t` | `\\\t` |
+| `&` | literal | `\\&` |
+| `*` | `\\*` | literal |
+| `$`, `[`, `]` | literal (`escape_litteral` handles) | literal |
+| `"` | `\\\"` | `\\\"` |
+
+**Common pitfall — `&` in sed `by` values:** In sed replacement strings, `&` means "the entire matched text". Writing `&&` in a `by` value produces the matched `from` text repeated twice instead of a literal `&&`. Always escape as `\\&\\&`. This applies to any `&` in `by`, not just `&&`.
+
+### Perl encoding (`apply_changes_multi_line` / `apply_multi_line_replace`)
+
+Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / literal (by).
+
+| Character in target | `from` encoding | `by` encoding |
+|---------------------|----------------|---------------|
+| Newline | `\n` | `\n` |
+| Tab | `\t` | `\t` |
+| Any special char | literal | literal |
+
+**Prefer multiline (perl) for new rules** — simpler encoding, handles all cases, no `&` pitfall.
 
 5. Update `rebase.sh` conflict routing
    - Ensure each file that now has a new rebasing rule is routable in `resolve_conflicts`.
@@ -89,12 +118,23 @@ Important:
    - For each changed `.rebase/replace/**/*.json`, verify every `from` exists in the upstream file content before finishing.
      - Example: `git show <upstream-ref>:<path-without-code-prefix>` and compare with the `from` snippet.
      - `path-without-code-prefix` means the same file path but without the leading `code/` (because `upstream-code` stores VS Code sources at repo root).
+   - Verify each `from` appears **exactly once** in the upstream file. If it matches multiple times, the rule will silently replace all of them. Extend the `from` snippet with more context until it is unique.
    - Dry-run the generated rule using the same replacement path as `rebase.sh` (Perl-based multiline replace), not a language-native `.replace(...)`.
    - Include at least one test case where `from`/`by` contains `$` (for example template literals like `${key}`) and confirm replacement still succeeds.
    - Re-check exclusions:
      - no rules for `code/extensions/che-*`
      - no rules for `package-lock.json`
    - Ensure every changed rule file is actually referenced by logic in `rebase.sh` when required.
+
+8. Verify completeness — no uncovered Che-specific changes
+   - For each file that was updated or created in `.rebase/replace/`, simulate the **full** rule application:
+     1. Start with the upstream file at `CURRENT_UPSTREAM_VERSION`.
+     2. Apply **all** rule entries from the JSON (not just the newly added ones) plus any custom inline replacements from `rebase.sh`.
+     3. Diff the result against the che-code working tree file.
+   - If the diff is empty → all Che changes are covered. Good.
+   - If there is a remaining diff → there are Che-specific changes in the working tree that are **not covered** by any rule. These changes would be silently lost during rebase.
+     - If the uncovered changes are from the same commit being processed, add additional rule entries for them.
+     - If the uncovered changes are pre-existing (from earlier commits), report them to the user as a warning: "Pre-existing Che-specific changes at lines X-Y have no rebase rule and would be lost during rebase."
 
 ## Decision notes
 

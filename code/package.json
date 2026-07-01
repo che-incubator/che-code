@@ -137,12 +137,12 @@
     "playwright-core": "1.59.1",
     "ssh2": "^1.16.0",
     "tas-client": "0.3.1",
-    "undici": "^7.24.0",
+    "undici": "^7.28.0",
     "v8-inspect-profiler": "^0.1.1",
     "vscode-oniguruma": "1.7.0",
     "vscode-regexpp": "^3.1.0",
     "vscode-textmate": "^9.3.2",
-    "ws": "^8.19.0",
+    "ws": "^8.21.0",
     "yauzl": "^3.0.0",
     "yazl": "^2.4.3",
     "js-yaml": "^4.1.0"
@@ -269,7 +269,14 @@
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
     "flatted": "^3.4.2",
     "shell-quote": "^1.8.4",
-    "qs": "6.15.2"
+    "qs": "6.15.2",
+    "ip-address": "^10.2.0",
+    "chrome-remote-interface": {
+      "ws": "^7.5.11"
+    },
+    "webdriver": {
+      "undici@6": "^6.27.0"
+    }
   },
   "repository": {
     "type": "git",

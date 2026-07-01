@@ -8,6 +8,7 @@
 */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const os = require('os');
 
@@ -17,6 +18,16 @@ const port = 3400;
 let username = "UNKNOWN";
 try {
   username = fs.readFileSync('/sshd/username', 'utf8');
+} catch (error) {
+  // continue
+}
+
+let uriScheme = 'vscode';
+try {
+  const schemeArg = process.argv.slice(2)[0];
+  if (schemeArg) {
+    uriScheme = schemeArg;
+  }
 } catch (error) {
   // continue
 }
@@ -52,6 +63,7 @@ const server = http.createServer((req, res) => {
     let keyMessage = hasUserPrefSSHKey ? userPubKey : genKey;
     let encodedKeyMessage = Buffer.from(hasUserPrefSSHKey ? userKey : genKey).toString('base64url');
     let encodedUrl = encodeURIComponent(process.env["CHE_DASHBOARD_URL"]);
+    getHostURL((hostURL) => {
 
     res.end(`
 <!DOCTYPE html>
@@ -87,8 +99,8 @@ const server = http.createServer((req, res) => {
         <li class="extension-li">Click the URI below (you may need to accept the prompt allowing this page to open the link with your VS Code-based editor) <b>OR</b> from the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URI below.</li>
         <div class="parent">
           <div>
-            <a href="vscode://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}">
-              <pre id="uri-connection">vscode://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}</pre>
+            <a href="${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}">
+              <pre id="uri-connection">${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}</pre>
             </a>
           </div>
           <div class="clipboard">
@@ -104,7 +116,7 @@ const server = http.createServer((req, res) => {
     </div>
     <div id="docs-manual" hidden>
       <ol>
-        <li>Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools">oc client</a> is <a href="https://oauth-openshift${getHostURL()}/oauth/token/request">logged in</a> to your OpenShift cluster</li>
+        <li>Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools">oc client</a> is <a href="${hostURL}/oauth/token/request">logged in</a> to your OpenShift cluster</li>
         <li><p class="center">Run <code id="port-forward">oc port-forward -n ${process.env["DEVWORKSPACE_NAMESPACE"]} ${process.env["HOSTNAME"]} 2022:2022</code><a href="#"><svg class="clipboard-img-code" onclick="copyToClipboard('port-forward')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
             <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
             <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
@@ -159,11 +171,13 @@ const server = http.createServer((req, res) => {
     </div>
     <script>
       initializePlatformContent();
-      openDevspacesURI("${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedKeyMessage}", "${encodedUrl}");
+      openDevspacesURI("${uriScheme}", "${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedKeyMessage}", "${encodedUrl}");
     </script>
   </body>
 </html>
     `);
+
+    });
     } else {
       let loc = req.url.substring(1);
       let isBinaryData = false;
@@ -197,16 +211,51 @@ server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
 });
 
-function getHostURL () {
+function getHostURL (callback) {
+
     const consoleURL = process.env["CLUSTER_CONSOLE_URL"];
     const devspacesURL = process.env["CHE_DASHBOARD_URL"];
+
     if (consoleURL === undefined || devspacesURL === undefined) {
-      return undefined;
+        return callback(undefined);
     }
-    let i = 0;
-    while (i < consoleURL.length && i < devspacesURL.length
-        && consoleURL.substring(consoleURL.length - 1 - i) === devspacesURL.substring(devspacesURL.length - 1 - i)) {
-      i++;
-    }
-    return consoleURL.substring(consoleURL.length - i);
+
+    console.log(`Discovering cluster API URL via ${devspacesURL}`);
+    const host = new URL(devspacesURL);
+    const oauthStartURL = `${host.protocol}//${host.host}/oauth/start`;
+
+    const getFallbackURL = () => {
+        console.log('Falling back to legacy discovery method.');
+        let i = 0;
+        while (i < consoleURL.length && i < devspacesURL.length
+            && consoleURL.substring(consoleURL.length - 1 - i) === devspacesURL.substring(devspacesURL.length - 1 - i)) {
+            i++;
+        }
+        return `https://oauth-openshift${consoleURL.substring(consoleURL.length - i)}`;
+    };
+
+    // Follow the /oauth/start redirect to discover the real cluster hostname
+    const mod = host.protocol === "https:" ? https : http;
+    const req = mod.get(oauthStartURL, { rejectUnauthorized: false }, (res) => {
+      clearTimeout(timer);
+      res.resume(); // only interested in headers, so consume body
+      if (res.statusCode === 302 && res.headers.location) {
+        const resHost = new URL(res.headers.location);
+        const resURL = `${resHost.protocol}//${resHost.host}`;
+        console.log(`Resolved API URL: ${resURL}`);
+        callback(resURL);
+      } else {
+        callback(getFallbackURL());
+      }
+    });
+
+    const timer = setTimeout(() => {
+        req.destroy();
+        callback(getFallbackURL());
+    }, 10000);
+
+    req.on('error', () => {
+      clearTimeout(timer);
+      callback(getFallbackURL());
+    });
 }

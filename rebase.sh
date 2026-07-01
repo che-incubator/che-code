@@ -380,6 +380,8 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/vite/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
@@ -412,11 +414,17 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/git/src/askpass.sh" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/ssh-askpass.sh" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/git/src/git-editor.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/product.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/web.main.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -490,6 +498,12 @@ resolve_conflicts() {
       apply_code_vs_base_browser_dompurify_changes
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/.esbuild.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/chat-lib/package.json" ]]; then
@@ -505,6 +519,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes

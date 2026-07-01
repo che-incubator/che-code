@@ -6390,7 +6390,7 @@
 		"lru-cache": "^11.1.0",
 		"markdown-it": "^14.1.1",
 		"minimatch": "^10.2.1",
-		"undici": "^7.24.1",
+		"undici": "^7.28.0",
 		"vscode-tas-client": "^0.1.84",
 		"web-tree-sitter": "^0.23.0"
 	},
@@ -6400,7 +6400,12 @@
 		"node-gyp": "npm:node-gyp@10.3.1",
 		"zod": "3.25.76",
 		"shell-quote": "^1.8.4",
-		"qs": "6.15.2"
+		"qs": "6.15.2",
+		"ip-address": "^10.2.0",
+		"ws": "^8.21.0",
+		"webdriver": {
+			"undici@6": "^6.27.0"
+		}
 	},
 	"vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",
 	"__metadata": {
