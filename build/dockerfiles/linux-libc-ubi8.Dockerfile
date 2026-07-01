@@ -12,6 +12,7 @@ FROM registry.access.redhat.com/ubi8/nodejs-22:1-1776847890 as linux-libc-ubi8-b
 USER root
 
 # Export GITHUB_TOKEN into environment variable
+# test
 ARG GITHUB_TOKEN=''
 ENV GITHUB_TOKEN=$GITHUB_TOKEN
 
