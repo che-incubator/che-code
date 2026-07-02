@@ -3,6 +3,8 @@
         "packageMocks/keytar"
     ],
     "overrides": {
-        "form-data@3": "^3.0.5"
+        "@types/node-fetch": {
+            "form-data": "^3.0.5"
+        }
     }
 }
