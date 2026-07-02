@@ -1,7 +1,4 @@
 {
-    "workspaces": [
-        "packageMocks/keytar"
-    ],
     "overrides": {
         "form-data@3": "^3.0.5"
     }
