@@ -63,7 +63,9 @@
     "handlebars": "4.7.9",
     "follow-redirects": "^1.16.0",
     "flatted": "^3.4.2",
-    "form-data@4": "^4.0.6"
+    "axios": {
+      "form-data": "^4.0.6"
+    }
   },
   "repository": {
     "type": "git",

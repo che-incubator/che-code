@@ -148,7 +148,9 @@
     "vscode-tas-client": "^0.1.84"
   },
   "overrides": {
-    "form-data@3": "^3.0.5"
+    "@types/node-fetch": {
+      "form-data": "^3.0.5"
+    }
   },
   "repository": {
     "type": "git",
