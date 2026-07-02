@@ -11,6 +11,7 @@ import { createDecorator } from '../../../instantiation/common/instantiation.js'
 import { ILogService } from '../../../log/common/log.js';
 import { IProductService } from '../../../product/common/productService.js';
 import { COPILOT_LICENSE_AGREEMENT } from '../../../endpoint/common/licenseAgreement.js';
+import { parseCopilotTokenFields } from '../copilot/copilotTokenFields.js';
 
 // #region Types
 
@@ -382,6 +383,20 @@ export const ICopilotApiService = createDecorator<ICopilotApiService>('copilotAp
  *   and is not part of the Anthropic-shaped CAPI surface.
  * - Malformed JSON in an SSE `data:` line is logged and skipped, not thrown.
  */
+/**
+ * Restricted/enhanced telemetry context derived from a user's minted CAPI Copilot session token,
+ * mirroring what the Copilot extension reads off its `CopilotToken` (`rt` opt-in, `tid` tracking id)
+ * plus the CAPI `endpoints.telemetry` host.
+ */
+export interface IRestrictedTelemetryContext {
+	/** Whether the token opts into enhanced/restricted telemetry (the `rt=1` claim). */
+	readonly restrictedTelemetryEnabled: boolean;
+	/** The Copilot user tracking id (`tid` claim), or `undefined` when absent. */
+	readonly trackingId: string | undefined;
+	/** The CAPI `endpoints.telemetry` base URL, resolved only when enabled; `undefined` otherwise. */
+	readonly telemetryEndpoint: string | undefined;
+}
+
 export interface ICopilotApiService {
 
 	readonly _serviceBrand: undefined;
@@ -477,14 +492,13 @@ export interface ICopilotApiService {
 	): Promise<string>;
 
 	/**
-	 * Resolve this user's CAPI-provided restricted-telemetry endpoint — the
-	 * `/copilot_internal/user` response's `endpoints.telemetry` base URL — reusing
-	 * the same cached endpoint discovery used for CAPI routing. Returns `undefined`
-	 * when the response advertises none. Lets agent-host restricted telemetry target
-	 * the user's telemetry host (dotcom, GHE, proxy) the way the Copilot extension
-	 * and CLI do, rather than assuming the dotcom default.
+	 * Resolve this user's restricted-telemetry context from the minted CAPI Copilot session token —
+	 * the `rt` opt-in and `tid` tracking id — plus the CAPI `endpoints.telemetry` host. The GitHub
+	 * token itself carries none of these claims; they live in the Copilot session token (minted via
+	 * `RequestType.CopilotToken`), exactly as the Copilot extension reads them off its `CopilotToken`.
+	 * The telemetry endpoint is resolved only when enabled, so public users incur no extra discovery.
 	 */
-	resolveTelemetryEndpoint(githubToken: string): Promise<string | undefined>;
+	resolveRestrictedTelemetryContext(githubToken: string): Promise<IRestrictedTelemetryContext>;
 }
 
 export class CopilotApiService implements ICopilotApiService {
@@ -815,13 +829,19 @@ export class CopilotApiService implements ICopilotApiService {
 	}
 
 	/**
-	 * Resolve this user's CAPI-provided restricted-telemetry endpoint (the
-	 * `/copilot_internal/user` response's `endpoints.telemetry`), reusing the
-	 * cached endpoint discovery. Returns `undefined` when none is advertised.
+	 * Resolve this user's restricted-telemetry context. Reads the `rt`/`tid` claims from the minted
+	 * CAPI Copilot session token (the GitHub token has neither), and resolves the CAPI
+	 * `endpoints.telemetry` host from the cached `/copilot_internal/user` discovery only when the
+	 * user is opted in, so public users pay no extra discovery call.
 	 */
-	async resolveTelemetryEndpoint(githubToken: string): Promise<string | undefined> {
-		const entry = await this._getEntryForToken(githubToken);
-		return entry.telemetryEndpoint;
+	async resolveRestrictedTelemetryContext(githubToken: string): Promise<IRestrictedTelemetryContext> {
+		const fields = parseCopilotTokenFields(await this._getCopilotToken(githubToken));
+		const restrictedTelemetryEnabled = fields.get('rt') === '1';
+		const trackingId = fields.get('tid');
+		const telemetryEndpoint = restrictedTelemetryEnabled
+			? (await this._getEntryForToken(githubToken)).telemetryEndpoint
+			: undefined;
+		return { restrictedTelemetryEnabled, trackingId, telemetryEndpoint };
 	}
 
 	private _getEntryForToken(githubToken: string): Promise<ICachedClient> {

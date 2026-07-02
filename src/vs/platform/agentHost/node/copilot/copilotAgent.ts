@@ -59,7 +59,6 @@ import { ICopilotSessionContext, projectFromCopilotContext } from './copilotGitP
 import { parsedPluginsEqual, toChildCustomizations } from './copilotPluginConverters.js';
 import { CopilotSessionLauncher, ContextSizeConfigKey, ThinkingLevelConfigKey, getCopilotContextTier, getCopilotReasoningEffort, type CopilotSessionLaunchPlan, type IActiveClientSnapshot } from './copilotSessionLauncher.js';
 import { ShellManager } from './copilotShellTools.js';
-import { isRestrictedTelemetryEnabled, parseCopilotTokenFields } from './copilotTokenFields.js';
 import { isAgentHostTelemetryService } from '../agentHostTelemetryService.js';
 import { ICopilotApiService } from '../shared/copilotApiService.js';
 import { CopilotSlashCommandCompletionProvider } from './copilotSlashCommandCompletionProvider.js';
@@ -653,32 +652,50 @@ export class CopilotAgent extends Disposable implements IAgent {
 		return handled;
 	}
 
-	private _updateRestrictedTelemetry(token: string | undefined): void {
-		const rtEnabled = isRestrictedTelemetryEnabled(token);
+	private _updateRestrictedTelemetry(githubToken: string | undefined): void {
+		// Safe default synchronously: keep restricted/enhanced telemetry disabled until the minted
+		// CAPI Copilot session token confirms the `rt=1` opt-in. The GitHub token here carries no
+		// `rt`/`tid` claims — those live in the Copilot session token, which the API service mints —
+		// so the real values are resolved asynchronously below. Mirrors how the Copilot extension
+		// reads `rt`/`tid` off its `CopilotToken` rather than the GitHub token.
+		this._applyRestrictedTelemetry(false, undefined, undefined);
+		if (githubToken) {
+			void this._resolveRestrictedTelemetry(githubToken);
+		}
+	}
+
+	private async _resolveRestrictedTelemetry(githubToken: string): Promise<void> {
+		try {
+			const ctx = await this._copilotApiService.resolveRestrictedTelemetryContext(githubToken);
+			if (this._githubToken !== githubToken) {
+				return; // token changed while resolving; a newer call owns the state
+			}
+			// TEMP DIAGNOSTIC (remove before merge): resolved restricted-telemetry context from the
+			// minted CAPI Copilot token — rt opt-in, whether a tracking id is present, and the endpoint.
+			this._logService.info(`[Copilot] rt-debug resolved rt=${ctx.restrictedTelemetryEnabled} tid=${ctx.trackingId ? 'set' : '<none>'} endpoint=${ctx.telemetryEndpoint ?? '<none>'}`);
+			this._applyRestrictedTelemetry(
+				ctx.restrictedTelemetryEnabled,
+				ctx.trackingId,
+				ctx.telemetryEndpoint ? `${ctx.telemetryEndpoint}/telemetry` : undefined,
+			);
+		} catch (err) {
+			this._logService.debug(`[Copilot] Restricted telemetry resolution failed: ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+
+	private _applyRestrictedTelemetry(rtEnabled: boolean, trackingId: string | undefined, telemetryEndpoint: string | undefined): void {
 		if (rtEnabled !== this._restrictedTelemetryEnabled) {
 			this._restrictedTelemetryEnabled = rtEnabled;
 			this._logService.info(`[Copilot] Restricted telemetry ${rtEnabled ? 'enabled' : 'disabled'}`);
 			this._onDidChangeRestrictedTelemetry.fire();
 		}
 		// Push the token-derived telemetry policy/identity to the restricted sender: `rt` gates
-		// enhanced GH telemetry (kept off for public users) and `tid` becomes `copilot_trackingId`.
-		if (!isAgentHostTelemetryService(this._telemetryService)) {
-			return;
-		}
-		const telemetryService = this._telemetryService;
-		telemetryService.setRestrictedTelemetryEnabled(rtEnabled);
-		telemetryService.setCopilotTrackingId(parseCopilotTokenFields(token).get('tid'));
-		// Route restricted telemetry at the user's CAPI `endpoints.telemetry` (dotcom, GHE, or proxy)
-		// rather than the dotcom default. Only opted-in (`rt=1`) users emit it, so only they pay the
-		// discovery; resolution is async, so any events before it resolves use the fallback URL.
-		if (rtEnabled && token) {
-			void this._copilotApiService.resolveTelemetryEndpoint(token).then(endpoint => {
-				if (this._githubToken === token) {
-					telemetryService.setRestrictedTelemetryEndpoint(endpoint ? `${endpoint}/telemetry` : undefined);
-				}
-			}, err => {
-				this._logService.debug(`[Copilot] Telemetry endpoint discovery failed: ${err instanceof Error ? err.message : String(err)}`);
-			});
+		// enhanced GH telemetry (kept off for public users), `tid` becomes `copilot_trackingId`, and
+		// the endpoint routes at the user's CAPI telemetry host (dotcom, GHE, or proxy).
+		if (isAgentHostTelemetryService(this._telemetryService)) {
+			this._telemetryService.setRestrictedTelemetryEnabled(rtEnabled);
+			this._telemetryService.setCopilotTrackingId(trackingId);
+			this._telemetryService.setRestrictedTelemetryEndpoint(telemetryEndpoint);
 		}
 	}
 

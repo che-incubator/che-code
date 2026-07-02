@@ -239,7 +239,7 @@ class StubCopilotApiService implements ICopilotApiService {
 
 	readonly messagesCallCount = { count: 0 };
 
-	async resolveTelemetryEndpoint(): Promise<string | undefined> { return undefined; }
+	async resolveRestrictedTelemetryContext() { return { restrictedTelemetryEnabled: false, trackingId: undefined, telemetryEndpoint: undefined }; }
 
 	messages(
 		token: string,

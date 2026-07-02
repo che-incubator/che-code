@@ -56,7 +56,7 @@ type MessagesResult =
 class FakeCopilotApiService implements ICopilotApiService {
 	declare readonly _serviceBrand: undefined;
 
-	async resolveTelemetryEndpoint(): Promise<string | undefined> { return undefined; }
+	async resolveRestrictedTelemetryContext() { return { restrictedTelemetryEnabled: false, trackingId: undefined, telemetryEndpoint: undefined }; }
 
 	messagesResult: MessagesResult = { kind: 'error', error: new Error('not configured') };
 	modelsResult: { kind: 'value'; value: CCAModel[] } | { kind: 'error'; error: Error } = { kind: 'value', value: [] };
@@ -1254,7 +1254,7 @@ suite('ClaudeProxyService', () => {
 				models: () => Promise.resolve([]),
 				responses: () => Promise.reject(new Error('not used')),
 				utilityChatCompletion: () => Promise.reject(new Error('not used')),
-				resolveTelemetryEndpoint: () => Promise.resolve(undefined),
+				resolveRestrictedTelemetryContext: () => Promise.resolve({ restrictedTelemetryEnabled: false, trackingId: undefined, telemetryEndpoint: undefined }),
 			};
 			const service = new ClaudeProxyService(new NullLogService(), wrapped);
 			const handle = await service.start(TOKEN);
@@ -1324,7 +1324,7 @@ suite('ClaudeProxyService', () => {
 				models: fake.models.bind(fake),
 				responses: fake.responses.bind(fake),
 				utilityChatCompletion: fake.utilityChatCompletion.bind(fake),
-				resolveTelemetryEndpoint: fake.resolveTelemetryEndpoint.bind(fake),
+				resolveRestrictedTelemetryContext: fake.resolveRestrictedTelemetryContext.bind(fake),
 			};
 			const service = new ClaudeProxyService(new NullLogService(), wrapped);
 			const handle = await service.start(TOKEN);
