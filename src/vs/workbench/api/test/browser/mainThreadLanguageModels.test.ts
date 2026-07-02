@@ -16,7 +16,7 @@ import { IAuthenticationAccessService } from '../../../services/authentication/b
 import { ILanguageModelIgnoredFilesService } from '../../../contrib/chat/common/ignoredFiles.js';
 import { ILanguageModelChatProvider, ILanguageModelsService, IChatMessage } from '../../../contrib/chat/common/languageModels.js';
 import { SerializableObjectWithBuffers } from '../../../services/extensions/common/proxyIdentifier.js';
-import { TestExtensionService } from '../../../test/common/workbenchTestServices.js';
+import { TestExtensionService, TestProductService } from '../../../test/common/workbenchTestServices.js';
 import { MainThreadLanguageModels } from '../../browser/mainThreadLanguageModels.js';
 import { ExtHostLanguageModelsShape } from '../../common/extHost.protocol.js';
 import { SingleProxyRPCProtocol } from '../common/testRPCProtocol.js';
@@ -42,6 +42,7 @@ suite('MainThreadLanguageModels', function () {
 			SingleProxyRPCProtocol(proxy),
 			languageModelsService,
 			new NullLogService(),
+			TestProductService,
 			new class extends mock<IAuthenticationService>() { },
 			new class extends mock<IAuthenticationAccessService>() { },
 			new TestExtensionService(),
@@ -84,6 +85,7 @@ suite('MainThreadLanguageModels', function () {
 			SingleProxyRPCProtocol(proxy),
 			languageModelsService,
 			new NullLogService(),
+			TestProductService,
 			new class extends mock<IAuthenticationService>() { },
 			new class extends mock<IAuthenticationAccessService>() { },
 			new TestExtensionService(),
@@ -118,6 +120,7 @@ suite('MainThreadLanguageModels', function () {
 			SingleProxyRPCProtocol({}),
 			languageModelsService,
 			new NullLogService(),
+			TestProductService,
 			new class extends mock<IAuthenticationService>() { },
 			new class extends mock<IAuthenticationAccessService>() { },
 			new TestExtensionService(),
@@ -156,6 +159,7 @@ suite('MainThreadLanguageModels', function () {
 			SingleProxyRPCProtocol({}),
 			languageModelsService,
 			new NullLogService(),
+			TestProductService,
 			new class extends mock<IAuthenticationService>() { },
 			new class extends mock<IAuthenticationAccessService>() { },
 			new TestExtensionService(),
@@ -192,6 +196,7 @@ suite('MainThreadLanguageModels', function () {
 			SingleProxyRPCProtocol(proxy),
 			languageModelsService,
 			new NullLogService(),
+			TestProductService,
 			new class extends mock<IAuthenticationService>() { },
 			new class extends mock<IAuthenticationAccessService>() { },
 			new TestExtensionService(),
