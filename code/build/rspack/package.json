@@ -13,6 +13,7 @@
   },
   "overrides": {
     "shell-quote": "^1.8.4",
+    "qs": "6.15.2",
     "ws": "^8.21.0",
     "webpack-bundle-analyzer":{
       "ws": "^7.5.11"

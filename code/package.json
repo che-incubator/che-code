@@ -269,6 +269,7 @@
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
     "flatted": "^3.4.2",
     "shell-quote": "^1.8.4",
+    "qs": "6.15.2",
     "ip-address": "^10.2.0",
     "chrome-remote-interface": {
       "ws": "^7.5.11"
