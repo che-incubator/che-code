@@ -279,7 +279,9 @@
     },
     "test-exclude": {
       "brace-expansion@5": "5.0.7"
-    }
+    },
+    "form-data@3": "^3.0.5",
+    "form-data@4": "^4.0.6"
   },
   "repository": {
     "type": "git",
