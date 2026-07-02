@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
-832425b2718 (CVE-2026-12143: override form-data to patched versions)
+https://github.com/che-incubator/che-code/pull/744
 
 - code/package.json
 - code/build/package.json
