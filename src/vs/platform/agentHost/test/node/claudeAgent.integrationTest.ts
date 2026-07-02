@@ -239,6 +239,8 @@ class StubCopilotApiService implements ICopilotApiService {
 
 	readonly messagesCallCount = { count: 0 };
 
+	async resolveRestrictedTelemetryContext() { return { restrictedTelemetryEnabled: false, trackingId: undefined, telemetryEndpoint: undefined }; }
+
 	messages(
 		token: string,
 		request: Anthropic.MessageCreateParamsStreaming,
