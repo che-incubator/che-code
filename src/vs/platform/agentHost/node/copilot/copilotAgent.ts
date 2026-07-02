@@ -670,9 +670,6 @@ export class CopilotAgent extends Disposable implements IAgent {
 			if (this._githubToken !== githubToken) {
 				return; // token changed while resolving; a newer call owns the state
 			}
-			// TEMP DIAGNOSTIC (remove before merge): resolved restricted-telemetry context from the
-			// minted CAPI Copilot token — rt opt-in, whether a tracking id is present, and the endpoint.
-			this._logService.info(`[Copilot] rt-debug resolved rt=${ctx.restrictedTelemetryEnabled} tid=${ctx.trackingId ? 'set' : '<none>'} endpoint=${ctx.telemetryEndpoint ?? '<none>'}`);
 			this._applyRestrictedTelemetry(
 				ctx.restrictedTelemetryEnabled,
 				ctx.trackingId,
