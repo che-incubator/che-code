@@ -59,6 +59,9 @@
     },
     "shell-quote": "^1.8.4",
     "ip-address": "^10.2.0",
-    "undici": "^7.28.0"
+    "undici": "^7.28.0",
+    "@types/node-fetch": {
+      "form-data": "^4.0.6"
+    }
   }
 }

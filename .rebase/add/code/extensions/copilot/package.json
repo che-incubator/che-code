@@ -5,6 +5,9 @@
         "ws": "^8.21.0",
         "webdriver": {
             "undici@6": "^6.27.0"
+        },
+        "@vscode/vsce": {
+            "form-data": "^4.0.6"
         }
     }
 }

@@ -79,6 +79,9 @@
     "path-scurry": {
       "lru-cache": "11.2.1"
     },
-    "lodash": "^4.18.1"
+    "lodash": "^4.18.1",
+    "@vscode/vsce": {
+      "form-data": "^4.0.6"
+    }
   }
 }
