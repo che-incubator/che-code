@@ -147,6 +147,9 @@
     "keytar": "workspace:*",
     "vscode-tas-client": "^0.1.84"
   },
+  "overrides": {
+    "form-data@3": "^3.0.5"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
