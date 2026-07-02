@@ -272,6 +272,14 @@
     "ip-address": "^10.2.0",
     "chrome-remote-interface": {
       "ws": "^7.5.11"
+    },
+    "form-data@3": "^3.0.5",
+    "form-data@4": "^4.0.6",
+    "axios": {
+      "form-data": "^4.0.6"
+    },
+    "@types/node-fetch": {
+      "form-data": "^3.0.5"
     }
   },
   "repository": {
