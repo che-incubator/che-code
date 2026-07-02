@@ -46,13 +46,13 @@
   },
   "overrides": {
     "@devfile/api": {
-      "form-data": "2.5.5"
+      "form-data": "^2.5.6"
     },
     "@types/node-fetch": {
-      "form-data": "4.0.4"
+      "form-data": "^4.0.6"
     },
     "jsdom": {
-      "form-data": "3.0.4"
+      "form-data": "^3.0.5"
     },
     "minimatch": "^3.1.5",
     "handlebars": "4.7.9"
