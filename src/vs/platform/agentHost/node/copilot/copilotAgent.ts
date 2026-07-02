@@ -683,7 +683,7 @@ export class CopilotAgent extends Disposable implements IAgent {
 	private _applyRestrictedTelemetry(rtEnabled: boolean, trackingId: string | undefined, telemetryEndpoint: string | undefined): void {
 		if (rtEnabled !== this._restrictedTelemetryEnabled) {
 			this._restrictedTelemetryEnabled = rtEnabled;
-			this._logService.info(`[Copilot] Restricted telemetry ${rtEnabled ? 'enabled' : 'disabled'}`);
+			this._logService.info(`[Copilot] Enhanced (restricted) telemetry ${rtEnabled ? 'enabled for this account' : 'disabled'}`);
 			this._onDidChangeRestrictedTelemetry.fire();
 		}
 		// Push the token-derived telemetry policy/identity to the restricted sender: `rt` gates
