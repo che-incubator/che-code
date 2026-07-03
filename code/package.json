@@ -277,7 +277,9 @@
     "webdriver": {
       "undici@6": "^6.27.0"
     },
-    "brace-expansion@5": "^5.0.6"
+    "minimatch": {
+      "brace-expansion": "5.0.7"
+    }
   },
   "repository": {
     "type": "git",
