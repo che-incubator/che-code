@@ -1315,6 +1315,9 @@ suite('AgentService (node dispatcher)', () => {
 				updateRef: async () => { },
 				deleteRefs: async () => { },
 				revParse: async () => undefined,
+				resolveBranchBaselineCommit: async () => undefined,
+				overlayPathIntoTree: async () => undefined,
+				diffTreePaths: async () => undefined,
 				computeFileDiffsBetweenRefs: async () => undefined,
 			};
 			const localService = disposables.add(new AgentService(new NullLogService(), fileService, nullSessionDataService, { _serviceBrand: undefined } as IProductService, gitService));
@@ -1411,6 +1414,9 @@ suite('AgentService (node dispatcher)', () => {
 				updateRef: async () => { },
 				deleteRefs: async () => { },
 				revParse: async () => undefined,
+				resolveBranchBaselineCommit: async () => undefined,
+				overlayPathIntoTree: async () => undefined,
+				diffTreePaths: async () => undefined,
 				computeFileDiffsBetweenRefs: async () => undefined,
 			};
 			const localService = disposables.add(new AgentService(new NullLogService(), fileService, nullSessionDataService, { _serviceBrand: undefined } as IProductService, gitService));

@@ -252,6 +252,10 @@
 	line-height: 22px;
 }
 
+.agent-sessions-workbench .part.editor .multiDiffEntry .header-content .actions-container {
+	gap: 4px;
+}
+
 .agent-sessions-workbench .part.editor .multiDiffEntry .header:focus,
 .agent-sessions-workbench .part.editor .multiDiffEntry .header:focus-visible {
 	outline: none;

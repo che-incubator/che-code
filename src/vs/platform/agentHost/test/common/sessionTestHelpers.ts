@@ -239,13 +239,48 @@ export function createNoopGitService(): import('../../common/agentHostGitService
 		push: async () => { },
 		getSessionGitState: async () => undefined,
 		computeSessionFileDiffs: async () => undefined,
+		resolveBranchBaselineCommit: async () => undefined,
 		showBlob: async () => undefined,
 		captureWorkingTreeAsTree: async () => undefined,
 		commitTree: async () => undefined,
 		updateRef: async () => { },
 		deleteRefs: async () => { },
 		revParse: async () => undefined,
+		overlayPathIntoTree: async () => undefined,
+		diffTreePaths: async () => undefined,
 		computeFileDiffsBetweenRefs: async () => undefined,
+	};
+}
+
+/**
+ * Returns a no-op {@link IAgentHostChangesetService} for tests that need to
+ * inject the changeset service but don't exercise changeset computation.
+ * Individual methods can be reassigned by callers that want to spy on them.
+ */
+export function createNoopChangesetService(): import('../../common/agentHostChangesetService.js').IAgentHostChangesetService {
+	return {
+		_serviceBrand: undefined,
+		registerStaticChangesets: () => { },
+		restoreStaticChangeset: () => { },
+		parsePersistedStaticChangesets: () => ({}),
+		applyPersistedStaticChangesets: () => { },
+		restorePersistedStaticChangesets: () => ({}),
+		persistChangesSummary: () => { },
+		getListMetadataKeys: () => undefined,
+		computeListEntryChanges: () => undefined,
+		isStaticChangesetComputeActive: () => false,
+		refreshChangesetCatalog: () => { },
+		refreshBranchChangeset: () => { },
+		refreshSessionChangeset: () => { },
+		onWorkingDirectoryAvailable: () => { },
+		recomputeSubscribedChangesets: () => { },
+		onSessionDisposed: () => { },
+		computeTurnChangeset: async session => session,
+		computeCompareTurnsChangeset: async session => session,
+		computeUncommittedChangeset: async session => session,
+		onToolCallEditsApplied: () => { },
+		onTurnComplete: () => { },
+		onSessionTruncated: () => { },
 	};
 }
 
