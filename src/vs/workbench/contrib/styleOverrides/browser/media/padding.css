@@ -45,7 +45,8 @@
 	width: auto;
 }
 
-/* Tighten the part title bar gutters: flush-left, small right inset. Reduce height from 35px to 32px. */
+/* Tighten the part title bar gutters: flush-left, small right inset. Reduce height from 35px to 32px.
+ * KEEP IN SYNC WITH: part.ts PartLayout.TITLE_HEIGHT_STYLE_OVERRIDE */
 .style-override.monaco-workbench .part > .title {
 	height: 32px;
 	padding-left: var(--vscode-spacing-size40, 4px);
@@ -82,6 +83,16 @@
 	.agent-session-item .agent-session-title-toolbar .actions-container {
 		gap: 4px;
 	}
+	&.chat-view-location-auxiliarybar {
+		.chat-view-title-inner {
+			padding: var(--vscode-spacing-size40, 4px);
+		}
+	}
+	&.chat-view-location-sidebar, &.chat-view-location-panel {
+		.chat-view-title-inner {
+			padding: 0 var(--vscode-spacing-size40, 4px) 0 var(--vscode-spacing-size80, 8px);
+		}
+	}
 }
 
 .style-override.monaco-workbench .monaco-pane-view .pane > .pane-header > .actions {
@@ -109,15 +120,3 @@
 	padding-right: 2px;
 }
 
-.style-override.monaco-workbench .chat-viewpane {
-	&.chat-view-location-auxiliarybar {
-		.chat-view-title-inner {
-			padding: 4px;
-		}
-	}
-	&.chat-view-location-sidebar, &.chat-view-location-panel {
-		.chat-view-title-inner {
-			padding: 0 4px 0 8px;
-		}
-	}
-}

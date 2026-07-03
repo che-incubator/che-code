@@ -217,6 +217,7 @@ class PartLayout {
 
 	private static readonly HEADER_HEIGHT = 35;
 	private static readonly TITLE_HEIGHT = 35;
+	// KEEP IN SYNC WITH: styleOverrides/browser/media/padding.css `.style-override .part > .title { height: 32px }`
 	private static readonly TITLE_HEIGHT_STYLE_OVERRIDE = 32;
 	private static readonly Footer_HEIGHT = 35;
 
