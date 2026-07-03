@@ -20,7 +20,7 @@ import { ISessionsService } from '../../../../../sessions/services/sessions/brow
 // eslint-disable-next-line local/code-import-patterns
 import { ISessionsProvidersService } from '../../../../../sessions/services/sessions/browser/sessionsProvidersService.js';
 // eslint-disable-next-line local/code-import-patterns
-import { BlockedSessionReason, IBlockedSession, IBlockedSessionsService } from '../../../../../sessions/contrib/blockedSessions/browser/blockedSessionsService.js';
+import { BlockedSessionReason, BlockedSessions, IBlockedSession } from '../../../../../sessions/contrib/blockedSessions/browser/blockedSessions.js';
 // eslint-disable-next-line local/code-import-patterns
 import { SessionActionFeedback } from '../../../../../sessions/contrib/sessions/browser/sessionActionFeedback.js';
 // eslint-disable-next-line local/code-import-patterns
@@ -127,10 +127,6 @@ function renderTitleBar(ctx: ComponentFixtureContext, state: ITitleBarState): vo
 			reg.defineInstance(ISessionsProvidersService, new class extends mock<ISessionsProvidersService>() {
 				override readonly onDidChangeProviders = Event.None;
 			}());
-			reg.defineInstance(IBlockedSessionsService, new class extends mock<IBlockedSessionsService>() {
-				override readonly blockedSessions: IObservable<readonly ISession[]> = constObservable(blocked.map(entry => entry.session));
-				override readonly blockedSessionsWithReasons: IObservable<readonly IBlockedSession[]> = constObservable(blocked);
-			}());
 			reg.defineInstance(IWorkbenchLayoutService, new class extends mock<IWorkbenchLayoutService>() {
 				override readonly onDidChangePartVisibility = Event.None;
 				override isVisible(part: Parts): boolean {
@@ -161,7 +157,12 @@ function renderTitleBar(ctx: ComponentFixtureContext, state: ITitleBarState): vo
 		override notifyApproved(): void { }
 	}();
 
-	const widget = disposableStore.add(instantiationService.createInstance(SessionsTitleBarWidget, action, undefined, sessionActionFeedback, approvalModel));
+	const blockedSessionsModel = new class extends mock<BlockedSessions>() {
+		override readonly blockedSessions: IObservable<readonly ISession[]> = constObservable(blocked.map(entry => entry.session));
+		override readonly blockedSessionsWithReasons: IObservable<readonly IBlockedSession[]> = constObservable(blocked);
+	}();
+
+	const widget = disposableStore.add(instantiationService.createInstance(SessionsTitleBarWidget, action, undefined, sessionActionFeedback, approvalModel, blockedSessionsModel));
 	widget.render(widgetHost);
 }
 

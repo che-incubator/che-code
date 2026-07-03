@@ -4,14 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
-import { derived, IObservable, IReaderWithStore, observableFromEvent } from '../../../../base/common/observable.js';
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { derivedOpts, IObservable, IReaderWithStore, observableFromEvent } from '../../../../base/common/observable.js';
+import { equals } from '../../../../base/common/arrays.js';
 import { ISession, SessionStatus } from '../../../services/sessions/common/session.js';
 import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 import { IGitHubService } from '../../github/browser/githubService.js';
 import { computePullRequestIconStatus } from '../../github/browser/pullRequestIconStatus.js';
-
-export const IBlockedSessionsService = createDecorator<IBlockedSessionsService>('blockedSessionsService');
 
 /**
  * Why a session is surfaced as "blocked" (i.e. needs the user's attention).
@@ -41,23 +39,14 @@ export interface IBlockedSession {
  *
  * Archived (done) sessions are never reported as blocked.
  */
-export interface IBlockedSessionsService {
-	readonly _serviceBrand: undefined;
+export class BlockedSessions extends Disposable {
+
+	private readonly _allSessions: IObservable<readonly ISession[]>;
 
 	/** The blocked sessions, most-recently-updated first. */
 	readonly blockedSessions: IObservable<readonly ISession[]>;
 
 	/** The blocked sessions paired with their reason, most-recently-updated first. */
-	readonly blockedSessionsWithReasons: IObservable<readonly IBlockedSession[]>;
-}
-
-export class BlockedSessionsService extends Disposable implements IBlockedSessionsService {
-
-	declare readonly _serviceBrand: undefined;
-
-	private readonly _allSessions: IObservable<readonly ISession[]>;
-
-	readonly blockedSessions: IObservable<readonly ISession[]>;
 	readonly blockedSessionsWithReasons: IObservable<readonly IBlockedSession[]>;
 
 	constructor(
@@ -72,10 +61,17 @@ export class BlockedSessionsService extends Disposable implements IBlockedSessio
 			() => this._sessionsManagementService.getSessions(),
 		);
 
-		this.blockedSessionsWithReasons = derived(this, reader => {
+		// Structural equality keeps the deriveds from propagating when a recompute
+		// (e.g. an `updatedAt` tick that doesn't reorder, or a reason-only change)
+		// yields the same result, so downstream autoruns/renders don't churn.
+		this.blockedSessionsWithReasons = derivedOpts({
+			owner: this,
+			equalsFn: (a, b) => equals(a, b, (x, y) => x.session.sessionId === y.session.sessionId && x.reason === y.reason),
+		}, reader => {
 			const blocked: IBlockedSession[] = [];
 			for (const session of this._allSessions.read(reader)) {
-				const reason = this._getBlockedReason(reader, session);
+				// `derivedOpts` under-types the store-backed reader as `IReader`; it is an `IDerivedReader` at runtime.
+				const reason = this._getBlockedReason(reader as IReaderWithStore, session);
 				if (reason !== undefined) {
 					blocked.push({ session, reason });
 				}
@@ -83,7 +79,10 @@ export class BlockedSessionsService extends Disposable implements IBlockedSessio
 			return blocked.sort((a, b) => b.session.updatedAt.read(reader).getTime() - a.session.updatedAt.read(reader).getTime());
 		});
 
-		this.blockedSessions = derived(this, reader => this.blockedSessionsWithReasons.read(reader).map(blocked => blocked.session));
+		this.blockedSessions = derivedOpts({
+			owner: this,
+			equalsFn: (a, b) => equals(a, b, (x, y) => x.sessionId === y.sessionId),
+		}, reader => this.blockedSessionsWithReasons.read(reader).map(blocked => blocked.session));
 	}
 
 	private _getBlockedReason(reader: IReaderWithStore, session: ISession): BlockedSessionReason | undefined {

@@ -17,7 +17,7 @@ import { CommandsRegistry, ICommandService } from '../../../../platform/commands
 import { Menus } from '../../../browser/menus.js';
 import { IWorkbenchContribution } from '../../../../workbench/common/contributions.js';
 import { IActionViewItemService } from '../../../../platform/actions/browser/actionViewItemService.js';
-import { autorun, derived, IObservable, IReader, observableFromEvent } from '../../../../base/common/observable.js';
+import { autorun, derived, IObservable, IReader, observableFromEvent, observableValue } from '../../../../base/common/observable.js';
 import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { URI } from '../../../../base/common/uri.js';
@@ -32,11 +32,11 @@ import { SHOW_SESSIONS_PICKER_COMMAND_ID } from './sessionsActions.js';
 import { ISessionsManagementService } from '../../../services/sessions/common/sessionsManagement.js';
 import { ISessionsService } from '../../../services/sessions/browser/sessionsService.js';
 import { getUntitledSessionTitle } from '../../../services/sessions/common/session.js';
-import { BlockedSessionReason, IBlockedSession, IBlockedSessionsService } from '../../blockedSessions/browser/blockedSessionsService.js';
+import { BlockedSessionReason, BlockedSessions, IBlockedSession } from '../../blockedSessions/browser/blockedSessions.js';
 import { BlockedSessionsList } from './blockedSessionsList.js';
 import { SessionActionFeedback } from './sessionActionFeedback.js';
-import { AgentSessionApprovalKind, AgentSessionApprovalModel } from '../../../../workbench/contrib/chat/browser/agentSessions/agentSessionApprovalModel.js';
-import { getFirstApprovalAcrossChats } from './views/sessionsList.js';
+import { AgentSessionApprovalKind, AgentSessionApprovalModel, agentSessionApprovalId } from '../../../../workbench/contrib/chat/browser/agentSessions/agentSessionApprovalModel.js';
+import { getFirstApprovalAcrossChats, IApprovedSession } from './views/sessionsList.js';
 import { openSessionToTheSide } from './views/sessionsView.js';
 
 /**
@@ -123,6 +123,18 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 	/** Tracks pending tool approvals per chat; distinguishes terminal vs question. */
 	private readonly _approvalModel: AgentSessionApprovalModel;
 
+	/** Computes the set of blocked sessions (needs input / failing CI / comments). */
+	private readonly _blockedSessionsModel: BlockedSessions;
+
+	/**
+	 * Sessions whose current pending approval the user just allowed, keyed by
+	 * `sessionId` → the approved approval's identity. Such a session is optimistically
+	 * hidden from the blocked set until its approval resolves into a NEW distinct
+	 * block (or it stops being blocked), so an approved row disappears immediately
+	 * instead of lingering until the provider updates the session status.
+	 */
+	private readonly _dismissedApprovals = observableValue<ReadonlyMap<string, string>>('dismissedApprovals', new Map());
+
 	/** The currently open blocked-sessions dropdown, if any. */
 	private _openContextView: IOpenContextView | undefined;
 	/** The blocked-sessions list rendered inside the open dropdown, if any. */
@@ -136,11 +148,11 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 		options: IBaseActionViewItemOptions | undefined,
 		sessionActionFeedback: SessionActionFeedback | undefined,
 		approvalModel: AgentSessionApprovalModel | undefined,
+		blockedSessions: BlockedSessions | undefined,
 		@ISessionsManagementService private readonly sessionsManagementService: ISessionsManagementService,
 		@ISessionsService private readonly sessionsService: ISessionsService,
 		@ISessionsProvidersService private readonly sessionsProvidersService: ISessionsProvidersService,
 		@ICommandService private readonly commandService: ICommandService,
-		@IBlockedSessionsService private readonly blockedSessionsService: IBlockedSessionsService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -155,6 +167,10 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 		// both agree on each session's pending action); the optional parameter is a
 		// test seam.
 		this._approvalModel = approvalModel ?? this._register(this.instantiationService.createInstance(AgentSessionApprovalModel));
+
+		// The widget owns the blocked-sessions model; the optional parameter is a
+		// test seam so fixtures can supply a preset instance.
+		this._blockedSessionsModel = blockedSessions ?? this._register(this.instantiationService.createInstance(BlockedSessions));
 
 		this._sidebarVisible = observableFromEvent(
 			this,
@@ -171,8 +187,9 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 					visibleSessionIds.add(session.sessionId);
 				}
 			}
-			return this.blockedSessionsService.blockedSessionsWithReasons.read(reader)
-				.filter(blocked => !visibleSessionIds.has(blocked.session.sessionId));
+			const dismissed = this._dismissedApprovals.read(reader);
+			return this._blockedSessionsModel.blockedSessionsWithReasons.read(reader)
+				.filter(blocked => !visibleSessionIds.has(blocked.session.sessionId) && !this._isApprovalDismissed(blocked, dismissed, reader));
 		});
 
 		// The homogeneous reason across all blocked sessions (or `undefined` for a
@@ -199,6 +216,35 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 			}
 			return common;
 		});
+
+		// Drop optimistic dismissals once the session is no longer blocked or its
+		// pending approval has been superseded by a new, distinct one — so a stale
+		// dismissal can't keep hiding a genuinely new block.
+		this._register(autorun(reader => {
+			const dismissed = this._dismissedApprovals.read(reader);
+			if (dismissed.size === 0) {
+				return;
+			}
+			const blockedById = new Map(this._blockedSessionsModel.blockedSessionsWithReasons.read(reader).map(blocked => [blocked.session.sessionId, blocked] as const));
+			let next: Map<string, string> | undefined;
+			for (const [sessionId, approvalId] of dismissed) {
+				const blocked = blockedById.get(sessionId);
+				let stale: boolean;
+				if (!blocked || blocked.reason !== BlockedSessionReason.NeedsInput) {
+					stale = true;
+				} else {
+					const approval = getFirstApprovalAcrossChats(this._approvalModel, blocked.session, reader);
+					stale = approval !== undefined && agentSessionApprovalId(approval) !== approvalId;
+				}
+				if (stale) {
+					next ??= new Map(dismissed);
+					next.delete(sessionId);
+				}
+			}
+			if (next) {
+				this._dismissedApprovals.set(next, undefined);
+			}
+		}));
 
 		// Re-render when the active session's title, workspace, or quick-chat kind changes
 		this._register(autorun(reader => {
@@ -420,6 +466,30 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 	}
 
 	/**
+	 * Whether a blocked session should stay hidden because the user just approved
+	 * its pending action: hidden while that approval resolves (no current approval,
+	 * status lagging) or is unchanged; a new, distinct approval re-surfaces it.
+	 */
+	private _isApprovalDismissed(blocked: IBlockedSession, dismissed: ReadonlyMap<string, string>, reader: IReader): boolean {
+		const dismissedId = dismissed.get(blocked.session.sessionId);
+		if (dismissedId === undefined || blocked.reason !== BlockedSessionReason.NeedsInput) {
+			return false;
+		}
+		const approval = getFirstApprovalAcrossChats(this._approvalModel, blocked.session, reader);
+		return approval === undefined || agentSessionApprovalId(approval) === dismissedId;
+	}
+
+	/**
+	 * Remember that the user allowed this exact approval so the session drops out of
+	 * the blocked set immediately (see {@link _isApprovalDismissed}).
+	 */
+	private _dismissApproval(approved: IApprovedSession): void {
+		const next = new Map(this._dismissedApprovals.get());
+		next.set(approved.session.sessionId, approved.approvalId);
+		this._dismissedApprovals.set(next, undefined);
+	}
+
+	/**
 	 * Classify a single blocked session into a specific requires-input kind, or
 	 * `undefined` when it can't be classified (which forces the generic message).
 	 */
@@ -630,7 +700,10 @@ export class SessionsTitleBarWidget extends BaseActionViewItem {
 				}));
 				list.setSessions(this._blockedSessions.get().map(entry => entry.session));
 				store.add(list.onDidChangeContentHeight(() => this.contextViewService.layout()));
-				store.add(list.onDidApproveSession(() => this._sessionActionFeedback.notifyApproved()));
+				store.add(list.onDidApproveSession(approved => {
+					this._dismissApproval(approved);
+					this._sessionActionFeedback.notifyApproved();
+				}));
 
 				// Keep the dropdown width matched to the command center box as the
 				// window resizes (the command center reflows to a new width).
@@ -774,7 +847,7 @@ export class SessionsTitleBarContribution extends Disposable implements IWorkben
 			if (!(action instanceof SubmenuItemAction)) {
 				return undefined;
 			}
-			return instantiationService.createInstance(SessionsTitleBarWidget, action, options, undefined, undefined);
+			return instantiationService.createInstance(SessionsTitleBarWidget, action, options, undefined, undefined, undefined);
 		}, undefined));
 	}
 }
