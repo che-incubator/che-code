@@ -17,9 +17,9 @@ import { GitHubPullRequestReviewThreadsModel } from '../../../github/browser/mod
 import { GitHubCIOverallStatus, GitHubPullRequestState, IGitHubPullRequest, IGitHubPullRequestReviewThread } from '../../../github/common/types.js';
 import { ISession, IGitHubInfo, SessionStatus } from '../../../../services/sessions/common/session.js';
 import { ISessionsChangeEvent, ISessionsManagementService } from '../../../../services/sessions/common/sessionsManagement.js';
-import { BlockedSessionReason, BlockedSessionsService } from '../../browser/blockedSessionsService.js';
+import { BlockedSessionReason, BlockedSessions } from '../../browser/blockedSessions.js';
 
-suite('BlockedSessionsService', () => {
+suite('BlockedSessions', () => {
 
 	const store = new DisposableStore();
 
@@ -27,19 +27,19 @@ suite('BlockedSessionsService', () => {
 
 	ensureNoDisposablesAreLeakedInTestSuite();
 
-	function createService(sessions: TestSession[], gitHubService: TestGitHubService): { service: BlockedSessionsService; management: TestSessionsManagementService } {
+	function createService(sessions: TestSession[], gitHubService: TestGitHubService): { service: BlockedSessions; management: TestSessionsManagementService } {
 		const management = new TestSessionsManagementService(sessions as unknown as ISession[]);
-		const service = store.add(new BlockedSessionsService(management as unknown as ISessionsManagementService, gitHubService as unknown as IGitHubService));
+		const service = store.add(new BlockedSessions(management as unknown as ISessionsManagementService, gitHubService as unknown as IGitHubService));
 		// Keep the derived live so per-session model references are actually read.
 		store.add(autorun(reader => { service.blockedSessions.read(reader); }));
 		return { service, management };
 	}
 
-	function blockedIds(service: BlockedSessionsService): string[] {
+	function blockedIds(service: BlockedSessions): string[] {
 		return service.blockedSessions.get().map(s => s.sessionId);
 	}
 
-	function blockedReasons(service: BlockedSessionsService): Array<[string, BlockedSessionReason]> {
+	function blockedReasons(service: BlockedSessions): Array<[string, BlockedSessionReason]> {
 		return service.blockedSessionsWithReasons.get().map((b): [string, BlockedSessionReason] => [b.session.sessionId, b.reason]);
 	}
 

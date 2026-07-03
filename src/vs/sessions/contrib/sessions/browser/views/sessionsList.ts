@@ -37,7 +37,7 @@ import { WorkbenchObjectTree } from '../../../../../platform/list/browser/listSe
 import { IStyleOverride, defaultButtonStyles, defaultFindWidgetStyles, defaultInputBoxStyles, defaultToggleStyles } from '../../../../../platform/theme/browser/defaultStyles.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
 import { GITHUB_REMOTE_FILE_SCHEME, ISession, ISessionWorkspace, SessionStatus } from '../../../../services/sessions/common/session.js';
-import { AgentSessionApprovalModel, IAgentSessionApprovalInfo } from '../../../../../workbench/contrib/chat/browser/agentSessions/agentSessionApprovalModel.js';
+import { AgentSessionApprovalModel, agentSessionApprovalId, IAgentSessionApprovalInfo } from '../../../../../workbench/contrib/chat/browser/agentSessions/agentSessionApprovalModel.js';
 import { Button } from '../../../../../base/browser/ui/button/button.js';
 import { IMarkdownRendererService } from '../../../../../platform/markdown/browser/markdownRenderer.js';
 import { Action, ActionRunner, IAction, Separator, SubmenuAction } from '../../../../../base/common/actions.js';
@@ -284,6 +284,16 @@ interface ISessionItemTemplate {
 	readonly elementDisposables: DisposableStore;
 }
 
+/** Payload emitted when the user approves a session's pending action. */
+export interface IApprovedSession {
+	readonly session: ISession;
+	/**
+	 * Identity of the approval that was allowed, so consumers can tell this exact
+	 * approval apart from a later, distinct one on the same session.
+	 */
+	readonly approvalId: string;
+}
+
 class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, ISessionItemTemplate> {
 	static readonly TEMPLATE_ID = 'session-item';
 	readonly templateId = SessionItemRenderer.TEMPLATE_ID;
@@ -299,9 +309,9 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 	private readonly _onDidChangeItemHeight = new Emitter<ISession>();
 	readonly onDidChangeItemHeight: Event<ISession> = this._onDidChangeItemHeight.event;
 
-	private readonly _onDidApproveSession = new Emitter<ISession>();
+	private readonly _onDidApproveSession = new Emitter<IApprovedSession>();
 	/** Fires when the user approves a session's pending action via its "Allow" button. */
-	readonly onDidApproveSession: Event<ISession> = this._onDidApproveSession.event;
+	readonly onDidApproveSession: Event<IApprovedSession> = this._onDidApproveSession.event;
 
 	constructor(
 		private readonly options: { grouping: () => SessionsGrouping; isPinned: (session: ISession) => boolean; isRead: (session: ISession) => boolean; visibleSessions: IObservable<readonly (IActiveSession | undefined)[]>; getMultiSelectedSessions: (session: ISession) => ISession[]; isInChatsSection: (session: ISession) => boolean; showHover: boolean; approvalRowMaxLines: number },
@@ -654,8 +664,11 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 				}));
 				button.label = localize('allowAction', "Allow");
 				buttonStore.add(button.onDidClick(() => {
+					// Capture the approval's identity BEFORE confirming: `confirm()` may
+					// synchronously clear the pending approval, so we can't read it after.
+					const approvalId = agentSessionApprovalId(info);
 					info.confirm();
-					this._onDidApproveSession.fire(element);
+					this._onDidApproveSession.fire({ session: element, approvalId });
 				}));
 			}
 
@@ -3224,9 +3237,9 @@ export class SessionsFlatList extends Disposable {
 
 	private readonly _onDidChangeContentHeight = this._register(new Emitter<void>());
 	readonly onDidChangeContentHeight = this._onDidChangeContentHeight.event;
-	private readonly _onDidApproveSession = this._register(new Emitter<ISession>());
+	private readonly _onDidApproveSession = this._register(new Emitter<IApprovedSession>());
 	/** Fires when a session's pending action is approved from its "Allow" button. */
-	readonly onDidApproveSession: Event<ISession> = this._onDidApproveSession.event;
+	readonly onDidApproveSession: Event<IApprovedSession> = this._onDidApproveSession.event;
 	private readonly tree: WorkbenchObjectTree<SessionListItem, FuzzyScore>;
 	private readonly _delegate: SessionsTreeDelegate;
 	private _sessions: readonly ISession[] = [];
@@ -3315,7 +3328,7 @@ export class SessionsFlatList extends Disposable {
 			}
 		}));
 
-		this._register(sessionRenderer.onDidApproveSession(session => this._onDidApproveSession.fire(session)));
+		this._register(sessionRenderer.onDidApproveSession(approved => this._onDidApproveSession.fire(approved)));
 	}
 
 	setSessions(sessions: readonly ISession[]): void {

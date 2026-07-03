@@ -34,6 +34,14 @@ export interface IAgentSessionApprovalInfo {
 }
 
 /**
+ * A stable identity for a specific pending approval, distinguishing it from a
+ * later, distinct approval on the same session (a fresh `since` yields a new id).
+ */
+export function agentSessionApprovalId(info: IAgentSessionApprovalInfo): string {
+	return `${info.kind}\u0000${info.label}\u0000${info.since.getTime()}`;
+}
+
+/**
  * Tracks approval state for all live chat sessions. For each session,
  * exposes an observable that emits {@link IAgentSessionApprovalInfo}
  * when a tool invocation is waiting for user confirmation, or `undefined`

@@ -13,7 +13,7 @@ import { HiddenItemStrategy, MenuWorkbenchToolBar } from '../../../../platform/a
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { Menus } from '../../../browser/menus.js';
 import { ISession } from '../../../services/sessions/common/session.js';
-import { SessionsFlatList } from './views/sessionsList.js';
+import { IApprovedSession, SessionsFlatList } from './views/sessionsList.js';
 import { AgentSessionApprovalModel } from '../../../../workbench/contrib/chat/browser/agentSessions/agentSessionApprovalModel.js';
 
 /** Fixed width of the blocked-sessions list, in pixels. */
@@ -47,9 +47,9 @@ export class BlockedSessionsList extends Disposable {
 	/** Fires when the list resizes and the host should re-layout its container. */
 	readonly onDidChangeContentHeight: Event<void> = this._onDidChangeContentHeight.event;
 
-	private readonly _onDidApproveSession = this._register(new Emitter<ISession>());
+	private readonly _onDidApproveSession = this._register(new Emitter<IApprovedSession>());
 	/** Fires when a session's pending action is approved from its "Allow" button. */
-	readonly onDidApproveSession: Event<ISession> = this._onDidApproveSession.event;
+	readonly onDidApproveSession: Event<IApprovedSession> = this._onDidApproveSession.event;
 
 	private readonly _rowsContainer: HTMLElement;
 	private readonly _list: SessionsFlatList;
@@ -92,7 +92,7 @@ export class BlockedSessionsList extends Disposable {
 			this._onDidChangeContentHeight.fire();
 		}));
 
-		this._register(this._list.onDidApproveSession(session => this._onDidApproveSession.fire(session)));
+		this._register(this._list.onDidApproveSession(approved => this._onDidApproveSession.fire(approved)));
 	}
 
 	/** Replace the sessions shown in the list and resize to fit their content. */
