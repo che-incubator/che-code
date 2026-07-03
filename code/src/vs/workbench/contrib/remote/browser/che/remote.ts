@@ -69,7 +69,7 @@ export class CheDisconnectionHandler {
 		environmentVariableService: IEnvironmentVariableService,
 		progressService: IProgressService
 	) {
-		this.devWorkspaceAssistant = new DevWorkspaceAssistant(commandService, requestService, environmentVariableService, progressService);
+		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
 	}
 
 	private canHandle(millisSinceLastIncomingData: number): boolean {
