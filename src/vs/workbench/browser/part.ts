@@ -217,6 +217,7 @@ class PartLayout {
 
 	private static readonly HEADER_HEIGHT = 35;
 	private static readonly TITLE_HEIGHT = 35;
+	private static readonly TITLE_HEIGHT_STYLE_OVERRIDE = 32;
 	private static readonly Footer_HEIGHT = 35;
 
 	private headerVisible: boolean = false;
@@ -226,10 +227,15 @@ class PartLayout {
 
 	layout(width: number, height: number): ILayoutContentResult {
 
-		// Title Size: Width (Fill), Height (Variable)
+		// Title Size: Width (Fill), Height (Variable).
+		// When the Modern UI style-override is active the title bar is 32 px
+		// (set in padding.css). Mirror that value here so the content area
+		// calculation stays in sync. Uses the same `.closest('.style-override')`
+		// check as EditorTabsControl.tabHeight.
 		let titleSize: Dimension;
 		if (this.options.hasTitle) {
-			const titleHeight = this.titleArea?.offsetHeight ?? PartLayout.TITLE_HEIGHT;
+			const isStyleOverride = !!this.titleArea?.closest('.style-override');
+			const titleHeight = isStyleOverride ? PartLayout.TITLE_HEIGHT_STYLE_OVERRIDE : PartLayout.TITLE_HEIGHT;
 			titleSize = new Dimension(width, Math.min(height, titleHeight));
 		} else {
 			titleSize = Dimension.None;
