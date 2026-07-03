@@ -301,8 +301,3 @@
 .style-override.monaco-workbench .pane-composite-part.basepanel > .title > .composite-bar-container > .composite-bar > .monaco-action-bar .actions-container {
 	gap: 4px;
 }
-
-/* .style-override.monaco-workbench .pane-composite-part > .title.has-composite-bar > .title-actions .monaco-action-bar .action-item,
-.style-override.monaco-workbench .pane-composite-part > .title.has-composite-bar > .global-actions .monaco-action-bar .action-item {
-	margin-bottom: 4px;
-} */
