@@ -277,7 +277,7 @@
     "webdriver": {
       "undici@6": "^6.27.0"
     },
-    "minimatch": {
+    "test-exclude": {
       "brace-expansion": "5.0.7"
     }
   },

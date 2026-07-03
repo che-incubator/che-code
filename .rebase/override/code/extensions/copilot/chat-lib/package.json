@@ -1,5 +1,6 @@
 {
     "dependencies": {
-        "undici": "^7.28.0"
+        "undici": "^7.28.0",
+        "rimraf": "^6.1.3"
     }
 }

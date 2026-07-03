@@ -6,6 +6,9 @@
         "ws": "^8.21.0",
         "webdriver": {
             "undici@6": "^6.27.0"
+        },
+        "minimatch": {
+            "brace-expansion": "5.0.7"
         }
     }
 }

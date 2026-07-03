@@ -522,6 +522,12 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes
       local upstream_path="${conflictingFile#code/}"
