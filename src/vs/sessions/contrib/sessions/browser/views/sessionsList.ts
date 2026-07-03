@@ -5,6 +5,7 @@
 
 import '../media/sessionsList.css';
 import * as DOM from '../../../../../base/browser/dom.js';
+import { synchronizeCSSAnimations } from '../../../../../base/browser/animationSync.js';
 import { Gesture } from '../../../../../base/browser/touch.js';
 import { IListVirtualDelegate, ListDragOverEffectPosition, ListDragOverEffectType, NotSelectableGroupId } from '../../../../../base/browser/ui/list/list.js';
 import { IListStyles } from '../../../../../base/browser/ui/list/listWidget.js';
@@ -256,10 +257,16 @@ class SessionItemActionRunner extends ActionRunner {
 	}
 }
 
+// Keyframes name of the in-progress title shimmer (see `session-title-shimmer`
+// in sessionsList.css). Used to phase-align the shimmer across rows.
+const SESSION_TITLE_SHIMMER_ANIMATION_NAME = 'session-title-shimmer';
+const SESSION_TITLE_SHIMMER_ANIMATION_NAMES = new Set([SESSION_TITLE_SHIMMER_ANIMATION_NAME]);
+
 interface ISessionItemTemplate {
 	readonly container: HTMLElement;
 	readonly statusIcon: SessionStatusIcon;
 	readonly title: HighlightedLabel;
+	readonly titleContainer: HTMLElement;
 	readonly titleToolbar: MenuWorkbenchToolBar;
 	readonly detailsRow: HTMLElement;
 	readonly approvalRow: HTMLElement;
@@ -309,7 +316,19 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 		const statusIcon = disposables.add(this.instantiationService.createInstance(SessionStatusIcon, iconContainer));
 		const mainCol = DOM.append(container, $('.session-main'));
 		const titleRow = DOM.append(mainCol, $('.session-title-row'));
-		const title = disposables.add(new HighlightedLabel(DOM.append(titleRow, $('.session-title'))));
+		const titleContainer = DOM.append(titleRow, $('.session-title'));
+		const title = disposables.add(new HighlightedLabel(titleContainer));
+		// The shimmer's CSS animation restarts from zero whenever it (re)starts —
+		// e.g. selecting then deselecting an in-progress row re-adds the animation
+		// via the `:not(.selected)` selector, and rows already shimmering at first
+		// render each started on their own clock. Anchor every (re)start to the
+		// shared document timeline so all rows stay perfectly in phase. This fires
+		// once per start (not per frame), so it is effectively free.
+		disposables.add(DOM.addDisposableListener(titleContainer, DOM.EventType.ANIMATION_START, (e: AnimationEvent) => {
+			if (e.target === titleContainer && e.animationName === SESSION_TITLE_SHIMMER_ANIMATION_NAME) {
+				synchronizeCSSAnimations(titleContainer, { animationNames: SESSION_TITLE_SHIMMER_ANIMATION_NAMES });
+			}
+		}));
 		const titleToolbarContainer = DOM.append(titleRow, $('.session-title-toolbar'));
 		// The list opens a session on click and on Gesture `tap` (touch).
 		// DOM event propagation stops only cover mouse/pointer events; the
@@ -336,7 +355,7 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 			actionRunner,
 		}));
 
-		return { container, statusIcon, title, titleToolbar, detailsRow, approvalRow, approvalLabel, approvalButtonContainer, contextKeyService, disposables, elementDisposables };
+		return { container, statusIcon, title, titleContainer, titleToolbar, detailsRow, approvalRow, approvalLabel, approvalButtonContainer, contextKeyService, disposables, elementDisposables };
 	}
 
 	renderElement(node: ITreeNode<SessionListItem, FuzzyScore>, _index: number, template: ISessionItemTemplate): void {
@@ -408,6 +427,9 @@ class SessionItemRenderer implements ITreeRenderer<SessionListItem, FuzzyScore, 
 			// owned by the SessionStatusIcon widget; here we just feed it the latest state.
 			// Row recycling re-feeds the widget, which cross-fades to the new session's icon.
 			template.statusIcon.setStatus(sessionStatus, isRead, isArchived, gitHubInfo?.pullRequest?.icon);
+			// The title shimmer (toggled by the `in-progress` class) is phase-aligned
+			// across rows via an `animationstart` handler on the title element, so no
+			// per-state work is needed here.
 			template.container.classList.toggle('in-progress', sessionStatus === SessionStatus.InProgress);
 			template.container.classList.toggle('needs-input', sessionStatus === SessionStatus.NeedsInput);
 			template.container.classList.toggle('unread', !isRead && !isArchived);
