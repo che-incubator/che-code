@@ -80,7 +80,7 @@ export abstract class Part<MementoType extends object = object> extends Componen
 		this.titleArea = this.createTitleArea(parent, options);
 		this.contentArea = this.createContentArea(parent, options);
 
-		this.partLayout = new PartLayout(this.options, this.contentArea);
+		this.partLayout = new PartLayout(this.options, this.titleArea, this.contentArea);
 
 		this.updateStyles();
 	}
@@ -222,14 +222,15 @@ class PartLayout {
 	private headerVisible: boolean = false;
 	private footerVisible: boolean = false;
 
-	constructor(private options: IPartOptions, private contentArea: HTMLElement | undefined) { }
+	constructor(private options: IPartOptions, private titleArea: HTMLElement | undefined, private contentArea: HTMLElement | undefined) { }
 
 	layout(width: number, height: number): ILayoutContentResult {
 
 		// Title Size: Width (Fill), Height (Variable)
 		let titleSize: Dimension;
 		if (this.options.hasTitle) {
-			titleSize = new Dimension(width, Math.min(height, PartLayout.TITLE_HEIGHT));
+			const titleHeight = this.titleArea?.offsetHeight ?? PartLayout.TITLE_HEIGHT;
+			titleSize = new Dimension(width, Math.min(height, titleHeight));
 		} else {
 			titleSize = Dimension.None;
 		}
