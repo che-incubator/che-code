@@ -80,7 +80,7 @@ export abstract class Part<MementoType extends object = object> extends Componen
 		this.titleArea = this.createTitleArea(parent, options);
 		this.contentArea = this.createContentArea(parent, options);
 
-		this.partLayout = new PartLayout(this.options, this.titleArea, this.contentArea);
+		this.partLayout = new PartLayout(this.options, this.contentArea);
 
 		this.updateStyles();
 	}
@@ -223,7 +223,7 @@ class PartLayout {
 	private headerVisible: boolean = false;
 	private footerVisible: boolean = false;
 
-	constructor(private options: IPartOptions, private titleArea: HTMLElement | undefined, private contentArea: HTMLElement | undefined) { }
+	constructor(private options: IPartOptions, private contentArea: HTMLElement | undefined) { }
 
 	layout(width: number, height: number): ILayoutContentResult {
 
@@ -234,7 +234,7 @@ class PartLayout {
 		// check as EditorTabsControl.tabHeight.
 		let titleSize: Dimension;
 		if (this.options.hasTitle) {
-			const isStyleOverride = !!this.titleArea?.closest('.style-override');
+			const isStyleOverride = !!this.contentArea?.closest('.style-override');
 			const titleHeight = isStyleOverride ? PartLayout.TITLE_HEIGHT_STYLE_OVERRIDE : PartLayout.TITLE_HEIGHT;
 			titleSize = new Dimension(width, Math.min(height, titleHeight));
 		} else {
