@@ -36,6 +36,9 @@ export interface MarkdownRenderOptions {
 
 	readonly actionHandler?: MarkdownActionHandler;
 
+	/** Rewrites parsed Markdown link and image destinations before sanitization. */
+	readonly transformUri?: (href: string, kind: 'link' | 'image') => string;
+
 	readonly fillInIncompleteTokens?: boolean;
 
 	readonly sanitizerConfig?: MarkdownSanitizerConfig;
@@ -85,26 +88,28 @@ function getLinkTitle(href: string): string {
 	return '';
 }
 
-const defaultMarkedRenderers = Object.freeze({
-	image: ({ href, title, text }: marked.Tokens.Image): string => {
-		let dimensions: string[] = [];
-		let attributes: string[] = [];
-		if (href) {
-			({ href, dimensions } = parseHrefAndDimensions(href));
-			attributes.push(`src="${escapeDoubleQuotes(href)}"`);
-		}
-		if (text) {
-			attributes.push(`alt="${escapeDoubleQuotes(text)}"`);
-		}
-		if (title) {
-			attributes.push(`title="${escapeDoubleQuotes(title)}"`);
-		}
-		if (dimensions.length) {
-			attributes = attributes.concat(dimensions);
-		}
-		return '<img ' + attributes.join(' ') + '>';
-	},
+function renderImage({ href, title, text }: marked.Tokens.Image, transformUri?: (href: string) => string): string {
+	let dimensions: string[] = [];
+	let attributes: string[] = [];
+	if (href) {
+		({ href, dimensions } = parseHrefAndDimensions(href));
+		href = transformUri?.(href) ?? href;
+		attributes.push(`src="${escapeDoubleQuotes(href)}"`);
+	}
+	if (text) {
+		attributes.push(`alt="${escapeDoubleQuotes(text)}"`);
+	}
+	if (title) {
+		attributes.push(`title="${escapeDoubleQuotes(title)}"`);
+	}
+	if (dimensions.length) {
+		attributes = attributes.concat(dimensions);
+	}
+	return '<img ' + attributes.join(' ') + '>';
+}
 
+const defaultMarkedRenderers = Object.freeze({
+	image: renderImage,
 	paragraph(this: marked.Renderer, { tokens }: marked.Tokens.Paragraph): string {
 		return `<p>${this.parser.parseInline(tokens)}</p>`;
 	},
@@ -389,8 +394,11 @@ function rewriteRenderedLinks(markdown: IMarkdownString, options: MarkdownRender
 
 function createMarkdownRenderer(marked: marked.Marked, options: MarkdownRenderOptions, markdown: IMarkdownString): { renderer: marked.Renderer; codeBlocks: Promise<[string, HTMLElement]>[]; syncCodeBlocks: [string, HTMLElement][] } {
 	const renderer = new marked.Renderer(options.markedOptions);
-	renderer.image = defaultMarkedRenderers.image;
-	renderer.link = defaultMarkedRenderers.link;
+	renderer.image = token => renderImage(token, href => options.transformUri?.(href, 'image') ?? href);
+	renderer.link = token => defaultMarkedRenderers.link.call(renderer, {
+		...token,
+		href: options.transformUri?.(token.href, 'link') ?? token.href,
+	});
 	renderer.paragraph = defaultMarkedRenderers.paragraph;
 
 	if (markdown.supportAlertSyntax) {

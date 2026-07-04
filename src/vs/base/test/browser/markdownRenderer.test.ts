@@ -52,6 +52,34 @@ suite('MarkdownRenderer', () => {
 			assert.ok(anchor, 'expected <a> to be preserved when scheme is allowed');
 			assert.strictEqual(anchor!.dataset.href, 'vscode-agent-host://my-host/path/to/foo.ts?_ah%3DeyJzY2hlbWUiOiJmaWxlIn0');
 		});
+
+		test('Transforms parsed link targets without changing labels, titles, or code', () => {
+			const markdown = { value: '`[same](file:///same)` [a[b].ts](file:///same "file:///same") ![image](file:///same|width=10,height=20)' };
+			const result = store.add(renderMarkdown(markdown, {
+				transformUri: href => href === 'file:///same' ? 'https://example.com/a.ts' : href,
+			})).element;
+			const anchor = result.querySelector('a');
+			assert.deepStrictEqual(
+				{
+					anchorCount: result.querySelectorAll('a').length,
+					text: anchor?.textContent,
+					href: anchor?.dataset.href,
+					title: anchor?.title,
+					image: result.querySelector('img')?.src,
+					imageWidth: result.querySelector('img')?.getAttribute('width'),
+					imageHeight: result.querySelector('img')?.getAttribute('height'),
+				},
+				{
+					anchorCount: 1,
+					text: 'a[b].ts',
+					href: 'https://example.com/a.ts',
+					title: 'file:///same',
+					image: 'https://example.com/a.ts',
+					imageWidth: '10',
+					imageHeight: '20',
+				},
+			);
+		});
 	});
 
 	suite('Images', () => {
