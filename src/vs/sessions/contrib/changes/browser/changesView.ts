@@ -14,7 +14,7 @@ import { ActionRunner, IAction, Separator, SubmenuAction, toAction } from '../..
 import { Codicon } from '../../../../base/common/codicons.js';
 import { Disposable, DisposableStore, IDisposable } from '../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
-import { autorun, derived, derivedObservableWithCache, derivedOpts, IObservable, observableFromEvent, observableValue } from '../../../../base/common/observable.js';
+import { autorun, derived, derivedObservableWithCache, IObservable, observableFromEvent, observableValue } from '../../../../base/common/observable.js';
 import { CountBadge } from '../../../../base/browser/ui/countBadge/countBadge.js';
 import { ProgressBar } from '../../../../base/browser/ui/progressbar/progressbar.js';
 import { basename, isEqual } from '../../../../base/common/resources.js';
@@ -76,12 +76,12 @@ import { AGENT_HOST_SKILL_BUTTON_UPDATE_PR_ID, isAgentHostSkillButtonId } from '
 import { ActiveSessionContextKeys, CHANGES_VIEW_CONTAINER_ID, CHANGES_VIEW_ID, ChangesContextKeys, ChangesViewMode, IsolationMode, SESSIONS_CHANGES_OPEN_SINGLE_FILE_DIFF_SETTING } from '../common/changes.js';
 import { buildTreeChildren, ChangesTreeElement, ChangesTreeRenderer, IChangesFileItem, IChangesTreeRootInfo, isChangesFileItem, toIChangesFileItem } from './changesViewRenderer.js';
 import { ResourceTree } from '../../../../base/common/resourceTree.js';
-import { structuralEquals } from '../../../../base/common/equals.js';
 import { compareFileNames, comparePaths } from '../../../../base/common/comparers.js';
 import { IViewsService } from '../../../../workbench/services/views/common/viewsService.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { IMarkdownString } from '../../../../base/common/htmlContent.js';
 import { IChangesViewService } from '../common/changesViewService.js';
+import { ChangesSummaryWidget } from './changesSummaryWidget.js';
 
 const $ = dom.$;
 
@@ -1634,44 +1634,23 @@ class RevealCIChecksAction extends Action2 {
 registerAction2(RevealCIChecksAction);
 
 class ChangesDiffStatsActionItem extends ActionViewItem {
-	private readonly diffStatsObs: IObservable<{ files: number; insertions: number; deletions: number } | undefined>;
+	private readonly _widget: ChangesSummaryWidget;
 
 	constructor(
 		action: MenuItemAction,
 		options: IActionViewItemOptions,
-		@IChangesViewService changesViewService: IChangesViewService
+		@IInstantiationService instantiationService: IInstantiationService,
 	) {
-		super(null, action, { ...options, icon: false, label: true });
+		super(null, action, { ...options, icon: false, label: false });
 
-		const diffStatsRawObs = derivedObservableWithCache<{ files: number; insertions: number; deletions: number } | undefined>(this,
-			(reader, lastValue) => {
-				const entries = changesViewService.activeSessionChangesObs.read(reader);
-				const isLoading = changesViewService.activeSessionLoadingObs.read(reader);
-
-				if (isLoading) {
-					return lastValue;
-				}
-
-				let insertions = 0, deletions = 0;
-				for (const entry of entries) {
-					insertions += entry.insertions;
-					deletions += entry.deletions;
-				}
-
-				return { files: entries.length, insertions, deletions };
-			});
-
-		this.diffStatsObs = derivedOpts<{ files: number; insertions: number; deletions: number } | undefined>({
-			equalsFn: structuralEquals
-		}, reader => diffStatsRawObs.read(reader));
+		this._widget = this._register(instantiationService.createInstance(ChangesSummaryWidget));
 
 		this._register(autorun(reader => {
-			const diffStats = this.diffStatsObs.read(reader);
-			if (diffStats === undefined) {
+			const changesSummary = this._widget.summary.read(reader);
+			if (changesSummary === undefined) {
 				return;
 			}
 
-			this.updateLabel();
 			this.updateTooltip();
 		}));
 	}
@@ -1679,34 +1658,21 @@ class ChangesDiffStatsActionItem extends ActionViewItem {
 	override render(container: HTMLElement): void {
 		super.render(container);
 		container.classList.add('changes-diff-stats-action');
-	}
 
-	protected override updateLabel(): void {
 		if (!this.label) {
 			return;
 		}
 
-		const diffStats = this.diffStatsObs.get();
-		if (diffStats === undefined) {
-			return;
-		}
-
-		const { insertions, deletions } = diffStats;
-
-		dom.reset(
-			this.label,
-			dom.$('span.working-set-lines-added', undefined, `+${insertions}`),
-			dom.$('span.working-set-lines-removed', undefined, `-${deletions}`)
-		);
+		this._widget.render(this.label);
 	}
 
 	protected override getTooltip(): string | undefined {
-		const diffStats = this.diffStatsObs.get();
-		if (diffStats === undefined) {
+		const changesSummary = this._widget.summary.get();
+		if (changesSummary === undefined) {
 			return undefined;
 		}
 
-		const { files, insertions, deletions } = diffStats;
-		return localize('changesView.diffStats.label', '{0} files, {1} additions, {2} deletions', files, insertions, deletions);
+		const { files, additions, deletions } = changesSummary;
+		return localize('changesView.diffStats.label', '{0} files, {1} additions, {2} deletions', files, additions, deletions);
 	}
 }
