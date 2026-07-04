@@ -54,6 +54,8 @@ The Electron-only `electron-browser/agentHost.contribution.ts` adds desktop-only
 
 When the default-provider setting flips, the provider re-fires `onDidChangeSessionTypes` so the management service re-collects and re-sorts session types with the new `order`.
 
+These session-type icons are specific to the Agents window provider. In the editor window, `agentSessions.ts` maps local Agent Host Copilot to the Local harness's `Codicon.vm` picker icon, while `agentSessionsViewer.ts` uses the same session-list status dot as the Local harness.
+
 ## IDs and URI Schemes
 
 A single agent host session uses several distinct identifiers:
