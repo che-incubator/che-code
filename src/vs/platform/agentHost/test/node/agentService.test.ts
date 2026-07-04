@@ -1855,6 +1855,37 @@ suite('AgentService (node dispatcher)', () => {
 			assert.strictEqual(state!.turns[0].state, TurnState.Complete);
 		});
 
+		test('interleaves persisted host-injected local turns after their anchor on restore', async () => {
+			const db = new TestSessionDatabase();
+			const localService = disposables.add(new AgentService(new NullLogService(), fileService, createSessionDataService(db), { _serviceBrand: undefined } as IProductService, createNoopGitService()));
+			localService.registerProvider(copilotAgent);
+			const { session } = await copilotAgent.createSession();
+			const sessionResource = (await copilotAgent.listSessions())[0].session;
+			const defaultChatUri = buildDefaultChatUri(sessionResource.toString());
+
+			// SDK transcript reconstructs a single real turn keyed by the user
+			// envelope id (`msg-real`, per mapSessionEvents).
+			copilotAgent.sessionMessages = [
+				{ type: 'message', session, role: 'user', messageId: 'msg-real', content: 'Hello', toolRequests: [] },
+				{ type: 'message', session, role: 'assistant', messageId: 'msg-real-a', content: 'Hi there!', toolRequests: [] },
+			];
+
+			// A host-injected local turn anchored after the real turn, plus one
+			// with no anchor (precedes any real turn), plus an orphan whose
+			// anchor is absent from the SDK transcript (should be dropped).
+			const localTurn = (id: string, text: string) => ({ id, message: { text, origin: { kind: MessageKind.User } }, responseParts: [], usage: undefined, state: TurnState.Complete });
+			await db.insertLocalTurn({ turnId: 'local-head', chatUri: defaultChatUri, anchorTurnId: undefined, seq: 1, payload: JSON.stringify(localTurn('local-head', '!pwd')) });
+			await db.insertLocalTurn({ turnId: 'local-after', chatUri: defaultChatUri, anchorTurnId: 'msg-real', seq: 2, payload: JSON.stringify(localTurn('local-after', '!ls')) });
+			await db.insertLocalTurn({ turnId: 'local-orphan', chatUri: defaultChatUri, anchorTurnId: 'gone', seq: 3, payload: JSON.stringify(localTurn('local-orphan', '!echo')) });
+
+			await localService.restoreSession(sessionResource);
+
+			const state = localService.stateManager.getSessionState(sessionResource.toString());
+			// head (no anchor) first, then the real turn, then its anchored local; orphan dropped.
+			assert.deepStrictEqual(state!.turns.map(t => t.id), ['local-head', 'msg-real', 'local-after']);
+		});
+
+
 		test('restores the default chat\'s independently-renamed title', async () => {
 			const db = new TestSessionDatabase();
 			const localService = disposables.add(new AgentService(new NullLogService(), fileService, createSessionDataService(db), { _serviceBrand: undefined } as IProductService, createNoopGitService()));
@@ -2654,6 +2685,60 @@ suite('AgentService (node dispatcher)', () => {
 			}, {
 				forkForwarded: false,
 				newTurnCount: 0,
+			});
+		});
+
+		test('fork at a host-injected local turn redirects the SDK boundary to the concrete anchor and carries the local turn into the new chat', async () => {
+			let receivedFork: IAgentCreateChatForkSource | undefined;
+			class MultiChatAgent extends MockAgent {
+				override async createChat(_session: URI, _chat: URI, options?: IAgentCreateChatOptions): Promise<void> {
+					receivedFork = options?.fork;
+				}
+			}
+			const db = new TestSessionDatabase();
+			const agent = disposables.add(new MultiChatAgent('copilot'));
+			const localService = disposables.add(new AgentService(new NullLogService(), fileService, createSessionDataService(db), { _serviceBrand: undefined } as IProductService, createNoopGitService()));
+			localService.registerProvider(agent);
+			const { session } = await agent.createSession();
+			const sessionResource = (await agent.listSessions())[0].session;
+			const defaultChatUri = buildDefaultChatUri(sessionResource.toString());
+
+			// SDK transcript reconstructs a single real turn keyed by the user
+			// message id; a host-injected local turn is persisted after it.
+			agent.sessionMessages = [
+				{ type: 'message', session, role: 'user', messageId: 'real-1', content: 'Hello', toolRequests: [] },
+				{ type: 'message', session, role: 'assistant', messageId: 'real-1-a', content: 'Hi', toolRequests: [] },
+			];
+			const localTurn: Turn = { id: 'local-1', state: TurnState.Complete, message: { text: '!echo hi', origin: { kind: MessageKind.User } }, responseParts: [], usage: undefined };
+			await db.insertLocalTurn({ turnId: 'local-1', chatUri: defaultChatUri, anchorTurnId: 'real-1', seq: 1, payload: JSON.stringify(localTurn) });
+
+			// Restore so the source chat interleaves [real-1, local-1] and the
+			// in-memory local index knows local-1 is a local turn.
+			await localService.restoreSession(sessionResource);
+			assert.deepStrictEqual(localService.stateManager.getSessionState(sessionResource.toString())?.turns.map(t => t.id), ['real-1', 'local-1']);
+
+			// Fork the default chat AT the local turn into a new peer chat.
+			const peerUri = URI.parse(buildChatUri(sessionResource, 'peer-1'));
+			await localService.createChat(sessionResource, peerUri, { fork: { source: URI.parse(defaultChatUri), turnId: 'local-1' } });
+
+			const peerTurns = localService.stateManager.getChatState(peerUri.toString())?.turns ?? [];
+			const forkedLocals = (await db.getLocalTurns()).filter(r => r.chatUri === peerUri.toString());
+			assert.deepStrictEqual({
+				// SDK fork boundary redirected from the local turn to its concrete anchor.
+				sdkForkTurnId: receivedFork?.turnId,
+				// New chat seeded with remapped copies of both turns.
+				peerTurnCount: peerTurns.length,
+				// The forked local turn is persisted under the new chat, anchored to
+				// the forked copy of the real turn.
+				forkedLocalCount: forkedLocals.length,
+				forkedLocalAnchor: forkedLocals[0]?.anchorTurnId,
+				anchorIsPeerFirstTurn: forkedLocals[0]?.anchorTurnId === peerTurns[0]?.id,
+			}, {
+				sdkForkTurnId: 'real-1',
+				peerTurnCount: 2,
+				forkedLocalCount: 1,
+				forkedLocalAnchor: peerTurns[0]?.id,
+				anchorIsPeerFirstTurn: true,
 			});
 		});
 

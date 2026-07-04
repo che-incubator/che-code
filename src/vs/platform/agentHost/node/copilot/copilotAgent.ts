@@ -1487,6 +1487,9 @@ export class CopilotAgent extends Disposable implements IAgent {
 					if (sourceDbRef) {
 						try {
 							await fs.mkdir(targetDbDir.fsPath, { recursive: true });
+							// VACUUM INTO fails if the target already exists; clear
+							// any stale DB left by a previous (e.g. crashed) attempt.
+							await fs.rm(targetDbPath.fsPath, { force: true });
 							await sourceDbRef.object.vacuumInto(targetDbPath.fsPath);
 						} finally {
 							sourceDbRef.dispose();
@@ -2339,6 +2342,9 @@ export class CopilotAgent extends Disposable implements IAgent {
 			if (sourceDbRef) {
 				try {
 					await fs.mkdir(targetDbDir.fsPath, { recursive: true });
+					// VACUUM INTO fails if the target already exists; clear any
+					// stale DB left by a previous (e.g. crashed) attempt.
+					await fs.rm(targetDbPath.fsPath, { force: true });
 					await sourceDbRef.object.vacuumInto(targetDbPath.fsPath);
 				} finally {
 					sourceDbRef.dispose();
@@ -2526,16 +2532,25 @@ export class CopilotAgent extends Disposable implements IAgent {
 		});
 	}
 
-	async truncateSession(session: URI, turnId?: string): Promise<void> {
+	async truncateSession(session: URI, turnId: string | undefined, chat: URI): Promise<void> {
 		const sessionId = AgentSession.id(session);
 		if (this._provisionalSessions.has(sessionId)) {
 			return;
 		}
+		const isPeerChat = !isDefaultChatUri(chat);
 		await this._sessionSequencer.queue(sessionId, async () => {
-			this._logService.info(`[Copilot:${sessionId}] Truncating session${turnId !== undefined ? ` at turnId=${turnId}` : ' (all turns)'}`);
+			this._logService.info(`[Copilot:${sessionId}] Truncating ${isPeerChat ? `peer chat ${chat.toString()}` : 'session'}${turnId !== undefined ? ` at turnId=${turnId}` : ' (all turns)'}`);
 
-			// Ensure the session is loaded so we can use the SDK RPC
-			const entry = this._findAnySession(sessionId) ?? await this._resumeSession(sessionId);
+			// Resolve the entry whose history is being truncated: a peer chat has
+			// its own backing SDK session, so route to it rather than the default
+			// chat. `_resolveChatEntry` resumes/materializes the chat if needed.
+			const entry = isPeerChat
+				? await this._resolveChatEntry(session, chat)
+				: (this._findAnySession(sessionId) ?? await this._resumeSession(sessionId));
+			if (!entry) {
+				this._logService.info(`[Copilot:${sessionId}] No chat entry resolved for truncation; nothing to truncate`);
+				return;
+			}
 
 			// Look up the SDK event ID for the truncation boundary.
 			// The protocol semantics: turnId is the last turn to KEEP.

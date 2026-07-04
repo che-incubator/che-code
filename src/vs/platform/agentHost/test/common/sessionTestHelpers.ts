@@ -8,7 +8,7 @@ import { Schemas } from '../../../../base/common/network.js';
 import { URI } from '../../../../base/common/uri.js';
 import { Event } from '../../../../base/common/event.js';
 import type { IDiffComputeService, IDiffCountResult } from '../../common/diffComputeService.js';
-import type { IFileEditContent, IFileEditRecord, IReviewedFileRecord, ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
+import type { IFileEditContent, IFileEditRecord, ILocalTurnRecord, IReviewedFileRecord, ISessionDatabase, ISessionDataService } from '../../common/sessionDataService.js';
 import type { Message } from '../../common/state/sessionState.js';
 
 export class TestSessionDatabase implements ISessionDatabase {
@@ -16,6 +16,7 @@ export class TestSessionDatabase implements ISessionDatabase {
 	private readonly _metadata = new Map<string, string>();
 	private readonly _drafts = new Map<string, Message>();
 	private readonly _reviewedFiles: IReviewedFileRecord[] = [];
+	private readonly _localTurns = new Map<string, ILocalTurnRecord>();
 
 	getAllFileEditsCalls = 0;
 	getFileEditsByTurnCalls = 0;
@@ -114,6 +115,19 @@ export class TestSessionDatabase implements ISessionDatabase {
 		this._edits.length = 0;
 	}
 
+	async insertLocalTurn(record: ILocalTurnRecord): Promise<void> {
+		this._localTurns.set(record.turnId, record);
+	}
+
+	async getLocalTurns(): Promise<ILocalTurnRecord[]> {
+		return [...this._localTurns.values()].sort((a, b) => a.seq - b.seq);
+	}
+
+	async deleteLocalTurns(turnIds: readonly string[]): Promise<void> {
+		for (const id of turnIds) {
+			this._localTurns.delete(id);
+		}
+	}
 	async remapTurnIds(_mapping: ReadonlyMap<string, string>): Promise<void> { }
 
 	async markFileReviewed(uri: URI, nonce: string): Promise<void> {
