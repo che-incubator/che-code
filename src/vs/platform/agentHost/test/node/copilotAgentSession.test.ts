@@ -2004,7 +2004,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'shell_completed', shellId: 'shell-a', exitCode: 0, description: 'sleep 6' },
 				},
 			}), {
-				content: 'Shell done',
 				messageText: '`sleep 6` completed',
 				startsTurn: true,
 			});
@@ -2016,7 +2015,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'shell_detached_completed', shellId: 'detached-a' },
 				},
 			}), {
-				content: 'Detached done',
 				messageText: 'Shell `detached-a` completed',
 				startsTurn: true,
 			});
@@ -2028,7 +2026,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'agent_completed', agentId: 'agent-a', agentType: 'task', status: 'completed' },
 				},
 			}), {
-				content: 'Agent done',
 				messageText: 'Background agent agent-a completed',
 				startsTurn: true,
 			});
@@ -2040,7 +2037,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'agent_completed', agentId: 'agent-b', agentType: 'task', status: 'failed' },
 				},
 			}), {
-				content: 'Agent failed',
 				messageText: 'Background agent agent-b failed',
 				startsTurn: true,
 			});
@@ -2052,7 +2048,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'agent_idle', agentId: 'agent-a', agentType: 'task' },
 				},
 			}), {
-				content: 'Agent idle',
 				messageText: 'Background agent agent-a is complete',
 				startsTurn: true,
 			});
@@ -2064,7 +2059,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'new_inbox_message', entryId: 'entry-a', senderName: 'sidekick', senderType: 'sidekick-agent', summary: 'New message' },
 				},
 			}), {
-				content: 'Inbox message',
 				messageText: 'New inbox message from sidekick',
 				startsTurn: false,
 			});
@@ -2076,7 +2070,6 @@ suite('CopilotAgentSession', () => {
 					kind: { type: 'instruction_discovered', sourcePath: 'packages/billing/AGENTS.md', triggerFile: 'packages/billing/src/index.ts', triggerTool: 'view', description: 'AGENTS.md from packages/billing/' },
 				},
 			}), {
-				content: 'Discovered instruction',
 				messageText: 'Instruction discovered: AGENTS.md from packages/billing/',
 				startsTurn: false,
 			});
@@ -2150,7 +2143,7 @@ suite('CopilotAgentSession', () => {
 				turnId: 'turn-active',
 				part: {
 					kind: ResponsePartKind.SystemNotification,
-					content: 'Agent "agent-a" has finished processing and is now idle.',
+					content: 'Background agent agent-a is complete',
 				},
 			});
 		});
@@ -2177,8 +2170,8 @@ suite('CopilotAgentSession', () => {
 			assert.deepStrictEqual(getActions(signals)
 				.filter(action => action.type === ActionType.ChatResponsePart)
 				.map(action => action.part), [
-				{ kind: ResponsePartKind.SystemNotification, content: 'Inbox from sidekick' },
-				{ kind: ResponsePartKind.SystemNotification, content: 'Discovered instruction' },
+				{ kind: ResponsePartKind.SystemNotification, content: 'New inbox message from sidekick' },
+				{ kind: ResponsePartKind.SystemNotification, content: 'Instruction discovered: AGENTS.md from packages/billing/' },
 			]);
 		});
 

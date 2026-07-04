@@ -2473,7 +2473,7 @@ export class CopilotAgentSession extends Disposable {
 					turnId: this._turnId,
 					part: {
 						kind: ResponsePartKind.SystemNotification,
-						content: notification.content,
+						content: notification.messageText,
 					},
 				});
 				return;

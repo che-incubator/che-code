@@ -259,6 +259,11 @@ export interface IChatProgressMessage {
 	shimmer?: boolean;
 }
 
+export interface IChatSystemNotificationPart {
+	content: IMarkdownString;
+	kind: 'systemNotification';
+}
+
 export interface IChatTask extends IChatTaskDto {
 	deferred: DeferredPromise<string | void>;
 	progress: (IChatWarningMessage | IChatContentReference)[];
@@ -1341,6 +1346,7 @@ export type IChatProgress =
 	| IChatContentInlineReference
 	| IChatCodeCitation
 	| IChatProgressMessage
+	| IChatSystemNotificationPart
 	| IChatTask
 	| IChatTaskResult
 	| IChatCommandButton
