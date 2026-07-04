@@ -396,7 +396,7 @@ async function waitForSessionConfig(provider: LocalAgentHostSessionsProvider, se
 	});
 }
 
-function fireSessionAdded(agentHost: MockAgentHostService, rawId: string, opts?: { provider?: string; title?: string; project?: { uri: string; displayName: string }; workingDirectory?: string; changes?: ChangesSummary; workspaceless?: boolean }): void {
+function fireSessionAdded(agentHost: MockAgentHostService, rawId: string, opts?: { provider?: string; title?: string; project?: { uri: string; displayName: string }; workingDirectory?: string; changes?: ChangesSummary; workspaceless?: boolean; createdAt?: string; modifiedAt?: string }): void {
 	const provider = opts?.provider ?? 'copilotcli';
 	const sessionUri = AgentSession.uri(provider, rawId);
 	agentHost.fireNotification({
@@ -407,13 +407,25 @@ function fireSessionAdded(agentHost: MockAgentHostService, rawId: string, opts?:
 			provider,
 			title: opts?.title ?? `Session ${rawId}`,
 			status: ProtocolSessionStatus.Idle,
-			createdAt: new Date().toISOString(),
-			modifiedAt: new Date().toISOString(),
+			createdAt: opts?.createdAt ?? new Date().toISOString(),
+			modifiedAt: opts?.modifiedAt ?? new Date().toISOString(),
 			project: opts?.project,
 			workingDirectory: opts?.workingDirectory,
 			changes: opts?.changes,
 			...(opts?.workspaceless ? { _meta: withSessionWorkspaceless(undefined, true) } : {}),
 		},
+	});
+}
+
+function fireSessionMetaChanged(agentHost: MockAgentHostService, rawId: string, meta: Record<string, unknown> | undefined, provider = 'copilotcli'): void {
+	agentHost.fireAction({
+		channel: AgentSession.uri(provider, rawId).toString(),
+		action: {
+			type: ActionType.SessionMetaChanged,
+			_meta: meta,
+		},
+		serverSeq: 1,
+		origin: undefined,
 	});
 }
 
@@ -755,13 +767,14 @@ suite('LocalAgentHostSessionsProvider', () => {
 		assert.strictEqual(changes[0].removed.length, 1);
 	});
 
-	test('duplicate session added notification is ignored', () => {
+	test('identical session added notification is ignored', () => {
 		const provider = createProvider(disposables, agentHost);
 		const changes: ISessionChangeEvent[] = [];
 		disposables.add(provider.onDidChangeSessions(e => changes.push(e)));
 
-		fireSessionAdded(agentHost, 'dup-sess', { title: 'Dup' });
-		fireSessionAdded(agentHost, 'dup-sess', { title: 'Dup' });
+		const timestamp = new Date(0).toISOString();
+		fireSessionAdded(agentHost, 'dup-sess', { title: 'Dup', createdAt: timestamp, modifiedAt: timestamp });
+		fireSessionAdded(agentHost, 'dup-sess', { title: 'Dup', createdAt: timestamp, modifiedAt: timestamp });
 
 		assert.strictEqual(changes.length, 1);
 	});
@@ -777,6 +790,93 @@ suite('LocalAgentHostSessionsProvider', () => {
 	});
 
 	// ---- Session listing via refresh -------
+
+	test('session added authoritatively updates a listed session in place', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {
+		const originalProject = URI.parse('file:///Users/me/project');
+		const originalWorkingDirectory = URI.parse('file:///Users/me/project');
+		agentHost.addSession(createSession('worktree-upsert', {
+			summary: 'Worktree Session',
+			project: { uri: originalProject, displayName: 'project' },
+			workingDirectory: originalWorkingDirectory,
+			modifiedTime: 1000,
+		}));
+
+		const provider = createProvider(disposables, agentHost);
+		provider.getSessions();
+		await timeout(0);
+		const session = provider.getSessions()[0]!;
+		const originalWorkspace = session.workspace.get()!;
+		const changes: ISessionChangeEvent[] = [];
+		disposables.add(provider.onDidChangeSessions(e => changes.push(e)));
+
+		const worktreeProject = 'file:///Users/me/project.worktrees/session';
+		const worktreeWorkingDirectory = 'file:///Users/me/project.worktrees/session/src';
+		fireSessionAdded(agentHost, 'worktree-upsert', {
+			title: 'Worktree Session',
+			project: { uri: worktreeProject, displayName: 'project-worktree' },
+			workingDirectory: worktreeWorkingDirectory,
+			createdAt: new Date(1000).toISOString(),
+			modifiedAt: new Date(2000).toISOString(),
+		});
+		fireSessionSummaryChanged(agentHost, 'worktree-upsert', {
+			_meta: { git: { branchName: 'agents/worktree-session', baseBranchName: 'main' } },
+		});
+
+		const current = provider.getSessions()[0]!;
+		const currentWorkspace = current.workspace.get()!;
+		assert.deepStrictEqual({
+			sameAdapter: current === session,
+			originalWorkingDirectory: originalWorkspace.folders[0].workingDirectory.toString(),
+			workingDirectory: currentWorkspace.folders[0].workingDirectory.toString(),
+			branchName: currentWorkspace.folders[0].gitRepository?.branchName,
+			changedEvents: changes.map(change => change.changed.map(changed => changed === session)),
+		}, {
+			sameAdapter: true,
+			originalWorkingDirectory: originalWorkingDirectory.toString(),
+			workingDirectory: worktreeWorkingDirectory,
+			branchName: 'agents/worktree-session',
+			changedEvents: [[true], [true]],
+		});
+	}));
+
+	test('session metadata changes notify when observable git fields change', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {
+		agentHost.addSession(createSession('git-meta', {
+			summary: 'Git Session',
+			project: { uri: URI.parse('file:///Users/me/project'), displayName: 'project' },
+		}));
+
+		const provider = createProvider(disposables, agentHost);
+		provider.getSessions();
+		await timeout(0);
+		const session = provider.getSessions()[0]!;
+		const changes: ISessionChangeEvent[] = [];
+		disposables.add(provider.onDidChangeSessions(e => changes.push(e)));
+		const meta = {
+			git: {
+				branchName: 'feature/worktree',
+				baseBranchName: 'main',
+				hasGitHubRemote: true,
+				upstreamBranchName: 'origin/feature/worktree',
+				incomingChanges: 2,
+				outgoingChanges: 3,
+				uncommittedChanges: 4,
+			},
+		};
+
+		fireSessionMetaChanged(agentHost, 'git-meta', meta);
+		fireSessionMetaChanged(agentHost, 'git-meta', meta);
+
+		const gitRepository = session.workspace.get()!.folders[0].gitRepository!;
+		assert.deepStrictEqual({
+			branchName: gitRepository.branchName,
+			uncommittedChanges: gitRepository.uncommittedChanges,
+			changedEvents: changes.map(change => change.changed.map(changed => changed === session)),
+		}, {
+			branchName: 'feature/worktree',
+			uncommittedChanges: 4,
+			changedEvents: [[true]],
+		});
+	}));
 
 	test('getSessions populates from listSessions', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {
 		agentHost.addSession(createSession('list-1', { summary: 'First' }));

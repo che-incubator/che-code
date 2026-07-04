@@ -550,6 +550,8 @@ Backend state change (turn complete, status update, etc.)
 
 Providers may fire `onDidReplaceSession` when a temporary (untitled) session is atomically replaced by a committed one after the first turn.
 
+Provider add notifications are authoritative upserts. A provisional `listSessions()` entry may already be cached when the backend publishes its materialized project and working directory, so providers update the existing session adapter in place and report it as changed rather than replacing its identity.
+
 ---
 
 ## Adding a New Provider

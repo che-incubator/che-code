@@ -599,6 +599,13 @@ export class AgentService extends Disposable implements IAgentService {
 					summary: liveSummary.title || s.summary,
 					status: liveSummary.status,
 					activity: liveSummary.activity,
+					modifiedTime: Date.parse(liveSummary.modifiedAt),
+					project: liveSummary.project
+						? { uri: URI.parse(liveSummary.project.uri), displayName: liveSummary.project.displayName }
+						: s.project,
+					workingDirectory: typeof liveSummary.workingDirectory === 'string'
+						? URI.parse(liveSummary.workingDirectory)
+						: s.workingDirectory,
 					changes: liveSummary.changes ?? s.changes,
 					changesets: this._stateManager.getSessionState(s.session.toString())?.changesets ?? s.changesets,
 					...(_meta !== undefined ? { _meta } : {}),

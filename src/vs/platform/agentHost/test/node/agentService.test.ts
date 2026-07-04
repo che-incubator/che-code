@@ -956,6 +956,50 @@ suite('AgentService (node dispatcher)', () => {
 			);
 		});
 
+		test('listSessions overlays live workspace metadata over a stale provider snapshot', async () => {
+			class DelayedListAgent extends MockAgent {
+				readonly listStarted = new DeferredPromise<void>();
+				readonly releaseList = new DeferredPromise<void>();
+				override async listSessions() {
+					const snapshot = await super.listSessions();
+					this.listStarted.complete();
+					await this.releaseList.p;
+					return snapshot;
+				}
+			}
+
+			const agent = new DelayedListAgent('copilot');
+			disposables.add(toDisposable(() => agent.dispose()));
+			agent.resolvedWorkingDirectory = URI.file('/original');
+			service.registerProvider(agent);
+			const { session } = await agent.createSession();
+
+			const listing = service.listSessions();
+			await agent.listStarted.p;
+			service.stateManager.restoreSession({
+				resource: session.toString(),
+				provider: 'copilot',
+				title: 'Materialized',
+				status: SessionStatus.Idle,
+				createdAt: new Date(1000).toISOString(),
+				modifiedAt: new Date(2000).toISOString(),
+				project: { uri: URI.file('/project').toString(), displayName: 'project' },
+				workingDirectory: URI.file('/worktree').toString(),
+			}, []);
+			agent.releaseList.complete();
+
+			const listed = (await listing).find(item => item.session.toString() === session.toString());
+			assert.deepStrictEqual({
+				modifiedTime: listed?.modifiedTime,
+				project: listed?.project && { uri: listed.project.uri.path, displayName: listed.project.displayName },
+				workingDirectory: listed?.workingDirectory?.path,
+			}, {
+				modifiedTime: 2000,
+				project: { uri: '/project', displayName: 'project' },
+				workingDirectory: '/worktree',
+			});
+		});
+
 		test.skip('listSessions synthesizes the session changeset catalogue from persisted diffs for unopened sessions', async () => {
 			// Pre-seed a `'diffs'` blob in the in-memory DB. The agent's
 			// `listSessions()` returns the session metadata but the session

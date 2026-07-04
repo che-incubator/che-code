@@ -1876,6 +1876,10 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 		return this._instantiationService.createInstance(AgentHostSessionAdapter, meta, this.id, resourceScheme, provider, options);
 	}
 
+	protected updateAdapter(adapter: AgentHostSessionAdapter, meta: IAgentSessionMetadata): boolean {
+		return adapter.update(meta);
+	}
+
 	/**
 	 * Computes the URI resource scheme used to route session URIs to this
 	 * provider's content provider for a given agent provider name. Local
@@ -3561,7 +3565,7 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 					if (announceExistingAsAdded) {
 						added.push(existing);
 					}
-					if (existing.update(meta)) {
+					if (this.updateAdapter(existing, meta)) {
 						changed.push(existing);
 					}
 				} else {
@@ -3712,10 +3716,6 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	private _handleSessionAdded(summary: SessionSummary): void {
 		const sessionUri = URI.parse(summary.resource);
 		const rawId = AgentSession.id(sessionUri);
-		if (this._sessionCache.has(rawId)) {
-			return;
-		}
-
 		const workingDir = typeof summary.workingDirectory === 'string'
 			? this.mapWorkingDirectoryUri(URI.parse(summary.workingDirectory))
 			: undefined;
@@ -3740,6 +3740,15 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 			// and cannot be flipped by a later `update`/`setMeta`.
 			...(summary._meta !== undefined ? { _meta: summary._meta } : {}),
 		};
+
+		const existing = this._sessionCache.get(rawId);
+		if (existing) {
+			if (this.updateAdapter(existing, meta)) {
+				this._onDidChangeSessions.fire({ added: [], removed: [], changed: [existing] });
+			}
+			return;
+		}
+
 		const cached = this.createAdapter(meta);
 		this._sessionCache.set(rawId, cached);
 		this._onDidChangeSessions.fire({ added: [cached], removed: [], changed: [] });
@@ -3938,8 +3947,8 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	private _handleSessionMetaChanged(session: string, meta: Record<string, unknown> | undefined): void {
 		const rawId = AgentSession.id(session);
 		const cached = this._sessionCache.get(rawId);
-		if (cached) {
-			cached.setMeta(meta);
+		if (cached?.setMeta(meta)) {
+			this._onDidChangeSessions.fire({ added: [], removed: [], changed: [cached] });
 		}
 	}
 
