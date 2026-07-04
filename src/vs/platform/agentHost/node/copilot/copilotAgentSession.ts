@@ -2860,6 +2860,10 @@ export class CopilotAgentSession extends Disposable {
 		// clickable file link, matching the `view`-tool display style.
 		this._register(wrapper.onSkillInvoked(e => {
 			this._logService.info(`[Copilot:${sessionId}] Skill invoked: ${e.data.name} (${e.data.path})`);
+			if (this._shouldDropUnmappedSubagentEvent(e, 'skill.invoked')) {
+				return;
+			}
+			const parentToolCallId = this._parentToolCallIdForSubagentEvent(e);
 			const synth = synthesizeSkillToolCall(e.data, e.id);
 			this._emitAction({
 				type: ActionType.ChatToolCallStart,
@@ -2867,14 +2871,14 @@ export class CopilotAgentSession extends Disposable {
 				toolCallId: synth.toolCallId,
 				toolName: synth.toolName,
 				displayName: synth.displayName,
-			});
+			}, parentToolCallId);
 			this._emitAction({
 				type: ActionType.ChatToolCallReady,
 				turnId: this._turnId,
 				toolCallId: synth.toolCallId,
 				invocationMessage: synth.invocationMessage,
 				confirmed: ToolCallConfirmationReason.NotNeeded,
-			});
+			}, parentToolCallId);
 			this._emitAction({
 				type: ActionType.ChatToolCallComplete,
 				turnId: this._turnId,
@@ -2883,7 +2887,7 @@ export class CopilotAgentSession extends Disposable {
 					success: true,
 					pastTenseMessage: synth.pastTenseMessage,
 				},
-			});
+			}, parentToolCallId);
 		}));
 
 		this._register(wrapper.onSubagentStarted(e => {

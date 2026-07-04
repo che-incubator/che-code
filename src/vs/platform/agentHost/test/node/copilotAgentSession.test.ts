@@ -25,7 +25,7 @@ import { AgentFeedbackAttachmentDisplayKind } from '../../common/meta/agentFeedb
 import { IDiffComputeService } from '../../common/diffComputeService.js';
 import { ISessionDataService } from '../../common/sessionDataService.js';
 import { ActionType, type ChatDeltaAction, type ChatErrorAction, type ChatInputRequestedAction, type ChatResponsePartAction, type ChatToolCallCompleteAction, type ChatToolCallReadyAction, type ChatToolCallStartAction, type ChatTurnCompleteAction, type ChatUsageAction, type SessionAction } from '../../common/state/sessionActions.js';
-import { MessageAttachmentKind, MessageKind, ResponsePartKind, ChatInputAnswerState, ChatInputAnswerValueKind, ChatInputQuestionKind, ChatInputResponseKind, ToolCallContributorKind, ToolCallStatus, ToolResultContentType, buildDefaultChatUri, type ToolDefinition, type ToolResultContent, type ToolResultFileEditContent, type UsageInfoMeta } from '../../common/state/sessionState.js';
+import { MessageAttachmentKind, MessageKind, ResponsePartKind, ChatInputAnswerState, ChatInputAnswerValueKind, ChatInputQuestionKind, ChatInputResponseKind, ToolCallConfirmationReason, ToolCallContributorKind, ToolCallStatus, ToolResultContentType, buildDefaultChatUri, type ToolDefinition, type ToolResultContent, type ToolResultFileEditContent, type UsageInfoMeta } from '../../common/state/sessionState.js';
 import { McpAuthRequiredReason, McpServerStatus } from '../../common/state/protocol/channels-session/state.js';
 import { CopilotAgentSession } from '../../node/copilot/copilotAgentSession.js';
 import { ActiveClientToolSet } from '../../node/activeClientState.js';
@@ -3024,6 +3024,67 @@ suite('CopilotAgentSession', () => {
 
 			assert.deepStrictEqual(toolCompletions, [
 				{ parentToolCallId: 'tc-subagent', toolCallId: 'tc-child-tool' },
+			]);
+		});
+
+		test('subagent skill invocation routes to the subagent session scope', async () => {
+			const { session, mockSession, signals } = await createAgentSession(disposables);
+			session.resetTurnState('turn-1');
+
+			mockSession.fire('subagent.started', {
+				toolCallId: 'tc-subagent',
+				agentName: 'explore',
+				agentDisplayName: 'Explore',
+				agentDescription: 'Explore tests',
+			} as SessionEventPayload<'subagent.started'>['data'], { agentId: 'agent-1' });
+
+			mockSession.fire('skill.invoked', {
+				name: 'explore',
+				path: '/skills/explore/SKILL.md',
+			} as SessionEventPayload<'skill.invoked'>['data'], { id: 'skill-event', agentId: 'agent-1' });
+
+			const skillActions = signals
+				.filter((signal): signal is IAgentActionSignal => signal.kind === 'action')
+				.filter(signal =>
+					signal.action.type === ActionType.ChatToolCallStart
+					|| signal.action.type === ActionType.ChatToolCallReady
+					|| signal.action.type === ActionType.ChatToolCallComplete
+				)
+				.map(signal => ({ parentToolCallId: signal.parentToolCallId, action: signal.action }));
+
+			assert.deepStrictEqual(skillActions, [
+				{
+					parentToolCallId: 'tc-subagent',
+					action: {
+						type: ActionType.ChatToolCallStart,
+						turnId: 'turn-1',
+						toolCallId: 'synth-skill-skill-event',
+						toolName: 'skill',
+						displayName: 'Read Skill',
+					},
+				},
+				{
+					parentToolCallId: 'tc-subagent',
+					action: {
+						type: ActionType.ChatToolCallReady,
+						turnId: 'turn-1',
+						toolCallId: 'synth-skill-skill-event',
+						invocationMessage: { markdown: 'Reading skill [explore](file:///skills/explore/SKILL.md)' },
+						confirmed: ToolCallConfirmationReason.NotNeeded,
+					},
+				},
+				{
+					parentToolCallId: 'tc-subagent',
+					action: {
+						type: ActionType.ChatToolCallComplete,
+						turnId: 'turn-1',
+						toolCallId: 'synth-skill-skill-event',
+						result: {
+							success: true,
+							pastTenseMessage: { markdown: 'Read skill [explore](file:///skills/explore/SKILL.md)' },
+						},
+					},
+				},
 			]);
 		});
 
