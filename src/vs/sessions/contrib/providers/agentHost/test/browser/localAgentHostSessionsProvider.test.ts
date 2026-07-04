@@ -317,7 +317,7 @@ function createPolicyRestrictedConfigurationService(): TestConfigurationService 
 
 function createProvider(disposables: DisposableStore, agentHostService: MockAgentHostService, contributions = [
 	{ type: 'agent-host-copilotcli', name: 'copilot', displayName: 'Copilot', description: 'test', icon: undefined },
-], options?: { sendRequest?: (resource: URI, message: string, options?: IChatSendRequestOptions) => Promise<ChatSendResult>; acquireOrLoadSession?: (resource: URI) => Promise<IChatModelReference | undefined>; lookupLanguageModel?: (modelId: string) => ILanguageModelChatMetadata | undefined; openSession?: boolean; configurationService?: IConfigurationService; activeSession?: IObservable<IActiveSession | undefined>; storageService?: IStorageService; isSessionsWindow?: boolean; confirmDelete?: boolean; workspaceTrusted?: boolean; gitHubService?: IGitHubService }): LocalAgentHostSessionsProvider {
+], options?: { sendRequest?: (resource: URI, message: string, options?: IChatSendRequestOptions) => Promise<ChatSendResult>; acquireOrLoadSession?: (resource: URI) => Promise<IChatModelReference | undefined>; lookupLanguageModel?: (modelId: string) => ILanguageModelChatMetadata | undefined; openSession?: boolean; configurationService?: IConfigurationService; activeSession?: IObservable<IActiveSession | undefined>; visibleSessions?: IObservable<readonly (IActiveSession | undefined)[]>; storageService?: IStorageService; isSessionsWindow?: boolean; confirmDelete?: boolean; workspaceTrusted?: boolean; gitHubService?: IGitHubService }): LocalAgentHostSessionsProvider {
 	const instantiationService = disposables.add(new TestInstantiationService());
 
 	instantiationService.stub(IAgentHostService, agentHostService);
@@ -357,8 +357,10 @@ function createProvider(disposables: DisposableStore, agentHostService: MockAgen
 	}());
 	instantiationService.stub(IPullRequestIconCache, instantiationService.createInstance(PullRequestIconCache));
 	const activeSessionObs = options?.activeSession ?? constObservable<IActiveSession | undefined>(undefined);
+	const visibleSessionsObs = options?.visibleSessions ?? constObservable<readonly (IActiveSession | undefined)[]>([]);
 	instantiationService.stub(ISessionsService, new class extends mock<ISessionsService>() {
 		override readonly activeSession: IObservable<IActiveSession | undefined> = activeSessionObs;
+		override readonly visibleSessions: IObservable<readonly (IActiveSession | undefined)[]> = visibleSessionsObs;
 	}());
 	instantiationService.stub(IAgentHostActiveClientService, new class extends mock<IAgentHostActiveClientService>() {
 		override getActiveClient = (_sessionType: string, clientId: string) => ({ clientId, tools: [], customizations: [] });
@@ -3569,6 +3571,58 @@ suite('LocalAgentHostSessionsProvider', () => {
 		// `mode` is dropped because it wasn't re-asserted in the replace payload.
 		const updated = provider.getSessionConfig(session!.sessionId);
 		assert.deepStrictEqual(updated?.values, { autoApprove: 'autoApprove', isolation: 'worktree' });
+	}));
+
+	test('keeps a visible session subscribed so host-spawned subagent chats keep reaching the catalog', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {
+		// Regression for the "Open Subagent" pill: a passively-watched session
+		// must stay subscribed so a host-spawned subagent's `chatAdded` keeps
+		// reaching the catalog past the idle-release window.
+		agentHost.addSession(createSession('subagent-live', { summary: 'Lead' }));
+		const visibleSessions = observableValue<readonly (IActiveSession | undefined)[]>('visible', []);
+		const provider = createProvider(disposables, agentHost, undefined, { visibleSessions });
+		provider.getSessions();
+		await timeout(0);
+		const session = provider.getSessions()[0];
+
+		// The session's view is on screen: its state subscription must be pinned.
+		visibleSessions.set([new class extends mock<IActiveSession>() {
+			override readonly resource = session.resource;
+		}()], undefined);
+
+		const sessionUri = AgentSession.uri('copilotcli', 'subagent-live').toString();
+		const defaultChat = buildDefaultChatUri(sessionUri);
+		const subagentOne = buildSubagentChatUri(sessionUri, 'tc-1');
+		const subagentTwo = buildSubagentChatUri(sessionUri, 'tc-2');
+		const toolChat = (resource: string, toolCallId: string, title: string): ChatSummary => ({
+			resource, title, status: ProtocolSessionStatus.InProgress, modifiedAt: new Date(0).toISOString(),
+			origin: { kind: ProtocolChatOriginKind.Tool, chat: defaultChat, toolCallId },
+		});
+		const stateWith = (chats: ChatSummary[]): SessionState => ({
+			provider: 'copilotcli', title: 'Lead', status: ProtocolSessionStatus.Idle,
+			lifecycle: SessionLifecycle.Ready, activeClients: [], defaultChat, chats,
+		});
+		const defaultSummary: ChatSummary = { resource: defaultChat, title: '', status: ProtocolSessionStatus.Idle, modifiedAt: new Date(0).toISOString() };
+
+		agentHost.setSessionState('subagent-live', 'copilotcli', stateWith([defaultSummary, toolChat(subagentOne, 'tc-1', 'Add name to README')]));
+		assert.ok(session.chats.get().some(c => c.resource.fragment === 'subagent/tc-1'), 'first subagent should reach the catalog while visible');
+
+		// Advance well past the idle-release window; a passively-watched session
+		// used to drop its state listener here.
+		await timeout(120_000);
+
+		// A second subagent spawns later in the same run; it must still reach the
+		// catalog because the visible session stayed subscribed.
+		agentHost.setSessionState('subagent-live', 'copilotcli', stateWith([
+			defaultSummary,
+			toolChat(subagentOne, 'tc-1', 'Add name to README'),
+			toolChat(subagentTwo, 'tc-2', 'Add description to package.json'),
+		]));
+
+		assert.deepStrictEqual(
+			session.chats.get().map(c => c.resource.fragment).filter(f => f.startsWith('subagent/')).sort(),
+			['subagent/tc-1', 'subagent/tc-2'],
+			'both subagents should reach the catalog after the idle window while the session stays visible',
+		);
 	}));
 });
 

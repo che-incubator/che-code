@@ -11,7 +11,7 @@ import { Emitter, Event } from '../../../../../base/common/event.js';
 import { IMarkdownString, MarkdownString } from '../../../../../base/common/htmlContent.js';
 import { Disposable, DisposableMap, DisposableStore, IDisposable, IReference, MutableDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
 import { equals } from '../../../../../base/common/objects.js';
-import { constObservable, derived, derivedOpts, IObservable, ISettableObservable, observableFromEvent, observableValue, observableValueOpts, transaction, waitForState, autorun } from '../../../../../base/common/observable.js';
+import { constObservable, derived, derivedOpts, IObservable, IReader, ISettableObservable, observableFromEvent, observableValue, observableValueOpts, transaction, waitForState, autorun } from '../../../../../base/common/observable.js';
 import { isEqual, isEqualOrParent, relativePath } from '../../../../../base/common/resources.js';
 import { ThemeIcon } from '../../../../../base/common/themables.js';
 import { URI } from '../../../../../base/common/uri.js';
@@ -1788,6 +1788,19 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	 */
 	private readonly _sessionStateIdleTimers = this._register(new DisposableMap<string, IDisposable>());
 
+	/**
+	 * Session ids whose views are currently visible in the Agents window. Their
+	 * state subscription is pinned open (no idle release) so host-driven catalog
+	 * changes the user did not initiate — most importantly spawned subagent chats
+	 * ({@link ChatOriginKind.Tool}) — keep flowing into `cached.chats` while the
+	 * session is on screen. Without this, the idle timer (only refreshed by
+	 * client-initiated actions/queries) can release the state listener mid-view,
+	 * so a subagent's `chatAdded` is dropped and its inline "Open Subagent" pill
+	 * cannot resolve until the session is re-subscribed (e.g. switched away and
+	 * back). Driven by {@link _syncVisibleSessionStatePins}.
+	 */
+	private readonly _pinnedSessionStates = new Set<string>();
+
 	protected _cacheInitialized = false;
 
 	private static readonly SESSION_REFRESH_RETRY_MIN_MS = 1_000;
@@ -1838,6 +1851,12 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 			}
 			this._activeDownloads.clear();
 		}));
+
+		// Keep the state subscription of every on-screen session pinned so
+		// host-spawned catalog changes (e.g. subagents) reach `cached.chats`
+		// live, instead of relying on the idle timer that only client actions
+		// refresh.
+		this._register(autorun(reader => this._syncVisibleSessionStatePins(reader)));
 	}
 
 	// -- Subclass hooks -------------------------------------------------------
@@ -3225,6 +3244,45 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	private static readonly SESSION_STATE_SUBSCRIPTION_IDLE_MS = 30_000;
 
 	/**
+	 * Pin the state subscription of every currently-visible session (so
+	 * host-driven catalog changes flow into `cached.chats` while it is on
+	 * screen) and resume the idle-release timer for sessions that have left the
+	 * viewport. Driven reactively by {@link ISessionsService.visibleSessions}.
+	 */
+	private _syncVisibleSessionStatePins(reader: IReader): void {
+		const visible = this._sessionsService.visibleSessions.read(reader);
+		const nowVisible = new Set<string>();
+		for (const session of visible) {
+			if (!session) {
+				continue;
+			}
+			for (const cached of this._sessionCache.values()) {
+				if (isEqual(cached.resource, session.resource)) {
+					nowVisible.add(cached.sessionId);
+					break;
+				}
+			}
+		}
+		// Pin visible sessions: hold the subscription open, cancelling any pending
+		// idle release. All operations are idempotent, so re-running per tick also
+		// recovers a subscription that could not be created earlier (e.g. a remote
+		// provider that was momentarily disconnected).
+		for (const sessionId of nowVisible) {
+			this._pinnedSessionStates.add(sessionId);
+			this._ensureSessionStateSubscription(sessionId);
+			this._sessionStateIdleTimers.deleteAndDispose(sessionId);
+		}
+		// Unpin sessions that have left the viewport: resume the idle-release
+		// timer so the agent host can eventually evict their restored state.
+		for (const sessionId of [...this._pinnedSessionStates]) {
+			if (!nowVisible.has(sessionId)) {
+				this._pinnedSessionStates.delete(sessionId);
+				this._keepSessionStateAlive(sessionId);
+			}
+		}
+	}
+
+	/**
 	 * Bump the idle-release timer for `sessionId` and lazily create the
 	 * underlying subscription if needed. Called from query paths
 	 * ({@link getSessionByResource}, {@link getSessionConfig}) that depend on
@@ -3234,6 +3292,12 @@ export abstract class BaseAgentHostSessionsProvider extends Disposable implement
 	private _keepSessionStateAlive(sessionId: string): void {
 		this._ensureSessionStateSubscription(sessionId);
 		if (!this._sessionStateSubscriptions.has(sessionId)) {
+			return;
+		}
+		// A visible session's subscription is pinned open; never arm the idle
+		// release while it is on screen.
+		if (this._pinnedSessionStates.has(sessionId)) {
+			this._sessionStateIdleTimers.deleteAndDispose(sessionId);
 			return;
 		}
 		this._sessionStateIdleTimers.set(
