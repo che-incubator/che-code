@@ -646,6 +646,10 @@ export function sessionFileChangesEqual(a: readonly ISessionFileChange[], b: rea
 		if (!isEqual(x.originalUri, y.originalUri)) {
 			return false;
 		}
+
+		if (x.reviewed !== y.reviewed) {
+			return false;
+		}
 	}
 
 	return true;
