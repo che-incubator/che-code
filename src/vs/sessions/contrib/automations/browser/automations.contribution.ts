@@ -12,6 +12,7 @@ import { ConfigurationScope, Extensions as ConfigurationExtensions, IConfigurati
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+import product from '../../../../platform/product/common/product.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase } from '../../../../workbench/common/contributions.js';
@@ -45,16 +46,18 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 			type: 'boolean',
 			default: false,
 			scope: ConfigurationScope.MACHINE,
-			tags: ['preview'],
+			tags: ['experimental', 'advanced'],
 			description: localize('chat.automations.enabled', "Enables the Automations feature: scheduling agent sessions to run on a cadence. When disabled, the Automations entry in the Customizations sidebar, the Automations section in the Customizations editor, and the Automation option in the new-session composer are hidden, and scheduled automations are not dispatched."),
+			included: product.quality !== 'stable',
 		},
 		[CHAT_AUTOMATIONS_RUN_TIMEOUT_MINUTES_SETTING]: {
 			type: 'number',
 			default: DEFAULT_AUTOMATIONS_RUN_TIMEOUT_MINUTES,
 			minimum: 1,
 			scope: ConfigurationScope.MACHINE,
-			tags: ['preview'],
+			tags: ['experimental', 'advanced'],
 			description: localize('chat.automations.runTimeoutMinutes', "Maximum number of minutes a scheduled automation run is allowed to take before the scheduler cancels it and marks it failed. Prevents a single hung run from permanently blocking subsequent scheduled runs."),
+			included: product.quality !== 'stable',
 		},
 	},
 });
