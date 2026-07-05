@@ -17,6 +17,7 @@ import { ChatModel } from '../../../../contrib/chat/common/model/chatModel.js';
 import { ChatViewModel } from '../../../../contrib/chat/common/model/chatViewModel.js';
 import { ChatListWidget } from '../../../../contrib/chat/browser/widget/chatListWidget.js';
 import { ChatInputPart, IChatInputPartOptions, IChatInputStyles } from '../../../../contrib/chat/browser/widget/input/chatInputPart.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
 import { IChatWidget, IChatWidgetService } from '../../../../contrib/chat/browser/chat.js';
 import { ElicitationState, IChatService } from '../../../../contrib/chat/common/chatService/chatService.js';
 import { ChatElicitationRequestPart } from '../../../../contrib/chat/common/model/chatProgressTypes/chatElicitationRequestPart.js';
@@ -53,6 +54,13 @@ export interface IChatWidgetFixtureOptions {
 	 * When omitted, behaves like today (auto-detected from message risk data).
 	 */
 	readonly riskAssessmentEnabled?: boolean;
+	/**
+	 * Optional hook invoked after the chat input part renders, e.g. to mount
+	 * widgets above the input. Receives the rendered input part and the fixture's
+	 * instantiation service so callers can create instances against the same
+	 * service graph.
+	 */
+	readonly decorateInputPart?: (inputPart: ChatInputPart, instantiationService: IInstantiationService) => void;
 }
 
 function makeUserMessage(text: string) {
@@ -262,6 +270,8 @@ export async function renderChatWidget(context: ComponentFixtureContext, options
 
 	inputPart.render(session, '', fixtureWidget);
 	inputPart.layout(width);
+
+	options.decorateInputPart?.(inputPart, instantiationService);
 
 	const listContainer = dom.$('.interactive-list');
 	listContainer.style.flex = '1 1 auto';
