@@ -1,6 +1,10 @@
 [
   {
     "from": "#!/bin/sh",
-    "by": "#!/bin/sh\\\nif [ -f /etc/ssh/passphrase ] && command -v ssh-keygen >/dev/null; then\\\n\\\tif ssh-keygen -y -P \"$(cat /etc/ssh/passphrase)\" -f /etc/ssh/dwo_ssh_key >/dev/null; then\\\n\\\t\\\tcat /etc/ssh/passphrase\\\n\\\t\\\texit 0\\\n\\\tfi\\\nfi"
+    "by": "#!/bin/sh\nif [ -f /etc/ssh/passphrase ] && command -v ssh-keygen >/dev/null; then\n  if ssh-keygen -y -P \"$(cat /etc/ssh/passphrase)\" -f /etc/ssh/dwo_ssh_key >/dev/null; then\n    cat /etc/ssh/passphrase\n    exit 0\n  fi\nfi"
+  },
+  {
+    "from": "VSCODE_GIT_ASKPASS_PIPE=`mktemp`\nELECTRON_RUN_AS_NODE=\"1\" VSCODE_GIT_ASKPASS_PIPE=\"$VSCODE_GIT_ASKPASS_PIPE\" VSCODE_GIT_ASKPASS_TYPE=\"ssh\" \"$VSCODE_GIT_ASKPASS_NODE\"",
+    "by": "# The following block was generated with AI assistance (Cursor AI)\n# and reviewed by the maintainers.\n#\n# Ensure the bundled node can find its shared libraries (e.g. libnode.so).\n# In Che, LD_LIBRARY_PATH may be sanitized in terminal sessions to avoid\n# library version conflicts with user containers; restore the paths needed\n# for the node binary scoped to this script only.\nif [ -n \"$VSCODE_GIT_ASKPASS_NODE\" ]; then\n  ASKPASS_NODE_DIR=$(dirname \"$VSCODE_GIT_ASKPASS_NODE\")\n  if [ -d \"$ASKPASS_NODE_DIR/ld_libs/core\" ]; then\n    LD_LIBRARY_PATH=\"$ASKPASS_NODE_DIR/ld_libs/core${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\n    if [ -d \"$ASKPASS_NODE_DIR/ld_libs/openssl\" ]; then\n      LD_LIBRARY_PATH=\"$ASKPASS_NODE_DIR/ld_libs/openssl:$LD_LIBRARY_PATH\"\n    fi\n  elif [ -d \"$ASKPASS_NODE_DIR/ld_libs\" ]; then\n    LD_LIBRARY_PATH=\"$ASKPASS_NODE_DIR/ld_libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\n  fi\n  export LD_LIBRARY_PATH\nfi\nVSCODE_GIT_ASKPASS_PIPE=`mktemp`\nELECTRON_RUN_AS_NODE=\"1\" VSCODE_GIT_ASKPASS_PIPE=\"$VSCODE_GIT_ASKPASS_PIPE\" VSCODE_GIT_ASKPASS_TYPE=\"ssh\" \"$VSCODE_GIT_ASKPASS_NODE\""
   }
 ]

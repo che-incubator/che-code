@@ -9,19 +9,36 @@
 
 function copyToClipboard(id) {
   var copyText = document.getElementById(id);
-  navigator.clipboard.writeText(copyText.innerHTML);
+  navigator.clipboard.writeText(copyText.innerText);
 }
 
 function initializePlatformContent() {
-
   if (navigator.userAgent.indexOf('Windows') !== -1) {
     var pathEntries = document.getElementsByClassName('path');
     for (var i = 0; i < pathEntries.length; i++) {
       var currText = pathEntries[i].innerHTML;
       currText = currText.replaceAll("/dev/null", "nul");
-      currText = currText.replaceAll("$HOME", "%USERPROFILE%");
+      currText = currText.replaceAll("${HOME}", "%USERPROFILE%");
       currText = currText.replaceAll("/","\\");
       pathEntries[i].innerHTML = currText;
     }
   }
+  syncDocsContent();
+}
+
+function toggleExtensionSwitch () {
+  syncDocsContent();
+}
+
+function syncDocsContent() {
+  var docsElem = document.getElementById("docs-parent");
+  var useExtension = document.getElementById("use-extension").checked;
+  var extensionElem = document.getElementById("docs-extension");
+  var manualElem = document.getElementById("docs-manual");
+  docsElem.innerHTML = useExtension ? extensionElem.innerHTML : manualElem.innerHTML;
+}
+
+function openDevspacesURI(scheme, namespace, podName, userName, dwName, encodedKeyMessage, encodedUrl) {
+  const gatewayLink = `${scheme}://redhat.devspaces-remote-ssh?namespace=${namespace}&podName=${podName}&userName=${userName}&dwName=${dwName}&key=${encodedKeyMessage}&url=${encodedUrl}`;
+  window.open(gatewayLink, "_self");
 }

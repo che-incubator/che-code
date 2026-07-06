@@ -1,10 +1,10 @@
 [
 	{
-		"from": "\\/\\/ Window",
-		"by": "\\/\\/ Window\\\n\\\tconst windowHeaderDescription = 'Controls the window header';"
+		"from": "// Window\n\n\t",
+		"by": "// Window\n\tconst windowHeaderDescription = 'Controls the window header';\n\t"
 	},
 	{
 		"from": "'window.title': {",
-		"by": "'window.header': {\\\n\\\t\\\t\\\t\\\t'type': 'string',\\\n\\\t\\\t\\\t\\\t'markdownDescription': windowHeaderDescription\\\n\\\t\\\t\\\t},\\\n\\\t\\\t\\\t'window.title': {"
+		"by": "'window.header': {\n\t\t\t\t'type': 'string',\n\t\t\t\t'markdownDescription': windowHeaderDescription\n\t\t\t},\n\t\t\t'window.title': {"
 	}
 ]

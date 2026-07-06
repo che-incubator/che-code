@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Red Hat, Inc.
+# Copyright (c) 2021-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -12,6 +12,7 @@ FROM docker.io/node:22-alpine3.22 as linux-musl-builder
 RUN apk add --update --no-cache \
     # Download some files
     curl \
+    patch \
     # compile some javascript native stuff (node-gyp)
     make gcc g++ python3 py3-pip \
     # git 
@@ -34,6 +35,7 @@ COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV VSCODE_SKIP_HEADER_INSTALL=1
 
 # workaround for https://github.com/nodejs/node/issues/52229
 ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
@@ -58,7 +60,7 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     # workaround to fix build
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-RUN NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
+RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
 RUN chmod a+x /checode/out/server-main.js \
@@ -104,6 +106,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 # Run integration tests (Browser)
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+      MACHINE_EXEC_MAX_RETRIES=1 \
       retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
     fi
 

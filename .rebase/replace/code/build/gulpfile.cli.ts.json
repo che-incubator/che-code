@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { debounce, untar } from './lib/util.ts';\nimport { createReporter } from './lib/reporter.ts';\nimport gunzip from 'gulp-gunzip';",
+        "by": "import { debounce } from './lib/util.ts';\nimport { createReporter } from './lib/reporter.ts';\nimport decompress from 'gulp-decompress';"
+    },
+    {
+        "from": ".pipe(gunzip())\n\t\t.pipe(untar())",
+        "by": ".pipe(decompress())"
+    }
+]

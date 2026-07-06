@@ -41,7 +41,8 @@
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^29.5.0",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "22.x"
+    "@types/node": "22.x",
+    "typescript": "^5.9.2"
   },
   "overrides": {
     "@devfile/api": {
@@ -52,7 +53,9 @@
     },
     "jsdom": {
       "form-data": "3.0.4"
-    }
+    },
+    "minimatch": "^3.1.5",
+    "handlebars": "4.7.9"
   },
   "repository": {
     "type": "git",

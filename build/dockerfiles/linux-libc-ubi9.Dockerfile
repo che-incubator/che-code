@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Red Hat, Inc.
+# Copyright (c) 2024-2026 Red Hat, Inc.
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.6-1760386551 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1776735844 as linux-libc-ubi9-builder
 
 USER root
 
@@ -22,29 +22,29 @@ RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/s390x/os/Packages/libsecret-devel-0.20.4-4.el9.s390x.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBSECRET="\
       libsecret \
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libsecret-devel-0.20.4-4.el9.ppc64le.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/ppc64le/os/Packages/libsecret-devel-0.20.4-4.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "x86_64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
       libsecret"; \
     else \
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
     && { if [[ $(uname -m) == "x86_64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libxkbfile-1.1.0-8.el9.x86_64.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/x86_64/os/Packages/libxkbfile-devel-1.1.0-8.el9.x86_64.rpm"; \
     elif [[ $(uname -m) == "ppc64le" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/ppc64le/os/Packages/libxkbfile-1.1.0-8.el9.ppc64le.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/ppc64le/os/Packages/libxkbfile-devel-1.1.0-8.el9.ppc64le.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/ppc64le/os/Packages/libxkbfile-1.1.0-8.el9.ppc64le.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/ppc64le/os/Packages/libxkbfile-devel-1.1.0-8.el9.ppc64le.rpm"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBKEYBOARD="\
-      https://rpmfind.net/linux/centos-stream/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
-      https://rpmfind.net/linux/centos-stream/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libxkbfile-1.1.0-8.el9.aarch64.rpm \
+      https://mirror.stream.centos.org/9-stream/CRB/aarch64/os/Packages/libxkbfile-devel-1.1.0-8.el9.aarch64.rpm"; \
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
@@ -59,7 +59,8 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
 COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    VSCODE_SKIP_HEADER_INSTALL=1
 
 # Initialize a git repository for code build tools
 RUN git init .
@@ -77,13 +78,15 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
+    && VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
     # cache shared libs from this image to provide them to a user's container
-    && mkdir -p /checode/ld_libs \
-    && find /usr/lib64 -name 'libbrotli*' 2>/dev/null | xargs -I {} cp -t /checode/ld_libs {} \
-    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
-    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/ {} +
+    && mkdir -p /checode/ld_libs/core /checode/ld_libs/openssl \
+    && find /usr/lib64 -name 'libbrotli*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/core/ {} + \
+    && find /usr/lib64 -name 'libssl.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} + \
+    && find /usr/lib64 -name 'libcrypto.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} +
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
@@ -112,9 +115,9 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then npm run playwright-install; fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
       yum install --nobest -y procps \
-        https://rpmfind.net/linux/epel/9/Everything/x86_64/Packages/e/epel-release-9-10.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
-        https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
+        https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/e/epel-release-9-11.el9.noarch.rpm \
+        https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
+        https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
     fi
 
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
@@ -132,6 +135,7 @@ RUN chmod u+x /opt/app-root/src/retry.sh
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       NODE_ARCH=$(echo "console.log(process.arch)" | node) \
       VSCODE_REMOTE_SERVER_PATH="$(pwd)/../vscode-reh-web-linux-${NODE_ARCH}" \
+      MACHINE_EXEC_MAX_RETRIES=1 \
       /opt/app-root/src/retry.sh -v -t 3 -s 2 -- timeout -v 5m ./scripts/test-web-integration.sh --browser chromium; \
     fi
 

@@ -12,7 +12,6 @@
 
 import * as k8s from '@kubernetes/client-node';
 import * as vscode from 'vscode';
-import { DefaultExtensions } from './default-extensions';
 import { InstallFromVSIX } from './install-from-vsix';
 
 const CONFIGS_SECTION = 'configurations.json';
@@ -28,8 +27,6 @@ export class EditorConfigurations {
     async initialize(): Promise<void> {
         try {
             const configs = await this.getConfigurations();
-            new DefaultExtensions(this.outputChannel, configs).install();
-
             if (!configs) {
                 this.outputChannel.appendLine(`[EditorConfigsHandler] configurations not found`);
                 return;

@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ChildProcess, spawn, SpawnOptions, StdioOptions } from 'child_process';
-import { chmodSync, existsSync, readFileSync, statSync, truncateSync, unlinkSync } from 'fs';
-import { homedir, release, tmpdir } from 'os';
+import { chmodSync, existsSync, readFileSync, statSync, truncateSync, unlinkSync, promises } from 'fs';
+import { homedir, tmpdir } from 'os';
 import type { ProfilingSession, Target } from 'v8-inspect-profiler';
 import { Event } from '../../base/common/event.js';
 import { isAbsolute, resolve, join, dirname } from '../../base/common/path.js';
@@ -40,7 +40,7 @@ function shouldSpawnCliProcess(argv: NativeParsedArgs): boolean {
 		|| !!argv['telemetry'];
 }
 
-export async function main(argv: string[]): Promise<any> {
+export async function main(argv: string[]): Promise<void> {
 	let args: NativeParsedArgs;
 
 	try {
@@ -73,7 +73,7 @@ export async function main(argv: string[]): Promise<any> {
 					tunnelProcess = spawn('cargo', ['run', '--', subcommand, ...tunnelArgs], { cwd: join(getAppRoot(), 'cli'), stdio, env });
 				} else {
 					const appPath = process.platform === 'darwin'
-						// ./Contents/MacOS/Electron => ./Contents/Resources/app/bin/code-tunnel-insiders
+						// ./Contents/MacOS/Code => ./Contents/Resources/app/bin/code-tunnel-insiders
 						? join(dirname(dirname(process.execPath)), 'Resources', 'app')
 						: dirname(process.execPath);
 					const tunnelCommand = join(appPath, 'bin', `${product.tunnelApplicationName}${isWindows ? '.exe' : ''}`);
@@ -183,9 +183,9 @@ export async function main(argv: string[]): Promise<any> {
 		try {
 
 			// Check for readonly status and chmod if so if we are told so
-			let targetMode: number = 0;
+			let targetMode = 0;
 			let restoreMode = false;
-			if (!!args['file-chmod']) {
+			if (args['file-chmod']) {
 				targetMode = statSync(target).mode;
 				if (!(targetMode & 0o200 /* File mode indicating writable by owner */)) {
 					chmodSync(target, targetMode | 0o200);
@@ -320,8 +320,6 @@ export async function main(argv: string[]): Promise<any> {
 			}
 		}
 
-		const isMacOSBigSurOrNewer = isMacintosh && release() > '20.0.0';
-
 		// If we are started with --wait create a random temporary file
 		// and pass it over to the starting instance. We can use this file
 		// to wait for it to be deleted to monitor that the edited file
@@ -339,8 +337,8 @@ export async function main(argv: string[]): Promise<any> {
 			// - the launched process terminates (e.g. due to a crash)
 			processCallbacks.push(async child => {
 				let childExitPromise;
-				if (isMacOSBigSurOrNewer) {
-					// On Big Sur, we resolve the following promise only when the child,
+				if (isMacintosh) {
+					// On macOS, we resolve the following promise only when the child,
 					// i.e. the open command, exited with a signal or error. Otherwise, we
 					// wait for the marker file to be deleted or for the child to error.
 					childExitPromise = new Promise<void>(resolve => {
@@ -387,9 +385,9 @@ export async function main(argv: string[]): Promise<any> {
 
 			const filenamePrefix = randomPath(homedir(), 'prof');
 
-			addArg(argv, `--inspect-brk=${profileHost}:${portMain}`);
-			addArg(argv, `--remote-debugging-port=${profileHost}:${portRenderer}`);
-			addArg(argv, `--inspect-brk-extensions=${profileHost}:${portExthost}`);
+			addArg(argv, `--inspect-brk=${portMain}`);
+			addArg(argv, `--remote-debugging-port=${portRenderer}`);
+			addArg(argv, `--inspect-brk-extensions=${portExthost}`);
 			addArg(argv, `--prof-startup-prefix`, filenamePrefix);
 			addArg(argv, `--no-cached-data`);
 
@@ -482,15 +480,29 @@ export async function main(argv: string[]): Promise<any> {
 		}
 
 		let child: ChildProcess;
-		if (!isMacOSBigSurOrNewer) {
+		if (!isMacintosh) {
 			if (!args.verbose && args.status) {
 				options['stdio'] = ['ignore', 'pipe', 'ignore']; // restore ability to see output when --status is used
 			}
 
-			// We spawn process.execPath directly
-			child = spawn(process.execPath, argv.slice(2), options);
+			// Figure out the app to launch: with --agents we try to launch the embedded app on Windows
+			let execToLaunch = process.execPath;
+			if (isWindows && args.agents && product.embedded?.win32SiblingExeBasename) {
+				const siblingExe = join(dirname(process.execPath), `${product.embedded.win32SiblingExeBasename}.exe`);
+				try {
+					if (existsSync(siblingExe) && statSync(siblingExe).isFile()) {
+						execToLaunch = siblingExe;
+						argv = argv.filter(arg => arg !== '--agents');
+					}
+				} catch (error) {
+					/* may not exist on disk */
+				}
+			}
+
+			// We spawn the resolved executable directly
+			child = spawn(execToLaunch, argv.slice(2), options);
 		} else {
-			// On Big Sur, we spawn using the open command to obtain behavior
+			// On macOS, we spawn using the open command to obtain behavior
 			// similar to if the app was launched from the dock
 			// https://github.com/microsoft/vscode/issues/102975
 
@@ -502,8 +514,26 @@ export async function main(argv: string[]): Promise<any> {
 			//    This way, Mac does not automatically try to foreground the new instance, which causes
 			//    focusing issues when the new instance only sends data to a previous instance and then closes.
 			const spawnArgs = ['-n', '-g'];
-			// -a opens the given application.
-			spawnArgs.push('-a', process.execPath); // -a: opens a specific application
+
+			// Figure out the app to launch: with --agents we try to launch the embedded app
+			let appToLaunch = process.execPath;
+			if (args.agents) {
+				// process.execPath is e.g. /Applications/Code.app/Contents/MacOS/Electron
+				// Embedded app is at /Applications/Code.app/Contents/Applications/<EmbeddedApp>.app
+				const contentsPath = dirname(dirname(process.execPath));
+				const applicationsPath = join(contentsPath, 'Applications');
+				try {
+					const files = await promises.readdir(applicationsPath);
+					const embeddedApp = files.find(file => file.endsWith('.app'));
+					if (embeddedApp) {
+						appToLaunch = join(applicationsPath, embeddedApp);
+						argv = argv.filter(arg => arg !== '--agents');
+					}
+				} catch (error) {
+					/* may not exist on disk */
+				}
+			}
+			spawnArgs.push('-a', appToLaunch); // -a opens the given application.
 
 			if (args.verbose || args.status) {
 				spawnArgs.push('--wait-apps'); // `open --wait-apps`: blocks until the launched app is closed (even if they were already running)
@@ -567,7 +597,7 @@ export async function main(argv: string[]): Promise<any> {
 			child = spawn('open', spawnArgs, { ...options, env: {} });
 		}
 
-		return Promise.all(processCallbacks.map(callback => callback(child)));
+		await Promise.all(processCallbacks.map(callback => callback(child)));
 	}
 }
 

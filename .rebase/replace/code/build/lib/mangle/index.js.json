@@ -1,6 +1,0 @@
-[
-    {
-        "from": "// Module passed around as type",
-        "by": "// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic\\\n\\\t\\\t'devfile-service',\\\n\\\t\\\t'github-service',\\\n\\\t\\\t'telemetry-service',\\\n\\\t\\\t'workspace-service',\\\n\\\n\\\t\\\t// Module passed around as type"
-    }
-]

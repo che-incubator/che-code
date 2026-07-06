@@ -8,11 +8,11 @@ import { gracefulify } from 'graceful-fs';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as os from 'os';
-import * as minimist from 'minimist';
+import minimist from 'minimist';
 import * as vscodetest from '@vscode/test-electron';
 import fetch from 'node-fetch';
 import { Quality, MultiLogger, Logger, ConsoleLogger, FileLogger, measureAndLog, getDevElectronPath, getBuildElectronPath, getBuildVersion, ApplicationOptions } from '../../automation';
-import { retry, timeout } from './utils';
+import { retry } from './utils';
 
 import { setup as setupDataLossTests } from './areas/workbench/data-loss.test';
 import { setup as setupPreferencesTests } from './areas/preferences/preferences.test';
@@ -21,11 +21,14 @@ import { setup as setupNotebookTests } from './areas/notebook/notebook.test';
 import { setup as setupLanguagesTests } from './areas/languages/languages.test';
 import { setup as setupStatusbarTests } from './areas/statusbar/statusbar.test';
 import { setup as setupExtensionTests } from './areas/extensions/extensions.test';
+import { setup as setupExtensionHostRestartTests } from './areas/extensions/extension-host-restart.test';
 import { setup as setupMultirootTests } from './areas/multiroot/multiroot.test';
 import { setup as setupLocalizationTests } from './areas/workbench/localization.test';
 import { setup as setupLaunchTests } from './areas/workbench/launch.test';
 import { setup as setupTerminalTests } from './areas/terminal/terminal.test';
 import { setup as setupTaskTests } from './areas/task/task.test';
+import { setup as setupChatTests } from './areas/chat/chatDisabled.test';
+import { setup as setupAccessibilityTests } from './areas/accessibility/accessibility.test';
 
 const rootPath = path.join(__dirname, '..', '..', '..');
 
@@ -102,7 +105,7 @@ function createLogger(): Logger {
 	}
 
 	// Prepare logs rot path
-	fs.rmSync(logsRootPath, { recursive: true, force: true, maxRetries: 3 });
+	fs.rmSync(logsRootPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
 	fs.mkdirSync(logsRootPath, { recursive: true });
 
 	// Always log to log file
@@ -117,19 +120,6 @@ try {
 	logger.log(`Error enabling graceful-fs: ${error}`);
 }
 
-const testDataPath = path.join(os.tmpdir(), 'vscsmoke');
-if (fs.existsSync(testDataPath)) {
-	fs.rmSync(testDataPath, { recursive: true, force: true, maxRetries: 10 });
-}
-fs.mkdirSync(testDataPath, { recursive: true });
-process.once('exit', () => {
-	try {
-		fs.rmSync(testDataPath, { recursive: true, force: true, maxRetries: 10 });
-	} catch {
-		// noop
-	}
-});
-
 function getTestTypeSuffix(): string {
 	if (opts.web) {
 		return 'browser';
@@ -140,8 +130,21 @@ function getTestTypeSuffix(): string {
 	}
 }
 
+const testDataPath = path.join(os.tmpdir(), `vscsmoke-${getTestTypeSuffix()}`);
+if (fs.existsSync(testDataPath)) {
+	fs.rmSync(testDataPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
+}
+fs.mkdirSync(testDataPath, { recursive: true });
+process.once('exit', () => {
+	try {
+		fs.rmSync(testDataPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
+	} catch {
+		// noop
+	}
+});
+
 const testRepoUrl = 'https://github.com/microsoft/vscode-smoketest-express';
-const workspacePath = path.join(testDataPath, `vscode-smoketest-express-${getTestTypeSuffix()}`);
+const workspacePath = path.join(testDataPath, `vscode-smoketest-express`);
 const extensionsPath = path.join(testDataPath, 'extensions-dir');
 fs.mkdirSync(extensionsPath, { recursive: true });
 
@@ -245,7 +248,7 @@ const userDataDir = path.join(testDataPath, 'd');
 async function setupRepository(): Promise<void> {
 	if (opts['test-repo']) {
 		logger.log('Copying test project repository:', opts['test-repo']);
-		fs.rmSync(workspacePath, { recursive: true, force: true, maxRetries: 10 });
+		fs.rmSync(workspacePath, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
 		// not platform friendly
 		if (process.platform === 'win32') {
 			cp.execSync(`xcopy /E "${opts['test-repo']}" "${workspacePath}"\\*`);
@@ -314,18 +317,12 @@ async function ensureStableCode(): Promise<void> {
 				},
 				error: error => logger.log(`download stable code error: ${error}`)
 			}
-		}), 'download stable code', logger), 1000, 3, () => new Promise<void>((resolve, reject) => {
-			fs.rm(stableCodeDestination, { recursive: true, force: true, maxRetries: 10 }, error => {
-				if (error) {
-					reject(error);
-				} else {
-					resolve();
-				}
-			});
-		}));
+		}), 'download stable code', logger), 1000, 3, async () => {
+			fs.rmSync(stableCodeDestination, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
+		});
 
 		if (process.platform === 'darwin') {
-			// Visual Studio Code.app/Contents/MacOS/Electron
+			// Visual Studio Code.app/Contents/MacOS/Code
 			stableCodePath = path.dirname(path.dirname(path.dirname(stableCodeExecutable)));
 		} else {
 			// VSCode/Code.exe (Windows) | VSCode/code (Linux)
@@ -353,6 +350,16 @@ async function setup(): Promise<void> {
 		await measureAndLog(() => ensureStableCode(), 'ensureStableCode', logger);
 	}
 	await measureAndLog(() => setupRepository(), 'setupRepository', logger);
+
+	// Copy smoke test extension for extension host restart test
+	if (!opts.web && !opts.remote) {
+		const smokeExtPath = path.join(rootPath, 'test', 'smoke', 'extensions', 'vscode-smoketest-ext-host');
+		const dest = path.join(extensionsPath, 'vscode-smoketest-ext-host');
+		if (fs.existsSync(dest)) {
+			fs.rmSync(dest, { recursive: true, force: true });
+		}
+		fs.cpSync(smokeExtPath, dest, { recursive: true });
+	}
 
 	logger.log('Smoketest setup done!\n');
 }
@@ -388,22 +395,9 @@ before(async function () {
 // After main suite (after all tests)
 after(async function () {
 	try {
-		let deleted = false;
-		await measureAndLog(() => Promise.race([
-			new Promise<void>((resolve, reject) => fs.rm(testDataPath, { recursive: true, force: true, maxRetries: 10 }, error => {
-				if (error) {
-					reject(error);
-				} else {
-					deleted = true;
-					resolve();
-				}
-			})),
-			timeout(30000).then(() => {
-				if (!deleted) {
-					throw new Error('giving up after 30s');
-				}
-			})
-		]), 'rimraf(testDataPath)', logger);
+		await measureAndLog(async () => {
+			fs.rmSync(testDataPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 1000 });
+		}, 'rimraf(testDataPath)', logger);
 	} catch (error) {
 		logger.log(`Unable to delete smoke test workspace: ${error}. This indicates some process is locking the workspace folder.`);
 	}
@@ -419,7 +413,10 @@ describe(`VSCode Smoke Tests (${opts.web ? 'Web' : 'Electron'})`, () => {
 	setupTaskTests(logger);
 	setupStatusbarTests(logger);
 	if (quality !== Quality.Dev && quality !== Quality.OSS) { setupExtensionTests(logger); }
-	setupMultirootTests(logger);
+	if (!opts.web && !opts.remote) { setupExtensionHostRestartTests(logger); }
+	if (!(opts.web && process.platform === 'win32' /* TODO@bpasero flaky */)) { setupMultirootTests(logger); }
 	if (!opts.web && !opts.remote && quality !== Quality.Dev && quality !== Quality.OSS) { setupLocalizationTests(logger); }
 	if (!opts.web && !opts.remote) { setupLaunchTests(logger); }
+	if (!opts.web) { setupChatTests(logger); }
+	setupAccessibilityTests(logger, opts, quality);
 });

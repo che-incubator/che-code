@@ -43,7 +43,14 @@
     "@types/node": "22.x",
     "add": "^2.0.6",
     "jest": "29.7.0",
+    "typescript": "^5.9.2",
     "ts-jest": "29.4.5"
+  },
+  "overrides": {
+    "minimatch": "^3.1.5",
+    "handlebars": "4.7.9",
+    "ip-address": "^10.2.0",
+    "ws": "^8.21.0"
   },
   "repository": {
     "type": "git",

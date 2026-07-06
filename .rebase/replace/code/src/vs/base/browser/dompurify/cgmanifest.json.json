@@ -1,0 +1,14 @@
+[
+  {
+    "from": "\"commitHash\": \"eaa0bdb26a1d0164af587d9059b98269008faece\",",
+    "by": "\"commitHash\": \"6f67fd396a7b8c64294343999fe607ca1f5299c0\","
+  },
+  {
+    "from": "\"tag\": \"3.2.7\"",
+    "by": "\"tag\": \"3.4.2\""
+  },
+  {
+    "from": "\"version\": \"3.2.7\"",
+    "by": "\"version\": \"3.4.2\""
+  }
+]

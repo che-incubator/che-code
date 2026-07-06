@@ -1,0 +1,10 @@
+[
+    {
+        "from": "installHeaders();",
+        "by": "installGypDeps();\n\nif (process.env['VSCODE_SKIP_HEADER_INSTALL']) {\n\tconsole.log('Skipping header install (VSCODE_SKIP_HEADER_INSTALL is set).');\n} else {\n\ttry {\n\t\tinstallHeaders();\n\t} catch (error) {\n\t\tconsole.warn(`\\x1b[33m*** Header installation failed: ${(error as Error).message}\\x1b[0m`);\n\t\tconsole.warn('\\x1b[33m*** Continuing without pre-cached headers. Native modules will resolve headers during their own build.\\x1b[0m');\n\t}\n}"
+    },
+    {
+        "from": "function installHeaders() {\n\tconst npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';\n\tchild_process.execSync(`${npm} ${process.env.npm_command || 'ci'}`, {\n\t\tenv: process.env,\n\t\tcwd: path.join(import.meta.dirname, 'gyp'),\n\t\tstdio: 'inherit'\n\t});\n\n\t// The node gyp package got installed using the above npm command using the gyp/package.json\n\t// file checked into our repository. So from that point it is safe to construct the path\n\t// to that executable",
+        "by": "function installGypDeps() {\n\tconst npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';\n\tchild_process.execSync(`${npm} ${process.env.npm_command || 'ci'}`, {\n\t\tenv: process.env,\n\t\tcwd: path.join(import.meta.dirname, 'gyp'),\n\t\tstdio: 'inherit'\n\t});\n}\n\nfunction installHeaders() {\n\t// The node gyp package got installed using installGypDeps() above.\n\t// So from that point it is safe to construct the path to that executable."
+    }
+]

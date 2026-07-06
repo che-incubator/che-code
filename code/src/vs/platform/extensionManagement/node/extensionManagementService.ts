@@ -24,7 +24,7 @@ import * as pfs from '../../../base/node/pfs.js';
 import { extract, IFile, zip } from '../../../base/node/zip.js';
 import * as nls from '../../../nls.js';
 import { IDownloadService } from '../../download/common/download.js';
-import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { IEnvironmentService, INativeEnvironmentService } from '../../environment/common/environment.js';
 import { AbstractExtensionManagementService, AbstractExtensionTask, IInstallExtensionTask, InstallExtensionTaskOptions, IUninstallExtensionTask, toExtensionManagementError, UninstallExtensionTaskOptions } from '../common/abstractExtensionManagementService.js';
 import {
 	ExtensionManagementError, ExtensionManagementErrorCode, IExtensionGalleryService, IExtensionIdentifier, IExtensionManagementService, IGalleryExtension, ILocalExtension, InstallOperation,
@@ -57,6 +57,7 @@ import { IUserDataProfilesService } from '../../userDataProfile/common/userDataP
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { isLinux } from '../../../base/common/platform.js';
 import { IExtensionGalleryManifestService } from '../common/extensionGalleryManifest.js';
+import { assertVSIXInstallAllowed } from './che/extensionManagement.js';
 
 export const INativeServerExtensionManagementService = refineServiceDecorator<IExtensionManagementService, INativeServerExtensionManagementService>(IExtensionManagementService);
 export interface INativeServerExtensionManagementService extends IExtensionManagementService {
@@ -156,7 +157,9 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 			}
 
 			const allowedToInstall = this.allowedExtensionsService.isAllowed({ id: extensionId, version: manifest.version, publisherDisplayName: undefined });
+			assertVSIXInstallAllowed(this.configurationService, this.logService, options); 
 			if (allowedToInstall !== true) {
+				this.logService.info(`ExtensionManagementService: Installation of the extension ${extensionId} is not allowed: ${allowedToInstall.value}.`);
 				throw new Error(nls.localize('notAllowed', "This extension cannot be installed because {0}", allowedToInstall.value));
 			}
 
@@ -262,7 +265,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 		}
 		this.logService.trace('Downloading extension from', vsix.toString());
 		const location = joinPath(this.extensionsDownloader.extensionsDownloadDir, generateUuid());
-		await this.downloadService.download(vsix, location);
+		await this.downloadService.download(vsix, location, 'extensionManagement.downloadVsix');
 		this.logService.info('Downloaded extension to', location.toString());
 		const cleanup = async () => {
 			try {
@@ -298,7 +301,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 	}
 
 	private async downloadAndExtractGalleryExtension(extensionKey: ExtensionKey, gallery: IGalleryExtension, operation: InstallOperation, options: InstallExtensionTaskOptions, token: CancellationToken): Promise<ExtractExtensionResult> {
-		const { verificationStatus, location } = await this.downloadExtension(gallery, operation, !options.donotVerifySignature, options.context?.[EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT]);
+		const { verificationStatus, location } = await this.downloadExtension(gallery, operation, !options.donotVerifySignature, options.context?.[EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT] as TargetPlatform | undefined);
 		try {
 
 			if (token.isCancellationRequested) {
@@ -535,7 +538,7 @@ type UpdateMetadataErrorEvent = {
 export class ExtensionsScanner extends Disposable {
 
 	private readonly obsoletedResource: URI;
-	private readonly obsoleteFileLimiter: Queue<any>;
+	private readonly obsoleteFileLimiter: Queue<IStringDictionary<boolean>>;
 
 	private readonly _onExtract = this._register(new Emitter<URI>());
 	readonly onExtract = this._onExtract.event;
@@ -545,11 +548,14 @@ export class ExtensionsScanner extends Disposable {
 
 	constructor(
 		private readonly beforeRemovingExtension: (e: ILocalExtension) => Promise<void>,
+		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IFileService private readonly fileService: IFileService,
 		@IExtensionsScannerService private readonly extensionsScannerService: IExtensionsScannerService,
 		@IExtensionsProfileScannerService private readonly extensionsProfileScannerService: IExtensionsProfileScannerService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IProductService private readonly productService: IProductService,
+		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
@@ -559,6 +565,7 @@ export class ExtensionsScanner extends Disposable {
 
 	async cleanUp(): Promise<void> {
 		await this.removeTemporarilyDeletedFolders();
+		await this.removeStaleAutoUpdateBuiltinExtensions();
 		await this.deleteExtensionsMarkedForRemoval();
 		//TODO: Remove this initiialization after coupe of releases
 		await this.initializeExtensionSize();
@@ -915,6 +922,7 @@ export class ExtensionsScanner extends Disposable {
 			installedTimestamp: extension.metadata?.installedTimestamp,
 			updated: !!extension.metadata?.updated,
 			pinned: !!extension.metadata?.pinned,
+			forceAutoUpdate: extension.forceAutoUpdate,
 			private: !!extension.metadata?.private,
 			isWorkspaceScoped: false,
 			source: extension.metadata?.source ?? (extension.identifier.uuid ? 'gallery' : 'vsix'),
@@ -931,6 +939,26 @@ export class ExtensionsScanner extends Disposable {
 				await this.extensionsScannerService.updateManifestMetadata(extension.location, { size });
 			}
 		}));
+	}
+
+	private async removeStaleAutoUpdateBuiltinExtensions(): Promise<void> {
+		if (this.environmentService.extensionTestsLocationURI) {
+			return;
+		}
+		const builtinExtensions = await this.extensionsScannerService.scanSystemExtensions({});
+		const userExtensions = await this.extensionsScannerService.scanAllUserExtensions();
+		const staleExtensions = userExtensions.filter(userExtension => {
+			if (!this.productService.builtInExtensionsEnabledWithAutoUpdates.some(id => id.toLowerCase() === userExtension.identifier.id.toLowerCase())) {
+				return false;
+			}
+			const builtinExtension = builtinExtensions.find(e => areSameExtensions(e.identifier, userExtension.identifier));
+			return builtinExtension && semver.lt(userExtension.manifest.version, builtinExtension.manifest.version);
+		});
+		if (staleExtensions.length) {
+			this.logService.info('Removing stale auto-update builtin extensions:', staleExtensions.map(e => `${e.identifier.id}@${e.manifest.version}`).join(', '));
+			await this.extensionsProfileScannerService.removeExtensionsFromProfile(staleExtensions.map(e => e.identifier), this.userDataProfilesService.defaultProfile.extensionsResource);
+			await Promise.allSettled(staleExtensions.map(e => this.deleteExtension(e, 'stale auto-update builtin')));
+		}
 	}
 
 	private async deleteExtensionsMarkedForRemoval(): Promise<void> {
@@ -1032,6 +1060,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IExtensionsScannerService private readonly extensionsScannerService: IExtensionsScannerService,
 		@IExtensionsProfileScannerService private readonly extensionsProfileScannerService: IExtensionsProfileScannerService,
+		@IProductService private readonly productService: IProductService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
@@ -1043,6 +1072,17 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 		const existingExtension = installed.find(i => areSameExtensions(i.identifier, this.identifier));
 		if (existingExtension) {
 			this._operation = InstallOperation.Update;
+		}
+
+		const system = await this.extensionsScanner.scanExtensions(ExtensionType.System, this.options.profileLocation, this.options.productVersion);
+		const existingSystemExtension = system.find(i => areSameExtensions(i.identifier, this.identifier));
+		if (existingSystemExtension) {
+			if (!existingSystemExtension.forceAutoUpdate) {
+				throw new ExtensionManagementError(nls.localize('builtinAutoUpdate', "Extension '{0}' is a built-in extension and not allowed to be updated in the current product quality '{1}'.", existingSystemExtension.identifier.id, this.productService.quality), ExtensionManagementErrorCode.Incompatible);
+			}
+			if (semver.gt(existingSystemExtension.manifest.version, this.manifest.version)) {
+				throw new ExtensionManagementError(nls.localize('builtinVersion', "Extension '{0}' is a built-in extension with version '{1}' and cannot be downgraded to version '{2}'.", existingSystemExtension.identifier.id, existingSystemExtension.manifest.version, this.manifest.version), ExtensionManagementErrorCode.Incompatible);
+			}
 		}
 
 		const metadata: Metadata = {
@@ -1068,6 +1108,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 					}
 				}
 			}
+
 			// Remove the extension with same version if it is already uninstalled.
 			// Installing a VSIX extension shall replace the existing extension always.
 			const existingWithSameVersion = await this.unsetIfRemoved(this.extensionKey);

@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+tone_instructions: |
+  You are a concise code reviewer. Focus only on critical logic, security, and performance issues.
+  Avoid trivial style issues or minor formatting suggestions.
+
+reviews:
+  path_instructions:
+    - path: ".rebase/CHANGELOG.md"
+      instructions: "Ignore markdownlint rule MD001 (heading-increment). The `####` heading style is intentional and consistent throughout this file."
+  # 'chill' is less verbose, 'assertive' is more verbose
+  profile: chill
+  # disable poem generation in comments
+  poem: false
+  # only post comments when there are actual findings
+  review_status: false
+  # suppress walkthrough/summary comment when no findings
+  collapse_walkthrough: true
+  changed_files_summary: false
+
+  # Pre-merge checks
+  pre_merge_checks:
+    title:
+      mode: error
+      requirements: >
+        Title must be concise (under 72 characters) and clearly describe the change.
+        Use imperative mood (e.g. "Fix", "Add", "Update", not "Fixed", "Added", "Updated").
+    description:
+      mode: warning
+    docstrings:
+      mode: off
+    custom_checks:
+      - name: Rebase rules for upstream changes
+        mode: error
+        instructions: >
+          If the PR modifies files under `code/` (excluding `code/extensions/che-*/**`
+          and `**/package-lock.json`), then the PR MUST also include corresponding
+          rebase rules in the `.rebase/` directory AND an entry in `.rebase/CHANGELOG.md`.
+
+          Important:
+          - A file can be under `code/` and still be Che-only (for example `code/src/.../che/...` newly created by Che). Do not create a rule for such files if they are not upstream VS Code files.
+          - Still create rules for the upstream file(s) that import/use those Che-only helpers.
+
+          The PR template has a checklist section "Does this PR contain changes that
+          override default upstream Code-OSS behavior?" with three checkboxes. If the
+          PR touches files under `code/`, all three checkboxes should be checked.
+
+          PASS if:
+          - No files under `code/` are changed (excluding che extensions and lock files), OR
+          - Newly added Che-only files with no upstream counterpart, OR
+          - Files under `code/` are changed AND `.rebase/` rules, `.rebase/CHANGELOG.md`,
+            and `rebase.sh` conflict routing are also updated in the same PR.
+
+          FAIL if files under `code/` are changed but any of the following are missing:
+          - `.rebase/` rule files (add/override/replace as appropriate)
+          - `.rebase/CHANGELOG.md` entry
+          - `rebase.sh` routing for the new rule files (e.g. elif branch in resolve_conflicts)

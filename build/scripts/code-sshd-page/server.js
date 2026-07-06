@@ -8,11 +8,29 @@
 */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const os = require('os');
 
 const hostname = '127.0.0.1';
 const port = 3400;
+
+let username = "UNKNOWN";
+try {
+  username = fs.readFileSync('/sshd/username', 'utf8');
+} catch (error) {
+  // continue
+}
+
+let uriScheme = 'vscode';
+try {
+  const schemeArg = process.argv.slice(2)[0];
+  if (schemeArg) {
+    uriScheme = schemeArg;
+  }
+} catch (error) {
+  // continue
+}
 
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
@@ -21,41 +39,90 @@ const server = http.createServer((req, res) => {
 
     let hasUserPrefSSHKey = fs.existsSync('/etc/ssh/dwo_ssh_key.pub');
 
-    let pubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
+    let userPubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
     try {
-      pubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
+      userPubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
+    } catch (err) {
+     // continue
+    }
+
+    let userKey = '';
+    try {
+      userKey = fs.readFileSync('/etc/ssh/dwo_ssh_key', 'utf8');
     } catch (err) {
      // continue
     }
 
     let genKey = "PRIVATE KEY NOT FOUND";
     try {
-      genKey = fs.readFileSync(`${process.env["HOME"]}/.ssh/ssh_client_ed25519_key`, 'utf8');
+      genKey = fs.readFileSync('/sshd/ssh_client_key', 'utf8');
     } catch (err) {
      // continue
     }
 
-    let keyMessage = hasUserPrefSSHKey ? pubKey : genKey;
+    let keyMessage = hasUserPrefSSHKey ? userPubKey : genKey;
+    let encodedKeyMessage = Buffer.from(hasUserPrefSSHKey ? userKey : genKey).toString('base64url');
+    let encodedUrl = encodeURIComponent(process.env["CHE_DASHBOARD_URL"]);
+    getHostURL((hostURL) => {
 
     res.end(`
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>${process.env["DEVWORKSPACE_NAME"]}</title>
     <link rel="stylesheet" href="page-style.css">
     <script src="page-utils.js"></script>
   </head>
   <body>
-    <h1>Workspace ${process.env["DEVWORKSPACE_NAME"]} is running</h1>
-    <div class="border">
+    <div class="header-parent">
+    <div class="header-title">
+      <h1>Workspace ${process.env["DEVWORKSPACE_NAME"]} is running</h1>
+    </div>
+    <div class="toggle-label">Use Extension</div>
+    <div class="toggle-input">
+      <label class="switch">
+        <input id="use-extension" type="checkbox" checked onclick="toggleExtensionSwitch()">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    </div>
+    <div id="docs-parent">
+    </div>
+    <div id="docs-extension" hidden>
       <ol>
-        <li>Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools">oc client</a> is <a href="https://oauth-openshift${getHostURL()}/oauth/token/request">logged in</a> to your OpenShift cluster</li>
+        <li class="extension-li">Install the following VS Code extensions :
+          <ul>
+            <li class="extension-li"><code>Dev Spaces Remote SSH</code> from the <a href="https://marketplace.visualstudio.com/items?itemName=redhat.devspaces-remote-ssh">VS Code Marketplace</a> or the <a href="https://open-vsx.org/extension/redhat/devspaces-remote-ssh">OpenVSX Registry</a></li>
+            <li class="extension-li"><code>Remote - SSH</code> from the <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">VS Code Marketplace</a> <b>OR</b> <code>Open Remote - SSH</code> from the <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">OpenVSX Registry</a></li>
+          </ul>
+        </li>
+        <li class="extension-li">Click the URI below (you may need to accept the prompt allowing this page to open the link with your VS Code-based editor) <b>OR</b> from the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URI below.</li>
+        <div class="parent">
+          <div>
+            <a href="${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}">
+              <pre id="uri-connection">${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}</pre>
+            </a>
+          </div>
+          <div class="clipboard">
+            <a href="#">
+            <svg class="clipboard-img-pre" onclick="copyToClipboard('uri-connection')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
+              <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
+              <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
+            </svg>
+            </a>
+          </div>
+        </div>
+      </ol>
+    </div>
+    <div id="docs-manual" hidden>
+      <ol>
+        <li>Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools">oc client</a> is <a href="${hostURL}/oauth/token/request">logged in</a> to your OpenShift cluster</li>
         <li><p class="center">Run <code id="port-forward">oc port-forward -n ${process.env["DEVWORKSPACE_NAMESPACE"]} ${process.env["HOSTNAME"]} 2022:2022</code><a href="#"><svg class="clipboard-img-code" onclick="copyToClipboard('port-forward')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
             <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
             <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
           </svg></a>. This establishes a connection to the workspace.</p></li>
         <li>
-        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${os.userInfo().username}</code> ${hasUserPrefSSHKey ? `. The SSH key, corresponding to the following public key, configured in the "SSH Keys" tab of "User Preferences" has been authorized to connect :` : `and the following identity file :`}
+        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${username}</code> ${hasUserPrefSSHKey ? `. The SSH key, corresponding to the following public key, configured in the "SSH Keys" tab of "User Preferences" has been authorized to connect :` : `and the following identity file :`}
         <div class="parent">
         <div>
         <pre id="key">${keyMessage}</pre>
@@ -72,15 +139,16 @@ const server = http.createServer((req, res) => {
         <p>
         <b>&#9888; Please ensure the permissions on the private key used are restricted to allow only the file owner to read/write. The SSH service may fail to correctly authenticate otherwise.</b>
         </p>
-        This can also be configured locally in the client SSH configuration file (eg. <code class="path">$HOME/.ssh/config</code>) with the following :
+        This can also be configured locally in the client SSH configuration file (eg. <code class="path">$\{HOME\}/.ssh/config</code>) with the following :
         <div class="parent">
         <div>
 <pre id="config" class="path">Host localhost
   HostName 127.0.0.1
-  User ${os.userInfo().username}
+  User ${username}
   Port 2022
-  IdentityFile $HOME/.ssh/ssh_client_ed25519_key
-  UserKnownHostsFile /dev/null</pre>
+  IdentityFile "$\{HOME\}/.ssh/ssh_client_key"
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no</pre>
         </div>
         <div class="clipboard">
           <a href="#">
@@ -92,19 +160,24 @@ const server = http.createServer((req, res) => {
         </div>
         </div>
         <p>
-        Where <code class="path">$HOME/.ssh/ssh_client_ed25519_key</code> should be replaced by the absolute path to the private key file on your local system.
+        Where <code class="path">$\{HOME\}/.ssh/ssh_client_key</code> should be replaced by the absolute path to the private key file on your local system.
         </p>
         </li>
       </ol>
       <h3>Troubleshooting</h3>
-      <p>If the connection fails with "<code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED</code>", it may be necessary to remove the <code>localhost</code> or <code>127.0.0.1</code> entries from <code class="path">$HOME/.ssh/known_hosts</code>. This is because the SSHD service container (to which <code>oc port-forward</code> is forwarding) may change. This can be bypassed by setting <code>UserKnownHostsFile <span class="path">/dev/null</span></code></p>
+      <p>If the connection fails with "<code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED</code>", it may be necessary to remove the <code>localhost</code> or <code>127.0.0.1</code> entries from <code class="path">$\{HOME\}/.ssh/known_hosts</code>. This is because the SSHD service container (to which <code>oc port-forward</code> is forwarding) may change. This can be bypassed by setting <code>UserKnownHostsFile <span class="path">/dev/null</span></code></p>
       <p>If the connection fails for an unknown reason, consider disabling the setting <code>remote.SSH.useExecServer</code> (set to false)</p>
       <p>For any other issues, relating to the use of a VS Code-based editor and the "Remote - SSH", the "Remote - SSH" logs from the "Output" view are very helpful in diagnosing the issue.</p>
     </div>
-    <script>initializePlatformContent();</script>
+    <script>
+      initializePlatformContent();
+      openDevspacesURI("${uriScheme}", "${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedKeyMessage}", "${encodedUrl}");
+    </script>
   </body>
 </html>
     `);
+
+    });
     } else {
       let loc = req.url.substring(1);
       let isBinaryData = false;
@@ -138,20 +211,51 @@ server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
 });
 
-function getHostURL () {
+function getHostURL (callback) {
+
     const consoleURL = process.env["CLUSTER_CONSOLE_URL"];
     const devspacesURL = process.env["CHE_DASHBOARD_URL"];
+
     if (consoleURL === undefined || devspacesURL === undefined) {
-      return undefined;
+        return callback(undefined);
     }
-    let i = 0;
-    while (i < consoleURL.length || i < devspacesURL.length) {
-      if (consoleURL.substring(consoleURL.length - 1 - i) != devspacesURL.substring(devspacesURL.length - 1 - i)) {
-        if (i != 0) {
-          break;
+
+    console.log(`Discovering cluster API URL via ${devspacesURL}`);
+    const host = new URL(devspacesURL);
+    const oauthStartURL = `${host.protocol}//${host.host}/oauth/start`;
+
+    const getFallbackURL = () => {
+        console.log('Falling back to legacy discovery method.');
+        let i = 0;
+        while (i < consoleURL.length && i < devspacesURL.length
+            && consoleURL.substring(consoleURL.length - 1 - i) === devspacesURL.substring(devspacesURL.length - 1 - i)) {
+            i++;
         }
+        return `https://oauth-openshift${consoleURL.substring(consoleURL.length - i)}`;
+    };
+
+    // Follow the /oauth/start redirect to discover the real cluster hostname
+    const mod = host.protocol === "https:" ? https : http;
+    const req = mod.get(oauthStartURL, { rejectUnauthorized: false }, (res) => {
+      clearTimeout(timer);
+      res.resume(); // only interested in headers, so consume body
+      if (res.statusCode === 302 && res.headers.location) {
+        const resHost = new URL(res.headers.location);
+        const resURL = `${resHost.protocol}//${resHost.host}`;
+        console.log(`Resolved API URL: ${resURL}`);
+        callback(resURL);
+      } else {
+        callback(getFallbackURL());
       }
-      i++;
-   }
-    return consoleURL.substring(consoleURL.length - i);
+    });
+
+    const timer = setTimeout(() => {
+        req.destroy();
+        callback(getFallbackURL());
+    }, 10000);
+
+    req.on('error', () => {
+      clearTimeout(timer);
+      callback(getFallbackURL());
+    });
 }

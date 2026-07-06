@@ -21,12 +21,12 @@ import { INLSConfiguration } from './vs/nls.js';
 import { IServerAPI } from './vs/server/node/remoteExtensionHostAgentServer.js';
 
 perf.mark('code/server/start');
-(globalThis as any).vscodeServerStartTime = performance.now();
+(globalThis as { vscodeServerStartTime?: number }).vscodeServerStartTime = performance.now();
 
 // Do a quick parse to determine if a server or the cli needs to be started
 const parsedArgs = minimist(process.argv.slice(2), {
 	boolean: ['start-server', 'list-extensions', 'print-ip-address', 'help', 'version', 'accept-server-license-terms', 'update-extensions'],
-	string: ['install-extension', 'install-builtin-extension', 'uninstall-extension', 'locate-extension', 'socket-path', 'host', 'port', 'compatibility'],
+	string: ['install-extension', 'install-builtin-extension', 'uninstall-extension', 'locate-extension', 'socket-path', 'host', 'port', 'compatibility', 'agent-host-port', 'agent-host-path'],
 	alias: { help: 'h', version: 'v' }
 });
 ['host', 'port', 'accept-server-license-terms'].forEach(e => {
@@ -105,7 +105,7 @@ if (shouldSpawnCli) {
 			perf.mark('code/server/firstWebSocket');
 		}
 		const remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();
-		// @ts-ignore
+		// @ts-expect-error
 		return remoteExtensionHostAgentServer.handleUpgrade(req, socket);
 	});
 	server.on('error', async (err) => {
@@ -144,7 +144,7 @@ if (shouldSpawnCli) {
 		console.log(output);
 
 		perf.mark('code/server/started');
-		(globalThis as any).vscodeServerListenTime = performance.now();
+		(globalThis as { vscodeServerListenTime?: number }).vscodeServerListenTime = performance.now();
 
 		await getRemoteExtensionHostAgentServer();
 	});
@@ -158,7 +158,7 @@ if (shouldSpawnCli) {
 	});
 }
 
-function sanitizeStringArg(val: any): string | undefined {
+function sanitizeStringArg(val: unknown): string | undefined {
 	if (Array.isArray(val)) { // if an argument is passed multiple times, minimist creates an array
 		val = val.pop(); // take the last item
 	}

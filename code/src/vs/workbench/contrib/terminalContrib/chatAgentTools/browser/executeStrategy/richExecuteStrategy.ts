@@ -6,13 +6,17 @@
 import type { CancellationToken } from '../../../../../../base/common/cancellation.js';
 import { CancellationError } from '../../../../../../base/common/errors.js';
 import { Emitter, Event } from '../../../../../../base/common/event.js';
-import { DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../../base/common/lifecycle.js';
 import { isNumber } from '../../../../../../base/common/types.js';
-import type { ICommandDetectionCapability, ITerminalCommand } from '../../../../../../platform/terminal/common/capabilities/capabilities.js';
+import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
+import { isCI, isMacintosh } from '../../../../../../base/common/platform.js';
+import type { ICommandDetectionCapability } from '../../../../../../platform/terminal/common/capabilities/capabilities.js';
 import { ITerminalLogService } from '../../../../../../platform/terminal/common/terminal.js';
 import type { ITerminalInstance } from '../../../../terminal/browser/terminal.js';
 import { trackIdleOnPrompt, type ITerminalExecuteStrategy, type ITerminalExecuteStrategyResult } from './executeStrategy.js';
 import type { IMarker as IXtermMarker } from '@xterm/xterm';
+import { createAltBufferPromise, setupRecreatingStartMarker, stripCommandEchoAndPrompt } from './strategyHelpers.js';
+import { TerminalChatAgentToolsSettingId } from '../../common/terminalChatAgentToolsConfiguration.js';
 
 /**
  * This strategy is used when the terminal has rich shell integration/command detection is
@@ -21,21 +25,23 @@ import type { IMarker as IXtermMarker } from '@xterm/xterm';
  * wrong in this state, minimal verification is done in this mode since rich command detection is a
  * strong signal that it's behaving correctly.
  */
-export class RichExecuteStrategy implements ITerminalExecuteStrategy {
+export class RichExecuteStrategy extends Disposable implements ITerminalExecuteStrategy {
 	readonly type = 'rich';
-	private _startMarker: IXtermMarker | undefined;
+	private readonly _startMarker = this._register(new MutableDisposable<IXtermMarker>());
 
-	private readonly _onDidCreateStartMarker = new Emitter<IXtermMarker | undefined>;
+	private readonly _onDidCreateStartMarker = this._register(new Emitter<IXtermMarker | undefined>);
 	public onDidCreateStartMarker: Event<IXtermMarker | undefined> = this._onDidCreateStartMarker.event;
 
 	constructor(
 		private readonly _instance: ITerminalInstance,
 		private readonly _commandDetection: ICommandDetectionCapability,
+		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@ITerminalLogService private readonly _logService: ITerminalLogService,
 	) {
+		super();
 	}
 
-	async execute(commandLine: string, token: CancellationToken): Promise<ITerminalExecuteStrategyResult> {
+	async execute(commandLine: string, token: CancellationToken, commandId?: string): Promise<ITerminalExecuteStrategyResult> {
 		const store = new DisposableStore();
 		try {
 			// Ensure xterm is available
@@ -44,36 +50,61 @@ export class RichExecuteStrategy implements ITerminalExecuteStrategy {
 			if (!xterm) {
 				throw new Error('Xterm is not available');
 			}
+			const alternateBufferPromise = createAltBufferPromise(xterm, store, this._log.bind(this));
 
-			const onDone: Promise<ITerminalCommand | void> = Promise.race([
+			const idlePollInterval = this._configurationService.getValue<number>(TerminalChatAgentToolsSettingId.IdlePollInterval) ?? 1000;
+
+			const onDone = Promise.race([
 				Event.toPromise(this._commandDetection.onCommandFinished, store).then(e => {
 					this._log('onDone via end event');
-					return e;
+					return {
+						'type': 'success',
+						command: e
+					} as const;
 				}),
 				Event.toPromise(token.onCancellationRequested as Event<undefined>, store).then(() => {
 					this._log('onDone via cancellation');
 				}),
-				trackIdleOnPrompt(this._instance, 1000, store).then(() => {
+				Event.toPromise(this._instance.onDisposed, store).then(() => {
+					this._log('onDone via terminal disposal');
+					return { type: 'disposal' } as const;
+				}),
+				trackIdleOnPrompt(this._instance, idlePollInterval, store, idlePollInterval).then(() => {
 					this._log('onDone via idle prompt');
 				}),
 			]);
 
-			// Record where the command started. If the marker gets disposed, re-created it where
-			// the cursor is. This can happen in prompts where they clear the line and rerender it
-			// like powerlevel10k's transient prompt
-			this._onDidCreateStartMarker.fire(this._startMarker = store.add(xterm.raw.registerMarker()));
-			store.add(this._startMarker.onDispose(() => {
-				this._log(`Start marker was disposed, recreating`);
-				this._onDidCreateStartMarker.fire(this._startMarker = store.add(xterm.raw.registerMarker()));
-			}));
+			const markerRecreation = setupRecreatingStartMarker(
+				xterm,
+				this._startMarker,
+				m => this._onDidCreateStartMarker.fire(m),
+				store,
+				this._log.bind(this)
+			);
 
 			// Execute the command
 			this._log(`Executing command line \`${commandLine}\``);
-			this._instance.runCommand(commandLine, true);
+			markerRecreation.dispose();
+			const forceBracketedPasteMode = isMacintosh;
+			this._instance.runCommand(commandLine, true, commandId, forceBracketedPasteMode);
 
 			// Wait for the terminal to idle
 			this._log('Waiting for done event');
-			const finishedCommand = await onDone;
+			const onDoneResult = await Promise.race([onDone, alternateBufferPromise.then(() => ({ type: 'alternateBuffer' } as const))]);
+			if (onDoneResult && onDoneResult.type === 'disposal') {
+				throw new Error('The terminal was closed');
+			}
+			if (onDoneResult && onDoneResult.type === 'alternateBuffer') {
+				this._log('Detected alternate buffer entry, skipping output capture');
+				return {
+					output: undefined,
+					exitCode: undefined,
+					error: 'alternateBuffer',
+					didEnterAltBuffer: true
+				};
+			}
+			const finishedCommand = onDoneResult && onDoneResult.type === 'success' ? onDoneResult.command : undefined;
+
 			if (token.isCancellationRequested) {
 				throw new CancellationError();
 			}
@@ -86,13 +117,23 @@ export class RichExecuteStrategy implements ITerminalExecuteStrategy {
 				const commandOutput = finishedCommand?.getOutput();
 				if (commandOutput !== undefined) {
 					this._log('Fetched output via finished command');
-					output = commandOutput;
+					// On some platforms (e.g. Windows/PowerShell), shell integration
+					// markers can misfire and getOutput() includes the command echo.
+					// Strip it defensively — the function is a no-op when the output
+					// is already clean.
+					output = stripCommandEchoAndPrompt(commandOutput, commandLine, this._log.bind(this));
 				}
 			}
 			if (output === undefined) {
 				try {
-					output = xterm.getContentsAsText(this._startMarker, endMarker);
+					output = xterm.getContentsAsText(this._startMarker.value, endMarker);
 					this._log('Fetched output via markers');
+
+					// The marker-based output includes the command echo and trailing
+					// prompt lines. Strip them to isolate the actual command output.
+					if (output !== undefined) {
+						output = stripCommandEchoAndPrompt(output, commandLine, this._log.bind(this));
+					}
 				} catch {
 					this._log('Failed to fetch output via markers');
 					additionalInformationLines.push('Failed to retrieve command output');
@@ -119,6 +160,11 @@ export class RichExecuteStrategy implements ITerminalExecuteStrategy {
 	}
 
 	private _log(message: string) {
-		this._logService.debug(`RunInTerminalTool#Rich: ${message}`);
+		const msg = `RunInTerminalTool#Rich: ${message}`;
+		if (isCI) {
+			this._logService.info(msg);
+		} else {
+			this._logService.debug(msg);
+		}
 	}
 }

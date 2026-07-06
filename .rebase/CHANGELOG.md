@@ -2,10 +2,264 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/607
+#### @rnikitenko
+https://github.com/che-incubator/che-code/pull/735
 
-- code/extensions/vscode-api-tests/package.json
+- code/extensions/copilot/.esbuild.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/736
+
+- code/extensions/git/src/askpass.sh
+- code/extensions/git/src/ssh-askpass.sh
+- code/extensions/git/src/git-editor.sh
+- code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts
+- code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/739
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/728
+
+- code/package.json
+- code/remote/package.json
+- code/build/rspack/package.json
+- code/extensions/copilot/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/720
+
+- code/package.json
+- code/test/automation/package.json
+- code/test/smoke/package.json
+- code/test/mcp/package.json
+- code/build/rspack/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/722
+
+- code/package.json
+- code/remote/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/copilot/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/716
+
+- code/package.json
+- code/build/package.json
+- code/test/monaco/package.json
+- code/extensions/mermaid-chat-features/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/705
+
+- code/extensions/markdown-language-features/package.json
+- code/extensions/mermaid-chat-features/package.json
+- code/src/vs/base/browser/dompurify/cgmanifest.json
+- code/src/vs/base/browser/dompurify/dompurify.d.ts
+- code/src/vs/base/browser/dompurify/dompurify.js
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/711
+
+- code/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/708
+
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/698
+
+- code/package.json
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/689
+
+- code/resources/server/bin/helpers/browser-linux.sh
+- code/resources/server/bin/remote-cli/code-linux.sh
+---
+
+#### @vitaliy-guliy
+https://github.com/che-incubator/che-code/commit/a26b43847e5afd707ebffbddef712893fb77a379
+
+- code/product.json
+---
+
+#### @RomanNikitenko
+https://github.com/RomanNikitenko/che-code/commit/199009d7def5f11925978911f4a1715797d3144e
+
+- code/product.json
+- code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/commit/8409a0167c3cd4ca3555c9c6fc32f2fce87923e9
+
+- code/src/vs/workbench/services/extensions/common/extensionsProposedApi.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/677
+
+- code/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/659
+
+- code/package.json
+- code/build/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/css-language-features/package.json
+- code/extensions/html-language-features/package.json
+- code/extensions/json-language-features/package.json
+- code/extensions/markdown-language-features/package.json
+- code/extensions/npm/package.json
+- code/test/automation/package.json
+- code/test/integration/browser/package.json
+---
+
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/668 \
+https://github.com/che-incubator/che-code/commit/c1cb30760472ea262b0c59cacae32bb398a40cdd
+
+- code/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/669
+
+- code/extensions/github-authentication/package.json
+- code/extensions/notebook-renderers/package.json
+- code/test/smoke/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/670
+
+- code/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/668
+
+- code/package.json
+- code/remote/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/662
+
+- code/build/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/661
+
+- code/package.json
+- code/build/npm/gyp/package.json
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/655
+
+- code/src/vs/platform/shell/node/shellEnv.ts
+- code/src/vs/server/node/remoteTerminalChannel.ts
+- code/src/vs/server/node/extensionHostConnection.ts
+---
+
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/654 \
+https://github.com/che-incubator/che-code/pull/646/changes/eebf4d4db208a1fc9c1ac056f613a5385471c892
+
+- code/test/mcp/package.json
+- code/package.json
+- code/build/package.json
+---
+
+#### @sbouchet @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/648 \
+https://github.com/che-incubator/che-code/pull/646/changes/c22ae74ef707862afdb29f9a9f343be912cb05f8
+
+- code/package.json
+- code/build/npm/gyp/package.json
+- code/build/gulpfile.cli.js
+- code/build/gulpfile.reh.js
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/647
+
+- code/test/monaco/package.json
+- code/build/package.json
+- code/package.json
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/617
+
+- code/src/vs/platform/extensionManagement/common/extensionManagement.ts
+- code/src/vs/platform/extensionManagement/node/extensionManagementService.ts
+- code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts
+- code/src/vs/server/node/serverServices.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/605
+
+- code/src/vs/workbench/browser/web.main.ts
+- code/src/vs/server/node/serverServices.ts
+- code/src/vs/server/node/serverEnvironmentService.ts
+- code/src/vs/workbench/contrib/extensions/browser/extensionsWorkbenchService.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/613
+
+- code/build/package.json
+- code/extensions/microsoft-authentication/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/621
+
+- code/build/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/611
+
+- code/package.json
+- code/build/npm/gyp/package.json
 ---
 
 #### @sbouchet
@@ -87,12 +341,6 @@ https://github.com/che-incubator/che-code/pull/557
 ---
 
 #### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/549
-
-- code/src/vs/workbench/contrib/chat/browser/actions/chatActions.ts
----
-
-#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/540 \
 https://github.com/RomanNikitenko/che-code/commit/724c0a97f73e070f80818091a8d19b7ed186b394 \
 https://github.com/RomanNikitenko/che-code/commit/1e51134551f4c876c4d6de388dcab90180d4607d
@@ -153,12 +401,6 @@ https://github.com/che-incubator/che-code/pull/482
 https://github.com/che-incubator/che-code/pull/476
 
 - code/extensions/package.json
----
-
-#### @RomanNikitenko
-https://github.com/che-incubator/che-code/pull/478
-
-- code/package.json
 ---
 
 #### @RomanNikitenko
@@ -270,4 +512,10 @@ https://github.com/che-incubator/che-code/pull/353
 https://github.com/che-incubator/che-code/pull/400
 
 - code/extensions/git/src/ssh-askpass.sh
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/695
+
+- code/build/npm/preinstall.ts
 ---

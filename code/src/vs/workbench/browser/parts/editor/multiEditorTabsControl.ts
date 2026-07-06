@@ -640,19 +640,19 @@ export class MultiEditorTabsControl extends EditorTabsControl {
 		}
 	}
 
-	moveEditor(editor: EditorInput, fromTabIndex: number, targeTabIndex: number): void {
+	moveEditor(editor: EditorInput, fromTabIndex: number, targetTabIndex: number): void {
 
 		// Move the editor label
 		const editorLabel = this.tabLabels[fromTabIndex];
 		this.tabLabels.splice(fromTabIndex, 1);
-		this.tabLabels.splice(targeTabIndex, 0, editorLabel);
+		this.tabLabels.splice(targetTabIndex, 0, editorLabel);
 
 		// Redraw tabs in the range of the move
 		this.forEachTab((editor, tabIndex, tabContainer, tabLabelWidget, tabLabel, tabActionBar) => {
 			this.redrawTab(editor, tabIndex, tabContainer, tabLabelWidget, tabLabel, tabActionBar);
 		},
-			Math.min(fromTabIndex, targeTabIndex), 	// from: smallest of fromTabIndex/targeTabIndex
-			Math.max(fromTabIndex, targeTabIndex)	//   to: largest of fromTabIndex/targeTabIndex
+			Math.min(fromTabIndex, targetTabIndex), // from: smallest of fromTabIndex/targetTabIndex
+			Math.max(fromTabIndex, targetTabIndex)	//   to: largest of fromTabIndex/targetTabIndex
 		);
 
 		// Moving an editor requires a layout to keep the active editor visible
@@ -827,7 +827,7 @@ export class MultiEditorTabsControl extends EditorTabsControl {
 		});
 
 		// Gesture Support
-		this._register(Gesture.addTarget(tabContainer));
+		const gestureDisposable = Gesture.addTarget(tabContainer);
 
 		// Tab Border Top
 		const tabBorderTopContainer = $('.tab-border-top-container');
@@ -867,7 +867,7 @@ export class MultiEditorTabsControl extends EditorTabsControl {
 		// Eventing
 		const eventsDisposable = this.registerTabListeners(tabContainer, tabIndex, tabsContainer, tabsScrollbar);
 
-		this.tabDisposables.push(combinedDisposable(eventsDisposable, tabActionBarDisposable, tabActionRunner, editorLabel));
+		this.tabDisposables.push(combinedDisposable(gestureDisposable, eventsDisposable, tabActionBarDisposable, editorLabel));
 
 		return tabContainer;
 	}
@@ -1104,7 +1104,17 @@ export class MultiEditorTabsControl extends EditorTabsControl {
 						const label = `${editor.getName()} + ${selectedEditors.length - 1}`;
 						applyDragImage(e, tab, label);
 					} else {
-						e.dataTransfer.setDragImage(tab, 0, 0); // top left corner of dragged tab set to cursor position to make room for drop-border feedback
+						const options = this.groupsView.partOptions;
+						const isTabSticky = this.tabsModel.isSticky(tabIndex);
+						const isShrinkSizing = options.tabSizing === 'shrink' || (isTabSticky && options.pinnedTabSizing === 'shrink');
+						if (isShrinkSizing) {
+							// When tab sizing is 'shrink', the tab label may be truncated. Using the tab DOM element
+							// as a drag image can cause parts of the tab header UI to visually drag along.
+							// Instead, use a clean text-only drag image with the editor name.
+							applyDragImage(e, tab, editor.getName());
+						} else {
+							e.dataTransfer.setDragImage(tab, 0, 0); // top left corner of dragged tab set to cursor position to make room for drop-border feedback
+						}
 					}
 				}
 

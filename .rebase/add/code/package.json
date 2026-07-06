@@ -1,10 +1,8 @@
 {
     "dependencies": {
-        "ws": "8.2.3",
         "js-yaml": "^4.1.0"
     },
     "devDependencies": {
-        "@types/ws": "8.2.0",
         "@types/js-yaml": "^4.0.5",
         "@types/minimatch": "^3.0.5"
     },
@@ -12,25 +10,16 @@
         "@gulp-sourcemaps/identity-map": {
             "postcss": "8.4.33"
         },
-        "npm-run-all": {
-            "cross-spawn": "7.0.6"
-        },
-        "postcss": {
-            "nanoid": "3.3.8"
-        },
-        "@vscode/test-web": {
-            "tar-fs": "3.1.1"
-        },
-        "prebuild-install": {
-            "tar-fs": "2.1.4"
-        },
+        "tar": "^7.5.11",
         "micromatch": "4.0.8",
         "braces": "3.0.3",
-        "@types/node-fetch": {
-            "form-data": "3.0.4"
-        },
-        "@azure/core-http": {
-            "form-data": "4.0.4"
+        "lodash": "^4.18.1",
+        "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
+        "flatted": "^3.4.2",
+        "shell-quote": "^1.8.4",
+        "ip-address": "^10.2.0",
+        "webdriver": {
+            "undici@6": "^6.27.0"
         }
     }
 }
