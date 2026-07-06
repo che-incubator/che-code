@@ -38,6 +38,16 @@ https://github.com/che-incubator/che-code/pull/728
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/717
+
+- code/build/package.json
+- code/test/mcp/package.json
+- code/package.json
+- code/extensions/copilot/package.json
+- code/build/rspack/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/720
 
 - code/package.json

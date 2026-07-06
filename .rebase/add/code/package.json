@@ -17,6 +17,7 @@
         "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
         "flatted": "^3.4.2",
         "shell-quote": "^1.8.4",
+        "qs": "6.15.2",
         "ip-address": "^10.2.0",
         "webdriver": {
             "undici@6": "^6.27.0"
