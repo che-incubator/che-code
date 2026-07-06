@@ -44,34 +44,5 @@
         "@types/node": "^20.10.5",
         "typescript": "^5.3.3",
         "@types/vscode": "^1.85.0"
-    },
-    "contributes": {
-        "commands": [
-            {
-                "command": "cheKeybindingsSync.pull",
-                "title": "Keybindings: Pull from Che"
-            },
-            {
-                "command": "cheKeybindingsSync.push",
-                "title": "Keybindings: Push to Che"
-            }
-        ],
-        "configuration": {
-            "title": "Che Keybindings Sync",
-            "properties": {
-                "cheKeybindingsSync.storageMode": {
-                    "type": "string",
-                    "enum": [
-                        "local",
-                        "global"
-                    ],
-                    "default": "global"
-                },
-                "cheKeybindingsSync.namespace": {
-                    "type": "string",
-                    "default": "default"
-                }
-            }
-        }
     }
 }
