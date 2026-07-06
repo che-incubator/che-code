@@ -17,6 +17,7 @@ import { IMenuService } from '../../../../../platform/actions/common/actions.js'
 import { IFileContent, IFileService } from '../../../../../platform/files/common/files.js';
 import { SyncDescriptor } from '../../../../../platform/instantiation/common/descriptors.js';
 import { IListService, ListService } from '../../../../../platform/list/browser/listService.js';
+import { IProductService } from '../../../../../platform/product/common/productService.js';
 import { IWorkspace, IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IViewPaneOptions } from '../../../../browser/parts/views/viewPane.js';
 import { IViewContainerModel, IViewDescriptor, IViewDescriptorService, IViewPaneContainer, ViewContainer, ViewContainerLocation } from '../../../../common/views.js';
@@ -414,6 +415,9 @@ function renderChangesView(ctx: ComponentFixtureContext, options: IChangesViewFi
 				override async openEditor(): Promise<undefined> { return undefined; }
 			}());
 			reg.defineInstance(IExtensionService, new class extends mock<IExtensionService>() { override readonly onDidChangeExtensions = Event.None; }());
+			reg.defineInstance(IProductService, new class extends mock<IProductService>() {
+				override readonly quality = 'stable';
+			}());
 			reg.defineInstance(ILifecycleService, new class extends mock<ILifecycleService>() {
 				override readonly startupKind = StartupKind.NewWindow;
 				override phase = LifecyclePhase.Restored;

@@ -38,6 +38,7 @@ import { WorkbenchCompressibleObjectTree } from '../../../../platform/list/brows
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { bindContextKey } from '../../../../platform/observable/common/platformObservableUtils.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
@@ -456,6 +457,7 @@ export class ChangesViewPane extends ViewPane {
 		@ILogService private readonly logService: ILogService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ISessionChangesService private readonly sessionChangesService: ISessionChangesService,
+		@IProductService private readonly productService: IProductService,
 	) {
 		super({ ...options, titleMenuId: MenuId.ChatEditingSessionTitleToolbar }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 
@@ -565,8 +567,12 @@ export class ChangesViewPane extends ViewPane {
 		const welcomeMessage = dom.append(this.welcomeContainer, $('.changes-welcome-message'));
 		welcomeMessage.textContent = localize('changesView.noChanges', "Changed files and other session artifacts will appear here.");
 
-		// Other Files widget - middle pane (files edited outside the workspace)
-		this.sessionFilesWidget = this._register(this.scopedInstantiationService.createInstance(SessionFilesWidget, this.splitViewContainer));
+		// Other Files widget - middle pane (files edited outside the workspace).
+		// Only available on stable builds; disabled in other quality channels.
+		const sessionFilesEnabled = this.productService.quality === 'stable';
+		if (sessionFilesEnabled) {
+			this.sessionFilesWidget = this._register(this.scopedInstantiationService.createInstance(SessionFilesWidget, this.splitViewContainer));
+		}
 
 		// CI Status widget — bottom pane
 		this.ciStatusWidget = this._register(this.scopedInstantiationService.createInstance(CIStatusWidget, this.splitViewContainer));
@@ -600,20 +606,19 @@ export class ChangesViewPane extends ViewPane {
 		};
 
 		// Middle pane: other files
-		const sessionFilesElement = this.sessionFilesWidget.element;
 		const sessionFilesWidget = this.sessionFilesWidget;
-		const sessionFilesPane: IView = {
-			element: sessionFilesElement,
+		const sessionFilesPane: IView | undefined = sessionFilesWidget ? {
+			element: sessionFilesWidget.element,
 			get minimumSize() { return getSessionFilesMinimumHeight(); },
 			get maximumSize() { return sessionFilesWidget.collapsed ? SessionFilesWidget.HEADER_HEIGHT : Number.POSITIVE_INFINITY; },
 			priority: LayoutPriority.High,
-			onDidChange: Event.map(this.sessionFilesWidget.onDidChangeHeight, () => undefined),
+			onDidChange: Event.map(sessionFilesWidget.onDidChangeHeight, () => undefined),
 			layout: (height) => {
-				sessionFilesElement.style.height = `${height}px`;
+				sessionFilesWidget.element.style.height = `${height}px`;
 				const bodyHeight = Math.max(0, height - SessionFilesWidget.HEADER_HEIGHT);
 				sessionFilesWidget.layout(bodyHeight);
 			},
-		};
+		} : undefined;
 
 		// Bottom pane: CI checks
 		const ciElement = this.ciStatusWidget.element;
@@ -632,8 +637,13 @@ export class ChangesViewPane extends ViewPane {
 		};
 
 		this.splitView.addView(treePane, Sizing.Distribute, 0, true);
-		this.splitView.addView(sessionFilesPane, SessionFilesWidget.HEADER_HEIGHT + SessionFilesWidget.PREFERRED_BODY_HEIGHT, 1, true);
-		this.splitView.addView(ciPane, CIStatusWidget.HEADER_HEIGHT + CIStatusWidget.PREFERRED_BODY_HEIGHT, 2, true);
+		let nextPaneIndex = 1;
+		const sessionFilesPaneIndex = sessionFilesPane ? nextPaneIndex++ : -1;
+		if (sessionFilesPane) {
+			this.splitView.addView(sessionFilesPane, SessionFilesWidget.HEADER_HEIGHT + SessionFilesWidget.PREFERRED_BODY_HEIGHT, sessionFilesPaneIndex, true);
+		}
+		const ciPaneIndex = nextPaneIndex++;
+		this.splitView.addView(ciPane, CIStatusWidget.HEADER_HEIGHT + CIStatusWidget.PREFERRED_BODY_HEIGHT, ciPaneIndex, true);
 
 		// Style the sash as a visible separator between sections
 		const updateSplitViewStyles = () => {
@@ -644,15 +654,19 @@ export class ChangesViewPane extends ViewPane {
 		this._register(this.themeService.onDidColorThemeChange(updateSplitViewStyles));
 
 		// Initially hide the other files and CI panes until content arrives
-		this.splitView.setViewVisible(1, false);
-		this.splitView.setViewVisible(2, false);
+		if (this.sessionFilesWidget) {
+			this.splitView.setViewVisible(sessionFilesPaneIndex, false);
+		}
+		this.splitView.setViewVisible(ciPaneIndex, false);
 
-		// Other files pane (index 1)
-		this._wireSectionPane(this.sessionFilesWidget, 1, SessionFilesWidget.HEADER_HEIGHT, getSessionFilesPreferredHeight);
-		this._register(this.sessionFilesWidget.onDidChangeHeight(() => this.fireTreePaneSizeChange()));
+		// Other files pane
+		if (this.sessionFilesWidget) {
+			this._wireSectionPane(this.sessionFilesWidget, sessionFilesPaneIndex, SessionFilesWidget.HEADER_HEIGHT, getSessionFilesPreferredHeight);
+			this._register(this.sessionFilesWidget.onDidChangeHeight(() => this.fireTreePaneSizeChange()));
+		}
 
-		// CI checks pane (index 2)
-		this._wireSectionPane(this.ciStatusWidget, 2, CIStatusWidget.HEADER_HEIGHT, getCIContentHeight);
+		// CI checks pane
+		this._wireSectionPane(this.ciStatusWidget, ciPaneIndex, CIStatusWidget.HEADER_HEIGHT, getCIContentHeight);
 
 		this._register(this.onDidChangeBodyVisibility(visible => {
 			if (visible) {
