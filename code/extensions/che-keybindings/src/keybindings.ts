@@ -10,29 +10,77 @@
 
 /* eslint-disable header/header */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-export const USER_KEYBINDINGS_URI =
-  vscode.Uri.parse('vscode-userdata:/User/keybindings.json');
+export const USER_KEYBINDINGS_URI = vscode.Uri.parse(
+	"vscode-userdata:/User/keybindings.json",
+);
 
-export async function readUserKeybindings(): Promise<string> {
-  const doc = await vscode.workspace.openTextDocument(USER_KEYBINDINGS_URI);
-  return doc.getText();
+export async function readUserKeybindings(
+	output?: vscode.OutputChannel,
+): Promise<string> {
+	output?.appendLine("[Keybindings] Reading user keybindings...");
+
+	try {
+		const doc = await vscode.workspace.openTextDocument(USER_KEYBINDINGS_URI);
+
+		output?.appendLine(
+			`[Keybindings] Opened: ${USER_KEYBINDINGS_URI.toString()}`,
+		);
+
+		const text = doc.getText();
+
+		output?.appendLine(`[Keybindings] Read successful (${text.length} bytes).`);
+
+		return text;
+	} catch (err) {
+		output?.appendLine(`[Keybindings] Failed to read keybindings: ${err}`);
+
+		return "[]";
+	}
 }
 
-export async function applyUserKeybindings(content: string): Promise<void> {
-  const doc = await vscode.workspace.openTextDocument(USER_KEYBINDINGS_URI);
+export async function writeUserKeybindings(
+	text: string,
+	output?: vscode.OutputChannel,
+): Promise<void> {
+	output?.appendLine("[Keybindings] Writing user keybindings...");
 
-  const edit = new vscode.WorkspaceEdit();
-  edit.replace(
-    USER_KEYBINDINGS_URI,
-    new vscode.Range(
-      doc.positionAt(0),
-      doc.positionAt(doc.getText().length)
-    ),
-    content
-  );
+	const doc = await vscode.workspace.openTextDocument(USER_KEYBINDINGS_URI);
 
-  await vscode.workspace.applyEdit(edit);
-  await doc.save();
+	const current = doc.getText();
+
+	output?.appendLine(`[Keybindings] Current size: ${current.length} bytes`);
+	output?.appendLine(`[Keybindings] New size: ${text.length} bytes`);
+
+	if (current === text) {
+		output?.appendLine("[Keybindings] No changes detected. Skipping write.");
+		return;
+	}
+
+	const edit = new vscode.WorkspaceEdit();
+
+	edit.replace(
+		USER_KEYBINDINGS_URI,
+		new vscode.Range(doc.positionAt(0), doc.positionAt(current.length)),
+		text,
+	);
+
+	output?.appendLine("[Keybindings] Applying workspace edit...");
+
+	const applied = await vscode.workspace.applyEdit(edit);
+
+	output?.appendLine(`[Keybindings] Workspace edit applied: ${applied}`);
+
+	if (!applied) {
+		throw new Error("Failed to apply workspace edit.");
+	}
+
+	output?.appendLine("[Keybindings] Saving keybindings.json...");
+
+	const saved = await doc.save();
+
+	output?.appendLine(`[Keybindings] Save completed: ${saved}`);
+
+	output?.appendLine("[Keybindings] Write completed successfully.");
 }

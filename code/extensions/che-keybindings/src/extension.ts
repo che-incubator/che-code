@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2025 Red Hat, Inc.
+ * Copyright (c) 2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,77 +9,38 @@
  ***********************************************************************/
 
 /* eslint-disable header/header */
-import * as vscode from 'vscode';
-import { getKeybindings, patchKeybindings } from './cheAPi';
-import { readUserKeybindings, applyUserKeybindings, USER_KEYBINDINGS_URI } from './keybindings';
-import { getOrCreateClientId } from './utils';
+import * as vscode from "vscode";
+import { SyncManager } from "./syncManager";
 
 export async function activate(context: vscode.ExtensionContext) {
-  const config = vscode.workspace.getConfiguration('cheKeybindingsSync');
-  if (config.get('storageMode') !== 'global') {
-    return;
-  }
+	const output = vscode.window.createOutputChannel("Che Keybindings Sync");
+	context.subscriptions.push(output);
 
-  const namespace = config.get<string>('namespace', 'default');
-  const clientId = getOrCreateClientId(context.globalState);
+	output.appendLine("======================================");
+	output.appendLine("Che Keybindings Sync Extension");
+	output.appendLine(`Activated at: ${new Date().toISOString()}`);
+	output.appendLine("Creating SyncManager...");
 
-  const output = vscode.window.createOutputChannel('Che Keybindings Sync');
-  output.appendLine('Activating Che Keybindings Sync');
+	try {
+		const manager = new SyncManager(context, output);
 
-  // ---------- PULL ON STARTUP ----------
-  try {
-    const remote = await getKeybindings(namespace);
-    if (remote?.keybindingsJson) {
-      const local = await readUserKeybindings();
-      if (local !== remote.keybindingsJson) {
-        await applyUserKeybindings(remote.keybindingsJson);
-        output.appendLine('Applied keybindings from Che backend');
-      }
-    }
-  } catch (e) {
-    output.appendLine(`Pull failed: ${e}`);
-  }
+		output.appendLine("Initializing SyncManager...");
+		await manager.initialize();
 
-  // ---------- AUTO PUSH ON SAVE ----------
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(async (doc) => {
-      if (doc.uri.toString() !== USER_KEYBINDINGS_URI.toString()) {
-        return;
-      }
+		context.subscriptions.push(manager);
 
-      try {
-        await patchKeybindings(namespace, doc.getText(), clientId);
-        output.appendLine('Pushed keybindings to Che backend');
-      } catch (e) {
-        output.appendLine(`Push failed: ${e}`);
-      }
-    })
-  );
+		output.appendLine("SyncManager initialized successfully.");
+		output.appendLine("Extension activation completed.");
+	} catch (err) {
+		output.appendLine(`Extension activation failed: ${err}`);
+		vscode.window.showErrorMessage(
+			`Che Keybindings Sync activation failed. Check Output -> Che Keybindings Sync`,
+		);
+	}
 
-  // ---------- COMMANDS ----------
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      'cheKeybindingsSync.pull',
-      async () => {
-        const remote = await getKeybindings(namespace);
-        if (remote?.keybindingsJson) {
-          await applyUserKeybindings(remote.keybindingsJson);
-          vscode.window.showInformationMessage('Keybindings pulled from Che');
-        }
-      }
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      'cheKeybindingsSync.push',
-      async () => {
-        const local = await readUserKeybindings();
-        await patchKeybindings(namespace, local, clientId);
-        vscode.window.showInformationMessage('Keybindings pushed to Che');
-      }
-    )
-  );
+	output.appendLine("======================================");
 }
 
-export function deactivate() {}
+export function deactivate() {
+	console.log("Che Keybindings Sync deactivated.");
+}

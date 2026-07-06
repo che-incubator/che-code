@@ -9,44 +9,82 @@
  ***********************************************************************/
 
 /* eslint-disable header/header */
-export type KeybindingsResponse = {
-  keybindingsJson: string;
-  meta?: {
-    resourceVersion?: string;
-    updatedAt?: string;
-  };
-};
+import * as vscode from "vscode";
 
-const API_PREFIX = '/api';
+export interface KeybindingsResponse {
+	keybindingsJson: string;
 
-export async function getKeybindings(namespace: string): Promise<KeybindingsResponse | null> {
-  const res = await fetch(
-    `${API_PREFIX}/namespace/${namespace}/keybindings`,
-    { credentials: 'include' }
-  );
+	meta?: {
+		clientId?: string;
+		resourceVersion?: string;
+	};
+}
 
-  if (!res.ok) {
-    return null;
-  }
-  const data = await res.json() as KeybindingsResponse;
-  return data;
+const API = "/api";
+
+export async function getKeybindings(
+	namespace: string,
+	output?: vscode.OutputChannel,
+): Promise<KeybindingsResponse | null> {
+	output?.appendLine(`[API] GET ${API}/namespace/${namespace}/keybindings`);
+
+	const res = await fetch(`${API}/namespace/${namespace}/keybindings`, {
+		credentials: "include",
+	});
+
+	output?.appendLine(`[API] GET Status: ${res.status}`);
+
+	if (!res.ok) {
+		output?.appendLine(`[API] GET Failed: ${await res.text()}`);
+		return null;
+	}
+
+	const data = (await res.json()) as KeybindingsResponse;
+
+	output?.appendLine(
+		`[API] GET Success - Received ${data.keybindingsJson.length} bytes`,
+	);
+
+	if (data.meta) {
+		output?.appendLine(
+			`[API] Meta => clientId=${data.meta.clientId ?? "N/A"}, resourceVersion=${data.meta.resourceVersion ?? "N/A"}`,
+		);
+	}
+
+	return data;
 }
 
 export async function patchKeybindings(
-  namespace: string,
-  keybindingsJson: string,
-  clientId: string
+	namespace: string,
+	keybindingsJson: string,
+	clientId: string,
+	output?: vscode.OutputChannel,
 ): Promise<void> {
-  await fetch(
-    `${API_PREFIX}/namespace/${namespace}/keybindings`,
-    {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        keybindingsJson,
-        meta: { clientId },
-      }),
-    }
-  );
+	output?.appendLine(`[API] PATCH ${API}/namespace/${namespace}/keybindings`);
+	output?.appendLine(`[API] Payload Size: ${keybindingsJson.length} bytes`);
+	output?.appendLine(`[API] Client ID: ${clientId}`);
+
+	const res = await fetch(`${API}/namespace/${namespace}/keybindings`, {
+		method: "PATCH",
+		credentials: "include",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			keybindingsJson,
+			meta: {
+				clientId,
+			},
+		}),
+	});
+
+	output?.appendLine(`[API] PATCH Status: ${res.status}`);
+
+	if (!res.ok) {
+		const error = await res.text();
+		output?.appendLine(`[API] PATCH Failed: ${error}`);
+		throw new Error(error);
+	}
+
+	output?.appendLine("[API] PATCH Successful.");
 }

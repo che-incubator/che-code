@@ -9,11 +9,29 @@
  ***********************************************************************/
 
 /* eslint-disable header/header */
-export function getOrCreateClientId(state: any): string {
-  let id = state.get('clientId');
-  if (!id) {
-    id = Math.random().toString(36).slice(2);
-    state.update('clientId', id);
-  }
-  return id;
+import * as vscode from "vscode";
+
+export function getOrCreateClientId(
+	state: vscode.Memento,
+	output?: vscode.OutputChannel,
+): string {
+	output?.appendLine("[Utils] Retrieving client ID...");
+
+	let id = state.get<string>("clientId");
+
+	if (!id) {
+		output?.appendLine(
+			"[Utils] No existing client ID found. Generating a new one...",
+		);
+
+		id = Math.random().toString(36).slice(2);
+
+		state.update("clientId", id);
+
+		output?.appendLine(`[Utils] Generated new client ID: ${id}`);
+	} else {
+		output?.appendLine(`[Utils] Existing client ID found: ${id}`);
+	}
+
+	return id;
 }
