@@ -133,7 +133,7 @@ export class DevWorkspaceAssistant {
 		const url = this.getWorkspaceUrl();
 		const patch = JSON.stringify([{ op: 'replace', path: '/spec/started', value: false }]);
 
-		await this.requestService.request({
+		const context = await this.requestService.request({
 			type: 'PATCH',
 			url,
 			data: patch,
@@ -141,6 +141,10 @@ export class DevWorkspaceAssistant {
 			timeout: 10000,
 			callSite: 'che-remote.devWorkspaceAssistant.stop',
 		}, CancellationToken.None);
+
+		if (context.res.statusCode && context.res.statusCode >= 400) {
+			throw new Error(`Failed to stop workspace: HTTP ${context.res.statusCode}`);
+		}
 	}
 
 	/**
@@ -195,15 +199,25 @@ export class DevWorkspaceAssistant {
 
 	private async doRestart(): Promise<void> {
 		this._isStopping = true;
-		await this.stopWorkspaceViaDashboardApi();
-		await this.waitForStopped();
-		this.startWorkspace();
+		try {
+			await this.stopWorkspaceViaDashboardApi();
+			await this.waitForStopped();
+			this.startWorkspace();
+		} catch (e) {
+			this._isStopping = false;
+			throw e;
+		}
 	}
 
 	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {
 		this._isStopping = true;
-		await this.stopWorkspaceViaDashboardApi();
-		this.goToDashboard();
+		try {
+			await this.stopWorkspaceViaDashboardApi();
+			this.goToDashboard();
+		} catch (e) {
+			this._isStopping = false;
+			throw e;
+		}
 	}
 
 	startWorkspace(): void {
