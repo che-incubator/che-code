@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
-4d26b584d50 — CVE-2026-45149 brace-expansion override
+https://github.com/che-incubator/che-code/pull/745
 
 - code/package.json
 - code/build/package.json
