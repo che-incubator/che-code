@@ -95,6 +95,10 @@ export class CheDisconnectionHandler {
 			return;
 		}
 
+		if (this.devWorkspaceAssistant.isStopping) {
+			return;
+		}
+
 		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
 		let devWorkspace;
 		try {

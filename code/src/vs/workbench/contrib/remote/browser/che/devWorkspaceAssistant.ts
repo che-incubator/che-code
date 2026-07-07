@@ -47,6 +47,7 @@ export class DevWorkspaceAssistant {
 	private static readonly POLL_INTERVAL_MS = 2000;
 	private static readonly STOP_TIMEOUT_MS = 10000;
 
+	private _isStopping = false;
 	private dashboardUrl: string | undefined;
 	private getDevWorkspaceUrl: string | undefined;
 	private startingDevWorkspaceUrl: string | undefined;
@@ -188,13 +189,19 @@ export class DevWorkspaceAssistant {
 		);
 	}
 
+	get isStopping(): boolean {
+		return this._isStopping;
+	}
+
 	private async doRestart(): Promise<void> {
+		this._isStopping = true;
 		await this.stopWorkspaceViaDashboardApi();
 		await this.waitForStopped();
 		this.startWorkspace();
 	}
 
 	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {
+		this._isStopping = true;
 		await this.stopWorkspaceViaDashboardApi();
 		this.goToDashboard();
 	}
