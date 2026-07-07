@@ -10,7 +10,6 @@ import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../../ba
 import { IConfigurationService } from '../../../../../../../platform/configuration/common/configuration.js';
 import { IDialogService } from '../../../../../../../platform/dialogs/common/dialogs.js';
 import { IInstantiationService } from '../../../../../../../platform/instantiation/common/instantiation.js';
-import { IStorageService } from '../../../../../../../platform/storage/common/storage.js';
 import { ChatEditorInput } from '../../../../browser/widgetHosts/editor/chatEditorInput.js';
 import { IChatService, IChatSessionStartOptions } from '../../../../common/chatService/chatService.js';
 import { IChatSessionsService, localChatSessionType } from '../../../../common/chatSessionsService.js';
@@ -51,7 +50,6 @@ suite('ChatEditorInput', () => {
 			{} as IConfigurationService,
 			{} as IChatSessionsService,
 			{} as IInstantiationService,
-			{} as IStorageService,
 		);
 
 		try {
@@ -103,7 +101,6 @@ suite('ChatEditorInput', () => {
 			{} as IConfigurationService,
 			{} as IChatSessionsService,
 			{} as IInstantiationService,
-			{} as IStorageService,
 		);
 
 		try {
