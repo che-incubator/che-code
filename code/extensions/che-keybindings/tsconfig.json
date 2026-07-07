@@ -3,7 +3,11 @@
 	"compilerOptions": {
 		"outDir": "./out",
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true
+		"emitDecoratorMetadata": true,
+		"skipLibCheck": true,
+		"types": [
+			"node"
+		]
 	},
 	"include": [
 		"src/**/*",
