@@ -69,10 +69,6 @@ fi
 # list checode
 ls -la /checode/
 
-# Start the machine-exec component in background
-export MACHINE_EXEC_PORT=3333
-nohup /checode/bin/machine-exec --url "127.0.0.1:${MACHINE_EXEC_PORT}" &
-
 runtime_ld_library_path=""
 
 # detect if we're using alpine/musl (avoid grep dependency for micro images)
@@ -125,6 +121,10 @@ export VSCODE_AGENT_FOLDER=/checode/remote
 # Controls where LD_LIBRARY_PATH sanitization is applied.
 # Supported values: all | none | shellEnv | terminal
 export LD_SANITIZE_SCOPE="${LD_SANITIZE_SCOPE:-terminal}"
+
+# Start the machine-exec component in background
+export MACHINE_EXEC_PORT=3333
+nohup ./machine-exec --url "127.0.0.1:${MACHINE_EXEC_PORT}" &
 
 if [ -z "$VSCODE_NODEJS_RUNTIME_DIR" ]; then
   export VSCODE_NODEJS_RUNTIME_DIR="$(pwd)"
