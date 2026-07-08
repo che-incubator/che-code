@@ -10,37 +10,68 @@
 
 /* eslint-disable header/header */
 import * as vscode from "vscode";
-import { SyncManager } from "./syncManager";
+import { USER_KEYBINDINGS_URI } from "./keybindings";
 
 export async function activate(context: vscode.ExtensionContext) {
 	const output = vscode.window.createOutputChannel("Che Keybindings Sync");
 	context.subscriptions.push(output);
 
+	output.show(true);
 	output.appendLine("======================================");
-	output.appendLine("Che Keybindings Sync Extension");
-	output.appendLine(`Activated at: ${new Date().toISOString()}`);
-	output.appendLine("Creating SyncManager...");
+	output.appendLine("Che Keybindings Investigation");
+	output.appendLine(`Activated: ${new Date().toISOString()}`);
+	output.appendLine("======================================");
 
 	try {
-		const manager = new SyncManager(context, output);
+		const doc = await vscode.workspace.openTextDocument(USER_KEYBINDINGS_URI);
 
-		output.appendLine("Initializing SyncManager...");
-		await manager.initialize();
+		output.appendLine("Successfully opened keybindings.json");
+		output.appendLine(`URI    : ${doc.uri.toString()}`);
+		output.appendLine(`Scheme : ${doc.uri.scheme}`);
+		output.appendLine(`Path   : ${doc.uri.path}`);
+		output.appendLine(`Length : ${doc.getText().length}`);
 
-		context.subscriptions.push(manager);
-
-		output.appendLine("SyncManager initialized successfully.");
-		output.appendLine("Extension activation completed.");
+		output.appendLine("----- Current Content -----");
+		output.appendLine(doc.getText());
+		output.appendLine("---------------------------");
 	} catch (err) {
-		output.appendLine(`Extension activation failed: ${err}`);
-		vscode.window.showErrorMessage(
-			`Che Keybindings Sync activation failed. Check Output -> Che Keybindings Sync`,
-		);
+		output.appendLine(`Failed to open keybindings.json: ${err}`);
 	}
 
-	output.appendLine("======================================");
+	// Fires whenever keybindings.json is saved
+	context.subscriptions.push(
+		vscode.workspace.onDidSaveTextDocument(doc => {
+			output.appendLine("");
+			output.appendLine("===== onDidSaveTextDocument =====");
+			output.appendLine(`Saved: ${doc.uri.toString()}`);
+
+			if (doc.uri.toString() === USER_KEYBINDINGS_URI.toString()) {
+				output.appendLine("Detected keybindings.json save");
+				output.appendLine(`Length: ${doc.getText().length}`);
+				output.appendLine(doc.getText());
+			}
+		}),
+	);
+
+	// Fires whenever any text document changes
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeTextDocument(event => {
+			if (event.document.uri.toString() === USER_KEYBINDINGS_URI.toString()) {
+				output.appendLine("");
+				output.appendLine("===== onDidChangeTextDocument =====");
+				output.appendLine(`Changes: ${event.contentChanges.length}`);
+
+				for (const change of event.contentChanges) {
+					output.appendLine(
+						`Range: ${change.rangeOffset}-${change.rangeOffset + change.rangeLength}`,
+					);
+					output.appendLine(`Inserted: ${JSON.stringify(change.text)}`);
+				}
+			}
+		}),
+	);
+
+	output.appendLine("Listening for keybindings changes...");
 }
 
-export function deactivate() {
-	console.log("Che Keybindings Sync deactivated.");
-}
+export function deactivate() {}
