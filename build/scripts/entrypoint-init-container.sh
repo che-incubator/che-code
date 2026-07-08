@@ -13,9 +13,6 @@
 
 # Copy checode stuff to the shared volume
 cp -r /checode-* /checode/
-# Copy machine-exec as well
-mkdir -p /checode/bin
-cp /bin/machine-exec /checode/bin/
 # Copy entrypoint
 cp /entrypoint-volume.sh /checode/
 # Copy remote configuration
