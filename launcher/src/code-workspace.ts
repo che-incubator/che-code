@@ -11,6 +11,7 @@
 import * as fs from './fs-extra.js';
 import { env } from 'process';
 import { FlattenedDevfile, Project } from './flattened-devfile.js';
+import path from 'path';
 
 export interface Workspace {
   folders: Folder[];
@@ -68,7 +69,8 @@ export class CodeWorkspace {
       // if there is only one project, try to find the workspace file
       if (!path && devfile.projects && devfile.projects.length === 1) {
         const project = devfile.projects[0];
-        const toFind = `${env.PROJECTS_ROOT}/${project.name}/.code-workspace`;
+        const pathProject = project.clonePath || project.name;
+        const toFind = `${env.PROJECTS_ROOT}/${pathProject}/.code-workspace`;
 
         try {
           if (await this.fileExists(toFind)) {
@@ -152,12 +154,26 @@ export class CodeWorkspace {
 
     let synchronized = false;
 
+    if (!env.PROJECTS_ROOT) {
+      console.log('  > env.PROJECTS_ROOT is not set, skip project assertion');
+      return false;
+    }
+
+    const basePath = path.resolve(env.PROJECTS_ROOT);
+
     for (const project of projects) {
-      if (await fs.pathExists(`${env.PROJECTS_ROOT}/${project.name}`)) {
+      const pathProject = project.clonePath || project.name;
+      const fullPath = path.resolve(basePath, pathProject);
+
+      if (!fullPath.startsWith(basePath) || !path.isAbsolute(fullPath) || fullPath.startsWith('..')) {
+        console.log(`> Skipping project ${project.name}: clonePath escapes projects root`);
+        continue;
+      }
+      if (await fs.pathExists(fullPath)) {
         if (!workspace.folders.some((folder) => folder.name === project.name)) {
           workspace.folders.push({
             name: project.name,
-            path: `${env.PROJECTS_ROOT}/${project.name}`,
+            path: fullPath,
           });
 
           synchronized = true;
