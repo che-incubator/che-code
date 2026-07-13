@@ -1,4 +1,8 @@
 {
+    "devDependencies": {
+        "@vitest/coverage-v8": "^3.2.6",
+        "vitest": "^3.2.6"
+    },
     "dependencies": {
         "undici": "^7.28.0"
     }
