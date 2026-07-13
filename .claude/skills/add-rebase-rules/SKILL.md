@@ -51,6 +51,11 @@ Important:
      - `.rebase/override/<path>` when overriding existing values must be explicit
    - It is valid to use both for one file.
    - Keep file formatting consistent with existing `.rebase` JSON style (2-space indentation).
+   - **Choosing add vs override for dependency version pins (e.g. CVE fixes):**
+     - If the dependency already exists in the upstream `package.json` (in `dependencies`, `devDependencies`, etc.) and we need a different version → use `.rebase/override/` with the correct section. This is an override of an existing upstream value.
+     - If the fix uses npm `overrides` (the npm feature that pins transitive dependency versions) and the override key does not exist in upstream's `overrides` section → use `.rebase/add/`. This is additive content absent from upstream.
+     - Prefer the JSON merge mechanism (add or override) over `.rebase/replace/` for `package.json` changes. However, `.rebase/replace/` is acceptable when the change cannot be expressed by JSON merge alone — for example, **replacing one dependency with a different package** (e.g. swapping `gulp-untar` for `gulp-decompress` — see `.rebase/replace/code/package.json.json`) or **inserting a new entry at a specific position** among existing keys.
+     - Place each entry in the file where the dependency actually lives in upstream. For example, if `@vitest/coverage-v8` is a devDependency of `code/extensions/copilot/package.json`, its override rule belongs in `.rebase/override/code/extensions/copilot/package.json`, not in a sibling package.
 
 4. Create or update replace rules for non-JSON files
    - File path: `.rebase/replace/<original-path>.json`
