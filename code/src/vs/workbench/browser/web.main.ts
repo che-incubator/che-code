@@ -76,6 +76,7 @@ import { ILabelService } from '../../platform/label/common/label.js';
 import { UserDataProfileService } from '../services/userDataProfile/common/userDataProfileService.js';
 import { IUserDataProfileService } from '../services/userDataProfile/common/userDataProfile.js';
 import { BrowserUserDataProfilesService } from '../../platform/userDataProfile/browser/userDataProfile.js';
+import { CheUserDataProfilesService } from '../../platform/userDataProfile/browser/che/userDataProfile.js';
 import { DeferredPromise, timeout } from '../../base/common/async.js';
 import { windowLogGroup, windowLogId } from '../services/log/common/logConstants.js';
 import { LogService } from '../../platform/log/common/logService.js';
@@ -344,7 +345,7 @@ export class BrowserMain extends Disposable {
 		serviceCollection.set(IUriIdentityService, uriIdentityService);
 
 		// User Data Profiles
-		const userDataProfilesService = new BrowserUserDataProfilesService(environmentService, fileService, uriIdentityService, logService);
+		const userDataProfilesService = new CheUserDataProfilesService(environmentService, fileService, uriIdentityService, logService);
 		serviceCollection.set(IUserDataProfilesService, userDataProfilesService);
 
 		const currentProfile = await this.getCurrentProfile(workspace, userDataProfilesService, environmentService);

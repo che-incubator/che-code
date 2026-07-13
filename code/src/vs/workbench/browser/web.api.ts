@@ -300,6 +300,13 @@ export interface IWorkbenchConstructionOptions {
 
 	//#endregion
 
+	/**
+	 * Full path to keybindings.json on the server filesystem.
+	 * When set, keybindings are read from and written to the server
+	 * filesystem (via vscodeRemote scheme) instead of browser IndexedDB.
+	 */
+	readonly cheKeybindingsPath?: string;
+
 	//#region Profile options
 
 	/**

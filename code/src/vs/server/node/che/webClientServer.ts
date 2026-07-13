@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2021-2022 Red Hat, Inc.
+ * Copyright (c) 2021-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,8 +9,23 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
+import { existsSync } from 'fs';
 import * as http from 'http';
+import { join } from '../../../base/common/path.js';
 import * as url from 'url';
+
+const CHE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
+
+/**
+ * Returns the server filesystem path for keybindings.json if the admin
+ * provided keybindings via ConfigMap. Otherwise returns undefined.
+ */
+export function getCheKeybindingsPath(userDataPath: string): string | undefined {
+    if (existsSync(CHE_CONFIG_KEYBINDINGS_PATH)) {
+        return join(userDataPath, 'User', 'keybindings.json');
+    }
+    return undefined;
+}
 
 export function getCheRedirectLocation(req: http.IncomingMessage, newQuery: any): string {
     let newLocation;
