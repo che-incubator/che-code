@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2024-2025 Red Hat, Inc.
+ * Copyright (c) 2024-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -15,11 +15,13 @@ import { mergeFirstWithSecond, parseJSON } from './json-utils.js';
 
 const CONFIGMAP_NAME = 'vscode-editor-configurations';
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
+const USER_KEYBINDINGS_PATH = '/checode/remote/data/User/keybindings.json';
 
 const enum EditorConfigs {
   Settings = 'settings.json',
   Extensions = 'extensions.json',
   Product = 'product.json',
+  Keybindings = 'keybindings.json',
 }
 
 /**
@@ -46,6 +48,7 @@ export class EditorConfigurations {
       }
 
       await this.configureSettings(configmap);
+      await this.configureKeybindings(configmap);
       await this.configureExtensions(configmap);
       await this.configureProductJSON(configmap);
     } catch (error) {
@@ -85,6 +88,48 @@ export class EditorConfigurations {
       console.log('    > Editor settings have been configured.');
     } catch (error) {
       console.log('Failed to configure editor settings.', error);
+    }
+  }
+
+  private async configureKeybindings(configmap: k8s.V1ConfigMap): Promise<void> {
+    const configmapContent = configmap.data![EditorConfigs.Keybindings];
+    if (!configmapContent) {
+      return;
+    }
+
+    console.log('  > Configure editor keybindings...');
+
+    try {
+      const keybindingsFromConfigmap = parseJSON(configmapContent, {
+        errorMessage: 'Configmap keybindings.json content is not valid.',
+      });
+
+      if (!Array.isArray(keybindingsFromConfigmap)) {
+        console.log('    > keybindings.json must be a JSON array. Skip this step.');
+        return;
+      }
+
+      let existingKeybindings: unknown[] = [];
+      if (await fs.fileExists(USER_KEYBINDINGS_PATH)) {
+        console.log(`    > Found existing keybindings file: ${USER_KEYBINDINGS_PATH}`);
+        const existingContent = await fs.readFile(USER_KEYBINDINGS_PATH);
+        const parsed = parseJSON(existingContent, {
+          errorMessage: 'Existing keybindings.json file is not valid.',
+        });
+        if (Array.isArray(parsed)) {
+          existingKeybindings = parsed;
+        }
+      } else {
+        console.log(`    > Creating keybindings file: ${USER_KEYBINDINGS_PATH}`);
+      }
+
+      const mergedKeybindings = [...existingKeybindings, ...keybindingsFromConfigmap];
+      const json = JSON.stringify(mergedKeybindings, null, '\t');
+      await fs.writeFile(USER_KEYBINDINGS_PATH, json);
+
+      console.log('    > Editor keybindings have been configured.');
+    } catch (error) {
+      console.log('Failed to configure editor keybindings.', error);
     }
   }
 

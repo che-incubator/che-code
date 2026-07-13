@@ -15,6 +15,7 @@ import { EditorConfigurations } from '../src/editor-configurations';
 
 const DEVWORKSPACE_NAMESPACE = 'test-namespace';
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
+const USER_KEYBINDINGS_PATH = '/checode/remote/data/User/keybindings.json';
 const WORKSPACE_FILE_PATH = '/projects/.code-workspace';
 const WORKSPACE_FILE_CONTENT =
   '{\n' +
@@ -394,5 +395,48 @@ describe('Test applying editor configurations:', () => {
       'product.json',
       JSON.stringify(JSON.parse(mergedProductJSON), null, '\t')
     );
+  });
+
+  it('should apply keybindings from a configmap when no existing keybindings file', async () => {
+    env.DEVWORKSPACE_NAMESPACE = DEVWORKSPACE_NAMESPACE;
+    const keybindingsContent = '[{"key": "ctrl+k", "command": "workbench.action.terminal.kill"}]';
+    const mockResponse = { data: { 'keybindings.json': keybindingsContent } } as V1ConfigMap;
+    mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
+    fileExistsMock.mockResolvedValue(false);
+
+    await new EditorConfigurations().configure();
+
+    expect(writeFileMock).toBeCalledTimes(1);
+    expect(writeFileMock).toBeCalledWith(
+      USER_KEYBINDINGS_PATH,
+      JSON.stringify(JSON.parse(keybindingsContent), null, '\t')
+    );
+  });
+
+  it('should merge keybindings from configmap with existing keybindings', async () => {
+    env.DEVWORKSPACE_NAMESPACE = DEVWORKSPACE_NAMESPACE;
+    const existingKeybindings = '[{"key": "ctrl+j", "command": "workbench.action.togglePanel"}]';
+    const configmapKeybindings = '[{"key": "ctrl+k", "command": "workbench.action.terminal.kill"}]';
+    const mockResponse = { data: { 'keybindings.json': configmapKeybindings } } as V1ConfigMap;
+    mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
+    fileExistsMock.mockResolvedValue(true);
+    readFileMock.mockResolvedValue(existingKeybindings);
+
+    await new EditorConfigurations().configure();
+
+    const merged = [...JSON.parse(existingKeybindings), ...JSON.parse(configmapKeybindings)];
+    expect(writeFileMock).toBeCalledTimes(1);
+    expect(writeFileMock).toBeCalledWith(USER_KEYBINDINGS_PATH, JSON.stringify(merged, null, '\t'));
+  });
+
+  it('should skip keybindings when configmap content is not a JSON array', async () => {
+    env.DEVWORKSPACE_NAMESPACE = DEVWORKSPACE_NAMESPACE;
+    const invalidKeybindings = '{"key": "ctrl+k", "command": "test"}';
+    const mockResponse = { data: { 'keybindings.json': invalidKeybindings } } as V1ConfigMap;
+    mockCoreV1Api.readNamespacedConfigMap.mockResolvedValue(mockResponse);
+
+    await new EditorConfigurations().configure();
+
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 });
