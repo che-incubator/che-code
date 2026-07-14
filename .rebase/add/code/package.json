@@ -10,7 +10,6 @@
         "@gulp-sourcemaps/identity-map": {
             "postcss": "8.4.33"
         },
-        "tar": "^7.5.11",
         "micromatch": "4.0.8",
         "braces": "3.0.3",
         "lodash": "^4.18.1",
