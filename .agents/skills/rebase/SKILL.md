@@ -431,6 +431,30 @@ git show upstream-code/<target-version>:<path-without-code-prefix> | head -1
 
 **Real example (1.116 → 1.128):** PR #705 bumped vendored DOMPurify from 3.2.7 to 3.4.2 for CVE-2026-41240. Upstream 1.128 already has DOMPurify 3.4.8. The revert removed: 2 override rules, 1 replace rule, 2 handler functions + 3 elif entries in rebase.sh, 5 code files restored, 1 CHANGELOG entry.
 
+### Accidental changes from previous rebases (no PR, no rule)
+
+Sometimes `pre-rebase.sh` reports NEEDS_RULE for a file where the "che-specific change" was actually introduced **accidentally during a previous rebase** — not via a deliberate PR. Signs:
+
+1. `git log --oneline -- <file>` shows only rebase commits, no feature PR
+2. `git blame` points to a rebase commit for the changed lines
+3. The change looks like a debugging aid or manual conflict resolution leftover
+4. There is no `.rebase/replace/` rule for this file
+
+**How to verify:**
+```bash
+# Check the file BEFORE the rebase that introduced the change
+git show <parent-of-rebase-commit>:<file>
+# If it matches the previous upstream — the change was introduced during that rebase
+```
+
+**Action:** Restore the file to match the current PREVIOUS_UPSTREAM_VERSION. During rebase, the smart fallback will detect no che-specific changes and take upstream automatically.
+
+```bash
+git show upstream-code/PREVIOUS_UPSTREAM_VERSION:<path-without-code-prefix> > <code-path>
+```
+
+**Real example (1.116 → 1.128):** `authenticationService.ts` had a try/catch wrapper added during the rebase to 1.108 (no PR, no rule). Upstream 1.128 completely rewrote the method with better error handling. Restoring to upstream 1.116 lets the smart fallback take upstream 1.128 cleanly.
+
 ### Upstream-superseded changes detection (automation gap)
 
 `pre-rebase.sh` currently compares che-code files against `PREVIOUS_UPSTREAM_VERSION` to detect che-specific changes. It does NOT compare against the TARGET upstream. This means it may report NEEDS_RULE for files where our change is already superseded by the target upstream.
