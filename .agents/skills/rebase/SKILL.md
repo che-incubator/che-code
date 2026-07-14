@@ -206,6 +206,23 @@ All tests must pass (or show only cosmetic warnings) before proceeding. If a tes
 
 ### Step 9: Run the rebase
 
+**Pre-flight check:** Before running `rebase.sh`, verify the working tree is clean:
+
+```bash
+git status --short | wc -l   # must be 0
+```
+
+If there are modifications or "unmerged paths" (from a previous failed run), abort first:
+
+```bash
+git merge --abort   # if merge in progress
+git checkout -- .   # discard any leftover modifications
+```
+
+`rebase.sh` performs a `git merge` internally (subtree merge). If it fails mid-merge (e.g. a rule application error), the merge stays in progress and all upstream changes remain staged/modified. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
+
+**Run:**
+
 ```bash
 bash rebase.sh
 ```
