@@ -13,8 +13,8 @@
 set -e
 set -u
 
-PREVIOUS_UPSTREAM_VERSION="release/1.108"
-CURRENT_UPSTREAM_VERSION="release/1.116"
+PREVIOUS_UPSTREAM_VERSION="release/1.116"
+CURRENT_UPSTREAM_VERSION="release/1.128"
 
 # update $1 json file
 # $2 is the formatting option
