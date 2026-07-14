@@ -249,7 +249,20 @@ The smart fallback in `resolve_conflicts()` detects che-specific changes by comp
 Network issues or incompatible dependencies. Try to fix by adjusting dependency pins or re-running. If unfixable, document in `.rebase/<ver>/rebase-errors.md`.
 
 **d) npm EOVERRIDE — override conflicts with direct dependency:**
-npm requires that overrides for direct dependencies use the exact same version spec. If an add-rule override (e.g. `overrides.tar: "^7.5.11"`) conflicts with an upstream direct dependency (e.g. `devDependencies.tar: "^7.5.9"`), **do NOT downgrade the override** — it was likely pinned for a CVE fix. Instead, add the override version to `.rebase/override/` for the same dependency section. Try to fix automatically; if not possible, document in the rebase errors report.
+npm requires that overrides must not conflict with direct dependencies. Two scenarios:
+
+1. **Upstream surpassed our CVE pin** (e.g. our override `tar@^7.5.11` but upstream now has direct dep `tar@^7.5.16`): **Remove the override** from `.rebase/add/`. The CVE is already fixed by upstream's higher version. This is the most common case during large version jumps.
+
+2. **Our CVE pin is higher than upstream** (e.g. our override `ws@^8.21.0` but upstream direct dep `ws@^8.19.0`): Add the override version to `.rebase/override/` for the same dependency section so it replaces upstream's lower version.
+
+**Detection:** The dependency audit (Step 3b) should catch these BEFORE rebase. If EOVERRIDE still occurs, it means the audit missed something — fix and update the audit logic.
+
+**e) Silent exit due to `set -e` and deleted files:**
+`rebase.sh` uses `set -e` — any failing command kills the script silently. Common triggers:
+- `git checkout --theirs` on a file deleted in upstream (no "theirs" version exists)
+- `git add` on a file that was `git rm`'d in a previous step
+
+If the script exits silently (exit code 1, no error message), run with `bash -x rebase.sh` to see the exact failing command. Then fix `rebase.sh` to handle the edge case.
 
 **Commit (conditional):** "Fix rebase errors" (with report sub-item if unfixed errors remain)
 
