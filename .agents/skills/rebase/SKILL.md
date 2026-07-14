@@ -282,21 +282,14 @@ GIT_EDITOR=: git merge --continue
 
 ### Step 12: Build check
 
-**Node.js version check:** After rebase, the required Node.js version may have changed. Before running `npm install`, verify:
-
-```bash
-cat code/.nvmrc
-node --version
-```
-
-If they differ (major version mismatch), install the required version:
+**Switch to the required Node.js version:** Before running any npm commands, switch to the Node.js version specified in `code/.nvmrc`:
 
 ```bash
 nvm install $(cat code/.nvmrc)
 nvm use $(cat code/.nvmrc)
 ```
 
-The upstream `preinstall.ts` script enforces the `.nvmrc` version — `npm install` will fail immediately if the wrong major version is active. This is common during large version jumps (e.g. v22 → v24 between 1.116 and 1.128).
+This is mandatory — upstream's `preinstall.ts` enforces the `.nvmrc` version and `npm install` will fail immediately if the wrong major version is active. The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128).
 
 **Compilation check:**
 
