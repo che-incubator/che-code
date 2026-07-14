@@ -508,8 +508,14 @@ resolve_conflicts() {
 
       if [ "$prev_content" = "$our_content" ]; then
         echo "  ⚙️ No che-specific changes detected, taking upstream version"
-        git checkout --theirs "$conflictingFile" > /dev/null 2>&1
-        git add "$conflictingFile" > /dev/null 2>&1
+        local upstream_path_new="${conflictingFile#code/}"
+        if git show "upstream-code/${CURRENT_UPSTREAM_VERSION}:${upstream_path_new}" > /dev/null 2>&1; then
+          git checkout --theirs "$conflictingFile" > /dev/null 2>&1
+          git add "$conflictingFile" > /dev/null 2>&1
+        else
+          echo "    (file deleted in upstream, removing)"
+          git rm "$conflictingFile" > /dev/null 2>&1
+        fi
       else
         echo "$conflictingFile has che-specific changes but no rebase rule!"
         echo "Run pre-rebase.sh first to identify and fix missing rules."
