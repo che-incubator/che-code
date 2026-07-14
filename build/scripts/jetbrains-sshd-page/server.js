@@ -10,46 +10,16 @@
 const http = require('http');
 const fs = require('fs');
 
-const hostname = '127.0.0.1';
-const port = 3400;
-
-let username = "UNKNOWN";
-try {
-  username = fs.readFileSync(`/sshd/username`, 'utf8');
-} catch (error) {
-  // continue
-}
-
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-
-    let hasUserPrefSSHKey = fs.existsSync('/etc/ssh/dwo_ssh_key.pub');
-
-    let pubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
-    try {
-      pubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let genKey = "PRIVATE KEY NOT FOUND";
-    try {
-      genKey = fs.readFileSync(`/sshd/ssh_client_ed25519_key`, 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let keyMessage = hasUserPrefSSHKey ? pubKey : genKey;
-
     res.end(`
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <title>${process.env["DEVWORKSPACE_NAME"]}</title>
     <link rel="stylesheet" href="page-style.css">
-    <script src="page-utils.js"></script>
   </head>
   <body>
   <script>
@@ -60,7 +30,7 @@ const server = http.createServer((req, res) => {
       }())
 
       function openToolbox() {
-        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}&dwName=${process.env['DEVWORKSPACE_NAME']}&username=${username}&key=${encodeURIComponent(keyMessage)}&project=${process.env['PROJECT_SOURCE']}"
+        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}"
         console.log("Opening Toolbox App...");
         window.open(tbxLink, "_self");
       }
@@ -71,10 +41,6 @@ const server = http.createServer((req, res) => {
 
     <div class="border">
       <h4 class="center">Make sure your local <a href="${process.env["CLUSTER_CONSOLE_URL"]}/command-line-tools" target="_blank">oc client</a> is <a href="https://oauth-openshift${getHostURL()}/oauth/token/request" target="_blank">logged in</a> to your OpenShift cluster</h4>
-      <p class="center">Run <code id="port-forward">oc port-forward -n ${process.env["DEVWORKSPACE_NAMESPACE"]} ${process.env["HOSTNAME"]} 2022:2022</code><a href="#"><svg class="clipboard-img-code" onclick="copyToClipboard('port-forward')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
-            <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
-            <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
-          </svg></a>. This establishes a connection to the workspace.</p>
     </div>
 
     <h4 class="center">Can't open the workspace?</h4>
@@ -83,8 +49,6 @@ const server = http.createServer((req, res) => {
     <!-- Provide an alternative way to open IDE, in case the browser can't show a pop-up -->
     <p class="center"><a href="javascript:;" onclick="openToolbox()"><b>Open the workspace over Toolbox</b></a></p>
     <p class="center"><a href="${process.env["CHE_DASHBOARD_URL"]}" target="_blank">Open Dashboard</a></p>
-
-    <script>initializePlatformContent();</script>
   </body>
 </html>
     `);
