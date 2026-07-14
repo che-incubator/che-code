@@ -310,6 +310,23 @@ If errors are found:
 
 **Commit (conditional):** "Fix compilation errors" (with report sub-item if unfixed errors remain)
 
+#### Lock file regeneration after Node.js version switch
+
+After `npm install` completes with the new Node.js version (which may differ from the version used during `rebase.sh`), check for uncommitted lock file changes:
+
+```bash
+git status --short -- '*.lock.json' '*package-lock.json'
+```
+
+If lock files were modified (common when Node.js major version changes, e.g. v22→v24, because npm updates `lockfileVersion` and recalculates the dependency tree), commit them:
+
+```bash
+git add code/package-lock.json code/build/package-lock.json code/remote/package-lock.json
+git commit -m "Regenerate lock files with Node.js $(node --version)"
+```
+
+This is expected — `rebase.sh` regenerates locks with whatever Node.js was active during the rebase, but the final state must reflect the version required by the new upstream (from `code/.nvmrc`).
+
 ### Step 13: Run tests (optional but recommended)
 
 ```bash
