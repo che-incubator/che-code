@@ -379,6 +379,24 @@ The process should never fully stop. All issues are either auto-fixed (with a co
 - **Phase 2:** try to fix npm install / EOVERRIDE errors automatically. If not possible, create `.rebase/<ver>/rebase-errors.md` and continue to PR creation.
 - **Phase 3:** compilation errors do not stop the process. Create a fix commit if possible, otherwise create `.rebase/<ver>/compilation-errors.md` and continue to PR creation.
 
+## Pre-rebase integrity checks
+
+### Stale elif entries (reverted changes with orphaned routing)
+
+Before running `rebase.sh`, verify that every `elif` entry in `rebase.sh` has a corresponding replace rule file AND that the Che-specific change actually exists in the working tree. A common failure mode:
+
+1. A Che-specific change is committed → an `elif` entry + replace rule is added
+2. The change is later **reverted** (e.g. feature removed)
+3. The replace rule file is deleted (or never created), but the `elif` entry in `rebase.sh` is forgotten
+
+**Detection:** For each `elif` entry that calls `apply_changes_multi_line "$file"`:
+- Check if `.rebase/replace/<file>.json` exists → if not, it's an orphan
+- If the rule file exists, check if the `by` content is actually different from what upstream provides → if the file in the working tree matches the previous upstream exactly (no Che-specific diff), the elif is stale
+
+**Fix:** Remove the stale `elif` entry from `rebase.sh`. The file will then fall through to the smart fallback (else branch) which safely takes the upstream version.
+
+**Automation opportunity:** Add a pre-rebase check that iterates all elif entries and verifies the corresponding rule file exists. Flag entries without rules as errors.
+
 ## Troubleshooting
 
 ### Rules keep failing after fixes
