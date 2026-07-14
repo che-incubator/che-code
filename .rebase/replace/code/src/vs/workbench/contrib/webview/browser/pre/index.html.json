@@ -1,6 +1,6 @@
 [
 	{
-		"from": "\t\tcontent=\"default-src 'none'; script-src 'sha256-TaWGDzV7c9rUH2q/5ygOyYUHSyHIqBMYfucPh3lnKvU=' 'self'; frame-src 'self'; style-src 'unsafe-inline';\"",
+		"from": "\t\tcontent=\"default-src 'none'; script-src 'sha256-nXjtuhBilO++r8hfxl5VjEScSmdm07wDAk6jw228DgM=' 'self'; frame-src 'self'; style-src 'unsafe-inline';\"",
 		"by": "\t\tcontent=\"default-src 'none'; script-src 'unsafe-inline' 'self'; frame-src 'self'; style-src 'unsafe-inline';\""
 	},
 	{
@@ -12,7 +12,7 @@
 		"by": "const swPath = encodeURI(`service-worker.js?v=${expectedWorkerVersion}&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&id=${ID}&remoteAuthority=${searchParams.get('remoteAuthority') ?? ''}`);"
 	},
 	{
-		"from": "navigator.serviceWorker.register(swPath, { type: 'module' })",
+		"from": "navigator.serviceWorker.register(swPath, { type: 'module', updateViaCache: 'none' })",
 		"by": "navigator.serviceWorker.register(swPath)"
 	}
 ]

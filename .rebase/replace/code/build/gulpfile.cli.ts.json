@@ -1,7 +1,11 @@
 [
     {
-        "from": "import { debounce, untar } from './lib/util.ts';\nimport { createReporter } from './lib/reporter.ts';\nimport gunzip from 'gulp-gunzip';",
-        "by": "import { debounce } from './lib/util.ts';\nimport { createReporter } from './lib/reporter.ts';\nimport decompress from 'gulp-decompress';"
+        "from": "import { gulp, gunzip } from './lib/gulp/facade.ts';",
+        "by": "import { gulp } from './lib/gulp/facade.ts';\nimport decompress from 'gulp-decompress';"
+    },
+    {
+        "from": "import { debounce, untar } from './lib/util.ts';",
+        "by": "import { debounce } from './lib/util.ts';"
     },
     {
         "from": ".pipe(gunzip())\n\t\t.pipe(untar())",
