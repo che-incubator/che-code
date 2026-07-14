@@ -1,4 +1,4 @@
-/*! @license DOMPurify 3.4.2 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.4.2/LICENSE */
+/*! @license DOMPurify 3.2.7 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.2.7/LICENSE */
 
 import type { TrustedTypePolicy, TrustedHTML, TrustedTypesWindow } from 'trusted-types/lib/index.d.ts';
 
@@ -8,20 +8,16 @@ import type { TrustedTypePolicy, TrustedHTML, TrustedTypesWindow } from 'trusted
 interface Config {
 	/**
 	 * Extend the existing array of allowed attributes.
-	 * Can be an array of attribute names, or a function that receives
-	 * the attribute name and tag name to determine if the attribute is allowed.
 	 */
-	ADD_ATTR?: string[] | ((attributeName: string, tagName: string) => boolean) | undefined;
+	ADD_ATTR?: string[] | undefined;
 	/**
 	 * Extend the existing array of elements that can use Data URIs.
 	 */
 	ADD_DATA_URI_TAGS?: string[] | undefined;
 	/**
 	 * Extend the existing array of allowed tags.
-	 * Can be an array of tag names, or a function that receives
-	 * the tag name to determine if the tag is allowed.
 	 */
-	ADD_TAGS?: string[] | ((tagName: string) => boolean) | undefined;
+	ADD_TAGS?: string[] | undefined;
 	/**
 	 * Extend the existing array of elements that are safe for URI-like values (be careful, XSS risk).
 	 */
@@ -94,10 +90,6 @@ interface Config {
 	 * Add child elements to be removed when their parent is removed.
 	 */
 	FORBID_CONTENTS?: string[] | undefined;
-	/**
-	 * Extend the existing or default array of forbidden content elements.
-	 */
-	ADD_FORBID_CONTENTS?: string[] | undefined;
 	/**
 	 * Add elements to block-list.
 	 */
@@ -203,7 +195,7 @@ interface UseProfilesConfig {
 	 */
 	svg?: boolean | undefined;
 	/**
-	 * Allow all safe SVG Filters.
+	 * Allow all save SVG Filters.
 	 */
 	svgFilters?: boolean | undefined;
 	/**
