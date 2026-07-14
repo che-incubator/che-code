@@ -168,6 +168,12 @@ resolve_package_lock() {
   dir=$(dirname "$lockFile")
 
   echo "  ⚙️ reworking $lockFile..."
+  local upstream_lock_path="${lockFile#code/}"
+  if ! git show "upstream-code/${CURRENT_UPSTREAM_VERSION}:${upstream_lock_path}" > /dev/null 2>&1; then
+    echo "    (lock file deleted in upstream, removing)"
+    git rm "$lockFile" > /dev/null 2>&1
+    return
+  fi
   git checkout --theirs "$lockFile" > /dev/null 2>&1
   npm install --ignore-scripts --prefix "$dir"
   git add "$lockFile" > /dev/null 2>&1
