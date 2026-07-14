@@ -296,10 +296,10 @@ This is mandatory — upstream's `preinstall.ts` enforces the `.nvmrc` version a
 ```bash
 cd code
 npm install
-npm run watch
+node --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js compile-build-without-mangling
 ```
 
-Wait for compilation to complete. Check for TypeScript errors.
+Always use `compile-build-without-mangling` (~2-3 min). Do NOT use the full build with mangling (`vscode-reh-web-linux-x64`) — it takes ~40 min and the mangler may break upstream mixin patterns that are unrelated to Che changes. The mangled production build is done separately in CI.
 
 **CRITICAL — Do NOT edit vanilla VS Code files.** If a compilation error occurs in a file that is NOT Che-specific (i.e. it exists identically in upstream VS Code), do NOT fix it by modifying that file. Upstream VS Code compiles successfully, so the error indicates a deeper root cause — typically a Che-specific dependency version pin (in `.rebase/add/` or `.rebase/override/`) that conflicts with what upstream expects, or a Che rebase rule that incorrectly strips a needed import/type. Investigate why the error occurs only in our build before changing any code.
 
