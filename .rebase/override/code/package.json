@@ -2,15 +2,12 @@
     "name": "che-code",
     "bin": "out/vs/server/main.js",
     "dependencies": {
-      "ws": "^8.21.0",
-      "undici": "^7.28.0"
+      "ws": "^8.21.0"
     },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
       "@vscode/test-cli": "^0.0.12",
-      "@vscode/test-web": "^0.0.77",
-      "eslint": "^9.39.3",
-      "tar": "^7.5.11"
+      "eslint": "^9.39.3"
     },
     "overrides": {
       "chrome-remote-interface": {
