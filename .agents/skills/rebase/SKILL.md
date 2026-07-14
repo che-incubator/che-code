@@ -221,6 +221,15 @@ git checkout -- .   # discard any leftover modifications
 
 `rebase.sh` performs a `git merge` internally (subtree merge). If it fails mid-merge (e.g. a rule application error), the merge stays in progress and all upstream changes remain staged/modified. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
 
+**Switch to the required Node.js version:** `rebase.sh` runs `npm install` internally to regenerate lock files. It must use the same Node.js (and npm) version that upstream uses, otherwise lock files will be regenerated in a different format (e.g. npm 10 vs npm 11) and require a separate fixup commit later.
+
+```bash
+nvm install $(cat code/.nvmrc)
+nvm use $(cat code/.nvmrc)
+```
+
+The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128). Check `code/.nvmrc` after fetching the new upstream in Step 2.
+
 **Run:**
 
 ```bash
@@ -282,14 +291,7 @@ GIT_EDITOR=: git merge --continue
 
 ### Step 12: Build check
 
-**Switch to the required Node.js version:** Before running any npm commands, switch to the Node.js version specified in `code/.nvmrc`:
-
-```bash
-nvm install $(cat code/.nvmrc)
-nvm use $(cat code/.nvmrc)
-```
-
-This is mandatory — upstream's `preinstall.ts` enforces the `.nvmrc` version and `npm install` will fail immediately if the wrong major version is active. The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128).
+Verify that the correct Node.js version (from Step 9) is still active — `node --version` must match `code/.nvmrc`. Upstream's `preinstall.ts` enforces this and `npm install` will fail immediately otherwise.
 
 **Compilation check:**
 
@@ -309,23 +311,6 @@ If errors are found:
 - **Do NOT block** — continue to PR creation regardless
 
 **Commit (conditional):** "Fix compilation errors" (with report sub-item if unfixed errors remain)
-
-#### Lock file regeneration after Node.js version switch
-
-After `npm install` completes with the new Node.js version (which may differ from the version used during `rebase.sh`), check for uncommitted lock file changes:
-
-```bash
-git status --short -- '*.lock.json' '*package-lock.json'
-```
-
-If lock files were modified (common when Node.js major version changes, e.g. v22→v24, because npm updates `lockfileVersion` and recalculates the dependency tree), commit them:
-
-```bash
-git add code/package-lock.json code/build/package-lock.json code/remote/package-lock.json
-git commit -m "Regenerate lock files with Node.js $(node --version)"
-```
-
-This is expected — `rebase.sh` regenerates locks with whatever Node.js was active during the rebase, but the final state must reflect the version required by the new upstream (from `code/.nvmrc`).
 
 ### Step 13: Run tests (optional but recommended)
 
