@@ -182,15 +182,23 @@ Common issues:
 
 If a fix fails for a file: same logic as Step 4 — if the file conflicts in the rebase, stop; if not, log as ERROR and continue.
 
-### Step 8: Test the fixed rules
+### Step 8: Re-validate and test the fixed rules
 
-Run the `test-rebase-rules` skill (or directly):
+After fixing stale rules, **always re-run full validation** to confirm no rules were broken:
+
+1. **Re-validate all `from` values** against the new upstream (quick check — iterate all rule files, verify each `from` is found in the corresponding upstream file). This catches typos, missed fixes, or side-effects of multi-rule files where fixing one rule may invalidate another.
+
+2. **Verify elif integrity** — every `elif` entry that calls `apply_changes*` must have a corresponding `.rebase/replace/<path>.json` file on disk. Flag orphan entries (e.g. from reverted features where the elif was left behind).
+
+3. **Run rule tests** (optional, provides deeper validation):
 
 ```bash
 bash .claude/skills/test-rebase-rules/run-all-tests.sh
 ```
 
 All tests must pass (or show only cosmetic warnings) before proceeding. If a test fails, re-fix the rule and re-test (retry loop). If repeated attempts fail, apply the same conflict/no-conflict logic from Steps 4 and 7.
+
+**Important:** Do NOT skip step 1 — it is a fast (< 5s) sanity check that catches the most common post-fix regressions. The full test suite (step 3) is slower and may show expected differences when comparing against the current working tree (which is still based on the previous upstream).
 
 **Commit (conditional, covers Steps 5-8):** "Fix and update rebase rules"
 
