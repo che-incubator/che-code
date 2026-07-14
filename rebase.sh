@@ -454,7 +454,11 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.vscode.web.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminal.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/helpers/browser-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -485,6 +489,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
