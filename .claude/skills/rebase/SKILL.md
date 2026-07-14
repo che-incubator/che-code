@@ -404,6 +404,39 @@ Jumping many releases at once (e.g. 1.108 → 1.120) will likely produce many st
 1. Breaking it into smaller incremental rebases
 2. Or accepting that Phase 1 will take longer to fix all rules
 
+### Superseded CVE fixes (revert before rebase)
+
+When `pre-rebase.sh` reports a file as NEEDS_RULE but the che-specific change is a **version bump or vendored library update** (typically a CVE fix), check if upstream already has an equal or newer version at the target release:
+
+```bash
+git show upstream-code/<target-version>:<path-without-code-prefix> | head -1
+```
+
+**If upstream has a newer version:** the che-specific fix is obsolete. Instead of creating a rebase rule:
+
+1. Find the original PR that introduced the fix: `git log --oneline -- <file>`
+2. Revert the merge commit: `git revert -m 1 <merge-commit-sha> --no-edit`
+3. If there are conflicts (common when later PRs touched the same files), resolve them:
+   - For the reverted file: take the pre-PR state
+   - For unrelated changes in the same file (from later PRs): keep them
+4. **Verify** each reverted change against the new upstream to confirm it's truly superseded
+5. Also check and remove associated rebase rules (`.rebase/override/`, `.rebase/replace/`, elif entries in `rebase.sh`)
+
+**Why revert instead of manual removal:**
+- Atomic — doesn't miss any file changed by the original PR
+- Auditable — clear `git log` history showing what was reverted and why
+- Less error-prone — manual removal risks missing CHANGELOG entries, package-lock changes, etc.
+
+**Trade-off:** `git revert` may produce conflicts if other PRs modified the same files after the CVE fix. These conflicts are usually straightforward to resolve (keep changes from later PRs, only revert the CVE-specific lines).
+
+**Real example (1.116 → 1.128):** PR #705 bumped vendored DOMPurify from 3.2.7 to 3.4.2 for CVE-2026-41240. Upstream 1.128 already has DOMPurify 3.4.8. The revert removed: 2 override rules, 1 replace rule, 2 handler functions + 3 elif entries in rebase.sh, 5 code files restored, 1 CHANGELOG entry.
+
+### Upstream-superseded changes detection (automation gap)
+
+`pre-rebase.sh` currently compares che-code files against `PREVIOUS_UPSTREAM_VERSION` to detect che-specific changes. It does NOT compare against the TARGET upstream. This means it may report NEEDS_RULE for files where our change is already superseded by the target upstream.
+
+**Future improvement:** after classifying a file as NEEDS_RULE, also compare our version against the TARGET upstream. If the target upstream has a newer/better version of the same change, reclassify as SUPERSEDED (safe to revert/take upstream).
+
 ### New che-specific files or extensions
 
 If a new che-specific extension is added under `code/extensions/che-*`, it does NOT need rebase rules (those directories are not affected by `git checkout --theirs`).
