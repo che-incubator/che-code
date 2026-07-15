@@ -373,6 +373,17 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commits get a checkbox. Conditional commits only appear if created. Reports are nested sub-items.
 
+**Formatting rules for commit hashes:**
+- If a step has exactly ONE commit: put the hash inline (e.g. `- [x] Rebase against upstream: b2569ad`)
+- If a step has MULTIPLE commits: list each as a sub-item with commit message and hash:
+  ```
+  - [x] Fix and update rebase rules:
+      - Fix 9 stale rebase rules for upstream 1.128: 4514fb4
+      - Remove stale elif for chatSetupController.ts: 5a191ad
+  ```
+- Steps that were not performed (no commit created) are omitted entirely
+- Additional steps not in the standard list (e.g. "Revert superseded CVE fix", "Regenerate lock files") are added as separate checklist items in chronological order among the standard steps
+
 ```markdown
 ### What does this PR do?
 
@@ -385,9 +396,9 @@ Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commi
 - [x] Create rebase rules for uncovered files: <commit-hash>
 - [x] Fix and update rebase rules: <commit-hash>
 - [x] Rebase against upstream: <commit-hash>
-- [ ] Fix rebase errors: <commit-hash>
+- [x] Fix rebase errors: <commit-hash>
     - [Rebase-errors-report](.rebase/<ver>/rebase-errors.md)
-- [ ] Fix compilation errors: <commit-hash>
+- [x] Fix compilation errors: <commit-hash>
     - [Compilation-errors-report](.rebase/<ver>/compilation-errors.md)
 - [x] Update artifacts lock: <commit-hash>
 
