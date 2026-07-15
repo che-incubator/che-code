@@ -339,11 +339,68 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 **Commit:** "Update artifacts lock" — containing only `build/artifacts/artifacts.lock.yaml` (and any lock files that change as a side effect, like `code/test/mcp/package-lock.json`). Do not mix with other changes.
 
+### Step 16: Update Dockerfile images to match Node.js version
+
+The Dockerfiles in `build/dockerfiles/` use base images that bundle Node.js. After a rebase that changes the required Node.js version (check `code/remote/.npmrc` → `target` field and `code/.nvmrc`), the images must be updated to match.
+
+**Why this matters:** The build copies `node` binary from the image and caches it at the path matching the `.npmrc` target version. A major version mismatch (e.g. nodejs-22 image but target 24.17.0) will cause the shipped binary to have incorrect ABI/API surface.
+
+**How to find the required Node.js version:**
+
+```bash
+grep target code/remote/.npmrc | cut -d '=' -f 2 | tr -d '"'
+# e.g. "24.17.0" → major version is 24
+```
+
+**How to find the latest image tags:**
+
+Use `skopeo` (must be installed locally) to query the registries:
+
+```bash
+# UBI9 full image
+skopeo list-tags docker://registry.access.redhat.com/ubi9/nodejs-<MAJOR> \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# UBI8 full image
+skopeo list-tags docker://registry.access.redhat.com/ubi8/nodejs-<MAJOR> \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# UBI9 minimal image
+skopeo list-tags docker://registry.access.redhat.com/ubi9/nodejs-<MAJOR>-minimal \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# Docker Hub Alpine image
+skopeo list-tags docker://docker.io/library/node \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if t.startswith('<MAJOR>.') and 'alpine' in t]; tags.sort(); print('\n'.join(tags[-10:]))"
+```
+
+Pick the latest non-source tag for each image. For Red Hat images, prefer tags with the highest build number (e.g. `9.8-1784075995` > `9.8-1783399045`). For Alpine, follow the existing pattern: `<major>-alpine<alpine_version>` (e.g. `24-alpine3.24`).
+
+**Files to update (5 Dockerfiles):**
+
+| File | Image pattern | Example |
+|------|--------------|---------|
+| `build/dockerfiles/linux-musl.Dockerfile` | `docker.io/node:<MAJOR>-alpine<VER>` | `node:24-alpine3.24` |
+| `build/dockerfiles/linux-libc-ubi8.Dockerfile` | `registry.access.redhat.com/ubi8/nodejs-<MAJOR>:<tag>` | `ubi8/nodejs-24:1-1784092369` |
+| `build/dockerfiles/linux-libc-ubi9.Dockerfile` | `registry.access.redhat.com/ubi9/nodejs-<MAJOR>:<tag>` | `ubi9/nodejs-24:9.8-1784075995` |
+| `build/dockerfiles/assembly.sshd.Dockerfile` | `registry.access.redhat.com/ubi9/nodejs-<MAJOR>-minimal:<tag>` | `ubi9/nodejs-24-minimal:9.8-1783399045` |
+| `build/dockerfiles/dev.Dockerfile` | `ENV NODEJS_VERSION=<full-version>` | `NODEJS_VERSION=24.17.0` |
+
+**Additional checks:**
+- Update the comment above each `FROM` line (e.g. `# https://registry.access.redhat.com/ubi9/nodejs-24`)
+- In `dev.Dockerfile`: if Node.js major version changed, check if the global `npm` install is still needed (Node.js 24+ ships with npm 11 natively — remove explicit npm global install if present)
+- The `CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'` in `linux-musl.Dockerfile` is for Node-API experimental features — keep it regardless of Node.js version
+
+**Commit:** "Update Dockerfile images to Node.js <MAJOR>" — containing all 5 Dockerfile changes.
+
 ## Phase 4 — Create Pull Request
 
 **MANDATORY: Re-read this entire Phase 4 section NOW before executing any step.** Do NOT compose the PR title or body from memory — follow the template below literally, substituting only the placeholder values. This phase has a strict format that must be followed exactly.
 
-### Step 16: Create Pull Request
+### Step 17: Create Pull Request
 
 1. Read `.claude/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
 2. Read `code/package.json` to get the `version` field (e.g. `1.120.0`)
@@ -401,6 +458,7 @@ Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commi
 - [x] Fix compilation errors: <commit-hash>
     - [Compilation-errors-report](.rebase/<ver>/compilation-errors.md)
 - [x] Update artifacts lock: <commit-hash>
+- [x] Update Dockerfile images to Node.js <MAJOR>: <commit-hash>
 
 ### What issues does this PR fix?
 
