@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\t\t} else {\n\t\t\tconst copilotShellScript = `#!/bin/sh\nunset NODE_OPTIONS\nELECTRON_RUN_AS_NODE=1 \"${process.execPath}\" \"${path.join(storageLocation, COPILOT_CLI_SHIM_JS)}\" \"$@\"`;",
+    "by": "\t\t} else {\n\t\t\tconst copilotShellScript = `#!/bin/sh\nunset NODE_OPTIONS\nNODE_DIR=$(dirname \"${process.execPath}\")\nif [ -d \"$NODE_DIR/ld_libs/core\" ]; then\n  LD_LIBRARY_PATH=\"$NODE_DIR/ld_libs/core\\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\n  if [ -d \"$NODE_DIR/ld_libs/openssl\" ]; then\n    LD_LIBRARY_PATH=\"$NODE_DIR/ld_libs/openssl:$LD_LIBRARY_PATH\"\n  fi\nelif [ -d \"$NODE_DIR/ld_libs\" ]; then\n  LD_LIBRARY_PATH=\"$NODE_DIR/ld_libs\\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\"\nfi\nexport LD_LIBRARY_PATH\nELECTRON_RUN_AS_NODE=1 \"${process.execPath}\" \"${path.join(storageLocation, COPILOT_CLI_SHIM_JS)}\" \"$@\"`;"
+  }
+]

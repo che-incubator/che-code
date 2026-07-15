@@ -1,0 +1,5 @@
+{
+    "overrides": {
+        "ip-address": "^10.2.0"
+    }
+}

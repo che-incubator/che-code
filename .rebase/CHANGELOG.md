@@ -3,6 +3,82 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/750
+
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+---
+
+https://github.com/che-incubator/che-code/pull/745
+
+- code/package.json
+- code/build/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/css-language-features/package.json
+- code/extensions/html-language-features/package.json
+- code/extensions/json-language-features/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/744
+
+- code/package.json
+- code/build/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/github-authentication/package.json
+- code/extensions/microsoft-authentication/package.json
+- code/test/mcp/package.json
+- code/test/smoke/package.json
+---
+
+#### @rnikitenko
+https://github.com/che-incubator/che-code/pull/735
+
+- code/extensions/copilot/.esbuild.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/736
+
+- code/extensions/git/src/askpass.sh
+- code/extensions/git/src/ssh-askpass.sh
+- code/extensions/git/src/git-editor.sh
+- code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts
+- code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/739
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/728
+
+- code/package.json
+- code/remote/package.json
+- code/build/rspack/package.json
+- code/extensions/copilot/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/717
+
+- code/build/package.json
+- code/test/mcp/package.json
+- code/package.json
+- code/extensions/copilot/package.json
+- code/build/rspack/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/720
 
 - code/package.json
@@ -13,6 +89,16 @@ https://github.com/che-incubator/che-code/pull/720
 - code/extensions/copilot/package.json
 - code/extensions/copilot/chat-lib/package.json
 - code/remote/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/722
+
+- code/package.json
+- code/remote/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/copilot/package.json
+- code/test/mcp/package.json
 ---
 
 #### @sbouchet
@@ -32,12 +118,14 @@ https://github.com/che-incubator/che-code/pull/705
 - code/src/vs/base/browser/dompurify/cgmanifest.json
 - code/src/vs/base/browser/dompurify/dompurify.d.ts
 - code/src/vs/base/browser/dompurify/dompurify.js
+---
 
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/711
 
 - code/package.json
 - code/remote/package.json
+---
 
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/708

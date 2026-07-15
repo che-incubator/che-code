@@ -6285,7 +6285,7 @@
 		"@typescript-eslint/eslint-plugin": "^8.35.0",
 		"@typescript-eslint/parser": "^8.32.0",
 		"@typescript-eslint/typescript-estree": "^8.26.1",
-		"@vitest/coverage-v8": "^3.2.4",
+		"@vitest/coverage-v8": "^3.2.6",
 		"@vitest/snapshot": "^1.5.0",
 		"@vscode/debugadapter": "^1.68.0",
 		"@vscode/debugprotocol": "^1.68.0",
@@ -6340,7 +6340,7 @@
 		"typescript-formatter": "github:jrieken/typescript-formatter#497efb26bc40b5fa59a350e6eab17bce650a7e4b",
 		"vite-plugin-top-level-await": "^1.5.0",
 		"vite-plugin-wasm": "^3.5.0",
-		"vitest": "^3.0.5",
+		"vitest": "^3.2.6",
 		"vscode-languageserver-protocol": "^3.17.5",
 		"vscode-languageserver-textdocument": "^1.0.12",
 		"vscode-languageserver-types": "^3.17.5",
@@ -6390,7 +6390,7 @@
 		"lru-cache": "^11.1.0",
 		"markdown-it": "^14.1.1",
 		"minimatch": "^10.2.1",
-		"undici": "^7.24.1",
+		"undici": "^7.28.0",
 		"vscode-tas-client": "^0.1.84",
 		"web-tree-sitter": "^0.23.0"
 	},
@@ -6399,7 +6399,18 @@
 		"string_decoder": "npm:string_decoder@1.2.0",
 		"node-gyp": "npm:node-gyp@10.3.1",
 		"zod": "3.25.76",
-		"shell-quote": "^1.8.4"
+		"shell-quote": "^1.8.4",
+		"qs": "6.15.2",
+		"ip-address": "^10.2.0",
+		"ws": "^8.21.0",
+		"webdriver": {
+			"undici@6": "^6.27.0"
+		},
+		"brace-expansion@5": "5.0.7",
+		"form-data@4": "^4.0.6",
+		"@vscode/vsce": {
+			"form-data": "^4.0.6"
+		}
 	},
 	"vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",
 	"__metadata": {
