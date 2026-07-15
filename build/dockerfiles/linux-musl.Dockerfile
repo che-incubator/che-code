@@ -54,20 +54,20 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
-# Grab dependencies (and force to rebuild them)
-RUN rm -rf /checode-compilation/node_modules && npm install --force
-
-# Rebuild platform specific dependencies
-RUN npm rebuild
-
 # @vscode/vsce-sign has no binary for ppc64le/s390x and its postinstall exits with code 1.
 # Disable the postinstall on unsupported architectures — the module is never included in the
 # final runtime bundle, so this has no effect on the running product.
 # hadolint ignore=SC3014
 RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
       sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
-        /checode-compilation/package-lock.json; \
+        /checode-compilation/build/package-lock.json; \
     fi
+
+# Grab dependencies (and force to rebuild them)
+RUN rm -rf /checode-compilation/node_modules && npm install --force
+
+# Rebuild platform specific dependencies
+RUN npm rebuild
 
 # Cache node binary with architecture-specific path
 RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
