@@ -60,7 +60,8 @@ RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-m
 # hadolint ignore=SC3014
 RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
       sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
-        /checode-compilation/build/package-lock.json; \
+        build/package-lock.json \
+        extensions/copilot/package-lock.json; \
     fi
 
 # Grab dependencies (and force to rebuild them)
