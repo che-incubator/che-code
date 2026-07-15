@@ -38,7 +38,7 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV VSCODE_SKIP_HEADER_INSTALL=1
 
 # workaround for https://github.com/nodejs/node/issues/52229
-ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
+ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT -include cstddef'
 
 # Initialize a git repository for code build tools
 RUN git init .
