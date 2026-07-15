@@ -341,6 +341,8 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 ## Phase 4 — Create Pull Request
 
+**MANDATORY: Re-read this entire Phase 4 section NOW before executing any step.** Do NOT compose the PR title or body from memory — follow the template below literally, substituting only the placeholder values. This phase has a strict format that must be followed exactly.
+
 ### Step 16: Create Pull Request
 
 1. Read `.claude/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
@@ -419,6 +421,19 @@ Example row:
 ```
 | quay.io/devfile/universal-developer-image:ubi8-latest | | [click here](<url>) |
 ```
+
+### Post-creation verification checklist
+
+After creating and updating the PR, verify ALL of the following. If any check fails, fix the PR body immediately with `gh pr edit`:
+
+- [ ] Title matches format: `Alignment with <version> version of VS Code` (version from `code/package.json`, e.g. `1.128.0`)
+- [ ] PR is created as **draft** (`--draft` flag)
+- [ ] "What does this PR do?" section contains **every step with its commit hash** (not a free-form description)
+- [ ] Each conditional step (Fix rebase errors, Fix compilation errors) is included ONLY if that commit was created
+- [ ] Report links (Pre-rebase-report, Dependency-audit-report) point to actual files in `.rebase/<ver>/`
+- [ ] Test table uses the exact `editor_image_base` from `rebase-config.yaml` with `:pr-<PR_NUMBER>-amd64` suffix
+- [ ] Test table has columns: `| Image | Status | Link |`
+- [ ] No extra sections added beyond the template (no "Notable changes", no "Summary", etc.)
 
 ## Stop Point Policy
 
