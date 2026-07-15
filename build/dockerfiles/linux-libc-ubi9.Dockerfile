@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1776735844 as linux-libc-ubi9-builder
+# https://registry.access.redhat.com/ubi9/nodejs-24
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1784075995 as linux-libc-ubi9-builder
 
 USER root
 
