@@ -121,9 +121,12 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
       && yum install -y chromium \
-      && PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) \
-      && rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" \
-      && ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"; \
+      && PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/chrome-linux64) \
+      && PLAYWRIGHT_HEADLESS_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64) \
+      && rm -f "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" \
+      && ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" \
+      && rm -f "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" \
+      && ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell"; \
     fi
 
 # use of retry and timeout

@@ -100,12 +100,15 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
       npm run playwright-install; \
     fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux) && \
+      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/chrome-linux64) && \
+      PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64) && \
+      echo "Found chromium path: $PLAYWRIGHT_CHROMIUM_PATH" && \
       echo "Found headless_shell path: $PLAYWRIGHT_HEADLESS_PATH" && \
-      rm -f "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/chrome" && \
-      ls -la "$PLAYWRIGHT_HEADLESS_PATH"; \
+      rm -f "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      rm -f "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" && \
+      ls -la "${PLAYWRIGHT_CHROMIUM_PATH}" "${PLAYWRIGHT_HEADLESS_PATH}"; \
     fi
 
 # Run integration tests (Browser)
