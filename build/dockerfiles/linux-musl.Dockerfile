@@ -38,7 +38,12 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV VSCODE_SKIP_HEADER_INSTALL=1
 
 # workaround for https://github.com/nodejs/node/issues/52229
-ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT -include cstddef -Dnullptr_t=std::nullptr_t'
+# GCC 15 in Alpine 3.24 requires nullptr_t to be explicitly declared;
+# Node.js v24's V8 headers use bare nullptr_t without std:: qualification.
+# A macro-based fix (-Dnullptr_t=...) breaks std::nullptr_t via recursive substitution,
+# so we create a header that uses a proper using-declaration instead.
+RUN printf '#include <cstddef>\nusing nullptr_t = std::nullptr_t;\n' > /usr/local/include/fix_nullptr.h
+ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT -include /usr/local/include/fix_nullptr.h'
 
 # Initialize a git repository for code build tools
 RUN git init .
