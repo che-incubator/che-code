@@ -65,7 +65,10 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     # workaround to fix build
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
+RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build
+RUN npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck
+RUN NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min
+RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min-ci
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
 # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
