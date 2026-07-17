@@ -86,6 +86,8 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
+    # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
+    && find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k -exec gzip -9 -k {} \; \
     # cache shared libs from this image to provide them to a user's container
     && mkdir -p /checode/ld_libs \
     && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
