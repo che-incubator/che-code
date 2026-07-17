@@ -69,8 +69,34 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
+# @vscode/vsce-sign has no binary for ppc64le/s390x and its postinstall
+# exits with code 1. Disable it in package-lock.json before npm install.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
+        build/package-lock.json \
+        extensions/copilot/package-lock.json; \
+    fi
+
+# gyp_main.py on UBI8 is not executable AND has wrong shebang
+# (python3.8 does not exist - only python3.9/3.12 available). Fix both.
+RUN chmod +x /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+    && sed -i '1s|^#!.*python.*|#!/usr/bin/python3|' \
+         /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py
+
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
+
+# tsgo has no native binary for ppc64le/s390x - replace with a no-op.
+# Must run AFTER npm install so node_modules/.bin/tsgo exists.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      find . -path "*/node_modules/.bin/tsgo" | while read f; do \
+        echo '#!/bin/sh' > "$f"; \
+        echo 'exit 0' >> "$f"; \
+        chmod +x "$f"; \
+      done; \
+    fi
 
 # Compile
 RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \

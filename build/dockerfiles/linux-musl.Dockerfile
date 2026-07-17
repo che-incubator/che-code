@@ -67,8 +67,27 @@ RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
 
+# Disable @vscode/vsce-sign postinstall in installed node_modules for unsupported architectures.
+# npm install unpacks the package fresh, so the patch must be applied after install and before rebuild.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      find . -path "*/node_modules/@vscode/vsce-sign/package.json" -exec \
+        sed -i 's/"postinstall": "node \.\/src\/postinstall\.js"/"postinstall": "echo skipped"/' {} +; \
+    fi
+
 # Rebuild platform specific dependencies
 RUN npm rebuild
+
+# tsgo has no native binary for ppc64le/s390x - replace it with a no-op so
+# type-check steps (noEmit only) are skipped gracefully during the build.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      find . -path "*/node_modules/.bin/tsgo" | while read f; do \
+        echo '#!/bin/sh' > "$f"; \
+        echo 'exit 0' >> "$f"; \
+        chmod +x "$f"; \
+      done; \
+    fi
 
 # Cache node binary with architecture-specific path
 RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
