@@ -5,7 +5,7 @@
 
 import { createReadStream, promises } from 'fs';
 import * as http from 'http';
-import { getCheRedirectLocation } from './che/webClientServer.js';
+import { getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';
 import * as url from 'url';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
@@ -73,6 +73,11 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
+
+		// Try to serve a pre-compressed .gz version (Che-specific optimization)
+		if (await tryServeCompressedFile(filePath, responseHeaders['Content-Type'], stat.size, req, res, responseHeaders)) {
+			return;
+		}
 
 		// Create the stream first and wait for it to open before sending
 		// headers so that errors (e.g. ENOENT race) can still produce a
