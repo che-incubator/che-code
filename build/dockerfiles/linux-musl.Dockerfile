@@ -63,6 +63,9 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
 RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
+# Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
+RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k -exec gzip -9 -k {} \;
+
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
 
