@@ -96,7 +96,7 @@ import { ISecretStorageService } from '../../platform/secrets/common/secrets.js'
 import { TunnelSource } from '../services/remote/common/tunnelModel.js';
 import { mainWindow } from '../../base/browser/window.js';
 import { INotificationService, Severity } from '../../platform/notification/common/notification.js';
-import { getPolicyService } from './che/web.js';
+import { CheKeybindingsInitializer, getPolicyService } from './che/web.js';
 import { IDefaultAccountService } from '../../platform/defaultAccount/common/defaultAccount.js';
 import { DefaultAccountService } from '../services/accounts/browser/defaultAccount.js';
 import { AccountPolicyService } from '../services/policies/common/accountPolicyService.js';
@@ -438,6 +438,9 @@ export class BrowserMain extends Disposable {
 		userDataInitializers.push(new UserDataSyncInitializer(environmentService, secretStorageService, userDataSyncStoreManagementService, fileService, userDataProfilesService, storageService, productService, requestService, logService, uriIdentityService));
 		if (environmentService.options.profile) {
 			userDataInitializers.push(new UserDataProfileInitializer(environmentService, fileService, userDataProfileService, storageService, logService, uriIdentityService, requestService));
+		}
+		if (environmentService.options.cheInitialKeybindings) {
+			userDataInitializers.push(new CheKeybindingsInitializer(environmentService.options.cheInitialKeybindings, fileService, userDataProfilesService, logService));
 		}
 		const userDataInitializationService = new UserDataInitializationService(userDataInitializers);
 		serviceCollection.set(IUserDataInitializationService, userDataInitializationService);
