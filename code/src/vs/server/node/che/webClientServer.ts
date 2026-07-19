@@ -11,8 +11,22 @@
 
 import { createReadStream } from 'fs';
 import { access, constants as fsConstants } from 'fs/promises';
+import { existsSync, readFileSync } from 'fs';
 import * as http from 'http';
 import * as url from 'url';
+
+const CHE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
+
+/**
+ * Reads keybindings.json content from the ConfigMap mount path.
+ * Returns the raw JSON string if the file exists, undefined otherwise.
+ */
+export function getCheInitialKeybindings(): string | undefined {
+    if (existsSync(CHE_CONFIG_KEYBINDINGS_PATH)) {
+        return readFileSync(CHE_CONFIG_KEYBINDINGS_PATH, 'utf-8');
+    }
+    return undefined;
+}
 
 const compressibleMimeTypes = new Set([
     'text/html', 'text/javascript', 'text/css', 'text/plain',
