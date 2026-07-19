@@ -560,3 +560,11 @@ https://github.com/che-incubator/che-code/pull/695
 
 - code/build/npm/preinstall.ts
 ---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/754
+
+- code/src/vs/server/node/webClientServer.ts
+- code/src/vs/workbench/browser/web.api.ts
+- code/src/vs/workbench/browser/web.main.ts
+---

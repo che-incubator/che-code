@@ -1,10 +1,14 @@
 [
     {
         "from": "import type * as http from 'http';",
-        "by": "import * as http from 'http';\nimport { getCheRedirectLocation } from './che/webClientServer.js';"
+        "by": "import * as http from 'http';\nimport { getCheInitialKeybindings, getCheRedirectLocation } from './che/webClientServer.js';"
     },
     {
         "from": "\t\t\tconst newLocation = url.format({ pathname: basePath, query: newQuery });\n\t\t\tresponseHeaders['Location'] = newLocation;",
         "by": "\t\t\tresponseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
+    },
+    {
+        "from": "callbackRoute: callbackRoute\n\t\t};",
+        "by": "callbackRoute: callbackRoute,\n\t\t\tcheInitialKeybindings: getCheInitialKeybindings(),\n\t\t};"
     }
 ]
