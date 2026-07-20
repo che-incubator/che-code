@@ -10,6 +10,7 @@
 /* eslint-disable header/header */
 
 import { VSBuffer } from '../../../base/common/buffer.js';
+import * as json from '../../../base/common/json.js';
 import { IFileService } from '../../../platform/files/common/files.js';
 import { ILogService } from '../../../platform/log/common/log.js';
 import { IPolicyService, NullPolicyService } from '../../../platform/policy/common/policy.js';
@@ -58,7 +59,7 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
 
         let configmapEntries: KeybindingEntry[];
         try {
-            const parsed = JSON.parse(this.initialKeybindings);
+            const parsed = json.parse(this.initialKeybindings);
             if (!Array.isArray(parsed)) {
                 this.logService.warn('[Che] ConfigMap keybindings.json is not a JSON array, skipping.');
                 return;
@@ -75,12 +76,13 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
         if (await this.fileService.exists(resource)) {
             try {
                 const content = (await this.fileService.readFile(resource)).value.toString();
-                const existing = JSON.parse(content);
+                const existing = json.parse(content);
                 if (Array.isArray(existing)) {
                     userEntries = existing.filter((e: KeybindingEntry) => e._source !== CONFIGMAP_SOURCE_MARKER);
                 }
             } catch (e) {
-                this.logService.warn('[Che] Failed to parse existing keybindings, preserving ConfigMap entries only.', e);
+                this.logService.warn('[Che] Failed to parse existing keybindings. Aborting to prevent data loss.', e);
+                return;
             }
         }
 
