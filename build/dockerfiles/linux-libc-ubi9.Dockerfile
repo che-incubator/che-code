@@ -20,6 +20,14 @@ ENV GITHUB_TOKEN=$GITHUB_TOKEN
 # For example, vscode ripgrep downloading is an example of such case.
 RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
+# UBI AppStream can temporarily omit packages on some arches (seen on aarch64).
+# Enable CentOS Stream repos so build deps resolve reliably.
+RUN ARCH=$(uname -m) \
+    && yum install -y \
+      "https://mirror.stream.centos.org/9-stream/BaseOS/${ARCH}/os/Packages/centos-gpg-keys-9.0-38.el9.noarch.rpm" \
+      "https://mirror.stream.centos.org/9-stream/BaseOS/${ARCH}/os/Packages/centos-stream-repos-9.0-38.el9.noarch.rpm" \
+    && yum -y clean all && rm -rf /var/cache/yum
+
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://mirror.stream.centos.org/9-stream/AppStream/s390x/os/Packages/libsecret-0.20.4-4.el9.s390x.rpm \
@@ -31,8 +39,8 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/libsecret-devel-0.20.4-4.el9.x86_64.rpm \
       libsecret"; \
     elif [[ $(uname -m) == "aarch64" ]]; then LIBSECRET="\
-      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm \
-      libsecret"; \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libsecret-0.20.4-4.el9.aarch64.rpm \
+      https://mirror.stream.centos.org/9-stream/AppStream/aarch64/os/Packages/libsecret-devel-0.20.4-4.el9.aarch64.rpm"; \
     else \
       LIBSECRET=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
@@ -67,6 +75,11 @@ RUN git init .
 
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
+
+# node-gyp's make generator execs gyp entrypoints via shebang; UBI npm may ship them without +x
+RUN chmod +x \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp
 
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
