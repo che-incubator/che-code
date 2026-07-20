@@ -9,7 +9,7 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { existsSync, readFileSync } from 'fs';
+import { promises as fs } from 'fs';
 import * as http from 'http';
 import * as url from 'url';
 
@@ -19,11 +19,12 @@ const CHE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
  * Reads keybindings.json content from the ConfigMap mount path.
  * Returns the raw JSON string if the file exists, undefined otherwise.
  */
-export function getCheInitialKeybindings(): string | undefined {
-    if (existsSync(CHE_CONFIG_KEYBINDINGS_PATH)) {
-        return readFileSync(CHE_CONFIG_KEYBINDINGS_PATH, 'utf-8');
+export async function getCheInitialKeybindings(): Promise<string | undefined> {
+    try {
+        return await fs.readFile(CHE_CONFIG_KEYBINDINGS_PATH, 'utf-8');
+    } catch {
+        return undefined;
     }
-    return undefined;
 }
 
 export function getCheRedirectLocation(req: http.IncomingMessage, newQuery: any): string {

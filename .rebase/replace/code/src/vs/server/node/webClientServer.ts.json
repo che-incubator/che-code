@@ -9,6 +9,6 @@
     },
     {
         "from": "callbackRoute: callbackRoute\n\t\t};",
-        "by": "callbackRoute: callbackRoute,\n\t\t\tcheInitialKeybindings: getCheInitialKeybindings(),\n\t\t};"
+        "by": "callbackRoute: callbackRoute,\n\t\t\tcheInitialKeybindings: await getCheInitialKeybindings(),\n\t\t};"
     }
 ]

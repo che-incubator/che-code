@@ -388,7 +388,7 @@ export class WebClientServer {
 			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
 			productConfiguration,
 			callbackRoute: callbackRoute,
-			cheInitialKeybindings: getCheInitialKeybindings(),
+			cheInitialKeybindings: await getCheInitialKeybindings(),
 		};
 
 		const cookies = cookie.parse(req.headers.cookie || '');
