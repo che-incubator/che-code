@@ -61,10 +61,10 @@ export async function tryServeCompressedFile(
                 responseHeaders['Vary'] = 'Accept-Encoding';
                 res.writeHead(200, responseHeaders);
                 gzStream.pipe(res);
-                res.once('close', () => gzStream.destroy());
                 gzStream.on('end', resolve);
                 gzStream.removeAllListeners('error');
-                gzStream.on('error', () => res.destroy());
+                gzStream.on('error', () => { res.destroy(); resolve(); });
+                res.once('close', () => { gzStream.destroy(); resolve(); });
             });
         });
         return true;
