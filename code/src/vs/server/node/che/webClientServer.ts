@@ -46,7 +46,7 @@ export async function tryServeCompressedFile(
     }
 
     const acceptEncoding = req.headers['accept-encoding'] || '';
-    if (!/\bgzip\b/.test(acceptEncoding)) {
+    if (!/\bgzip\b/.test(acceptEncoding) || /\bgzip\s*;\s*q=0(\.0{0,3})?\s*(?:,|$)/i.test(acceptEncoding)) {
         return false;
     }
 
