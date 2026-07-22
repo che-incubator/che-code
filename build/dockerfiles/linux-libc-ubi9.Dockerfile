@@ -115,7 +115,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then npm run playwright-install; fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       ARCH=$(uname -m) && \
       yum install --nobest -y procps \
-        https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/e/epel-release-9-10.el9.noarch.rpm \
+        https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages/e/epel-release-9-11.el9.noarch.rpm \
         https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-9.0-32.el9.noarch.rpm \
         https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-9.0-32.el9.noarch.rpm; \
     fi
