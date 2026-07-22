@@ -20,7 +20,7 @@
     "markdown-editor-package-json-check": "npm --prefix extensions/markdown-language-features run check-markdown-editor-package-json",
     "test-agent-host-e2e-coverage": "node test/integration/agentHost/coverage.ts",
     "check-cyclic-dependencies": "node build/lib/checkCyclicDependencies.ts out",
-    "preinstall": "node build/npm/preinstall.ts",
+    "preinstall": "node build/npm/preinstall.ts && node build/copy-extension-build-scripts.js",
     "postinstall": "node build/npm/postinstall.ts",
     "install-fast": "node build/npm/fast-install.ts",
     "compile": "npm-run-all2 -lp compile-client compile-copilot",
