@@ -56,12 +56,17 @@ export const enum CacheControl {
 export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void> {
 	try {
 		const stat = await promises.stat(filePath); // throws an error if file doesn't exist
+
+		// Indicate response varies by Accept-Encoding so shared caches
+		// don't serve a compressed response to clients that lack gzip support.
+		responseHeaders['Vary'] = 'Accept-Encoding';
+
 		if (cacheControl === CacheControl.ETAG) {
 
 			// Check if file modified since
 			const etag = `W/"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 			if (req.headers['if-none-match'] === etag) {
-				res.writeHead(304);
+				res.writeHead(304, responseHeaders);
 				return void res.end();
 			}
 
