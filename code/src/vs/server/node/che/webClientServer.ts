@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2021-2022 Red Hat, Inc.
+ * Copyright (c) 2021-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,8 +9,69 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
+import { createReadStream } from 'fs';
+import { access, constants as fsConstants } from 'fs/promises';
 import * as http from 'http';
 import * as url from 'url';
+
+const compressibleMimeTypes = new Set([
+    'text/html', 'text/javascript', 'text/css', 'text/plain',
+    'application/json', 'image/svg+xml',
+]);
+
+const disableCompression = process.env['CODE_DISABLE_STATIC_GZIP'] === '1';
+
+/**
+ * Attempts to serve a pre-compressed .gz version of the file.
+ * Returns true if the compressed file was served, false otherwise.
+ * Falls back gracefully: if .gz file doesn't exist or any error occurs, returns false
+ * so the caller can serve the original uncompressed file.
+ *
+ * Set CODE_DISABLE_STATIC_GZIP=1 to bypass and always serve uncompressed files.
+ */
+export async function tryServeCompressedFile(
+    filePath: string,
+    contentType: string,
+    fileSize: number,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    responseHeaders: Record<string, string>,
+): Promise<boolean> {
+    if (disableCompression) {
+        return false;
+    }
+
+    if (!compressibleMimeTypes.has(contentType) || fileSize <= 1024) {
+        return false;
+    }
+
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    if (!/\bgzip\b/.test(acceptEncoding) || /\bgzip\s*;\s*q=0(\.0{0,3})?\s*(?:,|$)/i.test(acceptEncoding)) {
+        return false;
+    }
+
+    const gzFilePath = filePath + '.gz';
+    try {
+        await access(gzFilePath, fsConstants.R_OK);
+        const gzStream = createReadStream(gzFilePath);
+        await new Promise<void>((resolve, reject) => {
+            gzStream.on('error', reject);
+            gzStream.on('open', () => {
+                responseHeaders['Content-Encoding'] = 'gzip';
+                responseHeaders['Vary'] = 'Accept-Encoding';
+                res.writeHead(200, responseHeaders);
+                gzStream.pipe(res);
+                gzStream.on('end', resolve);
+                gzStream.removeAllListeners('error');
+                gzStream.on('error', () => { res.destroy(); resolve(); });
+                res.once('close', () => { gzStream.destroy(); resolve(); });
+            });
+        });
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 export function getCheRedirectLocation(req: http.IncomingMessage, newQuery: any): string {
     let newLocation;
