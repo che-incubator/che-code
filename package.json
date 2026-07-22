@@ -3,6 +3,7 @@
   "version": "7.122.0-next",
   "description": "Run Code-OSS on kubernetes",
   "scripts": {
+    "preinstall": "cd code && node build/copy-extension-build-scripts.js",
     "prepare": "cd code && npm install && npm run download-builtin-extensions",
     "watch": "cd code && npm run watch",
     "server": "cd code && VSCODE_DEV=1 node out/server-main.js --host 0.0.0.0 --without-connection-token",
