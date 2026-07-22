@@ -5,7 +5,7 @@
 
 import { createReadStream, promises } from 'fs';
 import * as http from 'http';
-import { getCheRedirectLocation } from './che/webClientServer.js';
+import { getCheInitialKeybindings, getCheRedirectLocation } from './che/webClientServer.js';
 import * as url from 'url';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
@@ -387,7 +387,8 @@ export class WebClientServer {
 			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
 			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
 			productConfiguration,
-			callbackRoute: callbackRoute
+			callbackRoute: callbackRoute,
+			cheInitialKeybindings: await getCheInitialKeybindings(),
 		};
 
 		const cookies = cookie.parse(req.headers.cookie || '');

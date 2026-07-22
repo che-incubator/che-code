@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2021-2022 Red Hat, Inc.
+ * Copyright (c) 2021-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,8 +9,23 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
+import { promises as fs } from 'fs';
 import * as http from 'http';
 import * as url from 'url';
+
+const CHE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
+
+/**
+ * Reads keybindings.json content from the ConfigMap mount path.
+ * Returns the raw JSON string if the file exists, undefined otherwise.
+ */
+export async function getCheInitialKeybindings(): Promise<string | undefined> {
+    try {
+        return await fs.readFile(CHE_CONFIG_KEYBINDINGS_PATH, 'utf-8');
+    } catch {
+        return undefined;
+    }
+}
 
 export function getCheRedirectLocation(req: http.IncomingMessage, newQuery: any): string {
     let newLocation;
