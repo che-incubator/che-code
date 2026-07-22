@@ -21,6 +21,7 @@ export interface Devfile {
 
 export interface Project {
   name: string;
+  clonePath?: string;
   git: Git;
 }
 
