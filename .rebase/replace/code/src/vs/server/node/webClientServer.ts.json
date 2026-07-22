@@ -1,7 +1,15 @@
 [
     {
         "from": "import type * as http from 'http';",
-        "by": "import * as http from 'http';\nimport { getCheRedirectLocation } from './che/webClientServer.js';"
+        "by": "import * as http from 'http';\nimport { getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';"
+    },
+    {
+        "from": "\t\tconst stat = await promises.stat(filePath); // throws an error if file doesn't exist\n\t\tif (cacheControl === CacheControl.ETAG) {\n\n\t\t\t// Check if file modified since\n\t\t\tconst etag = `W/\"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}\"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)\n\t\t\tif (req.headers['if-none-match'] === etag) {\n\t\t\t\tres.writeHead(304);\n\t\t\t\treturn void res.end();\n\t\t\t}",
+        "by": "\t\tconst stat = await promises.stat(filePath); // throws an error if file doesn't exist\n\n\t\t// Indicate response varies by Accept-Encoding so shared caches\n\t\t// don't serve a compressed response to clients that lack gzip support.\n\t\tresponseHeaders['Vary'] = 'Accept-Encoding';\n\n\t\tif (cacheControl === CacheControl.ETAG) {\n\n\t\t\t// Check if file modified since\n\t\t\tconst etag = `W/\"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}\"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)\n\t\t\tif (req.headers['if-none-match'] === etag) {\n\t\t\t\tres.writeHead(304, responseHeaders);\n\t\t\t\treturn void res.end();\n\t\t\t}"
+    },
+    {
+        "from": "\t\tresponseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';\n\n\t\t// Create the stream first and wait for it to open before sending",
+        "by": "\t\tresponseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';\n\n\t\t// Try to serve a pre-compressed .gz version (Che-specific optimization)\n\t\tif (await tryServeCompressedFile(filePath, responseHeaders['Content-Type'], stat.size, req, res, responseHeaders)) {\n\t\t\treturn;\n\t\t}\n\n\t\t// Create the stream first and wait for it to open before sending"
     },
     {
         "from": "\t\t\tconst newLocation = url.format({ pathname: basePath, query: newQuery });\n\t\t\tresponseHeaders['Location'] = newLocation;",
