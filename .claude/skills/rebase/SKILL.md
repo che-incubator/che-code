@@ -447,16 +447,16 @@ Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commi
 - [x] Alignment with <version> version of VS Code: https://github.com/microsoft/vscode/tree/release/<branch-ver>
 - [x] Update upstream version references: <commit-hash>
 - [x] Pre-rebase conflict analysis: <commit-hash>
-    - [Pre-rebase-report](.rebase/<ver>/pre-rebase-report.md)
+    - [Pre-rebase-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/pre-rebase-report.md)
 - [x] Audit and update dependency pins (CVE fixes): <commit-hash>
-    - [Dependency-audit-report](.rebase/<ver>/dependency-audit.md)
+    - [Dependency-audit-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/dependency-audit.md)
 - [x] Create rebase rules for uncovered files: <commit-hash>
 - [x] Fix and update rebase rules: <commit-hash>
 - [x] Rebase against upstream: <commit-hash>
 - [x] Fix rebase errors: <commit-hash>
-    - [Rebase-errors-report](.rebase/<ver>/rebase-errors.md)
+    - [Rebase-errors-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/rebase-errors.md)
 - [x] Fix compilation errors: <commit-hash>
-    - [Compilation-errors-report](.rebase/<ver>/compilation-errors.md)
+    - [Compilation-errors-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/compilation-errors.md)
 - [x] Update artifacts lock: <commit-hash>
 - [x] Update Dockerfile images to Node.js <MAJOR>: <commit-hash>
 
@@ -499,7 +499,7 @@ After creating and updating the PR, verify ALL of the following. If any check fa
 - [ ] PR is created as **draft** (`--draft` flag)
 - [ ] "What does this PR do?" section contains **every step with its commit hash** (not a free-form description)
 - [ ] Each conditional step (Fix rebase errors, Fix compilation errors) is included ONLY if that commit was created
-- [ ] Report links (Pre-rebase-report, Dependency-audit-report) point to actual files in `.rebase/<ver>/`
+- [ ] Report links use **absolute URLs** (not relative paths) pointing to the PR branch: `https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/...` — relative paths resolve against the base branch (`main`) where these files don't exist
 - [ ] Test table uses the exact `editor_image_base` from `rebase-config.yaml` with `:pr-<PR_NUMBER>-amd64` suffix
 - [ ] Test table has columns: `| Image | Status | Link |`
 - [ ] No extra sections added beyond the template (no "Notable changes", no "Summary", etc.)
