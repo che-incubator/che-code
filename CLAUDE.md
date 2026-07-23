@@ -134,6 +134,12 @@ The final image is assembled from three platform-specific builds:
 
 The `assembly.Dockerfile` combines all three into a single image that selects the right binary at runtime.
 
+## Git Commit Rules
+
+- **Always** use `git commit -s` (or `--signoff`) to add `Signed-off-by:` trailer
+- This is required by the project's DCO (Developer Certificate of Origin) policy
+- Example: `git commit -s -m "fix: description"`
+
 ## Shell Portability Rules
 
 All shell scripts and ad-hoc terminal commands must work on both **macOS** (zsh default, bash 3.2) and **Linux** (bash 4+/5+). Violations lead to silently wrong results that corrupt analysis and conclusions.
