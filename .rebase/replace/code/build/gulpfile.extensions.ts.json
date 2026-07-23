@@ -1,0 +1,6 @@
+[
+  {
+    "from": "const compilations = [\n\t'extensions/configuration-editing/tsconfig.json',",
+    "by": "const compilations = [\n\t'extensions/che-activity-tracker/tsconfig.json',\n    'extensions/che-api/tsconfig.json',\n    'extensions/che-commands/tsconfig.json',\n    'extensions/che-port/tsconfig.json',\n    'extensions/che-remote/tsconfig.json',\n    'extensions/che-resource-monitor/tsconfig.json',\n    'extensions/che-terminal/tsconfig.json',\n    'extensions/che-telemetry/tsconfig.json',\n    'extensions/che-github-authentication/tsconfig.json',\n\t'extensions/configuration-editing/tsconfig.json',"
+  }
+]
