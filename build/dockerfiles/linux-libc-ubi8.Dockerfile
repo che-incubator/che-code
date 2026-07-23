@@ -69,6 +69,11 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
+# node-gyp's make generator execs gyp entrypoints via shebang; UBI npm may ship them without +x
+RUN chmod +x \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp
+
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
 
