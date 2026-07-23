@@ -182,9 +182,15 @@ Common issues:
 
 If a fix fails for a file: same logic as Step 4 — if the file conflicts in the rebase, stop; if not, log as ERROR and continue.
 
-### Step 8: Test the fixed rules
+### Step 8: Re-validate and test the fixed rules
 
-Run the `test-rebase-rules` skill (or directly):
+After fixing stale rules, **always re-run full validation** to confirm no rules were broken:
+
+1. **Re-validate all `from` values** against the new upstream (quick check — iterate all rule files, verify each `from` is found in the corresponding upstream file). This catches typos, missed fixes, or side-effects of multi-rule files where fixing one rule may invalidate another.
+
+2. **Verify elif integrity** — every `elif` entry that calls `apply_changes*` must have a corresponding `.rebase/replace/<path>.json` file on disk. Flag orphan entries (e.g. from reverted features where the elif was left behind).
+
+3. **Run rule tests** (optional, provides deeper validation):
 
 ```bash
 bash .claude/skills/test-rebase-rules/run-all-tests.sh
@@ -192,11 +198,39 @@ bash .claude/skills/test-rebase-rules/run-all-tests.sh
 
 All tests must pass (or show only cosmetic warnings) before proceeding. If a test fails, re-fix the rule and re-test (retry loop). If repeated attempts fail, apply the same conflict/no-conflict logic from Steps 4 and 7.
 
+**Important:** Do NOT skip step 1 — it is a fast (< 5s) sanity check that catches the most common post-fix regressions. The full test suite (step 3) is slower and may show expected differences when comparing against the current working tree (which is still based on the previous upstream).
+
 **Commit (conditional, covers Steps 5-8):** "Fix and update rebase rules"
 
 ## Phase 2 — Rebase
 
 ### Step 9: Run the rebase
+
+**Pre-flight check:** Before running `rebase.sh`, verify the working tree is clean:
+
+```bash
+git status --short | wc -l   # must be 0
+```
+
+If there are modifications or "unmerged paths" (from a previous failed run), abort first:
+
+```bash
+git merge --abort   # if merge in progress
+git checkout -- .   # discard any leftover modifications
+```
+
+`rebase.sh` performs a `git merge` internally (subtree merge). If it fails mid-merge (e.g. a rule application error), the merge stays in progress and all upstream changes remain staged/modified. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
+
+**Switch to the required Node.js version:** `rebase.sh` runs `npm install` internally to regenerate lock files. It must use the same Node.js (and npm) version that upstream uses, otherwise lock files will be regenerated in a different format (e.g. npm 10 vs npm 11) and require a separate fixup commit later.
+
+```bash
+nvm install $(cat code/.nvmrc)
+nvm use $(cat code/.nvmrc)
+```
+
+The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128). Check `code/.nvmrc` after fetching the new upstream in Step 2.
+
+**Run:**
 
 ```bash
 bash rebase.sh
@@ -224,7 +258,20 @@ The smart fallback in `resolve_conflicts()` detects che-specific changes by comp
 Network issues or incompatible dependencies. Try to fix by adjusting dependency pins or re-running. If unfixable, document in `.rebase/<ver>/rebase-errors.md`.
 
 **d) npm EOVERRIDE — override conflicts with direct dependency:**
-npm requires that overrides for direct dependencies use the exact same version spec. If an add-rule override (e.g. `overrides.tar: "^7.5.11"`) conflicts with an upstream direct dependency (e.g. `devDependencies.tar: "^7.5.9"`), **do NOT downgrade the override** — it was likely pinned for a CVE fix. Instead, add the override version to `.rebase/override/` for the same dependency section. Try to fix automatically; if not possible, document in the rebase errors report.
+npm requires that overrides must not conflict with direct dependencies. Two scenarios:
+
+1. **Upstream surpassed our CVE pin** (e.g. our override `tar@^7.5.11` but upstream now has direct dep `tar@^7.5.16`): **Remove the override** from `.rebase/add/`. The CVE is already fixed by upstream's higher version. This is the most common case during large version jumps.
+
+2. **Our CVE pin is higher than upstream** (e.g. our override `ws@^8.21.0` but upstream direct dep `ws@^8.19.0`): Add the override version to `.rebase/override/` for the same dependency section so it replaces upstream's lower version.
+
+**Detection:** The dependency audit (Step 3b) should catch these BEFORE rebase. If EOVERRIDE still occurs, it means the audit missed something — fix and update the audit logic.
+
+**e) Silent exit due to `set -e` and deleted files:**
+`rebase.sh` uses `set -e` — any failing command kills the script silently. Common triggers:
+- `git checkout --theirs` on a file deleted in upstream (no "theirs" version exists)
+- `git add` on a file that was `git rm`'d in a previous step
+
+If the script exits silently (exit code 1, no error message), run with `bash -x rebase.sh` to see the exact failing command. Then fix `rebase.sh` to handle the edge case.
 
 **Commit (conditional):** "Fix rebase errors" (with report sub-item if unfixed errors remain)
 
@@ -244,15 +291,17 @@ GIT_EDITOR=: git merge --continue
 
 ### Step 12: Build check
 
-Run a quick compilation check:
+Verify that the correct Node.js version (from Step 9) is still active — `node --version` must match `code/.nvmrc`. Upstream's `preinstall.ts` enforces this and `npm install` will fail immediately otherwise.
+
+**Compilation check:**
 
 ```bash
 cd code
 npm install
-npm run watch
+node --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js compile-build-without-mangling
 ```
 
-Wait for compilation to complete. Check for TypeScript errors.
+Always use `compile-build-without-mangling` (~2-3 min). Do NOT use the full build with mangling (`vscode-reh-web-linux-x64`) — it takes ~40 min and the mangler may break upstream mixin patterns that are unrelated to Che changes. The mangled production build is done separately in CI.
 
 **CRITICAL — Do NOT edit vanilla VS Code files.** If a compilation error occurs in a file that is NOT Che-specific (i.e. it exists identically in upstream VS Code), do NOT fix it by modifying that file. Upstream VS Code compiles successfully, so the error indicates a deeper root cause — typically a Che-specific dependency version pin (in `.rebase/add/` or `.rebase/override/`) that conflicts with what upstream expects, or a Che rebase rule that incorrectly strips a needed import/type. Investigate why the error occurs only in our build before changing any code.
 
@@ -290,9 +339,68 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 **Commit:** "Update artifacts lock" — containing only `build/artifacts/artifacts.lock.yaml` (and any lock files that change as a side effect, like `code/test/mcp/package-lock.json`). Do not mix with other changes.
 
+### Step 16: Update Dockerfile images to match Node.js version
+
+The Dockerfiles in `build/dockerfiles/` use base images that bundle Node.js. After a rebase that changes the required Node.js version (check `code/remote/.npmrc` → `target` field and `code/.nvmrc`), the images must be updated to match.
+
+**Why this matters:** The build copies `node` binary from the image and caches it at the path matching the `.npmrc` target version. A major version mismatch (e.g. nodejs-22 image but target 24.17.0) will cause the shipped binary to have incorrect ABI/API surface.
+
+**How to find the required Node.js version:**
+
+```bash
+grep target code/remote/.npmrc | cut -d '=' -f 2 | tr -d '"'
+# e.g. "24.17.0" → major version is 24
+```
+
+**How to find the latest image tags:**
+
+Use `skopeo` (must be installed locally) to query the registries:
+
+```bash
+# UBI9 full image
+skopeo list-tags docker://registry.access.redhat.com/ubi9/nodejs-<MAJOR> \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# UBI8 full image
+skopeo list-tags docker://registry.access.redhat.com/ubi8/nodejs-<MAJOR> \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# UBI9 minimal image
+skopeo list-tags docker://registry.access.redhat.com/ubi9/nodejs-<MAJOR>-minimal \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if not t.startswith('sha256')]; tags.sort(); print('\n'.join(tags))" \
+  | grep -v source | tail -5
+
+# Docker Hub Alpine image
+skopeo list-tags docker://docker.io/library/node \
+  | python3 -c "import json,sys; data=json.load(sys.stdin); tags=[t for t in data['Tags'] if t.startswith('<MAJOR>.') and 'alpine' in t]; tags.sort(); print('\n'.join(tags[-10:]))"
+```
+
+Pick the latest non-source tag for each image. For Red Hat images, prefer tags with the highest build number (e.g. `9.8-1784075995` > `9.8-1783399045`). For Alpine, follow the existing pattern: `<major>-alpine<alpine_version>` (e.g. `24-alpine3.24`).
+
+**Files to update (5 Dockerfiles):**
+
+| File | Image pattern | Example |
+|------|--------------|---------|
+| `build/dockerfiles/linux-musl.Dockerfile` | `docker.io/node:<MAJOR>-alpine<VER>` | `node:24-alpine3.24` |
+| `build/dockerfiles/linux-libc-ubi8.Dockerfile` | `registry.access.redhat.com/ubi8/nodejs-<MAJOR>:<tag>` | `ubi8/nodejs-24:1-1784092369` |
+| `build/dockerfiles/linux-libc-ubi9.Dockerfile` | `registry.access.redhat.com/ubi9/nodejs-<MAJOR>:<tag>` | `ubi9/nodejs-24:9.8-1784075995` |
+| `build/dockerfiles/assembly.sshd.Dockerfile` | `registry.access.redhat.com/ubi9/nodejs-<MAJOR>-minimal:<tag>` | `ubi9/nodejs-24-minimal:9.8-1783399045` |
+| `build/dockerfiles/dev.Dockerfile` | `ENV NODEJS_VERSION=<full-version>` | `NODEJS_VERSION=24.17.0` |
+
+**Additional checks:**
+- Update the comment above each `FROM` line (e.g. `# https://registry.access.redhat.com/ubi9/nodejs-24`)
+- In `dev.Dockerfile`: if Node.js major version changed, check if the global `npm` install is still needed (Node.js 24+ ships with npm 11 natively — remove explicit npm global install if present)
+- The `CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'` in `linux-musl.Dockerfile` is for Node-API experimental features — keep it regardless of Node.js version
+
+**Commit:** "Update Dockerfile images to Node.js <MAJOR>" — containing all 5 Dockerfile changes.
+
 ## Phase 4 — Create Pull Request
 
-### Step 16: Create Pull Request
+**MANDATORY: Re-read this entire Phase 4 section NOW before executing any step.** Do NOT compose the PR title or body from memory — follow the template below literally, substituting only the placeholder values. This phase has a strict format that must be followed exactly.
+
+### Step 17: Create Pull Request
 
 1. Read `.claude/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
 2. Read `code/package.json` to get the `version` field (e.g. `1.120.0`)
@@ -322,23 +430,35 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commits get a checkbox. Conditional commits only appear if created. Reports are nested sub-items.
 
+**Formatting rules for commit hashes:**
+- If a step has exactly ONE commit: put the hash inline (e.g. `- [x] Rebase against upstream: b2569ad`)
+- If a step has MULTIPLE commits: list each as a sub-item with commit message and hash:
+  ```
+  - [x] Fix and update rebase rules:
+      - Fix 9 stale rebase rules for upstream 1.128: 4514fb4
+      - Remove stale elif for chatSetupController.ts: 5a191ad
+  ```
+- Steps that were not performed (no commit created) are omitted entirely
+- Additional steps not in the standard list (e.g. "Revert superseded CVE fix", "Regenerate lock files") are added as separate checklist items in chronological order among the standard steps
+
 ```markdown
 ### What does this PR do?
 
 - [x] Alignment with <version> version of VS Code: https://github.com/microsoft/vscode/tree/release/<branch-ver>
 - [x] Update upstream version references: <commit-hash>
 - [x] Pre-rebase conflict analysis: <commit-hash>
-    - [Pre-rebase-report](.rebase/<ver>/pre-rebase-report.md)
+    - [Pre-rebase-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/pre-rebase-report.md)
 - [x] Audit and update dependency pins (CVE fixes): <commit-hash>
-    - [Dependency-audit-report](.rebase/<ver>/dependency-audit.md)
+    - [Dependency-audit-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/dependency-audit.md)
 - [x] Create rebase rules for uncovered files: <commit-hash>
 - [x] Fix and update rebase rules: <commit-hash>
 - [x] Rebase against upstream: <commit-hash>
-- [ ] Fix rebase errors: <commit-hash>
-    - [Rebase-errors-report](.rebase/<ver>/rebase-errors.md)
-- [ ] Fix compilation errors: <commit-hash>
-    - [Compilation-errors-report](.rebase/<ver>/compilation-errors.md)
+- [x] Fix rebase errors: <commit-hash>
+    - [Rebase-errors-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/rebase-errors.md)
+- [x] Fix compilation errors: <commit-hash>
+    - [Compilation-errors-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/compilation-errors.md)
 - [x] Update artifacts lock: <commit-hash>
+- [x] Update Dockerfile images to Node.js <MAJOR>: <commit-hash>
 
 ### What issues does this PR fix?
 
@@ -371,6 +491,19 @@ Example row:
 | quay.io/devfile/universal-developer-image:ubi8-latest | | [click here](<url>) |
 ```
 
+### Post-creation verification checklist
+
+After creating and updating the PR, verify ALL of the following. If any check fails, fix the PR body immediately with `gh pr edit`:
+
+- [ ] Title matches format: `Alignment with <version> version of VS Code` (version from `code/package.json`, e.g. `1.128.0`)
+- [ ] PR is created as **draft** (`--draft` flag)
+- [ ] "What does this PR do?" section contains **every step with its commit hash** (not a free-form description)
+- [ ] Each conditional step (Fix rebase errors, Fix compilation errors) is included ONLY if that commit was created
+- [ ] Report links use **absolute URLs** (not relative paths) pointing to the PR branch: `https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/...` — relative paths resolve against the base branch (`main`) where these files don't exist
+- [ ] Test table uses the exact `editor_image_base` from `rebase-config.yaml` with `:pr-<PR_NUMBER>-amd64` suffix
+- [ ] Test table has columns: `| Image | Status | Link |`
+- [ ] No extra sections added beyond the template (no "Notable changes", no "Summary", etc.)
+
 ## Stop Point Policy
 
 The process should never fully stop. All issues are either auto-fixed (with a commit) or documented in a report for the user to address in follow-up commits.
@@ -378,6 +511,24 @@ The process should never fully stop. All issues are either auto-fixed (with a co
 - **Phase 1:** mostly auto-handled. Only stops if a fix truly can't be created AND the file conflicts in the rebase. Non-conflicting failures are logged as ERRORs in reports.
 - **Phase 2:** try to fix npm install / EOVERRIDE errors automatically. If not possible, create `.rebase/<ver>/rebase-errors.md` and continue to PR creation.
 - **Phase 3:** compilation errors do not stop the process. Create a fix commit if possible, otherwise create `.rebase/<ver>/compilation-errors.md` and continue to PR creation.
+
+## Pre-rebase integrity checks
+
+### Stale elif entries (reverted changes with orphaned routing)
+
+Before running `rebase.sh`, verify that every `elif` entry in `rebase.sh` has a corresponding replace rule file AND that the Che-specific change actually exists in the working tree. A common failure mode:
+
+1. A Che-specific change is committed → an `elif` entry + replace rule is added
+2. The change is later **reverted** (e.g. feature removed)
+3. The replace rule file is deleted (or never created), but the `elif` entry in `rebase.sh` is forgotten
+
+**Detection:** For each `elif` entry that calls `apply_changes_multi_line "$file"`:
+- Check if `.rebase/replace/<file>.json` exists → if not, it's an orphan
+- If the rule file exists, check if the `by` content is actually different from what upstream provides → if the file in the working tree matches the previous upstream exactly (no Che-specific diff), the elif is stale
+
+**Fix:** Remove the stale `elif` entry from `rebase.sh`. The file will then fall through to the smart fallback (else branch) which safely takes the upstream version.
+
+**Automation opportunity:** Add a pre-rebase check that iterates all elif entries and verifies the corresponding rule file exists. Flag entries without rules as errors.
 
 ## Troubleshooting
 
@@ -403,6 +554,63 @@ Some files have special handler functions in `rebase.sh` with inline logic beyon
 Jumping many releases at once (e.g. 1.108 → 1.120) will likely produce many stale rules. Consider:
 1. Breaking it into smaller incremental rebases
 2. Or accepting that Phase 1 will take longer to fix all rules
+
+### Superseded CVE fixes (revert before rebase)
+
+When `pre-rebase.sh` reports a file as NEEDS_RULE but the che-specific change is a **version bump or vendored library update** (typically a CVE fix), check if upstream already has an equal or newer version at the target release:
+
+```bash
+git show upstream-code/<target-version>:<path-without-code-prefix> | head -1
+```
+
+**If upstream has a newer version:** the che-specific fix is obsolete. Instead of creating a rebase rule:
+
+1. Find the original PR that introduced the fix: `git log --oneline -- <file>`
+2. Revert the merge commit: `git revert -m 1 <merge-commit-sha> --no-edit`
+3. If there are conflicts (common when later PRs touched the same files), resolve them:
+   - For the reverted file: take the pre-PR state
+   - For unrelated changes in the same file (from later PRs): keep them
+4. **Verify** each reverted change against the new upstream to confirm it's truly superseded
+5. Also check and remove associated rebase rules (`.rebase/override/`, `.rebase/replace/`, elif entries in `rebase.sh`)
+
+**Why revert instead of manual removal:**
+- Atomic — doesn't miss any file changed by the original PR
+- Auditable — clear `git log` history showing what was reverted and why
+- Less error-prone — manual removal risks missing CHANGELOG entries, package-lock changes, etc.
+
+**Trade-off:** `git revert` may produce conflicts if other PRs modified the same files after the CVE fix. These conflicts are usually straightforward to resolve (keep changes from later PRs, only revert the CVE-specific lines).
+
+**Real example (1.116 → 1.128):** PR #705 bumped vendored DOMPurify from 3.2.7 to 3.4.2 for CVE-2026-41240. Upstream 1.128 already has DOMPurify 3.4.8. The revert removed: 2 override rules, 1 replace rule, 2 handler functions + 3 elif entries in rebase.sh, 5 code files restored, 1 CHANGELOG entry.
+
+### Accidental changes from previous rebases (no PR, no rule)
+
+Sometimes `pre-rebase.sh` reports NEEDS_RULE for a file where the "che-specific change" was actually introduced **accidentally during a previous rebase** — not via a deliberate PR. Signs:
+
+1. `git log --oneline -- <file>` shows only rebase commits, no feature PR
+2. `git blame` points to a rebase commit for the changed lines
+3. The change looks like a debugging aid or manual conflict resolution leftover
+4. There is no `.rebase/replace/` rule for this file
+
+**How to verify:**
+```bash
+# Check the file BEFORE the rebase that introduced the change
+git show <parent-of-rebase-commit>:<file>
+# If it matches the previous upstream — the change was introduced during that rebase
+```
+
+**Action:** Restore the file to match the current PREVIOUS_UPSTREAM_VERSION. During rebase, the smart fallback will detect no che-specific changes and take upstream automatically.
+
+```bash
+git show upstream-code/PREVIOUS_UPSTREAM_VERSION:<path-without-code-prefix> > <code-path>
+```
+
+**Real example (1.116 → 1.128):** `authenticationService.ts` had a try/catch wrapper added during the rebase to 1.108 (no PR, no rule). Upstream 1.128 completely rewrote the method with better error handling. Restoring to upstream 1.116 lets the smart fallback take upstream 1.128 cleanly.
+
+### Upstream-superseded changes detection (automation gap)
+
+`pre-rebase.sh` currently compares che-code files against `PREVIOUS_UPSTREAM_VERSION` to detect che-specific changes. It does NOT compare against the TARGET upstream. This means it may report NEEDS_RULE for files where our change is already superseded by the target upstream.
+
+**Future improvement:** after classifying a file as NEEDS_RULE, also compare our version against the TARGET upstream. If the target upstream has a newer/better version of the same change, reclassify as SUPERSEDED (safe to revert/take upstream).
 
 ### New che-specific files or extensions
 
