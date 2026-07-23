@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\"@emmetio/css-parser\": \"ramya-rao-a/css-parser#vscode\"",
+    "by": "\"@emmetio/css-parser\": \"git+https://github.com/ramya-rao-a/css-parser#vscode\""
+  }
+]
