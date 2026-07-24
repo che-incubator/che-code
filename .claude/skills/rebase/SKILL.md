@@ -287,9 +287,66 @@ Should return empty. If not, resolve manually and continue the merge:
 GIT_EDITOR=: git merge --continue
 ```
 
+### Step 12: Post-rebase verification (detect auto-resolution errors)
+
+Run immediately after conflicts are resolved. This detects files that `git subtree merge` silently auto-resolved incorrectly — files that:
+- Changed between `PREVIOUS_UPSTREAM_VERSION` and `CURRENT_UPSTREAM_VERSION`
+- Have NO rebase rules (no `.rebase/replace/`, `.rebase/add/`, `.rebase/override/`, no `elif` in `rebase.sh`)
+- Are NOT `package-lock.json` files
+- Currently differ from the upstream content
+
+**Run:**
+
+```bash
+bash post-rebase-verify.sh --dry-run
+```
+
+This generates `.rebase/<ver>/post-rebase-verify-report.md` listing all mismatched files with diffs.
+
+**Classification algorithm — for each detected mismatch:**
+
+1. Find the commit that introduced the Che-specific difference:
+   ```bash
+   git log --oneline --all -- <file> | head -10
+   ```
+2. Examine the commit message and context:
+   - If the commit has a clear Che-specific intent (e.g. "fix: disable telemetry", "add che extensions to build", explicit PR with Che purpose) → **Action: create rebase rule**
+   - If the commit is a merge/rebase commit with no explicit Che intent, or the change is a leftover from a workaround that's no longer needed → **Action: align with upstream**
+
+3. Apply the decision:
+   - **Align with upstream:** overwrite the file with upstream content:
+     ```bash
+     git show upstream-code/<target-version>:<path-without-code-prefix> > <file>
+     ```
+   - **Create rebase rule:** create `.rebase/replace/<file>.json` with `from`/`by` patterns, add `elif` entry to `rebase.sh`, test with `run-all-tests.sh`
+
+**After all mismatches are processed:**
+
+1. Re-run `bash post-rebase-verify.sh --dry-run` to confirm 0 mismatches remain
+2. Commit "align with upstream" fixes in one commit: "Fix auto-resolution errors: align N files with upstream"
+3. Commit new rebase rules individually (one commit per rule)
+
+**Final report format:**
+
+Update `.rebase/<ver>/post-rebase-verify-report.md` to include a decisions table:
+
+```markdown
+## Decisions
+
+| File | Decision | Reason | Source commit | Fix commit |
+|------|----------|--------|---------------|------------|
+| `code/path/file.ts` | align with upstream | merge commit leftover, no PR | abc1234 | def5678 |
+| `code/path/other.ts` | create rule | "fix: disable telemetry" (che#21122) | 31e901d | 17a4e94 |
+```
+
+The "Source commit" links to the commit that introduced the Che difference.
+The "Fix commit" links to the commit that resolved the mismatch.
+
+This report serves as a self-contained audit trail — the reviewer can quickly verify each decision by checking the linked commits.
+
 ## Phase 3 — Verify
 
-### Step 12: Build check
+### Step 13: Build check
 
 Verify that the correct Node.js version (from Step 9) is still active — `node --version` must match `code/.nvmrc`. Upstream's `preinstall.ts` enforces this and `npm install` will fail immediately otherwise.
 
@@ -312,14 +369,14 @@ If errors are found:
 
 **Commit (conditional):** "Fix compilation errors" (with report sub-item if unfixed errors remain)
 
-### Step 13: Run tests (optional but recommended)
+### Step 14: Run tests (optional but recommended)
 
 ```bash
 cd code
 npm run test-node
 ```
 
-### Step 14: Run rebase rule tests against the final state
+### Step 15: Run rebase rule tests against the final state
 
 ```bash
 bash .claude/skills/test-rebase-rules/run-all-tests.sh
@@ -327,7 +384,7 @@ bash .claude/skills/test-rebase-rules/run-all-tests.sh
 
 This verifies that the rules still produce the correct output against the now-current upstream. All tests should pass.
 
-### Step 15: Update artifacts lock
+### Step 16: Update artifacts lock
 
 After all conflicts are resolved, rules are applied, and the build is verified, regenerate `build/artifacts/artifacts.lock.yaml`. This file pins the download URLs and SHA256 checksums for built-in extensions and tools (ripgrep, js-debug, etc.) and must match what the new upstream ships.
 
@@ -339,7 +396,7 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 **Commit:** "Update artifacts lock" — containing only `build/artifacts/artifacts.lock.yaml` (and any lock files that change as a side effect, like `code/test/mcp/package-lock.json`). Do not mix with other changes.
 
-### Step 16: Update Dockerfile images to match Node.js version
+### Step 17: Update Dockerfile images to match Node.js version
 
 The Dockerfiles in `build/dockerfiles/` use base images that bundle Node.js. After a rebase that changes the required Node.js version (check `code/remote/.npmrc` → `target` field and `code/.nvmrc`), the images must be updated to match.
 
@@ -400,7 +457,7 @@ Pick the latest non-source tag for each image. For Red Hat images, prefer tags w
 
 **MANDATORY: Re-read this entire Phase 4 section NOW before executing any step.** Do NOT compose the PR title or body from memory — follow the template below literally, substituting only the placeholder values. This phase has a strict format that must be followed exactly.
 
-### Step 17: Create Pull Request
+### Step 18: Create Pull Request
 
 1. Read `.claude/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
 2. Read `code/package.json` to get the `version` field (e.g. `1.120.0`)
@@ -459,6 +516,8 @@ Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commi
     - [Compilation-errors-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/compilation-errors.md)
 - [x] Update artifacts lock: <commit-hash>
 - [x] Update Dockerfile images to Node.js <MAJOR>: <commit-hash>
+- [x] Post-rebase verification: <commit-hash>
+    - [Post-rebase-verify-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/post-rebase-verify-report.md)
 
 ### What issues does this PR fix?
 
