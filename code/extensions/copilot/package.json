@@ -6406,6 +6406,8 @@
 		"webdriver": {
 			"undici@6": "^6.27.0"
 		},
+		"brace-expansion@1": "^1.1.16",
+		"brace-expansion@2": "^2.1.2",
 		"brace-expansion@5": "5.0.7",
 		"form-data@4": "^4.0.6",
 		"@vscode/vsce": {
