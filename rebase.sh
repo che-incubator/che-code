@@ -472,6 +472,8 @@ resolve_conflicts() {
       apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/common/terminalConfiguration.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/common/network.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminal.contribution.ts" ]]; then
