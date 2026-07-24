@@ -1,6 +1,13 @@
-# che-code chagelog
+# che-code changelog
 
-The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
+The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/771
+
+- code/package.json
+- code/extensions/copilot/package.json
+---
 
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/750
@@ -9,6 +16,7 @@ https://github.com/che-incubator/che-code/pull/750
 - code/extensions/copilot/chat-lib/package.json
 ---
 
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/745
 
 - code/package.json
