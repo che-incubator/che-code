@@ -273,6 +273,9 @@
     "chrome-remote-interface": {
       "ws": "^7.5.11"
     },
+    "test-exclude": {
+      "brace-expansion@5": "5.0.7"
+    },
     "webdriver": {
       "undici@6": "^6.27.0"
     }
