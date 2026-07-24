@@ -13,8 +13,8 @@
 set -e
 set -u
 
-PREVIOUS_UPSTREAM_VERSION="release/1.108"
-CURRENT_UPSTREAM_VERSION="release/1.116"
+PREVIOUS_UPSTREAM_VERSION="release/1.116"
+CURRENT_UPSTREAM_VERSION="release/1.128"
 
 # update $1 json file
 # $2 is the formatting option
@@ -168,6 +168,12 @@ resolve_package_lock() {
   dir=$(dirname "$lockFile")
 
   echo "  ⚙️ reworking $lockFile..."
+  local upstream_lock_path="${lockFile#code/}"
+  if ! git show "upstream-code/${CURRENT_UPSTREAM_VERSION}:${upstream_lock_path}" > /dev/null 2>&1; then
+    echo "    (lock file deleted in upstream, removing)"
+    git rm "$lockFile" > /dev/null 2>&1
+    return
+  fi
   git checkout --theirs "$lockFile" > /dev/null 2>&1
   npm install --ignore-scripts --prefix "$dir"
   git add "$lockFile" > /dev/null 2>&1
@@ -291,34 +297,6 @@ apply_code_vs_workbench_contrib_remote_browser_remote_changes() {
   git add "$filePath" > /dev/null 2>&1
 }
 
-# Apply changes on code/src/vs/base/browser/dompurify/dompurify.d.ts file
-apply_code_vs_base_browser_dompurify_d_changes() {
-
-  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.d.ts..."
-
-  # reset the file from what is upstream
-  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
-
-  # don't apply changes, keep ours version totally
-
-  # resolve the change
-  git add code/src/vs/base/browser/dompurify/dompurify.d.ts > /dev/null 2>&1
-}
-
-# Apply changes on code/src/vs/base/browser/dompurify/dompurify.js file
-apply_code_vs_base_browser_dompurify_changes() {
-
-  echo "  ⚙️ reworking code/src/vs/base/browser/dompurify/dompurify.js..."
-
-  # reset the file from what is upstream
-  git checkout --ours code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
-
-  # don't apply changes, keep ours version totally
-
-  # resolve the change
-  git add code/src/vs/base/browser/dompurify/dompurify.js > /dev/null 2>&1
-}
-
 # Apply changes for the given file
 apply_changes() {
   local filePath="$1"
@@ -410,8 +388,6 @@ resolve_conflicts() {
       apply_code_vs_workbench_contrib_remote_browser_remote_changes
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/webview/browser/pre/index.html" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupController.ts" ]]; then
-      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/git/src/askpass.sh" ]]; then
@@ -482,7 +458,27 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.vscode.web.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/gulpfile.extensions.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/hygiene.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/lib/i18n.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/npm/dirs.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/emmet/package.json" ]]; then
+      apply_changes "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/common/terminalConfiguration.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/base/common/network.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/telemetry/common/telemetryService.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminalInstance.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/browser/terminal.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/resources/server/bin/helpers/browser-linux.sh" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -490,19 +486,13 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/npm/preinstall.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/cgmanifest.json" ]]; then
-      apply_changes "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.d.ts" ]]; then
-      apply_code_vs_base_browser_dompurify_d_changes
-    elif [[ "$conflictingFile" == "code/src/vs/base/browser/dompurify/dompurify.js" ]]; then
-      apply_code_vs_base_browser_dompurify_changes
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/copilot/.esbuild.ts" ]]; then
+    elif [[ "$conflictingFile" == "code/extensions/copilot/.esbuild.mts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
@@ -510,15 +500,13 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/rspack/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/mermaid-chat-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
@@ -538,8 +526,14 @@ resolve_conflicts() {
 
       if [ "$prev_content" = "$our_content" ]; then
         echo "  ⚙️ No che-specific changes detected, taking upstream version"
-        git checkout --theirs "$conflictingFile" > /dev/null 2>&1
-        git add "$conflictingFile" > /dev/null 2>&1
+        local upstream_path_new="${conflictingFile#code/}"
+        if git show "upstream-code/${CURRENT_UPSTREAM_VERSION}:${upstream_path_new}" > /dev/null 2>&1; then
+          git checkout --theirs "$conflictingFile" > /dev/null 2>&1
+          git add "$conflictingFile" > /dev/null 2>&1
+        else
+          echo "    (file deleted in upstream, removing)"
+          git rm "$conflictingFile" > /dev/null 2>&1
+        fi
       else
         echo "$conflictingFile has che-specific changes but no rebase rule!"
         echo "Run pre-rebase.sh first to identify and fix missing rules."

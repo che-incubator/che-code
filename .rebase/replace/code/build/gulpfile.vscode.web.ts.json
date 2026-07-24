@@ -1,0 +1,18 @@
+[
+  {
+    "from": "import product from '../product.json' with { type: 'json' };",
+    "by": "import product from '../product.json' with { type: 'json' };\nimport workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };"
+  },
+  {
+    "from": "export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product: typeof import('../product.json')) => {",
+    "by": "export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product: typeof import('../product.json'), workbenchConfig: typeof import('../src/vs/code/browser/workbench/che/workbench-config.json')) => {"
+  },
+  {
+    "from": "\t\t} else if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {\n\t\t\treturn content => {\n\t\t\t\tconst builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));\n\t\t\t\treturn content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/)\u003b\n\t\t\t};\n\t\t}\n\n\t\treturn undefined;",
+    "by": "\t\t} else if (path.endsWith('vs/workbench/services/extensionManagement/browser/builtinExtensionsScannerService.js')) {\n\t\t\treturn content => {\n\t\t\t\tconst builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));\n\t\t\t\treturn content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/)\u003b\n\t\t\t};\n\t\t} else if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {\n\t\t\treturn content => {\n\t\t\t\tconst workbenchConfiguration = JSON.stringify({ ...workbenchConfig });\n\t\t\treturn content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);\n\t\t\t};\n\t\t}\n\n\t\treturn undefined;"
+  },
+  {
+    "from": "fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product)",
+    "by": "fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product, workbenchConfig)"
+  }
+]

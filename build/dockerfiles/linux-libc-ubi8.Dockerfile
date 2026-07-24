@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi8/nodejs-20
-FROM registry.access.redhat.com/ubi8/nodejs-22:1-1776847890 as linux-libc-ubi8-builder
+# https://registry.access.redhat.com/ubi8/nodejs-24
+FROM registry.access.redhat.com/ubi8/nodejs-24:1784752538 as linux-libc-ubi8-builder
 
 USER root
 
@@ -84,8 +84,13 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min \
+    && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
+    && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
+    && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
+    && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
+    # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
+    && find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k -exec gzip -9 -k {} \; \
     # cache shared libs from this image to provide them to a user's container
     && mkdir -p /checode/ld_libs \
     && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
@@ -126,9 +131,12 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
       && yum install -y chromium \
-      && PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) \
-      && rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" \
-      && ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"; \
+      && PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/chrome-linux64) \
+      && PLAYWRIGHT_HEADLESS_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64) \
+      && rm -f "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" \
+      && ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" \
+      && rm -f "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" \
+      && ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell"; \
     fi
 
 # use of retry and timeout

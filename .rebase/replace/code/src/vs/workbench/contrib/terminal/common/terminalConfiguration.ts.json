@@ -1,0 +1,6 @@
+[
+  {
+    "from": "default: 'auto',\n\t\tdescription: localize('terminal.integrated.gpuAcceleration',",
+    "by": "default: 'canvas', // to fix the invisible characters issue\n\t\tdescription: localize('terminal.integrated.gpuAcceleration',"
+  }
+]

@@ -111,16 +111,6 @@ https://github.com/che-incubator/che-code/pull/716
 ---
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/pull/705
-
-- code/extensions/markdown-language-features/package.json
-- code/extensions/mermaid-chat-features/package.json
-- code/src/vs/base/browser/dompurify/cgmanifest.json
-- code/src/vs/base/browser/dompurify/dompurify.d.ts
-- code/src/vs/base/browser/dompurify/dompurify.js
----
-
-#### @sbouchet
 https://github.com/che-incubator/che-code/pull/711
 
 - code/package.json

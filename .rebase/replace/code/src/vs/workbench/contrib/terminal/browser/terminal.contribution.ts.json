@@ -1,0 +1,10 @@
+[
+  {
+    "from": "import { setupTerminalMenus } from './terminalMenus.js';",
+    "by": "import { setupTerminalMenus } from './terminalMenus.js';\nimport { setupCheTerminalMenus } from './che/terminalMenus.js';"
+  },
+  {
+    "from": "setupTerminalMenus();\n\nregisterColors();",
+    "by": "setupTerminalMenus();\nsetupCheTerminalMenus();\n\nregisterColors();"
+  }
+]

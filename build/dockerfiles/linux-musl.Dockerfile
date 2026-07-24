@@ -7,7 +7,7 @@
 #
 
 # Make an assembly including both musl and libc variant to be able to run on all linux systems
-FROM docker.io/node:22-alpine3.22 as linux-musl-builder
+FROM docker.io/node:24-alpine3.24 as linux-musl-builder
 
 RUN apk add --update --no-cache \
     # Download some files
@@ -38,7 +38,12 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV VSCODE_SKIP_HEADER_INSTALL=1
 
 # workaround for https://github.com/nodejs/node/issues/52229
-ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT'
+# GCC 15 in Alpine 3.24 requires nullptr_t to be explicitly declared;
+# Node.js v24's V8 headers use bare nullptr_t without std:: qualification.
+# A macro-based fix (-Dnullptr_t=...) breaks std::nullptr_t via recursive substitution,
+# so we create a header that uses a proper using-declaration instead.
+RUN printf '#include <cstddef>\nusing nullptr_t = std::nullptr_t;\n' > /usr/local/include/fix_nullptr.h
+ENV CXXFLAGS='-DNODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT -include /usr/local/include/fix_nullptr.h'
 
 # Initialize a git repository for code build tools
 RUN git init .
@@ -60,8 +65,14 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     # workaround to fix build
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min
+RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build
+RUN npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck
+RUN NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min
+RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min-ci
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
+
+# Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
+RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k -exec gzip -9 -k {} \;
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
@@ -95,12 +106,15 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
       npm run playwright-install; \
     fi
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-linux) && \
+      PLAYWRIGHT_CHROMIUM_PATH=$(echo /root/.cache/ms-playwright/chromium-*/chrome-linux64) && \
+      PLAYWRIGHT_HEADLESS_PATH=$(echo /root/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64) && \
+      echo "Found chromium path: $PLAYWRIGHT_CHROMIUM_PATH" && \
       echo "Found headless_shell path: $PLAYWRIGHT_HEADLESS_PATH" && \
-      rm -f "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/headless_shell" && \
-      ln -sf /usr/bin/chromium-browser "$PLAYWRIGHT_HEADLESS_PATH/chrome" && \
-      ls -la "$PLAYWRIGHT_HEADLESS_PATH"; \
+      rm -f "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      rm -f "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" && \
+      ls -la "${PLAYWRIGHT_CHROMIUM_PATH}" "${PLAYWRIGHT_HEADLESS_PATH}"; \
     fi
 
 # Run integration tests (Browser)

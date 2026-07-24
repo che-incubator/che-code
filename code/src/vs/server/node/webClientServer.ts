@@ -5,7 +5,7 @@
 
 import { createReadStream, promises } from 'fs';
 import * as http from 'http';
-import { getCheRedirectLocation } from './che/webClientServer.js';
+import { getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';
 import * as url from 'url';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
@@ -56,12 +56,17 @@ export const enum CacheControl {
 export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void> {
 	try {
 		const stat = await promises.stat(filePath); // throws an error if file doesn't exist
+
+		// Indicate response varies by Accept-Encoding so shared caches
+		// don't serve a compressed response to clients that lack gzip support.
+		responseHeaders['Vary'] = 'Accept-Encoding';
+
 		if (cacheControl === CacheControl.ETAG) {
 
 			// Check if file modified since
 			const etag = `W/"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 			if (req.headers['if-none-match'] === etag) {
-				res.writeHead(304);
+				res.writeHead(304, responseHeaders);
 				return void res.end();
 			}
 
@@ -73,6 +78,11 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
+
+		// Try to serve a pre-compressed .gz version (Che-specific optimization)
+		if (await tryServeCompressedFile(filePath, responseHeaders['Content-Type'], stat.size, req, res, responseHeaders)) {
+			return;
+		}
 
 		// Create the stream first and wait for it to open before sending
 		// headers so that errors (e.g. ENOENT race) can still produce a
@@ -364,12 +374,6 @@ export class WebClientServer {
 			} : undefined
 		};
 
-		const proposedApi = this._environmentService.args['enable-proposed-api'];
-		if (proposedApi?.length) {
-			productConfiguration.extensionsEnabledWithApiProposalVersion ??= [];
-			productConfiguration.extensionsEnabledWithApiProposalVersion.push(...proposedApi);
-		}
-
 		if (!this._environmentService.isBuilt) {
 			try {
 				const productOverrides = JSON.parse((await promises.readFile(join(APP_ROOT, 'product.overrides.json'))).toString());
@@ -437,7 +441,7 @@ export class WebClientServer {
 			return void res.end('Not found');
 		}
 
-		const webWorkerExtensionHostIframeScriptSHA = 'sha256-2Q+j4hfT09+1+imS46J2YlkCtHWQt0/BE79PXjJ0ZJ8=';
+		const webWorkerExtensionHostIframeScriptSHA = 'sha256-daEgfo2VIXpx2Np71KqCCbkeQwv+68vPrx54XRcbdcs=';
 
 		const cspDirectives = [
 			'default-src \'self\';',
