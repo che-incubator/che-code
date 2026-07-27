@@ -9,6 +9,11 @@ https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d60
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/NNN
+
+- code/extensions/copilot/package.json
+---
+
 https://github.com/che-incubator/che-code/pull/750
 
 - code/extensions/copilot/package.json
