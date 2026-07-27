@@ -21,6 +21,9 @@
     "npm-run-all2": "^8.0.4"
   },
   "overrides": {
-    "shell-quote": "^1.8.4"
+    "shell-quote": "^1.8.4",
+    "@types/node-fetch": {
+      "form-data": "^3.0.5"
+    }
   }
 }
