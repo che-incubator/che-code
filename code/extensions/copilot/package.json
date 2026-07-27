@@ -6403,6 +6403,10 @@
 		"ip-address": "^10.2.0",
 		"ws": "^8.21.0",
 		"brace-expansion@5": "5.0.7",
+		"form-data@4": "^4.0.6",
+		"@vscode/vsce": {
+			"form-data": "^4.0.6"
+    },
 		"webdriver": {
 			"undici@6": "^6.27.0"
 		}
