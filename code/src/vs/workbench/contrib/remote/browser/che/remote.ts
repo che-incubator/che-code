@@ -69,7 +69,7 @@ export class CheDisconnectionHandler {
 		environmentVariableService: IEnvironmentVariableService,
 		progressService: IProgressService
 	) {
-		this.devWorkspaceAssistant = new DevWorkspaceAssistant(commandService, requestService, environmentVariableService, progressService);
+		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
 	}
 
 	private canHandle(millisSinceLastIncomingData: number): boolean {
@@ -92,6 +92,10 @@ export class CheDisconnectionHandler {
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
+			return;
+		}
+
+		if (this.devWorkspaceAssistant.isStopping) {
 			return;
 		}
 

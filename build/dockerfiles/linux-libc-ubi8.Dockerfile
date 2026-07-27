@@ -80,7 +80,10 @@ RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
 
 # gyp_main.py on UBI8 is not executable AND has wrong shebang
 # (python3.8 does not exist - only python3.9/3.12 available). Fix both.
-RUN chmod +x /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+# node-gyp's make generator also execs gyp via shebang; UBI npm may ship it without +x
+RUN chmod +x \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp \
     && sed -i '1s|^#!.*python.*|#!/usr/bin/python3|' \
          /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py
 

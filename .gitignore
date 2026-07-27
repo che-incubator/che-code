@@ -1,4 +1,9 @@
 vscode-reh-web-*
 node_modules
 *.iml
+*.swp
+.idea/
+.vscode/
+logs/
+*.log
 
