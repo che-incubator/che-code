@@ -31,7 +31,7 @@
     "url": "git+https://github.com/che-incubator/che-code.git"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.3.0",
     "@kubernetes/client-node": "^1.4.0"
   },
   "devDependencies": {
@@ -60,7 +60,8 @@
     "@types/node-fetch": {
       "form-data": "^4.0.6"
     },
-    "brace-expansion@1": "^1.1.18"
+    "brace-expansion@1": "^1.1.18",
+    "js-yaml@3": "^3.15.0"
   },
   "jest": {
     "collectCoverage": true,
