@@ -39,6 +39,15 @@ https://github.com/che-incubator/che-code/pull/774
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/NNN
+
+- code/package.json
+- code/remote/package.json
+- code/build/package.json
+- code/extensions/copilot/package.json
+- code/extensions/npm/package.json
+---
+
 https://github.com/che-incubator/che-code/pull/750
 
 - code/extensions/copilot/package.json
