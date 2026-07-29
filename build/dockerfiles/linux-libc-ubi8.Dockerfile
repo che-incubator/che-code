@@ -69,8 +69,12 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
-# node-gyp's make generator execs gyp entrypoints via shebang; UBI npm may ship them without +x
+# node-gyp's make generator execs gyp entrypoints via shebang; UBI npm may
+# ship them without +x and with a stale Python shebang (e.g. python3.8)
 RUN chmod +x \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
+      /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp \
+    && sed -i '1s|^#!.*python[^ ]*|#!/usr/bin/python3|' \
       /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py \
       /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp
 
