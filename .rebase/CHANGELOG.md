@@ -46,6 +46,7 @@ https://github.com/che-incubator/che-code/pull/NNN
 - code/build/package.json
 - code/extensions/copilot/package.json
 - code/extensions/npm/package.json
+- code/test/sanity/package.json
 ---
 
 https://github.com/che-incubator/che-code/pull/750
