@@ -39,7 +39,7 @@ https://github.com/che-incubator/che-code/pull/774
 ---
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/pull/NNN
+https://github.com/che-incubator/che-code/pull/777
 
 - code/package.json
 - code/remote/package.json
