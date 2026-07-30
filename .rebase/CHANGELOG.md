@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/pull/NNN
+https://github.com/che-incubator/che-code/pull/778
 
 - code/extensions/markdown-language-features/package.json
 - code/extensions/mermaid-chat-features/package.json
