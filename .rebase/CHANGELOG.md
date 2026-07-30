@@ -2,6 +2,12 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @rnikitenko
+https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
+
+- code/src/vs/workbench/services/configuration/browser/configurationService.ts
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/750
 
