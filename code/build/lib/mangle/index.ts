@@ -306,16 +306,6 @@ const skippedExportMangledFiles = [
 	// Generated
 	'extensionsApiProposals',
 
-	// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic
-    'devfile-service',
-    'github-service',
-    'telemetry-service',
-    'workspace-service',
-
-	// Dynamic imports whose destructuring is not found by findRenameLocations
-	'runInTerminalConfirmationTool',
-	'mockAgent',
-
 	// Module passed around as type
 	'pfs',
 
