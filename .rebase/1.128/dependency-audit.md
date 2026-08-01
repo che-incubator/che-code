@@ -12,6 +12,7 @@
 | Action | Meaning |
 |--------|---------|
 | **KEEP** | `.rebase/add/` entry — dependency does not exist in upstream; still needed |
+| **ORPHANED** | `.rebase/add/` override entry — transitive dep no longer exists in dependency tree (`npm ls` returns empty) |
 | **ACTIVE** | `.rebase/override/` entry — Che pin > upstream; actively overriding |
 | **REDUNDANT** | `.rebase/override/` entry — Che pin = upstream; can be removed |
 | **OUTDATED** | `.rebase/override/` entry — Che pin < upstream; upstream is newer, remove |
@@ -38,12 +39,11 @@
 | overrides | `shell-quote` | `^1.8.4` | — | No | **KEEP** | CVE fix |
 | overrides | `qs` | `6.15.2` | — | No | **KEEP** | CVE fix |
 | overrides | `ip-address` | `^10.2.0` | — | No | **KEEP** | CVE fix |
-| overrides | `webdriver → undici@6` | `^6.27.0` | — | No | **KEEP** | CVE fix (scoped) |
 | overrides | `test-exclude → brace-expansion@5` | `5.0.7` | — | No | **KEEP** | CVE fix (scoped) |
-| overrides | `form-data@3` | `^3.0.5` | — | No | **KEEP** | CVE fix |
+| overrides | `form-data@3` | `^3.0.5` | — | No | **ORPHANED** | `npm ls form-data@3` → (empty); no form-data v3 in tree |
 | overrides | `form-data@4` | `^4.0.6` | — | No | **KEEP** | CVE fix |
 | overrides | `axios → form-data` | `^4.0.6` | — | No | **KEEP** | CVE fix (scoped) |
-| overrides | `@types/node-fetch → form-data` | `^3.0.5` | — | No | **KEEP** | CVE fix (scoped) |
+| overrides | `@types/node-fetch → form-data` | `^3.0.5` | — | No | **ORPHANED** | `npm ls @types/node-fetch` → (empty); parent pkg not in tree |
 
 ### `code/remote/package.json`
 
@@ -70,10 +70,10 @@
 
 | Section | Dependency | Che Pin | Upstream (1.128) | In Upstream? | Action | Reason |
 |---------|-----------|---------|-----------------|--------------|--------|--------|
-| overrides | `shell-quote` | `^1.8.4` | — | No | **KEEP** | CVE fix |
-| overrides | `qs` | `6.15.2` | — | No | **KEEP** | CVE fix |
-| overrides | `ws` | `^8.21.0` | — | No | **KEEP** | CVE fix |
-| overrides | `webpack-bundle-analyzer → ws` | `^7.5.11` | — | No | **KEEP** | CVE fix (scoped) |
+| overrides | `shell-quote` | `^1.8.4` | — | No | **ORPHANED** | `npm ls shell-quote` → (empty) in rspack tree |
+| overrides | `qs` | `6.15.2` | — | No | **ORPHANED** | `npm ls qs` → (empty) in rspack tree |
+| overrides | `ws` | `^8.21.0` | — | No | **ORPHANED** | `npm ls ws` → (empty) in rspack tree |
+| overrides | `webpack-bundle-analyzer → ws` | `^7.5.11` | — | No | **ORPHANED** | `npm ls webpack-bundle-analyzer` → (empty); parent pkg not in tree |
 
 ### `code/build/npm/gyp/package.json`
 
@@ -89,7 +89,7 @@
 | overrides | `qs` | `6.15.2` | — | No | **KEEP** | CVE fix |
 | overrides | `ip-address` | `^10.2.0` | — | No | **KEEP** | CVE fix |
 | overrides | `ws` | `^8.21.0` | — | No | **KEEP** | CVE fix |
-| overrides | `webdriver → undici@6` | `^6.27.0` | — | No | **KEEP** | CVE fix (scoped) |
+| overrides | `webdriver → undici@6` | `^6.27.0` | — | No | **ORPHANED** | `npm ls webdriver` → (empty); parent pkg not in tree |
 | overrides | `brace-expansion@5` | `5.0.7` | — | No | **KEEP** | CVE fix |
 | overrides | `form-data@4` | `^4.0.6` | — | No | **KEEP** | CVE fix |
 | overrides | `@vscode/vsce → form-data` | `^4.0.6` | — | No | **KEEP** | CVE fix (scoped) |
@@ -264,11 +264,27 @@ These overrides are no longer needed and should be deleted from their respective
 | `override/code/extensions/copilot/package.json` | `vitest` (devDep) | `^3.2.6` | `^4.1.8` | OUTDATED — upstream newer |
 | `override/code/extensions/copilot/chat-lib/package.json` | `vitest` (devDep) | `^3.2.6` | `^4.1.8` | OUTDATED — upstream newer |
 
-### KEEP — 73 entries
+### ORPHANED — 7 entries
+
+These overrides target transitive dependencies that no longer exist in the dependency tree (confirmed via `npm ls`). Removed from `.rebase/add/` and `code/` files:
+
+| File | Override | npm ls result |
+|------|----------|---------------|
+| `add/code/package.json` | `form-data@3: ^3.0.5` | `npm ls form-data@3` → (empty) |
+| `add/code/package.json` | `@types/node-fetch → form-data: ^3.0.5` | `npm ls @types/node-fetch` → (empty) |
+| `add/code/build/rspack/package.json` | `shell-quote: ^1.8.4` | `npm ls shell-quote` → (empty) |
+| `add/code/build/rspack/package.json` | `qs: 6.15.2` | `npm ls qs` → (empty) |
+| `add/code/build/rspack/package.json` | `ws: ^8.21.0` | `npm ls ws` → (empty) |
+| `add/code/build/rspack/package.json` | `webpack-bundle-analyzer → ws: ^7.5.11` | `npm ls webpack-bundle-analyzer` → (empty) |
+| `add/code/extensions/copilot/package.json` | `webdriver → undici@6: ^6.27.0` | `npm ls webdriver` → (empty) |
+
+Note: `.rebase/add/code/build/rspack/package.json` deleted (all entries orphaned). Corresponding `elif` entry removed from `rebase.sh`.
+
+### KEEP — 66 entries
 
 | Category | Count | Details |
 |----------|-------|---------|
-| `.rebase/add/` (not in upstream) | 61 | All add-file entries: CVE overrides + Che-specific deps |
+| `.rebase/add/` (not in upstream) | 54 | CVE overrides + Che-specific deps (verified via `npm ls`) |
 | `.rebase/override/` ACTIVE | 11 | Che pin > upstream — still actively needed |
 | Pinned exception | 1 | `@vscode/l10n-dev` held at `0.0.18` |
 
@@ -299,6 +315,6 @@ These overrides are no longer needed and should be deleted from their respective
 ## Recommended Follow-up
 
 1. **Remove 6 entries** from `.rebase/override/` files (1 REDUNDANT + 5 OUTDATED)
-2. **Verify CVE overrides** in `.rebase/add/` are still needed — some CVEs may have been fixed in newer transitive dependency versions pulled by upstream 1.128
+2. ~~**Verify CVE overrides** in `.rebase/add/` are still needed~~ — Done: 7 ORPHANED overrides identified and removed via `npm ls` verification
 3. **Review `vite` pin** (`7.3.1`) — upstream switched to `npm:rolldown-vite@latest`; confirm Che deliberately needs standard vite
 4. **Review `@vscode/l10n-dev`** exception — still intentionally held at `0.0.18` while upstream is at `0.0.35`

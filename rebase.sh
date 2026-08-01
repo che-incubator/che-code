@@ -500,8 +500,6 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/chat-lib/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/rspack/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
