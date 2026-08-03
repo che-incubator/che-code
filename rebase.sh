@@ -516,6 +516,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/platform/workspaces/common/workspaceIdentifier.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     else
       # Smart fallback: check if the file has che-specific changes
       local upstream_path="${conflictingFile#code/}"

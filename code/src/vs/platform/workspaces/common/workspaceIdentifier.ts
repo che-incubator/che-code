@@ -6,6 +6,7 @@
 import { hash } from '../../../base/common/hash.js';
 import { URI } from '../../../base/common/uri.js';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from '../../workspace/common/workspace.js';
+import { getDevWorkspaceId } from './che/devWorkspaceId.js';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // NOTE: DO NOT CHANGE. IDENTIFIERS HAVE TO REMAIN STABLE
@@ -30,5 +31,9 @@ export function getSingleFolderWorkspaceIdentifier(folderUri: URI): ISingleFolde
 }
 
 function getWorkspaceId(uri: URI): string {
+	const devWorkspaceId = getDevWorkspaceId();
+	if (devWorkspaceId) {
+		return hash(devWorkspaceId + uri.toString()).toString(16);
+	}
 	return hash(uri.toString()).toString(16);
 }
