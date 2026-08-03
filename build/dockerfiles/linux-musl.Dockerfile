@@ -64,7 +64,12 @@ RUN VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" ./node_modu
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
 
 # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
-RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k -exec gzip -9 -k {} \;
+# Exclude files patched by the launcher at runtime — they are compressed post-patch by the launcher itself
+RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -size +1k \
+    -not -path "*/vs/code/browser/workbench/workbench.js" \
+    -not -path "*/vs/workbench/workbench.web.main.internal.js" \
+    -not -path "*/vs/workbench/api/node/extensionHostProcess.js" \
+    -exec gzip -9 -k {} \;
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
