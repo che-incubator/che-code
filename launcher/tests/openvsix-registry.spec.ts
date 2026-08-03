@@ -81,6 +81,8 @@ describe('Test Configuring of OpenVSIX registry:', () => {
           return ORIGINAL_PRODUCT_JSON;
         } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
           return fileWorkbench;
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
+          return fileWorkbench;
         }
       },
 
@@ -121,6 +123,8 @@ describe('Test Configuring of OpenVSIX registry:', () => {
         if ('product.json' === file) {
           return ORIGINAL_PRODUCT_JSON;
         } else if ('out/vs/code/browser/workbench/workbench.js' === file) {
+          return fileWorkbench;
+        } else if ('out/vs/workbench/workbench.web.main.internal.js' === file) {
           return fileWorkbench;
         }
       },
