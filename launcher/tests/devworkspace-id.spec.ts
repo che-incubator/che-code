@@ -54,7 +54,8 @@ describe('Test setting DevWorkspace ID to VS Code', () => {
     const devWorkspaceId = new DevWorkspaceId();
     await devWorkspaceId.configure();
 
-    expect(readFileMock).toBeCalledTimes(1);
+    expect(readFileMock).toBeCalledTimes(2);
     expect(writeFileMock).toBeCalledWith('out/vs/code/browser/workbench/workbench.js', NEW_WORKBENCH);
+    expect(writeFileMock).toBeCalledWith('out/vs/workbench/workbench.web.main.internal.js', NEW_WORKBENCH);
   });
 });

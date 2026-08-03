@@ -66,6 +66,9 @@ describe('Test Configuring of WebView static resources:', () => {
         case 'out/vs/code/browser/workbench/workbench.js':
           return fileWorkbench;
 
+        case 'out/vs/workbench/workbench.web.main.internal.js':
+          return fileWorkbench;
+
         case 'out/vs/workbench/api/node/extensionHostProcess.js':
           return fileExtensionHostProcess;
       }
@@ -94,10 +97,16 @@ describe('Test Configuring of WebView static resources:', () => {
 
     await webviewResources.configure();
 
-    expect(updateMock).toHaveBeenCalledTimes(2);
+    expect(updateMock).toHaveBeenCalledTimes(3);
 
     expect(updateMock).toHaveBeenCalledWith(
       'out/vs/code/browser/workbench/workbench.js',
+      'https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/',
+      'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/'
+    );
+
+    expect(updateMock).toHaveBeenCalledWith(
+      'out/vs/workbench/workbench.web.main.internal.js',
       'https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/',
       'https://che-dogfooding.apps.che-dev.x6e0.p1.openshiftapps.com/vgulyy/che-code-multiroot/3100/oss-dev/static/out/vs/workbench/contrib/webview/browser/pre/'
     );
