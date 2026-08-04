@@ -9,6 +9,7 @@
  ***********************************************************************/
 
 import { createReadStream, createWriteStream } from 'fs';
+import { rename, unlink } from 'fs/promises';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import { FILE_WORKBENCH, FILE_WORKBENCH_WEB_MAIN, FILE_EXTENSION_HOST_PROCESS } from './files.js';
@@ -23,8 +24,15 @@ export class PostPatchCompression {
     for (const file of FILES_TO_COMPRESS) {
       const start = Date.now();
       const gzFile = file + '.gz';
-      await pipeline(createReadStream(file), createGzip({ level: 1 }), createWriteStream(gzFile));
-      console.log(`  > ${gzFile} created in ${Date.now() - start}ms`);
+      const tmpFile = gzFile + '.tmp';
+      try {
+        await pipeline(createReadStream(file), createGzip({ level: 1 }), createWriteStream(tmpFile));
+        await rename(tmpFile, gzFile);
+        console.log(`  > ${gzFile} created in ${Date.now() - start}ms`);
+      } catch (err) {
+        console.warn(`  > WARNING: failed to compress ${file}, skipping (server will serve uncompressed): ${err}`);
+        await unlink(tmpFile).catch(() => {});
+      }
     }
 
     console.log(`  > total compression time: ${Date.now() - startTotal}ms`);
