@@ -12,7 +12,15 @@ https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d60
 https://github.com/che-incubator/che-code/pull/771
 
 - code/package.json
+- code/build/package.json
+- code/build/npm/gyp/package.json
 - code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/markdown-language-features/package.json
+- code/extensions/npm/package.json
+- code/test/automation/package.json
+- code/test/integration/browser/package.json
+- code/test/sanity/package.json
 ---
 
 #### @sbouchet
