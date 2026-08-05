@@ -6,8 +6,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-# https://registry.access.redhat.com/ubi9/nodejs-20
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.7-1776735844 as linux-libc-ubi9-builder
+# https://registry.access.redhat.com/ubi9/nodejs-24
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1785389273 as linux-libc-ubi9-builder
 
 USER root
 
@@ -145,9 +145,12 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 
 RUN if [ "$(uname -m)" = "x86_64" ]; then \
       yum install -y chromium && \
-      PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/) && \
-      rm "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome" && \
-      ln -s /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome-linux/chrome"; \
+      PLAYWRIGHT_CHROMIUM_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium-*/chrome-linux64) && \
+      PLAYWRIGHT_HEADLESS_PATH=$(echo /opt/app-root/src/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64) && \
+      rm -f "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_CHROMIUM_PATH}/chrome" && \
+      rm -f "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell" && \
+      ln -sf /usr/bin/chromium-browser "${PLAYWRIGHT_HEADLESS_PATH}/chrome-headless-shell"; \
     fi
 
 # use of retry and timeout

@@ -8,15 +8,11 @@ import { constObservable } from '../../../../../base/common/observable.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { CancellationToken } from '../../../../../base/common/cancellation.js';
 import { mock } from '../../../../../base/test/common/mock.js';
-import { TestConfigurationService } from '../../../../../platform/configuration/test/common/testConfigurationService.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
-import { IChatPromptSlashCommand, PromptsStorage } from '../../../../contrib/chat/common/promptSyntax/service/promptsService.js';
-import { AICustomizationManagementSection, AI_CUSTOMIZATION_WELCOME_PAGE_VARIANT_SETTING, AICustomizationWelcomePageVariant } from '../../../../contrib/chat/browser/aiCustomization/aiCustomizationManagement.js';
-import { IAICustomizationWorkspaceService, IStorageSourceFilter } from '../../../../contrib/chat/common/aiCustomizationWorkspaceService.js';
-import { PromptsType } from '../../../../contrib/chat/common/promptSyntax/promptTypes.js';
+import { IChatPromptSlashCommand } from '../../../../contrib/chat/common/promptSyntax/service/promptsService.js';
+import { AICustomizationManagementSection } from '../../../../contrib/chat/browser/aiCustomization/aiCustomizationManagement.js';
+import { IAICustomizationWorkspaceService } from '../../../../contrib/chat/common/aiCustomizationWorkspaceService.js';
 import { AICustomizationWelcomePage } from '../../../../contrib/chat/browser/aiCustomization/aiCustomizationWelcomePage.js';
-import { ClassicAICustomizationWelcomePage } from '../../../../contrib/chat/browser/aiCustomization/aiCustomizationWelcomePageClassic.js';
-import { PromptLaunchersAICustomizationWelcomePage } from '../../../../contrib/chat/browser/aiCustomization/aiCustomizationWelcomePagePromptLaunchers.js';
 import { ComponentFixtureContext, defineComponentFixture, defineThemedFixtureGroup } from '../fixtureUtils.js';
 import { NullHoverService } from '../../../../../platform/hover/test/browser/nullHoverService.js';
 
@@ -34,10 +30,6 @@ const visibleSections = new Set<AICustomizationManagementSection>([
 	AICustomizationManagementSection.Plugins,
 ]);
 
-const defaultFilter: IStorageSourceFilter = {
-	sources: [PromptsStorage.local, PromptsStorage.user, PromptsStorage.extension, PromptsStorage.plugin],
-};
-
 function createMockWorkspaceService(): IAICustomizationWorkspaceService {
 	return new class extends mock<IAICustomizationWorkspaceService>() {
 		override readonly isSessionsWindow = false;
@@ -49,9 +41,6 @@ function createMockWorkspaceService(): IAICustomizationWorkspaceService {
 		override readonly hasOverrideProjectRoot = constObservable(false);
 		override getActiveProjectRoot(): URI {
 			return URI.file('/workspace');
-		}
-		override getStorageSourceFilter(_type: PromptsType): IStorageSourceFilter {
-			return defaultFilter;
 		}
 		override async commitFiles(): Promise<void> { }
 		override async deleteFiles(): Promise<void> { }
@@ -84,49 +73,9 @@ function createHost(container: HTMLElement): HTMLElement {
 	return DOM.append(content, DOM.$('.content-inner'));
 }
 
-function renderClassicWelcomePage(ctx: ComponentFixtureContext): void {
+function renderWelcomePage(ctx: ComponentFixtureContext): void {
 	const host = createHost(ctx.container);
 	const workspaceService = createMockWorkspaceService();
-	const page = ctx.disposableStore.add(new ClassicAICustomizationWelcomePage(
-		host,
-		workspaceService.welcomePageFeatures,
-		{
-			selectSection: () => { },
-			selectSectionWithMarketplace: () => { },
-			closeEditor: () => { },
-			prefillChat: () => { },
-		},
-		createMockCommandService(),
-		workspaceService,
-	));
-	page.rebuildCards(visibleSections);
-}
-
-function renderPromptLaunchersWelcomePage(ctx: ComponentFixtureContext): void {
-	const host = createHost(ctx.container);
-	const workspaceService = createMockWorkspaceService();
-	const page = ctx.disposableStore.add(new PromptLaunchersAICustomizationWelcomePage(
-		host,
-		workspaceService.welcomePageFeatures,
-		{
-			selectSection: () => { },
-			selectSectionWithMarketplace: () => { },
-			closeEditor: () => { },
-			prefillChat: () => { },
-		},
-		createMockCommandService(),
-		workspaceService,
-		NullHoverService,
-	));
-	page.rebuildCards(visibleSections);
-}
-
-function renderSelectedWelcomePage(ctx: ComponentFixtureContext, variant: AICustomizationWelcomePageVariant): void {
-	const host = createHost(ctx.container);
-	const workspaceService = createMockWorkspaceService();
-	const configService = new TestConfigurationService({
-		[AI_CUSTOMIZATION_WELCOME_PAGE_VARIANT_SETTING]: variant,
-	});
 	const page = ctx.disposableStore.add(new AICustomizationWelcomePage(
 		host,
 		workspaceService.welcomePageFeatures,
@@ -138,27 +87,15 @@ function renderSelectedWelcomePage(ctx: ComponentFixtureContext, variant: AICust
 		},
 		createMockCommandService(),
 		workspaceService,
-		configService,
 		NullHoverService,
+		'Local',
 	));
 	page.rebuildCards(visibleSections);
 }
 
 export default defineThemedFixtureGroup({ path: 'chat/aiCustomizations/' }, {
-	WelcomePageClassic: defineComponentFixture({
+	WelcomePage: defineComponentFixture({
 		labels: { kind: 'screenshot' },
-		render: renderClassicWelcomePage,
-	}),
-	WelcomePagePromptLaunchers: defineComponentFixture({
-		labels: { kind: 'screenshot' },
-		render: renderPromptLaunchersWelcomePage,
-	}),
-	WelcomePageSelectorClassic: defineComponentFixture({
-		labels: { kind: 'screenshot' },
-		render: ctx => renderSelectedWelcomePage(ctx, 'classic'),
-	}),
-	WelcomePageSelectorPromptLaunchers: defineComponentFixture({
-		labels: { kind: 'screenshot' },
-		render: ctx => renderSelectedWelcomePage(ctx, 'promptLaunchers'),
+		render: renderWelcomePage,
 	}),
 });

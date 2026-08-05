@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\t\t\t\tthis.cachedFolderConfigs.deleteAndDispose(key);\n\t\t\t\tchanges.push(this._configuration.compareAndDeleteFolderConfiguration(key));\n\t\t\t}\n",
+    "by": "\t\t\t\tthis.cachedFolderConfigs.deleteAndDispose(key);\n\t\t\t\tif (this._configuration.folderConfigurations.has(key)) {\n\t\t\t\t\tchanges.push(this._configuration.compareAndDeleteFolderConfiguration(key));\n\t\t\t\t}\n\t\t\t}\n"
+  }
+]

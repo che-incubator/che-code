@@ -1,9 +1,5 @@
 [
     {
-        "from": "// Module passed around as type",
-        "by": "// che-api contains few interfaces (with Symbol usage) that are not handled correctly by the mangle logic\n    'devfile-service',\n    'github-service',\n    'telemetry-service',\n    'workspace-service',\n\n\t// Module passed around as type"
-    },
-    {
         "from": "private readonly renameWorkerPool: workerpool.WorkerPool;",
         "by": "private readonly renameWorkerPool: workerpool.WorkerPool;\n\tprivate readonly defaultWorkersNumber = 4;"
     },

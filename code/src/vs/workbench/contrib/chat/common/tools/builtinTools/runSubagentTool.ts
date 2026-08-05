@@ -17,10 +17,12 @@ import { IInstantiationService } from '../../../../../../platform/instantiation/
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { IProductService } from '../../../../../../platform/product/common/productService.js';
 import { ChatRequestVariableSet } from '../../attachments/chatVariableEntries.js';
+import { isByokModel } from '../../chatSelectedModel.js';
 import { IChatProgress, IChatService } from '../../chatService/chatService.js';
 import { ChatAgentLocation, ChatConfiguration, ChatModeKind, GeneralPurposeAgentName } from '../../constants.js';
-import { ILanguageModelChatMetadata, ILanguageModelsService } from '../../languageModels.js';
+import { COPILOT_VENDOR_ID, ILanguageModelChatMetadata, ILanguageModelsService } from '../../languageModels.js';
 import { ChatModel, IChatRequestModeInstructions } from '../../model/chatModel.js';
+import { getChatSessionType } from '../../model/chatUri.js';
 import { IChatAgentRequest, IChatAgentResult, IChatAgentService } from '../../participants/chatAgents.js';
 import { ComputeAutomaticInstructions } from '../../promptSyntax/computeAutomaticInstructions.js';
 import { ChatRequestHooks, mergeHooks } from '../../promptSyntax/hookSchema.js';
@@ -89,7 +91,6 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 		super();
 
 		this._register(Event.filter(this.configurationService.onDidChangeConfiguration, e =>
-			e.affectsConfiguration(ChatConfiguration.SubagentToolCustomAgents) ||
 			e.affectsConfiguration(ChatConfiguration.GeneralPurposeAgentEnabled)
 		)(() => this._onDidUpdateToolData.fire()));
 	}
@@ -97,7 +98,6 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 	getToolData(): IToolData {
 		const modelDescription = BaseModelDescription;
 		const generalPurposeAgentEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.GeneralPurposeAgentEnabled);
-		const customAgentsEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.SubagentToolCustomAgents);
 
 		const properties: IJSONSchemaMap = {
 			prompt: {
@@ -109,16 +109,12 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 				description: 'A short (3-5 word) description of the task'
 			}
 		};
-
-		if (customAgentsEnabled || generalPurposeAgentEnabled) {
-			properties.agentName = {
-				type: 'string',
-				description: generalPurposeAgentEnabled
-					? 'Name of the agent to invoke.'
-					: 'Optional name of a specific agent to invoke. If not provided, uses the current agent.'
-			};
-		}
-
+		properties.agentName = {
+			type: 'string',
+			description: generalPurposeAgentEnabled
+				? 'Name of the agent to invoke.'
+				: 'Optional name of a specific agent to invoke. If not provided, uses the current agent.'
+		};
 		properties.model = {
 			type: 'string',
 			description: 'Optional model for the subagent. Format: "Model Name (Vendor)", vendor is usually "copilot". Only use to enforce a specific model.',
@@ -183,12 +179,11 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 			const subAgentName = args.agentName;
 			// Defensive: model may omit agentName despite schema requiring it
 			const gpEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.GeneralPurposeAgentEnabled);
-			const customAgentsEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.SubagentToolCustomAgents);
 			const isGeneralPurpose = gpEnabled && (!subAgentName || subAgentName === GeneralPurposeAgentName);
 			const effectiveSubAgentName = isGeneralPurpose ? GeneralPurposeAgentName : subAgentName;
 
 			if (subAgentName && !isGeneralPurpose) {
-				subagent = customAgentsEnabled ? await this.getSubAgentByName(subAgentName) : undefined;
+				subagent = await this.getSubAgentByName(subAgentName);
 				if (subagent) {
 					// Check the pre-resolved model cache from prepareToolInvocation
 					const cached = this._resolvedModels.get(invocation.callId);
@@ -222,6 +217,7 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 						name: subAgentName,
 						content: instructions.content,
 						toolReferences: this.languageModelToolsService.toToolReferences(instructions.toolReferences),
+						allowedSubagents: undefined,
 						metadata: instructions.metadata,
 						isBuiltin: isBuiltinAgent(subagent.source, subagent.uri, this.productService),
 					};
@@ -253,9 +249,22 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 			// uses in the renderer (see PR #302863), and the subagent grouping matches on toolCallId.
 			const subAgentInvocationId = invocation.chatStreamToolCallId ?? invocation.callId ?? `subagent-${generateUuid()}`;
 
+			// Running Copilot credit (AIC) total for this subagent. The subagent's
+			// turn reports usage events whose `copilotCredits` is the cumulative
+			// total so far, so the latest value is the subagent's full cost. It is
+			// surfaced on the subagent tool's hover via `toolSpecificData.credits`.
+			let subagentCredits: number | undefined;
 			let inEdit = false;
 			const progressCallback = (parts: IChatProgress[]) => {
 				for (const part of parts) {
+					// Usage events carry the subagent's running credit total; keep the
+					// latest so its own cost can be shown on the subagent tool's hover.
+					if (part.kind === 'usage') {
+						if (typeof part.copilotCredits === 'number') {
+							subagentCredits = part.copilotCredits;
+						}
+						continue;
+					}
 					// Write certain parts immediately to the model
 					if (part.kind === 'textEdit' || part.kind === 'notebookEdit' || part.kind === 'codeblockUri') {
 						if (part.kind === 'codeblockUri' && !inEdit) {
@@ -308,8 +317,11 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 			}
 
 			const variableSet = new ChatRequestVariableSet();
-			const computer = this.instantiationService.createInstance(ComputeAutomaticInstructions, ChatModeKind.Agent, modeTools, undefined);
-			await computer.collect(variableSet, token);
+			// When the extension is responsible for instruction collection, skip the core path entirely.
+			if (this.configurationService.getValue<boolean>(ChatConfiguration.CollectInstructionsInExtension) !== true) {
+				const computer = this.instantiationService.createInstance(ComputeAutomaticInstructions, ChatModeKind.Agent, modeTools, undefined, getChatSessionType(invocation.context.sessionResource));
+				await computer.collect(variableSet, token);
+			}
 
 			// Collect hooks from hook .json files
 			let collectedHooks: ChatRequestHooks | undefined;
@@ -393,6 +405,10 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 			if (invocation.toolSpecificData?.kind === 'subagent') {
 				invocation.toolSpecificData.result = resultText;
 				invocation.toolSpecificData.modelName = resolvedModelName;
+				// Surface the subagent's own credit (AIC) cost on its tool hover.
+				if (typeof subagentCredits === 'number' && subagentCredits > 0) {
+					invocation.toolSpecificData.credits = subagentCredits;
+				}
 			}
 
 			// Return result with toolMetadata containing subAgentInvocationId for trajectory tracking
@@ -420,7 +436,7 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 
 	private async getSubAgentByName(name: string): Promise<ICustomAgent | undefined> {
 		const agents = await this.promptsService.getCustomAgents(CancellationToken.None);
-		return agents.find(agent => agent.name === name);
+		return agents.find(agent => agent.name === name && agent.enabled);
 	}
 
 	/**
@@ -515,10 +531,19 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 		if (subagent && !explicitModelResolved) {
 			const modeModelQualifiedNames = subagent.model;
 			if (modeModelQualifiedNames) {
+				// When the main model is BYOK (flagged via `metadata.isBYOK`), skip Copilot/CAPI fallback models
+				// for built-in agents (e.g. Explore), whose model list is a curated convenience fallback. A
+				// user-authored agent's model list is a deliberate choice and is always honored as-is.
+				const mainModelMetadata = mainModelId ? this.languageModelsService.lookupLanguageModel(mainModelId) : undefined;
+				const mainModelIsByok = !!mainModelMetadata && isByokModel(mainModelMetadata);
+				const skipCopilotFallbacks = mainModelIsByok && isBuiltinAgent(subagent.source, subagent.uri, this.productService);
 				// Find the actual model identifier from the qualified name(s)
 				for (const qualifiedName of modeModelQualifiedNames) {
 					const lmByQualifiedName = this.languageModelsService.lookupLanguageModelByQualifiedName(qualifiedName);
 					if (lmByQualifiedName?.identifier) {
+						if (skipCopilotFallbacks && lmByQualifiedName.metadata.vendor === COPILOT_VENDOR_ID) {
+							continue;
+						}
 						modeModelId = lmByQualifiedName.identifier;
 						break;
 					}
@@ -544,9 +569,8 @@ export class RunSubagentTool extends Disposable implements IToolImpl {
 
 		// Defensive: model may omit agentName despite schema requiring it
 		const gpEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.GeneralPurposeAgentEnabled);
-		const customAgentsEnabled = this.configurationService.getValue<boolean>(ChatConfiguration.SubagentToolCustomAgents);
 		const isGeneralPurpose = gpEnabled && (!args.agentName || args.agentName === GeneralPurposeAgentName);
-		const subagent = (args.agentName && !isGeneralPurpose && customAgentsEnabled) ? await this.getSubAgentByName(args.agentName) : undefined;
+		const subagent = (args.agentName && !isGeneralPurpose) ? await this.getSubAgentByName(args.agentName) : undefined;
 
 		// Resolve the model early and cache it for invoke()
 		const resolved = this.resolveSubagentModel(subagent, context.modelId, args.model);

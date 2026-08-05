@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from '../../workspace/common/workspace.js';",
+        "by": "import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from '../../workspace/common/workspace.js';\nimport { getDevWorkspaceId } from './che/devWorkspaceId.js';"
+    },
+    {
+        "from": "function getWorkspaceId(uri: URI): string {\n\treturn hash(uri.toString()).toString(16);\n}",
+        "by": "function getWorkspaceId(uri: URI): string {\n\tconst devWorkspaceId = getDevWorkspaceId();\n\tif (devWorkspaceId) {\n\t\treturn hash(devWorkspaceId + uri.toString()).toString(16);\n\t}\n\treturn hash(uri.toString()).toString(16);\n}"
+    }
+]
