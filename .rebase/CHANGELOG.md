@@ -49,6 +49,7 @@ https://github.com/che-incubator/che-code/pull/777
 - code/test/sanity/package.json
 ---
 
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/750
 
 - code/extensions/copilot/package.json
