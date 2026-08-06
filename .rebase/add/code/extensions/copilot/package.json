@@ -11,9 +11,6 @@
         },
         "@grpc/proto-loader": {
             "protobufjs": "^7.6.5"
-        },
-        "@opentelemetry/otlp-transformer": {
-            "protobufjs": "^8.7.1"
         }
     }
 }
