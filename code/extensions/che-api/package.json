@@ -35,7 +35,7 @@
     "@kubernetes/client-node": "^1.4.0",
     "fs-extra": "^11.2.0",
     "inversify": "^6.0.2",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "reflect-metadata": "^0.2.2",
     "vscode-nls": "^5.0.0"
   },
