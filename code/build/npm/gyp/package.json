@@ -7,7 +7,8 @@
     "node-gyp": "^11.2.0"
   },
   "overrides": {
-    "ip-address": "^10.2.0"
+    "ip-address": "^10.2.0",
+    "brace-expansion@2": "^2.1.4"
   },
   "scripts": {}
 }
