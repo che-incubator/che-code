@@ -1,0 +1,10 @@
+[
+  {
+    "from": "if (product.extensionsGallery) {\n\t\t\tconsole.error(`product.json: Contains 'extensionsGallery'`);\n\t\t\terrorCount++;\n\t\t}",
+    "by": "// CHECODE: we have openvsx\n\t\t/*\n\t\tif (product.extensionsGallery) {\n\t\t\tconsole.error(`product.json: Contains 'extensionsGallery'`);\n\t\t\terrorCount++;\n\t\t}\n\t\t*/"
+  },
+  {
+    "from": "const copyrights = es.through(function (file: VinylFileWithLines) {\n\t\tconst lines = file.__lines;",
+    "by": "const copyrights = es.through(function (file: VinylFileWithLines) {\n\t\t// CHECODE: skip che relative copyright files\n\t\tif (/^.*\\/vs\\/server\\/che.*/.test(file.relative)) {\n\t\t\tthis.emit('data', file);\n\t\t\treturn;\n\t\t}\n\t\tconst lines = file.__lines;"
+  }
+]

@@ -108,7 +108,10 @@ fi
 
 set -e
 
+# update package version
 npm --no-git-tag-version version --allow-same-version "${VERSION}"
+# update machine-exec depencency
+sed_in_place -e "s|\(FROM quay.io/eclipse/che-machine-exec:\)[^ ]\+|\1${VERSION}|" build/dockerfiles/assembly.Dockerfile
 
 # commit change into branch
 if [[ ${NOCOMMIT} -eq 0 ]]; then

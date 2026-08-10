@@ -948,7 +948,9 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		for (const key of this.cachedFolderConfigs.keys()) {
 			if (!this.workspace.folders.filter(folder => folder.uri.toString() === key.toString())[0]) {
 				this.cachedFolderConfigs.deleteAndDispose(key);
-				changes.push(this._configuration.compareAndDeleteFolderConfiguration(key));
+				if (this._configuration.folderConfigurations.has(key)) {
+					changes.push(this._configuration.compareAndDeleteFolderConfiguration(key));
+				}
 			}
 		}
 

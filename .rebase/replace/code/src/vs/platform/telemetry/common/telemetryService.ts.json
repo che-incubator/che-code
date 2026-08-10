@@ -1,0 +1,10 @@
+[
+  {
+    "from": "'default': TelemetryConfiguration.ON,\n\t\t\t'restricted': true,\n\t\t\t'scope': ConfigurationScope.APPLICATION,\n\t\t\t'tags': ['usesOnlineServices', 'telemetry'],",
+    "by": "'default': TelemetryConfiguration.OFF,\n\t\t\t'restricted': true,\n\t\t\t'scope': ConfigurationScope.APPLICATION,\n\t\t\t'tags': ['usesOnlineServices', 'telemetry'],"
+  },
+  {
+    "from": "product.nameLong, product.privacyStatementUrl),\n\t\t\t'default': true,",
+    "by": "product.nameLong, product.privacyStatementUrl),\n\t\t\t'default': false,"
+  }
+]

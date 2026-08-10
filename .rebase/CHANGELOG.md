@@ -2,6 +2,21 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @rnikitenko
+https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
+
+- code/src/vs/workbench/services/configuration/browser/configurationService.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/774
+
+- code/package.json
+- code/remote/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/copilot/package.json
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/750
 
@@ -108,16 +123,6 @@ https://github.com/che-incubator/che-code/pull/716
 - code/build/package.json
 - code/test/monaco/package.json
 - code/extensions/mermaid-chat-features/package.json
----
-
-#### @sbouchet
-https://github.com/che-incubator/che-code/pull/705
-
-- code/extensions/markdown-language-features/package.json
-- code/extensions/mermaid-chat-features/package.json
-- code/src/vs/base/browser/dompurify/cgmanifest.json
-- code/src/vs/base/browser/dompurify/dompurify.d.ts
-- code/src/vs/base/browser/dompurify/dompurify.js
 ---
 
 #### @sbouchet

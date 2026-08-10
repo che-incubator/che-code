@@ -45,6 +45,13 @@ jest.mock('../src/local-storage-key-provider', () => ({
   },
 }));
 
+const compressPostPatch = jest.fn();
+jest.mock('../src/post-patch-compression', () => ({
+  PostPatchCompression: function () {
+    return { compress: compressPostPatch };
+  },
+}));
+
 const configureTustedExtensions = jest.fn();
 jest.mock('../src/trusted-extensions', () => ({
   TrustedExtensions: function () {
@@ -82,6 +89,7 @@ describe('Test main flow:', () => {
     expect(configureWebviewResourcesMock).toBeCalled();
     expect(configureNodeExtraCertificate).toBeCalled();
     expect(configureLocalStorageKeyProvider).toBeCalled();
+    expect(compressPostPatch).toBeCalled();
     expect(configureTustedExtensions).toBeCalled();
 
     expect(generateCodeWorkspace).toBeCalled();

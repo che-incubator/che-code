@@ -34,7 +34,7 @@ ENV ZSH_DISABLE_COMPFIX="true"
 
 USER 10001
 
-ENV NODEJS_VERSION=22.22.1
+ENV NODEJS_VERSION=24.17.0
 
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0 \
@@ -46,7 +46,7 @@ RUN source $NVM_DIR/nvm.sh && \
     nvm use v$NODEJS_VERSION
 
 USER 0
-RUN npm install --global npm@10.9.3 node-gyp@11
+RUN npm install --global node-gyp@11
 
 # Set permissions on /home/user/.cache to allow the user to write
 RUN chgrp -R 0 /home/user/.cache && chmod -R g=u /home/user/.cache

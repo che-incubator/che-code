@@ -1,0 +1,6 @@
+[
+  {
+    "from": "getL10nJson([{ contents, extension }])\n\t\t\t\t\t.then((json) => {\n\t\t\t\t\t\tcallback(undefined, new File({\n\t\t\t\t\t\t\tpath: `extensions/${extensionFolderName}/bundle.l10n.json`,\n\t\t\t\t\t\t\tcontents: Buffer.from(JSON.stringify(json), 'utf8')\n\t\t\t\t\t\t}));\n\t\t\t\t\t})\n\t\t\t\t\t.catch((err) => {\n\t\t\t\t\t\tcallback(new Error(`File ${file.relative} threw an error when parsing: ${err}`));\n\t\t\t\t\t});",
+    "by": "try {\n\t\t\t\t\tconst json = getL10nJson([{ contents, extension }]);\n\t\t\t\t\tcallback(undefined, new File({\n\t\t\t\t\t\tpath: `extensions/${extensionFolderName}/bundle.l10n.json`,\n\t\t\t\t\t\tcontents: Buffer.from(JSON.stringify(json), 'utf8')\n\t\t\t\t\t}));\n\t\t\t\t} catch (error) {\n\t\t\t\t\tcallback(new Error(`File ${file.relative} threw an error when parsing: ${error}`));\n\t\t\t\t}"
+  }
+]

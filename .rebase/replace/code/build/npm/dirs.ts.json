@@ -1,0 +1,6 @@
+[
+  {
+    "from": "'extensions',\n\t'extensions/configuration-editing',",
+    "by": "'extensions',\n\t'extensions/che-activity-tracker',\n\t'extensions/che-api',\n\t'extensions/che-commands',\n\t'extensions/che-port',\n\t'extensions/che-remote',\n\t'extensions/che-resource-monitor',\n\t'extensions/che-terminal',\n\t'extensions/che-github-authentication',\n\t'extensions/configuration-editing',"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "from": "\tprivate get _remoteResourcesPath(): string {\n\t\treturn paths.posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);\n\t}\n\n\tset(authority: string, host: string, port: number): void {",
+    "by": "\tset(authority: string, host: string, port: number): void {"
+  },
+  {
+    "from": "path: this._remoteResourcesPath,",
+    "by": "path: `${window.location.pathname}oss-dev/vscode-remote-resource`,"
+  }
+]
