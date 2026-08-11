@@ -127,9 +127,6 @@ apply_code_package_changes() {
   # now apply again the changes
   override_json_file code/package.json
 
-  # apply the replace
-  apply_multi_line_replace code/package.json
-  
   # resolve the change
   git add code/package.json > /dev/null 2>&1
 }
@@ -455,8 +452,6 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/extensions/npm/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/.moduleignore" ]]; then
-      apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
