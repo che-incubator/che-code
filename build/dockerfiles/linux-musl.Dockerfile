@@ -7,7 +7,7 @@
 #
 
 # Use Debian-based Node.js image for all architectures (amd64, arm64, ppc64le)
-FROM docker.io/node:22-bookworm as linux-musl-builder
+FROM docker.io/node:24-bookworm as linux-musl-builder
 
 # Set architecture variable for later use
 ARG TARGETARCH
@@ -59,14 +59,42 @@ RUN git init .
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
 
-# @vscode/vsce-sign has no binary for ppc64le/s390x and its postinstall exits with code 1.
-# Disable the postinstall on unsupported architectures — the module is never included in the
-# final runtime bundle, so this has no effect on the running product.
+# prepareBuiltInCopilotRipgrepShim has no unsupported-arch guard unlike other
+# copilot functions. Patch it to skip gracefully on ppc64le/s390x.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      sed -i 's/export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string): void {/export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string): void {\n\tif (!copilotPlatforms.includes(toCopilotPackagePlatformArch(platform, arch))) { return; }/' \
+        build/lib/copilot.ts; \
+    fi
+
+# The root .npmrc sets runtime=electron and disturl=electronjs.org for desktop builds.
+# On ppc64le/s390x we build the web server only — write global npmrc overrides so
+# node-gyp uses plain Node headers. Project .npmrc is left intact for build tools.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      printf 'runtime=node\ndisturl=https://nodejs.org/dist\nbuild_from_source=false\n' \
+        >> /root/.npmrc; \
+    fi
+
+# @vscode/vsce-sign and @github/copilot have no binary for ppc64le/s390x.
+# Disable their postinstall scripts before npm install.
 # hadolint ignore=SC3014
 RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
       sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
         build/package-lock.json \
         extensions/copilot/package-lock.json; \
+      sed -i 's/"postinstall": "tsx \.\/script\/postinstall\.ts"/"postinstall": "echo skipped"/' \
+        extensions/copilot/package.json; \
+    fi
+
+# On ppc64le/s390x, build_from_source in remote/.npmrc causes node-gyp to
+# download headers from nodejs.org which times out. Disable it and also
+# disable @parcel/watcher install script since no prebuilt exists for ppc64le.
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" != "amd64" ] && [ "${TARGETARCH}" != "arm64" ]; then \
+      sed -i '/^build_from_source/d' remote/.npmrc; \
+      sed -i '0,/"hasInstallScript": true/s/"hasInstallScript": true/"hasInstallScript": false/' \
+        remote/package-lock.json; \
     fi
 
 # Grab dependencies (and force to rebuild them)
@@ -108,25 +136,34 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     && cp /usr/local/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/${PLATFORM_DIR}/node \
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
-# Build with architecture-specific gulp target
-RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
-      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
-        ./node_modules/.bin/gulp vscode-reh-web-linux-ppc64-min; \
-    elif [ "${TARGETARCH}" = "arm64" ]; then \
-      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
-        ./node_modules/.bin/gulp vscode-reh-web-linux-arm64-min; \
-    else \
-      VSCODE_MANGLE_WORKERS=2 NODE_OPTIONS="--max-old-space-size=8192" \
-        ./node_modules/.bin/gulp vscode-reh-web-linux-x64-min; \
+# Compile non-arch-specific assets (main's new pipeline steps)
+RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-extension-media-build
+
+# Compile copilot extension only on supported architectures
+# hadolint ignore=SC3014
+RUN if [ "${TARGETARCH}" = "amd64" ] || [ "${TARGETARCH}" = "arm64" ]; then \
+      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp compile-copilot-extension-build; \
     fi
 
-# Copy output to /checode with architecture-specific source
+RUN npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck
+
+RUN NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min
+
+# Build and copy with architecture-specific gulp target
+RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
+      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-ppc64-min-ci; \
+    elif [ "${TARGETARCH}" = "arm64" ]; then \
+      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-arm64-min-ci; \
+    else \
+      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min-ci; \
+    fi
+
 RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
       cp -r ../vscode-reh-web-linux-ppc64 /checode; \
     elif [ "${TARGETARCH}" = "arm64" ]; then \
       cp -r ../vscode-reh-web-linux-arm64 /checode; \
     else \
-      cp -r ../vscode-reh-web-linux-x64 /checode; \
+      cp -r ../vscode-reh-web-linux-alpine /checode; \
     fi
 
 # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
@@ -199,7 +236,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
         MACHINE_EXEC_MAX_RETRIES=1 \
         retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
       else \
-        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
         MACHINE_EXEC_MAX_RETRIES=1 \
         retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
       fi \
@@ -214,7 +251,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
         VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-arm64" \
         retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
       else \
-        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
         retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
       fi \
     fi
@@ -234,3 +271,4 @@ RUN npm install \
 
 FROM scratch as linux-musl-content
 COPY --from=linux-musl-builder /checode /checode-linux-musl
+
