@@ -1,0 +1,19 @@
+stopped: {
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+> scope: Local: foo
+    > this: Window
+    y: 'value of y'
+    z: 'value of z'
+
+Setting "y" to "z"
+<result>: 'value of z'
+
+Original
+> scope: Local: foo
+    > this: Window
+    y: 'value of y'
+    z: 'value of z'

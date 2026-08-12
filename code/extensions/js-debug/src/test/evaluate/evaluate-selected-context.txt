@@ -1,0 +1,9 @@
+--- Evaluating in page
+Pausing...
+Paused
+result: false
+Resumed
+--- Evaluating in worker
+Paused
+result: true
+Resumed

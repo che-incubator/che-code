@@ -1,0 +1,9 @@
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+<anonymous> @ <eval>/VM<xx>:1:25
+Window.bar @ ${workspaceFolder}/web/browserify/module2.ts:3:3 <hidden: Skipped by skipFiles>
+<anonymous> @ <eval>/VM<xx>:1:8

@@ -1,0 +1,134 @@
+{
+  "name": "vscode-devfile",
+  "publisher": "devfile",
+  "displayName": "Devfile Walkthrough",
+  "description": "Generate and edit Devfiles in a flash.",
+  "version": "0.0.4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devfile/vscode-walkthrough-extension"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "icon": "media/devfile-icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/devfile-extension.js",
+  "scripts": {
+    "esbuild-base": "rimraf out && esbuild ./src/devfile-extension.ts --bundle --outfile=out/devfile-extension.js --external:vscode --format=cjs --platform=node",
+    "compile": "npm run esbuild-base -- --sourcemap",
+    "watch": "npm run esbuild-base -- --sourcemap --watch",
+    "build-vsix": "vsce package",
+    "build-vsix-ignorewarnings": "vsce package --allow-star-activation --out devfile-vscode-devfile-0.0.1.vsix",
+    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
+    "pretest": "npm run compile && npm run eslint",
+    "eslint": "eslint src --ext ts",
+    "cleanup": "rm -f ./devfile-vscode-devfile-0.0.1.vsix && rm -rf ./out"
+  },
+  "dependencies": {
+    "inversify": "^5.0.1",
+    "js-yaml": "^3.13.1",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "esbuild": "^0.19.12",
+    "eslint": "^8.56.0",
+    "typescript": "^4.9.4",
+    "vsce": "^2.15.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-devfile.new-container",
+        "title": "Devfile: New Container"
+      },
+      {
+        "command": "vscode-devfile.new-endpoint",
+        "title": "Devfile: New Container Endpoint"
+      },
+      {
+        "command": "vscode-devfile.new-environment-variable",
+        "title": "Devfile: New Container Environment Variable"
+      },
+      {
+        "command": "vscode-devfile.new-command",
+        "title": "Devfile: New Command"
+      },
+      {
+        "command": "vscode-devfile.install-yaml",
+        "title": "Devfile: Install YAML Extension"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "get-started-with-devfile",
+        "title": "Get Started with the Devfile",
+        "description": "Generate a Devfile to customize your Cloud Development Environment",
+        "icon": "media/devfile-icon.png",
+        "steps": [
+          {
+            "id": "add-container",
+            "title": "Add Container",
+            "description": "Adding a container\n[New Container](command:vscode-devfile.new-container)",
+            "media": {
+              "markdown": "media/new-container.md"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "add-endpoint",
+            "title": "Add Container Endpoint",
+            "description": "Adding a container endpoint\n[New Endpoint](command:vscode-devfile.new-endpoint)",
+            "media": {
+              "markdown": "media/new-endpoint.md"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "add-environment-variable",
+            "title": "Add Container Environment Variable",
+            "description": "Adding a container environment variable\n[New Variable](command:vscode-devfile.new-environment-variable)",
+            "media": {
+              "markdown": "media/new-environment-variable.md"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "add-command",
+            "title": "Add Command",
+            "description": "Adding a command\n[New Command](command:vscode-devfile.new-command)",
+            "media": {
+              "markdown": "media/new-command.md"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "install-yaml",
+            "title": "Add YAML Extension",
+            "description": "Provide Devfile code assistance \n[Install](command:vscode-devfile.install-yaml)",
+            "media": {
+              "markdown": "media/install-yaml.md"
+            }
+          },
+          {
+            "id": "restart-workspace",
+            "title": "Restart Your Workspace From Devfile",
+            "description": "Apply the Devfile and restart \n[Restart](command:che-remote.command.restartFromLocalDevfile)",
+            "media": {
+              "markdown": "media/restart-workspace.md"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
