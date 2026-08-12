@@ -38,7 +38,6 @@
     "prepare": "husky install",
     "package": "gulp package",
     "publish": "gulp publish",
-    "postinstall": "playwright install chromium --with-deps --only-shell",
     "precommit": "npm-run-all --parallel test:lint test:types",
     "updatetypes": "cd src/typings && npx -y @vscode/dts dev && npx -y @vscode/dts master",
     "updatenodeapi": "python src/build/getNodePdl.py && dprint fmt",
@@ -142,7 +141,6 @@
     "mocha-junit-reporter": "^2.2.1",
     "mocha-multi-reporters": "^1.5.1",
     "nyc": "^15.1.0",
-    "playwright": "^1.55.1",
     "sinon": "^17.0.1",
     "stream-buffers": "^3.0.2",
     "ts-node": "^10.9.2",
@@ -161,6 +159,7 @@
     "workspace"
   ],
   "overrides": {
-    "serialize-javascript": ">=7.0.5"
+    "serialize-javascript": ">=7.0.5",
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
   }
 }

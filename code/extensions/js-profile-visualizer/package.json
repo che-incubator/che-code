@@ -3,7 +3,6 @@
   "private": true,
   "workspaces": [
     "packages/vscode-js-profile-core",
-    "packages/vscode-js-profile-flame",
     "packages/vscode-js-profile-table"
   ],
   "scripts": {
@@ -32,11 +31,12 @@
     "tabWidth": 2
   },
   "overrides": {
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.3",
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
-    "@types/node": "^20.9.0",
+    "@types/node": "^20.19.0",
     "@types/vscode": "^1.84.1",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",

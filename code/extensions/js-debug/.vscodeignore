@@ -2,3 +2,5 @@
 **/*.map
 src/build/**
 src/testRunner.js
+testWorkspace/
+src/

@@ -45,6 +45,9 @@
     "typescript": "^4.9.4",
     "vsce": "^2.15.0"
   },
+  "overrides": {
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
+  },
   "contributes": {
     "commands": [
       {

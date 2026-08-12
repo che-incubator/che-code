@@ -78,5 +78,8 @@
     "execa": "^5.1.1",
     "split2": "^4.2.0",
     "ws": "^8.17.1"
+  },
+  "overrides": {
+    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
   }
 }
