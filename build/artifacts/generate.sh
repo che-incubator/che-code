@@ -43,39 +43,7 @@ makeArtifactsLockYaml () {
     echo "    filename: $FILENAME"          >> "$ARTIFACTS_LOCK_YAML"
     echo "    checksum: sha256:$SHA256"     >> "$ARTIFACTS_LOCK_YAML"
   done
-
-  # Generate artifacts for ripgrep dependency
-  PACKAGE_LOCK_JSON="$ROOT_DIR/code/package-lock.json"
-  VSCODE_RIPGREP_VERSION=$(grep '"node_modules/@vscode/ripgrep"' "$PACKAGE_LOCK_JSON" -A 2 | grep '"version"' | head -1 | cut -d '"' -f 4)
-  POST_INSTALL_SCRIPT=$(curl -sSL https://raw.githubusercontent.com/microsoft/vscode-ripgrep/v${VSCODE_RIPGREP_VERSION}/lib/postinstall.js)
-  VSIX_RIPGREP_PREBUILT_VERSION=$(echo "${POST_INSTALL_SCRIPT}" | grep "const VERSION" | cut -d"'" -f 2 )
-  VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION=$(echo "${POST_INSTALL_SCRIPT}" | grep "const MULTI_ARCH_LINUX_VERSION" | cut -d"'" -f 2 )
-
-  PLATFORMS=("ppc64le" "s390x" "x86_64" "aarch64")
-  for PLATFORM in "${PLATFORMS[@]}"; do
-    case $PLATFORM in
-      'ppc64le') RG_ARCH_SUFFIX='powerpc64le-unknown-linux-gnu';;
-      's390x') RG_ARCH_SUFFIX='s390x-unknown-linux-gnu';;
-      'x86_64') RG_ARCH_SUFFIX='x86_64-unknown-linux-musl';;
-      'aarch64') RG_ARCH_SUFFIX='aarch64-unknown-linux-musl';;
-    esac
-    case $PLATFORM in
-      'ppc64le' | 's390x') RG_VERSION=${VSIX_RIPGREP_PREBUILT_MULTIARCH_VERSION};;
-      'x86_64' | 'aarch64') RG_VERSION="${VSIX_RIPGREP_PREBUILT_VERSION}";;
-    esac
-
-    FILENAME="ripgrep-${RG_VERSION}-${RG_ARCH_SUFFIX}.tar.gz"
-    DOWNLOAD_URL="https://github.com/microsoft/ripgrep-prebuilt/releases/download/${RG_VERSION}/${FILENAME}"
-    checkUrlExistence "$DOWNLOAD_URL"
-
-    read -r SHA256 rest <<< "$(curl -sL "$DOWNLOAD_URL" | shasum -a 256)"
-
-    echo "  # ripgrep-${PLATFORM}"            >> "$ARTIFACTS_LOCK_YAML"
-    echo "  - download_url: $DOWNLOAD_URL"    >> "$ARTIFACTS_LOCK_YAML"
-    echo "    filename: $FILENAME"            >> "$ARTIFACTS_LOCK_YAML"
-    echo "    checksum: sha256:$SHA256"       >> "$ARTIFACTS_LOCK_YAML"
-  done
-
+  
   echo "[INFO] Completed ${ARTIFACTS_LOCK_YAML}"
 }
 
