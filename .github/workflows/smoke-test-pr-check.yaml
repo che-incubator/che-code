@@ -29,6 +29,8 @@ jobs:
 
       - name: Checkout che-code source code
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Prepare Che-Code Dockerfile ( remove tests )
         run: |
