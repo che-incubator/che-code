@@ -10,6 +10,9 @@
         "form-data@4": "^4.0.6",
         "@vscode/vsce": {
             "form-data": "^4.0.6"
+        },
+        "@grpc/proto-loader": {
+            "protobufjs": "^7.6.5"
         }
     }
 }
