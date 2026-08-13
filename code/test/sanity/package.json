@@ -23,6 +23,7 @@
   },
   "overrides": {
     "serialize-javascript": "^7.0.3",
-    "js-yaml": "^4.3.1"
+    "js-yaml": "^4.3.1",
+    "brace-expansion@2": "^2.1.4"
   }
 }

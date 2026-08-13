@@ -14,5 +14,8 @@
     "tmp": "0.2.6",
     "tree-kill": "1.2.2",
     "vscode-uri": "^3.0.2"
+  },
+  "overrides": {
+    "brace-expansion@1": "^1.1.18"
   }
 }
