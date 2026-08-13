@@ -52,7 +52,7 @@
     "yauzl": "^3.3.1",
     "yazl": "^2.4.3",
     "zod": "^3.25.76",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.3.1",
     "@kubernetes/client-node": "^1.4.0"
   },
   "overrides": {
