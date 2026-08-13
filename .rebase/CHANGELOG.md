@@ -9,6 +9,12 @@ https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d60
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/773
+
+- code/extensions/copilot/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/774
 
 - code/package.json
@@ -24,6 +30,7 @@ https://github.com/che-incubator/che-code/pull/750
 - code/extensions/copilot/chat-lib/package.json
 ---
 
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/745
 
 - code/package.json
