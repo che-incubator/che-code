@@ -155,7 +155,7 @@ RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
     elif [ "${TARGETARCH}" = "arm64" ]; then \
       NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-arm64-min-ci; \
     else \
-      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min-ci; \
+      NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-x64-min-ci; \
     fi
 
 RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
@@ -163,7 +163,7 @@ RUN if [ "${TARGETARCH}" = "ppc64le" ]; then \
     elif [ "${TARGETARCH}" = "arm64" ]; then \
       cp -r ../vscode-reh-web-linux-arm64 /checode; \
     else \
-      cp -r ../vscode-reh-web-linux-alpine /checode; \
+      cp -r ../vscode-reh-web-linux-x64 /checode; \
     fi
 
 # Pre-compress static assets for faster HTTP delivery (served by che/webClientServer.ts)
@@ -236,7 +236,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
         MACHINE_EXEC_MAX_RETRIES=1 \
         retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
       else \
-        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
         MACHINE_EXEC_MAX_RETRIES=1 \
         retry -v -t 3 -s 2 -- timeout 5m ./scripts/test-web-integration.sh --browser chromium; \
       fi \
@@ -251,7 +251,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
         VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-arm64" \
         retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
       else \
-        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-alpine" \
+        VSCODE_REMOTE_SERVER_PATH="/vscode-reh-web-linux-x64" \
         retry -v -t 3 -s 2 -- timeout 5m npm run smoketest-no-compile -- --web --headless --electronArgs="--disable-dev-shm-usage --use-gl=swiftshader"; \
       fi \
     fi
