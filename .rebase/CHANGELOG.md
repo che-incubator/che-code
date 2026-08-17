@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
 #### @sbouchet
-CVE-2026-69153: update postcss to ^8.5.23
+https://github.com/che-incubator/che-code/pull/791
 
 - code/package.json
 - code/build/vite/package.json
