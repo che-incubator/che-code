@@ -7259,6 +7259,9 @@
     },
     "@grpc/proto-loader": {
       "protobufjs": "^7.6.5"
+    },
+    "vite": {
+      "postcss": "^8.5.23"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",

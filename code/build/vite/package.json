@@ -8,6 +8,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "overrides": {
+    "vite": {
+      "postcss": "^8.5.23"
+    }
+  },
   "devDependencies": {
     "@vscode/component-explorer": "^0.2.1-58",
     "@vscode/component-explorer-vite-plugin": "^0.2.1-58",
