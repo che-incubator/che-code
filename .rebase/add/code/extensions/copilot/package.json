@@ -13,7 +13,7 @@
             "protobufjs": "^7.6.5"
         },
         "vite": {
-            "postcss": "^8.5.23"
+            "postcss": "^8.5.26"
         }
     }
 }

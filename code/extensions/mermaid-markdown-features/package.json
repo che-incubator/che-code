@@ -266,7 +266,7 @@
   "overrides": {
     "lodash-es": "4.18.1",
     "@zenuml/core": {
-      "postcss": "^8.5.23"
+      "postcss": "^8.5.26"
     }
   }
 }

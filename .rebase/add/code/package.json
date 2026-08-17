@@ -8,7 +8,7 @@
     },
     "overrides": {
         "@gulp-sourcemaps/identity-map": {
-            "postcss": "^8.5.23"
+            "postcss": "^8.5.26"
         },
         "micromatch": "4.0.8",
         "braces": "3.0.3",
