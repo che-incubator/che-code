@@ -2,6 +2,17 @@
 
 The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
 
+#### @sbouchet
+CVE-2026-69153: update postcss to ^8.5.23
+
+- code/package.json
+- code/build/vite/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/mermaid-markdown-features/package.json
+- code/test/monaco/package.json
+---
+
 #### @rnikitenko
 https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
 
