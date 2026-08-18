@@ -48,6 +48,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   private deviceAuthentication?: DeviceAuthentication;
 
   private readonly storageKey: string;
+  private readonly deviceAuthSessionStorageKey: string;
 
   constructor(
     @inject(Logger) private logger: Logger,
@@ -57,6 +58,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   ) {
     const workspaceId = process.env.DEVWORKSPACE_ID || 'default';
     this.storageKey = `sessions:${workspaceId}`;
+    this.deviceAuthSessionStorageKey = `device-auth-session-ids:${workspaceId}`;
     this.sessionsPromise = this.readSessions();
   }
 
@@ -83,6 +85,80 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     ]);
 
     let sessions = await this.sessionsPromise;
+
+		const isDeviceAuthToken = await this.githubService.isDeviceAuthToken();
+
+		let deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+
+		/*
+		 * While Device Authentication is active, remember which persisted
+		 * sessions belong to Device Authentication.
+		 */
+		if (isDeviceAuthToken && sessions.length > 0) {
+			const currentToken = await this.githubService.getToken();
+
+			const currentDeviceAuthSessions = sessions
+				.filter((session) => session.accessToken === currentToken)
+				.map((session) => session.id);
+
+			const updatedDeviceAuthSessionIds = [
+				...new Set([...deviceAuthSessionIds, ...currentDeviceAuthSessions]),
+			];
+
+			if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
+				await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
+
+				deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+			}
+		}
+
+		/*
+		 * VS Code restores persisted authentication sessions when the
+		 * workspace is restarted.
+		 *
+		 * If Device Authentication is no longer active, remove only
+		 * the sessions that were previously created using Device Authentication.
+		 */
+		if (!isDeviceAuthToken && deviceAuthSessionIds.length > 0) {
+			const removed = sessions.filter((session) =>
+				deviceAuthSessionIds.includes(session.id),
+			);
+
+			const kept = sessions.filter(
+				(session) => !deviceAuthSessionIds.includes(session.id),
+			);
+
+			if (removed.length > 0) {
+				this.logger.info(
+					`GitHubAuthProvider: removing ${removed.length} persisted Device Authentication session(s) because Device Authentication is no longer active`,
+				);
+
+				await this.storeSessions(kept);
+
+				const removedIds = new Set(removed.map((session) => session.id));
+
+				await this.storeDeviceAuthSessionIds(
+					deviceAuthSessionIds.filter((id) => !removedIds.has(id)),
+				);
+
+				this.sessionChangeEmitter.fire({
+					added: [],
+					removed,
+					changed: [],
+				});
+
+				sessions = kept;
+
+				/*
+				 * Do not immediately recreate a session using the fallback
+				 * PAT/git-credential token. The user must authenticate again.
+				 */
+				return;
+			}
+			// Clean up stale session IDs.
+			await this.storeDeviceAuthSessionIds([]);
+		}
+
     if (sessions.length > 0) {
       try {
         await this.githubService.getTokenScopes(sessions[0].accessToken);
@@ -97,6 +173,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
           this.logger.warn('GitHubAuthProvider: existing session token is not valid, clearing sessions');
           const removed = [...sessions];
           await this.storeSessions([]);
+          await this.storeDeviceAuthSessionIds([]);
           this.sessionChangeEmitter.fire({ added: [], removed, changed: [] });
           sessions = [];
         } else {
@@ -117,6 +194,38 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     this.doHydrate().catch(err =>
       this.logger.error(`GitHubAuthProvider: background hydration failed: ${(err as Error).message}`)
     );
+  }
+
+  private async getDeviceAuthSessionIds(): Promise<string[]> {
+    const raw = await this.extensionContext
+      .getContext()
+      .secrets
+      .get(this.deviceAuthSessionStorageKey);
+
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      return JSON.parse(raw) as string[];
+    } catch {
+      this.logger.warn(
+        'GitHubAuthProvider: failed to parse persisted device-auth session IDs',
+      );
+      return [];
+    }
+  }
+
+  private async storeDeviceAuthSessionIds(
+    sessionIds: string[],
+  ): Promise<void> {
+    await this.extensionContext
+      .getContext()
+      .secrets
+      .store(
+        this.deviceAuthSessionStorageKey,
+        JSON.stringify(sessionIds),
+      );
   }
 
   private async waitForToken(timeoutMs: number, intervalMs: number): Promise<string | undefined> {
@@ -227,6 +336,18 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       scopes,
     };
 
+    const isDeviceAuth = await this.githubService.isDeviceAuthToken();
+    if (isDeviceAuth) {
+      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+
+      if (!deviceAuthSessionIds.includes(session.id)) {
+        await this.storeDeviceAuthSessionIds([
+          ...deviceAuthSessionIds,
+          session.id,
+        ]);
+      }
+    }
+
     const sessionIndex = sessions.findIndex(s => sessionMatchesRequestedScopes(s.scopes, sortedScopes));
     const removed: vscode.AuthenticationSession[] = [];
     const updatedSessions = [...sessions];
@@ -303,6 +424,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     this.logger.info(`GitHubAuthProvider: clearing all ${sessions.length} sessions`);
     const removed = [...sessions];
     await this.storeSessions([]);
+    await this.storeDeviceAuthSessionIds([]);
     this.sessionChangeEmitter.fire({ added: [], removed, changed: [] });
   }
 
@@ -326,6 +448,16 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       if (removed.length > 0) {
         this.logger.info(`GitHubAuthProvider: clearing ${removed.length} device-auth sessions, keeping ${kept.length} K8s sessions`);
         await this.storeSessions(kept);
+        const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+
+        const removedIds = new Set(removed.map(session => session.id),);
+
+        await this.storeDeviceAuthSessionIds(
+          deviceAuthSessionIds.filter(
+            id => !removedIds.has(id),
+          ),
+        );
+        
         this.sessionChangeEmitter.fire({ added: [], removed, changed: [] });
       }
     } catch {
@@ -341,6 +473,12 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     if (session) {
       const updatedSessions = sessions.filter(s => s.id !== id);
       await this.storeSessions(updatedSessions);
+      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+      if (deviceAuthSessionIds.includes(id)) {
+        await this.storeDeviceAuthSessionIds(deviceAuthSessionIds.filter(
+          sessionId => sessionId !== id,
+        ));
+      }
       this.sessionChangeEmitter.fire({ added: [], removed: [session], changed: [] });
 
       this.logger.info(`GitHubAuthProvider: session was removed successfully! `);
