@@ -74,8 +74,9 @@
     "vite": {
       "postcss": "^8.5.26"
     },
+    "brace-expansion@1": "^1.1.18",
     "minimatch@10": {
-      "brace-expansion": "5.0.7"
+      "brace-expansion": "5.0.9"
     }
   }
 }
