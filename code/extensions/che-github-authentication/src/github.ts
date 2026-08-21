@@ -18,6 +18,7 @@ import { ErrorHandler } from './error-handler';
 import { ExtensionContext } from './extension-context';
 import { Logger } from './logger';
 import { getMatchingHydrationScopeBundles, hasAllScopes, isUnauthorizedError, sessionMatchesRequestedScopes } from './utils';
+import { AuthenticationSession } from 'vscode';
 
 export interface GithubUser {
   login: string;
@@ -185,7 +186,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     try {
       const token = await this.githubService.getToken();
-      await this.doHydrateWithToken(token);
+      const hydratedSessions = await this.doHydrateWithToken(token);
+      if (isDeviceAuthToken && hydratedSessions.length > 0) {
+        const hydratedSessionIds = hydratedSessions.map(session => session.id);
+        const updatedDeviceAuthSessionIds = [...new Set([...deviceAuthSessionIds, ...hydratedSessionIds])];
+        await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
+        deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+      }
       return;
     } catch {
       this.logger.info('GitHubAuthProvider: no token available after initialization');
@@ -207,7 +214,11 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     }
 
     try {
-      return JSON.parse(raw) as string[];
+      const sessionIds: unknown = JSON.parse(raw);
+      if (!Array.isArray(sessionIds) || !sessionIds.every(id => typeof id === 'string')) {
+        throw new Error('Invalid device-auth session ID storage value');
+      }
+      return sessionIds;
     } catch {
       this.logger.warn(
         'GitHubAuthProvider: failed to parse persisted device-auth session IDs',
@@ -249,19 +260,19 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     await this.doHydrateWithToken(token);
   }
 
-  private async doHydrateWithToken(token: string): Promise<void> {
+  private async doHydrateWithToken(token: string): Promise<AuthenticationSession[]> {
     try {
       const tokenScopes = await this.githubService.getTokenScopes(token);
       if (tokenScopes.length === 0) {
         this.logger.info('GitHubAuthProvider: hydrate skipped, token has no scopes');
-        return;
+        return [];
       }
 
       const githubUser = await this.githubService.getUser();
       const matchingBundles = getMatchingHydrationScopeBundles(tokenScopes);
       if (matchingBundles.length === 0) {
         this.logger.info('GitHubAuthProvider: hydrate skipped, token scopes match no known bundle');
-        return;
+        return [];
       }
 
       const account = { label: githubUser.login, id: githubUser.id.toString() };
@@ -275,12 +286,14 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       await this.storeSessions(hydratedSessions);
       this.sessionChangeEmitter.fire({ added: hydratedSessions, removed: [], changed: [] });
       this.logger.info(`GitHubAuthProvider: hydrated ${hydratedSessions.length} session(s) from K8s token`);
+      return hydratedSessions;
     } catch (error) {
       if (isUnauthorizedError(error)) {
         this.logger.warn('GitHubAuthProvider: hydrate failed, token is not valid');
       } else {
         this.logger.warn(`GitHubAuthProvider: hydrate failed: ${(error as Error).message}`);
       }
+      return [];
     }
   }
 
