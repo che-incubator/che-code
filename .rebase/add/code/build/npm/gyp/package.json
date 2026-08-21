@@ -1,6 +1,6 @@
 {
     "overrides": {
-        "ip-address": "^10.2.0",
+        "ip-address": "^10.3.1",
         "brace-expansion@2": "^2.1.4",
         "tar": "^7.5.22"
     }

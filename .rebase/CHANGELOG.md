@@ -2,6 +2,16 @@
 
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
+#### @sbouchet
+CVE-2026-69192: bump ip-address override from ^10.2.0 to ^10.3.1
+
+- .rebase/add/code/package.json
+- .rebase/add/code/build/npm/gyp/package.json
+- .rebase/add/code/extensions/copilot/package.json
+- .rebase/add/code/remote/package.json
+- .rebase/add/code/test/mcp/package.json
+---
+
 #### @rnikitenko
 https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
 
