@@ -47,9 +47,13 @@ export class BrowserLifecycleService extends AbstractLifecycleService {
 
 	private onBeforeUnload(event: BeforeUnloadEvent): void {
 
+		console.log('[che-startup-debug] onBeforeUnload event fired');
+		console.trace('[che-startup-debug] onBeforeUnload call stack');
+
 		// Before unload ignored (once)
 		if (this.ignoreBeforeUnload) {
 			this.logService.info('[lifecycle] onBeforeUnload triggered but ignored once');
+			console.log('[che-startup-debug] onBeforeUnload IGNORED (ignoreBeforeUnload=true)');
 
 			this.ignoreBeforeUnload = false;
 		}
@@ -73,6 +77,7 @@ export class BrowserLifecycleService extends AbstractLifecycleService {
 
 		// Standard shutdown
 		if (typeof reason === 'number') {
+			console.log('[che-startup-debug] withExpectedShutdown called, reason:', reason);
 			this.shutdownReason = reason;
 
 			// Ensure UI state is persisted
@@ -196,6 +201,7 @@ export class BrowserLifecycleService extends AbstractLifecycleService {
 			return;
 		}
 
+		console.log('[che-startup-debug] onLoadAfterUnload: page restored from bfcache, triggering reload');
 		// At this point, we know that the page was restored from
 		// cache even though it was unloaded before,
 		// so in order to get back to a functional workbench, we

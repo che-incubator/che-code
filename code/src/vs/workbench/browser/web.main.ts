@@ -128,8 +128,12 @@ export class BrowserMain extends Disposable {
 
 	async open(): Promise<IWorkbench> {
 
+		console.log('[che-startup-debug] BrowserMain.open() started, location:', mainWindow.location.href);
+
 		// Init services and wait for DOM to be ready in parallel
 		const [services] = await Promise.all([this.initServices(), domContentLoaded(getWindow(this.domElement))]);
+
+		console.log('[che-startup-debug] BrowserMain.open() services initialized');
 
 		// Create Workbench
 		const workbench = this.createWorkbench(this.domElement, services.serviceCollection, services.logService);
@@ -139,6 +143,8 @@ export class BrowserMain extends Disposable {
 
 		// Startup
 		const instantiationService = workbench.startup();
+
+		console.log('[che-startup-debug] BrowserMain.open() workbench.startup() completed');
 
 		// Window
 		this._register(instantiationService.createInstance(BrowserWindow));
@@ -284,6 +290,7 @@ export class BrowserMain extends Disposable {
 
 
 		const workspace = this.resolveWorkspace();
+		console.log('[che-startup-debug] resolveWorkspace result:', JSON.stringify(workspace));
 
 		// Product
 		const productService: IProductService = mixin({ _serviceBrand: undefined, ...product }, this.configuration.productConfiguration);
@@ -632,10 +639,13 @@ export class BrowserMain extends Disposable {
 		const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, getPolicyService(remoteAgentService,logService, this.configuration.remoteAuthority));
 
 		try {
+			console.log('[che-startup-debug] Initializing WorkspaceService with workspace:', JSON.stringify(workspace));
 			await workspaceService.initialize(workspace);
+			console.log('[che-startup-debug] WorkspaceService.initialize() completed successfully');
 
 			return workspaceService;
 		} catch (error) {
+			console.log('[che-startup-debug] WorkspaceService.initialize() FAILED:', error);
 			onUnexpectedError(error);
 			logService.error(error);
 

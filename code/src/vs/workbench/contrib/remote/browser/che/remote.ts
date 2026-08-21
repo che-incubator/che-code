@@ -120,6 +120,7 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
+		console.log('[che-startup-debug] CheDisconnectionHandler.handleStateChange():', { millisSinceLastIncomingData, type, status: this.status });
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);
 			return true;
