@@ -50,9 +50,12 @@ export class BrowserWorkspaceEditingService extends AbstractWorkspaceEditingServ
 	}
 
 	async enterWorkspace(workspaceUri: URI): Promise<void> {
+		console.log('[che-startup-debug] enterWorkspace called with:', workspaceUri.toString());
 		const oldWorkspace = toWorkspaceIdentifier(this.contextService.getWorkspace());
+		console.log('[che-startup-debug] enterWorkspace oldWorkspace:', oldWorkspace);
 		const result = await this.doEnterWorkspace(workspaceUri);
 		if (result) {
+			console.log('[che-startup-debug] enterWorkspace: doEnterWorkspace returned result, calling openWindow with forceReuseWindow');
 
 			// Fire event to allow participants to join
 			// and possibly migrate data into this workspace

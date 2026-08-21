@@ -484,6 +484,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 	}
 
 	private async doOpen(workspace: IWorkspace, options?: { reuse?: boolean; payload?: object }): Promise<void> {
+		console.log('[che-startup-debug] BrowserHostService.doOpen() called:', { workspace, options });
 
 		// When we are in a temporary workspace and are asked to open a local folder
 		// we swap that folder into the workspace to avoid a window reload. Access
@@ -625,6 +626,8 @@ export class BrowserHostService extends Disposable implements IHostService {
 	}
 
 	async reload(): Promise<void> {
+		console.log('[che-startup-debug] BrowserHostService.reload() called');
+		console.trace('[che-startup-debug] BrowserHostService.reload() call stack');
 		await this.handleExpectedShutdown(ShutdownReason.RELOAD);
 
 		mainWindow.location.reload();
