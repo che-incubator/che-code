@@ -87,78 +87,78 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     let sessions = await this.sessionsPromise;
 
-		const isDeviceAuthToken = await this.githubService.isDeviceAuthToken();
+    const isDeviceAuthToken = await this.githubService.isDeviceAuthToken();
 
-		let deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+    let deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
-		/*
-		 * While Device Authentication is active, remember which persisted
-		 * sessions belong to Device Authentication.
-		 */
-		if (isDeviceAuthToken && sessions.length > 0) {
-			const currentToken = await this.githubService.getToken();
+    /*
+    * While Device Authentication is active, remember which persisted
+    * sessions belong to Device Authentication.
+    */
+    if (isDeviceAuthToken && sessions.length > 0) {
+      const currentToken = await this.githubService.getToken();
 
-			const currentDeviceAuthSessions = sessions
+      const currentDeviceAuthSessions = sessions
 				.filter((session) => session.accessToken === currentToken)
 				.map((session) => session.id);
 
-			const updatedDeviceAuthSessionIds = [
-				...new Set([...deviceAuthSessionIds, ...currentDeviceAuthSessions]),
-			];
+      const updatedDeviceAuthSessionIds = [
+        ...new Set([...deviceAuthSessionIds, ...currentDeviceAuthSessions]),
+      ];
 
-			if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
-				await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
+      if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
+        await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
 
-				deviceAuthSessionIds = updatedDeviceAuthSessionIds;
-			}
-		}
+        deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+      }
+    }
 
-		/*
-		 * VS Code restores persisted authentication sessions when the
-		 * workspace is restarted.
-		 *
+    /*
+    * VS Code restores persisted authentication sessions when the
+    * workspace is restarted.
+    *
 		 * If Device Authentication is no longer active, remove only
 		 * the sessions that were previously created using Device Authentication.
-		 */
-		if (!isDeviceAuthToken && deviceAuthSessionIds.length > 0) {
+    */
+    if (!isDeviceAuthToken && deviceAuthSessionIds.length > 0) {
 			const removed = sessions.filter((session) =>
-				deviceAuthSessionIds.includes(session.id),
-			);
+        deviceAuthSessionIds.includes(session.id),
+      );
 
-			const kept = sessions.filter(
+      const kept = sessions.filter(
 				(session) => !deviceAuthSessionIds.includes(session.id),
-			);
+      );
 
-			if (removed.length > 0) {
-				this.logger.info(
-					`GitHubAuthProvider: removing ${removed.length} persisted Device Authentication session(s) because Device Authentication is no longer active`,
-				);
+      if (removed.length > 0) {
+        this.logger.info(
+          `GitHubAuthProvider: removing ${removed.length} persisted Device Authentication session(s) because Device Authentication is no longer active`,
+        );
 
-				await this.storeSessions(kept);
+        await this.storeSessions(kept);
 
 				const removedIds = new Set(removed.map((session) => session.id));
 
-				await this.storeDeviceAuthSessionIds(
+        await this.storeDeviceAuthSessionIds(
 					deviceAuthSessionIds.filter((id) => !removedIds.has(id)),
-				);
+        );
 
-				this.sessionChangeEmitter.fire({
-					added: [],
-					removed,
-					changed: [],
-				});
+        this.sessionChangeEmitter.fire({
+          added: [],
+          removed,
+          changed: [],
+        });
 
-				sessions = kept;
+        sessions = kept;
 
-				/*
-				 * Do not immediately recreate a session using the fallback
-				 * PAT/git-credential token. The user must authenticate again.
-				 */
-				return;
-			}
-			// Clean up stale session IDs.
-			await this.storeDeviceAuthSessionIds([]);
-		}
+        /*
+        * Do not immediately recreate a session using the fallback
+        * PAT/git-credential token. The user must authenticate again.
+        */
+        return;
+      }
+      // Clean up stale session IDs.
+      await this.storeDeviceAuthSessionIds([]);
+    }
 
     if (sessions.length > 0) {
       try {
@@ -184,23 +184,39 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
     }
 
-    try {
-      const token = await this.githubService.getToken();
-      const hydratedSessions = await this.doHydrateWithToken(token);
-      if (isDeviceAuthToken && hydratedSessions.length > 0) {
-        const hydratedSessionIds = hydratedSessions.map(session => session.id);
-        const updatedDeviceAuthSessionIds = [...new Set([...deviceAuthSessionIds, ...hydratedSessionIds])];
+    const token = await this.githubService.getToken();
+
+    const hydratedSessions = await this.doHydrateWithToken(token);
+
+    if (isDeviceAuthToken && hydratedSessions.length > 0) {
+      const hydratedSessionIds = hydratedSessions.map(session => session.id);
+
+      const updatedDeviceAuthSessionIds = [
+        ...new Set([...deviceAuthSessionIds, ...hydratedSessionIds]),
+      ];
+
+      try {
         await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
         deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+      } catch (error) {
+        await this.rollbackHydratedSessions(hydratedSessions);
+        throw error;
       }
-      return;
-    } catch {
-      this.logger.info('GitHubAuthProvider: no token available after initialization');
     }
+  }
 
-    this.doHydrate().catch(err =>
-      this.logger.error(`GitHubAuthProvider: background hydration failed: ${(err as Error).message}`)
-    );
+  private async rollbackHydratedSessions(hydratedSessions: AuthenticationSession[]): Promise<void> {
+    const hydratedSessionIds = new Set(hydratedSessions.map(session => session.id));
+    const sessions = await this.sessionsPromise;
+    const updatedSessions = sessions.filter(session => !hydratedSessionIds.has(session.id));
+
+    await this.storeSessions(updatedSessions);
+
+    this.sessionChangeEmitter.fire({
+      added: [],
+      removed: hydratedSessions,
+      changed: [],
+    });
   }
 
   private async getDeviceAuthSessionIds(): Promise<string[]> {
@@ -249,15 +265,6 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
     }
     return undefined;
-  }
-
-  private async doHydrate(): Promise<void> {
-    const token = await this.waitForToken(30000, 500);
-    if (!token) {
-      this.logger.warn('GitHubAuthProvider: hydrate failed, token not available after 30s');
-      return;
-    }
-    await this.doHydrateWithToken(token);
   }
 
   private async doHydrateWithToken(token: string): Promise<AuthenticationSession[]> {
