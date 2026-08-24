@@ -76,9 +76,9 @@ export class DeviceAuthentication {
 
   async removeDeviceAuthToken(): Promise<void> {
     try {
-      await this.gitHubAuthProvider.clearDeviceAuthSessions();
+      // TEMPORARY: skip session clearing to test revocation only
       await this.githubService.removeDeviceAuthToken();
-      const message = 'The token was deleted successfully. Some operations may require Github Sign Out => Sign In to use another token.'
+      const message = 'Revocation request sent. Token and sessions are NOT removed (test mode).'
       vscode.window.showInformationMessage(message);
     } catch (error) {
       const message = `Can not remove Device Authentication token: ${error.message}`;
