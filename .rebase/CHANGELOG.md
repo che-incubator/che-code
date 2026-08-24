@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-CVE-2026-69192: bump ip-address override from ^10.2.0 to ^10.3.1
+https://github.com/che-incubator/che-code/pull/796
 
 - .rebase/add/code/package.json
 - .rebase/add/code/build/npm/gyp/package.json
