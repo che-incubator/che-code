@@ -45,6 +45,7 @@ https://github.com/che-incubator/che-code/pull/777
 - code/remote/package.json
 - code/build/package.json
 - code/extensions/copilot/package.json
+- code/extensions/npm/package.json
 - code/test/sanity/package.json
 ---
 
