@@ -63,4 +63,49 @@ describe('Test Port Scanner with real path', () => {
     await portScanner.getListeningPorts();
     await portScanner.getListeningPorts();
   });
+
+  test('should continue scanning IPv4 ports when IPv6 is unavailable', async () => {
+    const spyReadfile = jest.spyOn(fs, 'readFile') as jest.Mock;
+
+    spyReadfile
+      .mockResolvedValueOnce('ipv4-content')
+      .mockRejectedValueOnce(Object.assign(new Error('IPv6 is disabled'), { code: 'ENOENT' }));
+
+    await expect(portScanner.getListeningPorts()).resolves.toBeDefined();
+  });
+
+  test('should continue scanning IPv6 ports when IPv4 is unavailable', async () => {
+    const spyReadfile = jest.spyOn(fs, 'readFile') as jest.Mock;
+
+    spyReadfile
+      .mockRejectedValueOnce(Object.assign(new Error('IPv4 is disabled'), { code: 'ENOENT' }))
+      .mockResolvedValueOnce('ipv6-content');
+
+    await expect(portScanner.getListeningPorts()).resolves.toBeDefined();
+  });
+
+  test('should return empty ports when both IPv4 and IPv6 are unavailable', async () => {
+    const spyReadfile = jest.spyOn(fs, 'readFile') as jest.Mock;
+
+    spyReadfile
+      .mockRejectedValueOnce(Object.assign(new Error('IPv4 is disabled'), { code: 'ENOENT' }))
+      .mockRejectedValueOnce(Object.assign(new Error('IPv6 is disabled'), { code: 'ENOENT' }));
+
+    const ports = await portScanner.getListeningPorts();
+
+    expect(ports).toEqual([]);
+  });
+
+  test('should propagate errors other than ENOENT', async () => {
+    const spyReadfile = jest.spyOn(fs, 'readFile') as jest.Mock;
+
+    const error = Object.assign(new Error('Permission denied'), { code: 'EACCES' });
+
+    spyReadfile
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce('');
+
+    await expect(portScanner.getListeningPorts()).rejects.toThrow('Permission denied');
+  });
+  
 });

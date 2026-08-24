@@ -221,7 +221,6 @@
     "gulp-azure-storage": "^0.12.1",
     "gulp-bom": "^3.0.0",
     "gulp-buffer": "0.0.2",
-    "gulp-decompress": "^3.0.0",
     "gulp-filter": "^5.1.0",
     "gulp-flatmap": "^1.0.2",
     "gulp-gunzip": "^1.0.0",
@@ -292,8 +291,10 @@
     "shell-quote": "^1.8.4",
     "qs": "6.15.2",
     "ip-address": "^10.2.0",
+    "brace-expansion@1": "^1.1.18",
+    "brace-expansion@2": "^2.1.4",
     "test-exclude": {
-      "brace-expansion@5": "5.0.7"
+      "brace-expansion@5": "5.0.9"
     },
     "axios": {
       "form-data": "^4.0.6"
