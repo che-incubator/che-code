@@ -1079,19 +1079,30 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 			const isQuotaExceeded = e instanceof Error && e.name === 'ChatQuotaExceeded';
 			const isRateLimited = e instanceof Error && e.name === 'ChatRateLimited';
 			const isExpectedError = e instanceof Error && e.name === 'ChatExpectedError';
-			if (e instanceof Error && e.name === 'GitHubAuthenticationRequired') {
-				return {
-					errorDetails: {
-						message: 'GitHub authentication is required to use Copilot.',
-						responseIsIncomplete: true,
-					},
-					errorCallstack: undefined,
-					errorName: e.name,
-				};
-			}
+			const isGitHubAuthenticationRequired = e instanceof Error && e.name === 'GitHubAuthenticationRequired';
+
 			const { callstack: errorCallstack } = packErrorForTelemetry(e);
 			const errorName = e instanceof Error ? e.name : undefined;
-			return { errorDetails: { message: toErrorMessage(e), responseIsIncomplete: true, isQuotaExceeded, isRateLimited, isExpectedError }, errorCallstack, errorName };
+			return {
+				errorDetails: {
+					message: isGitHubAuthenticationRequired ? 'GitHub authentication is required to use Copilot.' : toErrorMessage(e),
+					responseIsIncomplete: true,
+					isQuotaExceeded,
+					isRateLimited,
+					isExpectedError:
+						isExpectedError || isGitHubAuthenticationRequired,
+					confirmationButtons: isGitHubAuthenticationRequired
+						? [{
+							label: 'Device Authentication',
+							data: {
+								command: 'github-authentication.device-code-flow.authentication',
+							},
+						}]
+						: undefined,
+				},
+				errorCallstack,
+				errorName,
+			};
 
 		} finally {
 			if (inFlightRequest) {

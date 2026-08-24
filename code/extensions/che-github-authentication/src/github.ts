@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2023 Red Hat, Inc.
+ * Copyright (c) 2023-2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -80,21 +80,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   }
 
   async hydrateFromK8sToken(): Promise<void> {
-    await Promise.race([
-      this.githubService.whenReady,
-      new Promise<void>(resolve => setTimeout(resolve, 5000))
-    ]);
+    await Promise.race([this.githubService.whenReady,new Promise<void>(resolve => setTimeout(resolve, 5000))]);
 
     let sessions = await this.sessionsPromise;
 
     const isDeviceAuthToken = await this.githubService.isDeviceAuthToken();
-
     let deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
-    /*
-    * While Device Authentication is active, remember which persisted
-    * sessions belong to Device Authentication.
-    */
     if (isDeviceAuthToken && sessions.length > 0) {
       const currentToken = await this.githubService.getToken();
 
@@ -108,7 +100,6 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
       if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
         await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
-
         deviceAuthSessionIds = updatedDeviceAuthSessionIds;
       }
     }
@@ -125,8 +116,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         deviceAuthSessionIds.includes(session.id),
       );
 
-      const kept = sessions.filter(
-				(session) => !deviceAuthSessionIds.includes(session.id),
+      const kept = sessions.filter((session) => !deviceAuthSessionIds.includes(session.id),
       );
 
       if (removed.length > 0) {
@@ -139,7 +129,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 				const removedIds = new Set(removed.map((session) => session.id));
 
         await this.storeDeviceAuthSessionIds(
-					deviceAuthSessionIds.filter((id) => !removedIds.has(id)),
+          deviceAuthSessionIds.filter((id) => !removedIds.has(id)),
         );
 
         this.sessionChangeEmitter.fire({
@@ -148,15 +138,10 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
           changed: [],
         });
 
-        sessions = kept;
-
-        /*
-        * Do not immediately recreate a session using the fallback
-        * PAT/git-credential token. The user must authenticate again.
-        */
+        // Do not recreate a session using the fallback PAT.
         return;
       }
-      // Clean up stale session IDs.
+
       await this.storeDeviceAuthSessionIds([]);
     }
 
@@ -185,7 +170,6 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     }
 
     const token = await this.githubService.getToken();
-
     const hydratedSessions = await this.doHydrateWithToken(token);
 
     if (isDeviceAuthToken && hydratedSessions.length > 0) {
@@ -253,18 +237,6 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         this.deviceAuthSessionStorageKey,
         JSON.stringify(sessionIds),
       );
-  }
-
-  private async waitForToken(timeoutMs: number, intervalMs: number): Promise<string | undefined> {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      try {
-        return await this.githubService.getToken();
-      } catch {
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-      }
-    }
-    return undefined;
   }
 
   private async doHydrateWithToken(token: string): Promise<AuthenticationSession[]> {
@@ -378,6 +350,24 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     }
 
     await this.storeSessions(updatedSessions);
+    if (isDeviceAuth) {
+      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+
+      if (!deviceAuthSessionIds.includes(session.id)) {
+        try {
+          await this.storeDeviceAuthSessionIds([
+            ...deviceAuthSessionIds,
+            session.id,
+          ]);
+        } catch (error) {
+          // Roll back the session because its Device Authentication
+          // tracking ID could not be persisted.
+          await this.storeSessions(sessions);
+          throw error;
+        }
+      }
+    }
+
     this.sessionChangeEmitter.fire({ added: [session], removed, changed: [] });
 
     this.logger.info(`GitHubAuthProvider: session was created successfully for scopes: ${JSON.stringify(scopes)}`);
