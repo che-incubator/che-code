@@ -211,10 +211,46 @@ export class GithubServiceImpl implements GithubService {
       throw new Error('device-authentication secret not found');
     }
 
+    const rawToken = deviceAuthSecrets[0].data?.token
+      ? base64Decode(deviceAuthSecrets[0].data.token)
+      : '';
+    if (rawToken) {
+      await this.revokeGitHubToken(rawToken);
+    }
+
     await this.deleteDeviceAuthSecrets(deviceAuthSecrets);
 
     // another token should be used by the Github Service after removing the Device Authentication token
     this.initializeToken();
+  }
+
+  private async revokeGitHubToken(token: string): Promise<void> {
+    try {
+      this.logger.info('Github Service: attempting to revoke GitHub token...');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
+      try {
+        const response = await fetch('https://api.github.com/credentials/revoke', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ credentials: [token] }),
+          signal: controller.signal,
+        });
+        if (response.ok || response.status === 202) {
+          this.logger.info('Github Service: GitHub token revoked successfully');
+        } else {
+          this.logger.warn(`Github Service: GitHub token revocation failed (HTTP ${response.status})`);
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (error: any) {
+      this.logger.warn(`Github Service: GitHub token revocation error: ${error.message}`);
+    }
   }
 
   private async deleteDeviceAuthSecrets(secrets?: k8s.V1Secret[]): Promise<void> {
