@@ -519,6 +519,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/mermaid-markdown-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/workspaces/common/workspaceIdentifier.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     else

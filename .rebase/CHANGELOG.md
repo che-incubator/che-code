@@ -13,6 +13,13 @@ https://github.com/che-incubator/che-code/pull/791
 - code/test/monaco/package.json
 ---
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/NNN
+
+- code/extensions/mermaid-markdown-features/package.json
+- code/extensions/markdown-language-features/package.json
+---
+
 #### @rnikitenko
 https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
 
