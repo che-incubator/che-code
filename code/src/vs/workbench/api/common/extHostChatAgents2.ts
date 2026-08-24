@@ -946,9 +946,7 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 		if (!model) {
 			model = await this._languageModels.getDefaultLanguageModel(extension);
 			if (!model) {
-				const error = new Error('GitHub authentication is required');
-				error.name = 'GitHubAuthenticationRequired';
-				throw error;
+				throw new Error('Language model unavailable');
 			}
 		}
 
@@ -1079,30 +1077,9 @@ export class ExtHostChatAgents2 extends Disposable implements ExtHostChatAgentsS
 			const isQuotaExceeded = e instanceof Error && e.name === 'ChatQuotaExceeded';
 			const isRateLimited = e instanceof Error && e.name === 'ChatRateLimited';
 			const isExpectedError = e instanceof Error && e.name === 'ChatExpectedError';
-			const isGitHubAuthenticationRequired = e instanceof Error && e.name === 'GitHubAuthenticationRequired';
-
 			const { callstack: errorCallstack } = packErrorForTelemetry(e);
 			const errorName = e instanceof Error ? e.name : undefined;
-			return {
-				errorDetails: {
-					message: isGitHubAuthenticationRequired ? 'GitHub authentication is required to use Copilot.' : toErrorMessage(e),
-					responseIsIncomplete: true,
-					isQuotaExceeded,
-					isRateLimited,
-					isExpectedError:
-						isExpectedError || isGitHubAuthenticationRequired,
-					confirmationButtons: isGitHubAuthenticationRequired
-						? [{
-							label: 'Device Authentication',
-							data: {
-								command: 'github-authentication.device-code-flow.authentication',
-							},
-						}]
-						: undefined,
-				},
-				errorCallstack,
-				errorName,
-			};
+			return { errorDetails: { message: toErrorMessage(e), responseIsIncomplete: true, isQuotaExceeded, isRateLimited, isExpectedError }, errorCallstack, errorName };
 
 		} finally {
 			if (inFlightRequest) {
