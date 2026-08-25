@@ -95,7 +95,12 @@ export class CheDisconnectionHandler {
 			return;
 		}
 
-		if (this.devWorkspaceAssistant.isStopping) {
+		const pendingAction = this.devWorkspaceAssistant.pendingAction;
+		if (pendingAction === 'restartPending') {
+			this.devWorkspaceAssistant.startWorkspace();
+			return;
+		}
+		if (pendingAction === 'stopping') {
 			return;
 		}
 
