@@ -13,6 +13,9 @@
         },
         "@grpc/proto-loader": {
             "protobufjs": "^7.6.5"
+        },
+        "vite": {
+            "postcss": "^8.5.26"
         }
     }
 }
