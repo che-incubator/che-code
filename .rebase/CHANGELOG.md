@@ -14,7 +14,7 @@ https://github.com/che-incubator/che-code/pull/791
 ---
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/pull/NNN
+https://github.com/che-incubator/che-code/pull/797
 
 - code/extensions/mermaid-markdown-features/package.json
 - code/extensions/markdown-language-features/package.json
