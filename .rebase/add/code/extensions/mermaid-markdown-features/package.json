@@ -1,0 +1,7 @@
+{
+    "overrides": {
+        "@zenuml/core": {
+            "postcss": "^8.5.26"
+        }
+    }
+}

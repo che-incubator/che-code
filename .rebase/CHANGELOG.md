@@ -12,6 +12,17 @@ https://github.com/che-incubator/che-code/pull/796
 - .rebase/add/code/test/mcp/package.json
 ---
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/791
+
+- code/package.json
+- code/build/vite/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/mermaid-markdown-features/package.json
+- code/test/monaco/package.json
+---
+
 #### @rnikitenko
 https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
 
