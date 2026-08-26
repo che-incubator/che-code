@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { commands, env, window } from 'vscode';
+import { env, window } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
@@ -139,20 +139,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 		}
 
 		if (tokenResult.kind === 'failure' && tokenResult.reason === 'GitHubLoginFailed') {
-			const message = 'GitHub authentication is required to use Copilot.';
-
-			window.showWarningMessage(
-				message,
-				'Sign in to GitHub',
-			).then(selection => {
-				if (selection === 'Sign in to GitHub') {
-					commands.executeCommand(
-						'github-authentication.device-code-flow.authentication',
-					);
-				}
-			});
-
-			throw new GitHubLoginFailedError(message);
+			throw new GitHubLoginFailedError('GitHubLoginFailed');
 		}
 
 		if (tokenResult.kind === 'failure' && tokenResult.reason === 'RateLimited') {
