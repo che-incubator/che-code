@@ -47,7 +47,13 @@ export class DevWorkspaceAssistant {
 	private static readonly POLL_INTERVAL_MS = 2000;
 	private static readonly STOP_TIMEOUT_MS = 10000;
 
-	private _isStopping = false;
+	/**
+	 * Tracks the intentional workspace lifecycle action in progress:
+	 * - 'idle': no action, disconnection handler shows normal dialogs
+	 * - 'restartPending': devfile update is about to happen; if extension host dies, redirect to dashboard
+	 * - 'stopping': doRestart/stopWorkspace is running on browser side, handler should not interfere
+	 */
+	private _pendingAction: 'idle' | 'restartPending' | 'stopping' = 'idle';
 	private dashboardUrl: string | undefined;
 	private getDevWorkspaceUrl: string | undefined;
 	private startingDevWorkspaceUrl: string | undefined;
@@ -61,6 +67,12 @@ export class DevWorkspaceAssistant {
 		});
 		CommandsRegistry.registerCommand('che-remote.command.stopWorkspaceAndRedirectToDashboard', () => {
 			this.stopWorkspaceAndRedirectToDashboard();
+		});
+		CommandsRegistry.registerCommand('che-remote.command.prepareForRestart', () => {
+			this._pendingAction = 'restartPending';
+		});
+		CommandsRegistry.registerCommand('che-remote.command.cancelRestart', () => {
+			this._pendingAction = 'idle';
 		});
 	}
 
@@ -193,29 +205,29 @@ export class DevWorkspaceAssistant {
 		);
 	}
 
-	get isStopping(): boolean {
-		return this._isStopping;
+	get pendingAction(): 'idle' | 'restartPending' | 'stopping' {
+		return this._pendingAction;
 	}
 
 	private async doRestart(): Promise<void> {
-		this._isStopping = true;
+		this._pendingAction = 'stopping';
 		try {
 			await this.stopWorkspaceViaDashboardApi();
 			await this.waitForStopped();
 			this.startWorkspace();
 		} catch (e) {
-			this._isStopping = false;
+			this._pendingAction = 'idle';
 			throw e;
 		}
 	}
 
 	async stopWorkspaceAndRedirectToDashboard(): Promise<void> {
-		this._isStopping = true;
+		this._pendingAction = 'stopping';
 		try {
 			await this.stopWorkspaceViaDashboardApi();
 			this.goToDashboard();
 		} catch (e) {
-			this._isStopping = false;
+			this._pendingAction = 'idle';
 			throw e;
 		}
 	}

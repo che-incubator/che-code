@@ -7161,7 +7161,7 @@
     "esbuild": "0.28.1",
     "fastq": "^1.19.1",
     "glob": "^11.1.0",
-    "js-yaml": "^4.3.0",
+    "js-yaml": "^4.3.1",
     "minimist": "^1.2.8",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
@@ -7261,6 +7261,9 @@
     },
     "@grpc/proto-loader": {
       "protobufjs": "^7.6.5"
+    },
+    "vite": {
+      "postcss": "^8.5.26"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",

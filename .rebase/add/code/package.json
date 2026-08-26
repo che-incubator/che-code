@@ -1,14 +1,11 @@
 {
-    "dependencies": {
-        "js-yaml": "^4.1.0"
-    },
     "devDependencies": {
         "@types/js-yaml": "^4.0.5",
         "@types/minimatch": "^3.0.5"
     },
     "overrides": {
         "@gulp-sourcemaps/identity-map": {
-            "postcss": "8.4.33"
+            "postcss": "^8.5.26"
         },
         "micromatch": "4.0.8",
         "braces": "3.0.3",
@@ -25,6 +22,7 @@
         },
         "axios": {
             "form-data": "^4.0.6"
-        }
+        },
+        "js-yaml@4": "^4.3.1"
     }
 }
