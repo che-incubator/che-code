@@ -52,7 +52,9 @@
       "form-data@2": "^2.5.6"
     },
     "minimatch": "^3.1.5",
-    "handlebars": "4.7.9"
+    "handlebars": "4.7.9",
+    "brace-expansion@1": "^1.1.18",
+    "js-yaml": "^3.15.0"
   },
   "repository": {
     "type": "git",

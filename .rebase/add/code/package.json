@@ -1,14 +1,11 @@
 {
-    "dependencies": {
-        "js-yaml": "^4.1.0"
-    },
     "devDependencies": {
         "@types/js-yaml": "^4.0.5",
         "@types/minimatch": "^3.0.5"
     },
     "overrides": {
         "@gulp-sourcemaps/identity-map": {
-            "postcss": "8.4.33"
+            "postcss": "^8.5.26"
         },
         "micromatch": "4.0.8",
         "braces": "3.0.3",
@@ -18,11 +15,14 @@
         "shell-quote": "^1.8.4",
         "qs": "6.15.2",
         "ip-address": "^10.2.0",
+        "brace-expansion@1": "^1.1.18",
+        "brace-expansion@2": "^2.1.4",
         "test-exclude": {
-            "brace-expansion@5": "5.0.7"
+            "brace-expansion@5": "5.0.9"
         },
         "axios": {
             "form-data": "^4.0.6"
-        }
+        },
+        "js-yaml@4": "^4.3.1"
     }
 }

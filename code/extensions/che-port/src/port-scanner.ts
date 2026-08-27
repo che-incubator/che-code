@@ -54,9 +54,12 @@ export class PortScanner {
    */
   public async getListeningPorts(): Promise<ListeningPort[]> {
     const ipConverter = new IpConverter();
-    const outIPV6 = this.scanner.getListeningPortV6();
-    const outIPV4 = this.scanner.getListeningPortV4();
-    const output = (await Promise.all([outIPV4, outIPV6])).join();
+    const [outputIPV4, outputIPV6] = await Promise.all([
+      this.readListeningPorts(() => this.scanner.getListeningPortV4()),
+      this.readListeningPorts(() => this.scanner.getListeningPortV6()),
+    ]);
+
+    const output = outputIPV4 + outputIPV6;
 
     // parse
     const regex = /:\s(.*):(.*)\s[0-9].*\s0A\s/gm;
@@ -72,5 +75,16 @@ export class PortScanner {
       ports.push(port);
     }
     return ports;
+  }
+
+  private async readListeningPorts(reader: () => Promise<string>): Promise<string> {
+    try {
+      return await reader();
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        return '';
+      }
+      throw error;
+    }
   }
 }

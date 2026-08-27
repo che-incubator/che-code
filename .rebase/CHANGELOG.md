@@ -1,11 +1,43 @@
-# che-code chagelog
+# che-code changelog
 
-The file to keep a list of changed files which will potentionaly help to resolve rebase conflicts.
+The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/791
+
+- code/package.json
+- code/build/vite/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/mermaid-markdown-features/package.json
+- code/test/monaco/package.json
+---
 
 #### @rnikitenko
 https://github.com/che-incubator/che-code/commit/177a26a8ef76ea41a26eb6ac0ef9d6006b9af53e
 
 - code/src/vs/workbench/services/configuration/browser/configurationService.ts
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/771
+
+- code/package.json
+- code/build/package.json
+- code/build/npm/gyp/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/markdown-language-features/package.json
+- code/extensions/npm/package.json
+- code/test/automation/package.json
+- code/test/integration/browser/package.json
+- code/test/sanity/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/773
+
+- code/extensions/copilot/package.json
 ---
 
 #### @sbouchet
@@ -18,12 +50,24 @@ https://github.com/che-incubator/che-code/pull/774
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/777
+
+- code/package.json
+- code/remote/package.json
+- code/build/package.json
+- code/extensions/copilot/package.json
+- code/extensions/npm/package.json
+- code/test/sanity/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/750
 
 - code/extensions/copilot/package.json
 - code/extensions/copilot/chat-lib/package.json
 ---
 
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/745
 
 - code/package.json

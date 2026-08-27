@@ -127,9 +127,6 @@ apply_code_package_changes() {
   # now apply again the changes
   override_json_file code/package.json
 
-  # apply the replace
-  apply_multi_line_replace code/package.json
-  
   # resolve the change
   git add code/package.json > /dev/null 2>&1
 }
@@ -456,8 +453,6 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/.moduleignore" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.cli.ts" ]]; then
-      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.vscode.web.ts" ]]; then
@@ -508,6 +503,12 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/integration/browser/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/sanity/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/mermaid-markdown-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
@@ -515,6 +516,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/workspaces/common/workspaceIdentifier.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"

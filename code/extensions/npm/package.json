@@ -384,6 +384,10 @@
       }
     ]
   },
+  "overrides": {
+    "brace-expansion@2": "^2.1.4",
+    "js-yaml": "^3.15.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"

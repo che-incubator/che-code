@@ -33,6 +33,7 @@
     "npm-run-all2": "^8.0.4"
   },
   "overrides": {
-    "shell-quote": "^1.8.4"
+    "shell-quote": "^1.8.4",
+    "brace-expansion@1": "^1.1.18"
   }
 }
