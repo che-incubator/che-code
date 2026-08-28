@@ -78,6 +78,15 @@ const WORKSPACE_WITH_FIVE_PROJECTS = `{
 \t]
 }`;
 
+const WORKSPACE_WITH_PROJECTS_ROOT = `{
+\t"folders": [
+\t\t{
+\t\t\t"name": "projects",
+\t\t\t"path": "/tmp/projects"
+\t\t}
+\t]
+}`;
+
 const WORKSPACE_WITH_DEPENDENT_PROJECTS = `{
 \t"folders": [
 \t\t{
@@ -460,6 +469,43 @@ describe('Test generating VS Code Workspace file:', () => {
     expect(readFileMock).toBeCalledWith(env.DEVWORKSPACE_FLATTENED_DEVFILE);
 
     expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_DEPENDENT_PROJECTS);
+  });
+
+  test('should add PROJECTS_ROOT as a default folder when the workspace has no projects', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.empty.yaml');
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+
+      return undefined;
+    });
+
+    // no project directories exist and no default .code-workspace file is present
+    pathExistsMock.mockImplementation(async () => false);
+
+    const codeWorkspace = new CodeWorkspace();
+    await codeWorkspace.generate();
+
+    // should read only the flattened devworkspace file
+    expect(readFileMock).toBeCalledTimes(1);
+    expect(readFileMock).toBeCalledWith(env.DEVWORKSPACE_FLATTENED_DEVFILE);
+
+    // should create a default workspace file that opens the projects root
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_PROJECTS_ROOT);
   });
 
   test('should parse .code-workspace file if the file has extra characters', async () => {
