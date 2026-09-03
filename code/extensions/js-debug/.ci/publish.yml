@@ -1,0 +1,65 @@
+trigger: none
+pr: none
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
+
+parameters:
+  - name: publishExtension
+    displayName: 🚀 Publish Extension
+    type: boolean
+    default: false
+  - name: publishGhRelease
+    displayName: ☁️ Publish Github release
+    type: boolean
+    default: true
+
+extends:
+  template: azure-pipelines/extension/stable.yml@templates
+  parameters:
+    publishExtension: ${{ parameters.publishExtension }}
+    vscePackageArgs: --no-dependencies
+    apiScanExcludes: '**/w32appcontainertokens-*.node'
+    cgIgnoreDirectories: 'testdata,demos,.vscode-test,src/test,testWorkspace'
+    ${{ if eq(parameters.publishGhRelease, true) }}:
+      ghCreateRelease: true
+      ghReleaseAddChangeLog: true
+    l10nShouldOnlyPush: true
+    l10nPackageNlsPath: package.nls.json
+    l10nSourcePaths: src
+    buildSteps:
+      - script: npm install --legacy-peer-deps
+        displayName: Install dependencies
+
+      - script: npm run compile -- dapDebugServer
+        displayName: Compile DAP Debug Server Bundle
+
+      - script: node src/build/archiveDapBundle $(Build.ArtifactStagingDirectory)/dap-server
+        displayName: Package DAP Debug Server Bundle
+
+      - script: mkdir $(Build.ArtifactStagingDirectory)/sbom-dap-server
+        condition: ${{ eq(parameters.publishExtension, true) }}
+        displayName: Create SBOM drop path
+
+      - task: 1ES.PublishPipelineArtifact@1
+        inputs:
+          artifactName: 'Publish DAP Debug Server Bundle'
+          sbomBuildComponentPath: $(Build.SourcesDirectory)/dist
+          sbomBuildDropPath: $(Build.ArtifactStagingDirectory)/sbom-dap-server
+          sbomEnabled: ${{ eq(parameters.publishExtension, true) }}
+          targetPath: $(Build.ArtifactStagingDirectory)/dap-server
+        displayName: Publish DAP Debug Server Bundle
+
+      - script: npm run compile -- package:hoist
+        displayName: Package Stable
+    tsa:
+      config:
+        areaPath: 'Visual Studio Code Debugging Extensions'
+        serviceTreeID: '053e3ba6-924d-456c-ace0-67812c5ccc52'
+      enabled: true
+    apiScanSoftwareVersion: '1'

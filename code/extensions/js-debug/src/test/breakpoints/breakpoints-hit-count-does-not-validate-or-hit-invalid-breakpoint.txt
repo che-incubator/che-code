@@ -1,0 +1,23 @@
+Evaluating#1:
+        function foo() {
+          for (let i = 0; i < 10; i++) {
+            console.log(i);
+            console.log(i);
+            console.log(i);
+          }
+        }
+
+{
+    breakpoints : [
+        [0] : {
+            id : <number>
+            message : Unbound breakpoint
+            verified : false
+        }
+    ]
+}
+{
+    category : stderr
+    output : Invalid hit condition "potato". Expected an expression like "> 42" or "== 2".
+}
+Evaluating#2: foo();

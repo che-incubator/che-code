@@ -1,0 +1,24 @@
+
+Window.foo @ <eval>/VM<xx>:4:11
+  > scope #0: Local: foo
+      n: 0
+      > this: Window
+  scope #1: Global [expensive]
+
+Window.bar @ <eval>/VM<xx>:13:15
+  > scope #0: Local: bar
+      n: 0
+      > this: Window
+  scope #1: Global [expensive]
+
+----await----
+<anonymous> @ <eval>/VM<xx>:8:11
+  scope error: Variables not available in async stacks
+----setTimeout----
+foo @ <eval>/VM<xx>:7:9
+  scope error: Variables not available in async stacks
+bar @ <eval>/VM<xx>:13:15
+  scope error: Variables not available in async stacks
+----await----
+<anonymous> @ <eval>/VM<xx>:15:7
+  scope error: Variables not available in async stacks

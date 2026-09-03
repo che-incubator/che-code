@@ -1,0 +1,13 @@
+
+<anonymous> @ ${workspaceFolder}/web/worker.html:6:5
+  > scope #0: Local
+      > e: MessageEvent {isTrusted: true, data: 'pause', origin: '', lastEventId: '', source: null, …}
+      this: undefined
+  scope #1: Global [expensive]
+
+----postMessage----
+<anonymous> @ ${workspaceFolder}/web/worker.js:6:5
+  scope error: Variables not available in async stacks
+----Worker.postMessage----
+<anonymous> @ <eval>/VM<xx>:1:10
+  scope error: Variables not available in async stacks

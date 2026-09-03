@@ -1,0 +1,28 @@
+Initializing
+Launching
+Thread started: {
+    reason : started
+    threadId : <number>
+}
+Requesting threads: {
+    threads : [
+        [0] : {
+            id : <number>
+            name : 📄 blank
+        }
+    ]
+}
+Launched
+Requesting threads: {
+    threads : [
+        [0] : {
+            id : <number>
+            name : 📄 blank
+        }
+    ]
+}
+Disconnecting
+Thread exited: {
+    reason : exited
+    threadId : <number>
+}

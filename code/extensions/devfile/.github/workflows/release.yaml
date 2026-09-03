@@ -1,0 +1,94 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publishToMarketPlace:
+        description: "Publish to VS Code Marketplace ?"
+        required: true
+        type: choice
+        options:
+          - "true"
+          - "false"
+        default: "false"
+      publishToOVSX:
+        description: "Publish to OpenVSX Registry ?"
+        required: true
+        type: choice
+        options:
+          - "true"
+          - "false"
+        default: "false"
+jobs:
+  packaging-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out vscode-devfile
+        uses: actions/checkout@v2
+      - name: Set Up NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+      - name: Install NodeJS dependencies
+        run: npm install -g typescript "@vscode/vsce" "ovsx"
+      - name: Build vscode-devfile
+        run: |
+          npm install
+          npm run vscode:prepublish
+          npm run compile
+          echo "EXT_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
+      - name: Package vscode-devfile
+        run: |
+          vsce package -o vscode-devfile-${{ env.EXT_VERSION }}-${GITHUB_RUN_NUMBER}.vsix
+          ls -lash *.vsix
+      - name: Calculate SHA256 Hash
+        run: |
+          sha256sum vscode-devfile-${{ env.EXT_VERSION }}-${GITHUB_RUN_NUMBER}.vsix
+      - name: Upload VSIX Artifacts
+        uses: actions/upload-artifact@v4.6.1
+        with:
+          name: vscode-devfile
+          path: |
+            vscode-devfile-${{ env.EXT_VERSION }}-${{ github.run_number }}.vsix
+          if-no-files-found: error
+      - name: Publish to GH Release Tab
+        if: ${{ inputs.publishToMarketPlace == 'true' && inputs.publishToOVSX == 'true' }}
+        uses: "marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0"
+        with:
+          repo_token: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
+          automatic_release_tag: "v${{ env.EXT_VERSION }}"
+          title: "${{ env.EXT_VERSION }}"
+          draft: true
+          files: |
+            vscode-devfile-${{ env.EXT_VERSION }}-${{ github.run_number }}.vsix
+  release-job:
+    environment: ${{ (inputs.publishToMarketPlace == 'true' || inputs.publishToOVSX == 'true') && 'release' || 'pre-release' }}
+    runs-on: ubuntu-latest
+    needs: packaging-job
+    steps:
+      - name: Check Out vscode-devfile
+        uses: actions/checkout@v2
+      - name: Set Up NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        run: |
+          npm install -g typescript "@vscode/vsce" "ovsx"
+      - name: Download VSIX
+        uses: actions/download-artifact@v4.2.0
+        with:
+          merge-multiple: true
+          path: .
+      - name: List downloaded files
+        run: ls -ll *.vsix
+      - name: Set EXT_VERSION variable
+        run: echo "EXT_VERSION=$(cat package.json | jq -r .version)" >> $GITHUB_ENV
+      - name: Publish to VS Code Marketplace
+        if: ${{ inputs.publishToMarketPlace == 'true' }}
+        run: |
+          vsce publish -p ${{ secrets.VSCODE_MARKETPLACE_TOKEN }} --packagePath vscode-devfile-${{ env.EXT_VERSION }}-${GITHUB_RUN_NUMBER}.vsix
+      - name: Publish to OpenVSX Registry
+        if: ${{ inputs.publishToOVSX == 'true' }}
+        run: |
+          ovsx publish -p ${{ secrets.OVSX_MARKETPLACE_TOKEN }}  --packagePath vscode-devfile-${{ env.EXT_VERSION }}-${GITHUB_RUN_NUMBER}.vsix
