@@ -70,6 +70,9 @@ fi
 # Common tools needed to set up service
 mkdir -p $HOME/bin
 cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
+if [ -e $sshd_libdir/bwrap ]; then
+  cp $sshd_libdir/bwrap $HOME/bin/
+fi
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
 # Each file is validated independently, so a missing source line in either one
