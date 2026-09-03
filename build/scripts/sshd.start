@@ -125,6 +125,10 @@ sed -i \
 
 cp /sshd/sshd_config /var/tmp/ssh/
 
+# Start the machine-exec component in background
+export MACHINE_EXEC_PORT=3333
+nohup $sshd_libdir/machine-exec --url "127.0.0.1:${MACHINE_EXEC_PORT}" &
+
 # Notify that configuration has been successful and share username
 echo -n "$(whoami)" > /sshd/username
 
