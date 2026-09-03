@@ -1,0 +1,20 @@
+attributes:
+  controller.devfile.io/devworkspace-config:
+    name: devworkspace-config
+    namespace: dogfooding
+  controller.devfile.io/storage-type: per-workspace
+components:
+- attributes:
+    app.kubernetes.io/component: che-code-runtime
+    app.kubernetes.io/part-of: che-code.eclipse.org
+    controller.devfile.io/merged-contributions: editor
+  container:
+    cpuLimit: "4"
+    image: quay.io/che-incubator/che-code-dev:insiders
+    memoryLimit: 13Gi
+    memoryRequest: 320Mi
+    sourceMapping: /projects
+  name: dev
+- name: projects
+  volume:
+    size: 3Gi
