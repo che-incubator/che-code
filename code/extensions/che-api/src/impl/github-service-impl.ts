@@ -211,10 +211,46 @@ export class GithubServiceImpl implements GithubService {
       throw new Error('device-authentication secret not found');
     }
 
-    await this.deleteDeviceAuthSecrets(deviceAuthSecrets);
+    const rawToken = deviceAuthSecrets[0].data?.token
+      ? base64Decode(deviceAuthSecrets[0].data.token)
+      : '';
+    if (rawToken) {
+      await this.revokeGitHubToken(rawToken);
+    }
 
-    // another token should be used by the Github Service after removing the Device Authentication token
-    this.initializeToken();
+    // TEMPORARY: skip secret deletion and session clearing to test if token still works after revoke
+    this.logger.info('Github Service: skipping secret deletion (revocation test mode)');
+  }
+
+  private async revokeGitHubToken(token: string): Promise<void> {
+    try {
+      this.logger.info('Github Service: attempting to revoke GitHub token...');
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
+      try {
+        const response = await fetch('https://api.github.com/credentials/revoke', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ credentials: [token] }),
+          signal: controller.signal,
+        });
+        this.logger.info(`Github Service: GitHub token revocation response: HTTP ${response.status}`);
+        if (response.ok || response.status === 202) {
+          this.logger.info('Github Service: GitHub token revoked successfully');
+        } else {
+          const body = await response.text().catch(() => '');
+          this.logger.warn(`Github Service: GitHub token revocation failed (HTTP ${response.status}): ${body}`);
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (error: any) {
+      this.logger.warn(`Github Service: GitHub token revocation error: ${error.message}`);
+    }
   }
 
   private async deleteDeviceAuthSecrets(secrets?: k8s.V1Secret[]): Promise<void> {

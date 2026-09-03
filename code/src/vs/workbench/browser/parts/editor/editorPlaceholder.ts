@@ -243,6 +243,8 @@ export class ErrorPlaceholderEditor extends EditorPlaceholder {
 		const error = options.error;
 		const isFileNotFound = (<FileOperationError | undefined>error)?.fileOperationResult === FileOperationResult.FILE_NOT_FOUND;
 
+		console.log('[che-startup-debug] ErrorPlaceholderEditor.getContents():', { resource: resource?.toString(), error: error?.message || error, isFileNotFound });
+
 		// Error Label
 		let label: string;
 		if (isFileNotFound) {

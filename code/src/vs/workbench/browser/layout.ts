@@ -856,15 +856,19 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		// - always when `window.restoreWindows: preserve`
 
 		if (isTemporaryWorkspace(contextService.getWorkspace())) {
+			console.log('[che-startup-debug] shouldRestoreEditors: false (temporary workspace)');
 			return false;
 		}
 
 		if (this.configurationService.getValue<boolean>(WorkbenchLayoutSettings.EDITOR_RESTORE_EDITORS) === false) {
+			console.log('[che-startup-debug] shouldRestoreEditors: false (disabled by config)');
 			return false;
 		}
 
 		const forceRestoreEditors = this.configurationService.getValue<string>('window.restoreWindows') === 'preserve';
-		return !!forceRestoreEditors || initialEditorsState === undefined;
+		const result = !!forceRestoreEditors || initialEditorsState === undefined;
+		console.log('[che-startup-debug] shouldRestoreEditors:', result, { forceRestoreEditors, hasInitialEditorsState: initialEditorsState !== undefined });
+		return result;
 	}
 
 	protected willRestoreEditors(): boolean {
