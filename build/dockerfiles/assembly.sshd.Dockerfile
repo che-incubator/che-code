@@ -15,6 +15,10 @@ RUN microdnf -y install libsecret openssh-server nss_wrapper-libs \
       gzip tar which && \
     microdnf -y clean all --enablerepo='*'
 
+# Machine Exec
+# https://quay.io/eclipse/che-machine-exec.
+FROM quay.io/eclipse/che-machine-exec:next as machine-exec
+
 # UBI 9/10
 FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1785358511
 
@@ -40,6 +44,9 @@ RUN mkdir -p /opt/www/code /opt/www/jetbrains
 
 COPY /build/scripts/code-sshd-page/* /opt/www/code
 COPY /build/scripts/jetbrains-sshd-page/* /opt/www/jetbrains
+
+COPY --from=machine-exec --chown=0:0 /go/ubi8/bin/che-machine-exec /sshd-staging/ubi8/machine-exec
+COPY --from=machine-exec --chown=0:0 /go/ubi9/bin/che-machine-exec /sshd-staging/ubi9/machine-exec
 
 # Lock down /etc/passwd until fixed in UDI
 RUN chmod 644 /etc/passwd
