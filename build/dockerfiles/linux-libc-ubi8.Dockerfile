@@ -66,8 +66,37 @@ ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
 # Initialize a git repository for code build tools
 RUN git init .
 
+# prepareBuiltInCopilotRipgrepShim has no unsupported-arch guard unlike other
+# copilot functions. Patch it to skip gracefully on ppc64le/s390x.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      sed -i 's/export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string): void {/export function prepareBuiltInCopilotRipgrepShim(platform: string, arch: string, builtInCopilotExtensionDir: string, appNodeModulesDir: string): void {\n\tif (!copilotPlatforms.includes(toCopilotPackagePlatformArch(platform, arch))) { return; }/' \
+        build/lib/copilot.ts; \
+    fi
+
 # change network timeout (slow using multi-arch build)
 RUN npm config set fetch-retry-mintimeout 100000 && npm config set fetch-retry-maxtimeout 600000
+
+# @vscode/vsce-sign and @github/copilot have no binary for ppc64le/s390x.
+# Disable their postinstall scripts before npm install.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      sed -i '/@vscode\/vsce-sign/,/\}/s/"hasInstallScript": true/"hasInstallScript": false/' \
+        build/package-lock.json \
+        extensions/copilot/package-lock.json; \
+      sed -i 's/"postinstall": "tsx \.\/script\/postinstall\.ts"/"postinstall": "echo skipped"/' \
+        extensions/copilot/package.json; \
+    fi
+
+# On ppc64le/s390x, build_from_source in remote/.npmrc causes node-gyp to
+# download headers from nodejs.org which times out. Disable it and also
+# disable @parcel/watcher install script since no prebuilt exists for ppc64le.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      sed -i '/^build_from_source/d' remote/.npmrc; \
+      sed -i '0,/"hasInstallScript": true/s/"hasInstallScript": true/"hasInstallScript": false/' \
+        remote/package-lock.json; \
+    fi
 
 # node-gyp's make generator execs gyp entrypoints via shebang; UBI npm may
 # ship them without +x and with a stale Python shebang (e.g. python3.8)
@@ -81,6 +110,17 @@ RUN chmod +x \
 # Grab dependencies (and force to rebuild them)
 RUN rm -rf /checode-compilation/node_modules && npm install --force
 
+# tsgo has no native binary for ppc64le/s390x - replace with a no-op.
+# Must run AFTER npm install so node_modules/.bin/tsgo exists.
+# hadolint ignore=SC3014
+RUN if [ "$(uname -m)" != "x86_64" ] && [ "$(uname -m)" != "aarch64" ]; then \
+      find . -path "*/node_modules/.bin/tsgo" | while read f; do \
+        echo '#!/bin/sh' > "$f"; \
+        echo 'exit 0' >> "$f"; \
+        chmod +x "$f"; \
+      done; \
+    fi
+
 # Compile
 RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d '=' -f 2 | tr -d '"') \
@@ -88,7 +128,11 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && mkdir -p /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH} \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
-    && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
+    && if [ "$(uname -m)" = "x86_64" ] || [ "$(uname -m)" = "aarch64" ]; then \
+    NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build; \
+    else \
+    NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-extension-media-build; \
+    fi \
     && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
     && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
@@ -185,3 +229,4 @@ RUN npm install \
 # Store the content of the result
 FROM scratch as linux-libc-content
 COPY --from=linux-libc-ubi8-builder /checode /checode-linux-libc/ubi8
+
