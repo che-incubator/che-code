@@ -19,6 +19,9 @@ RUN microdnf -y install libsecret openssh-server nss_wrapper-libs \
 # https://quay.io/eclipse/che-machine-exec.
 FROM quay.io/eclipse/che-machine-exec:next as machine-exec
 
+# Bubblewrap
+FROM quay.io/devfile/universal-developer-image:ubi9-latest as bubblewrap-ubi9
+
 # UBI 9/10
 FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1785358511
 
@@ -47,6 +50,7 @@ COPY /build/scripts/jetbrains-sshd-page/* /opt/www/jetbrains
 
 COPY --from=machine-exec --chown=0:0 /go/ubi8/bin/che-machine-exec /sshd-staging/ubi8/machine-exec
 COPY --from=machine-exec --chown=0:0 /go/ubi9/bin/che-machine-exec /sshd-staging/ubi9/machine-exec
+COPY --from=bubblewrap-ubi9 --chown=0:0 /usr/local/bin/bwrap /sshd-staging/ubi9/bwrap
 
 # Lock down /etc/passwd until fixed in UDI
 RUN chmod 644 /etc/passwd
