@@ -71,12 +71,20 @@ mkdir -p $HOME/bin
 cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
-grep -q 'export DEVWORKSPACE_NAME=' $HOME/.profile
+
+grep -q 'source $HOME/.sshd_profile' $HOME/.profile
 if [ ! $? -eq 0 ]; then
-  env | sed 's|^|export |' >> $HOME/.profile
-  echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.profile
-  cat $HOME/.profile >> $HOME/.bashrc
+  touch $HOME/.sshd_profile
+  echo "source $HOME/.sshd_profile" >> $HOME/.profile
+  echo "source $HOME/.sshd_profile" >> $HOME/.bashrc
 fi
+
+if [ -f $HOME/.sshd_profile ]; then
+  env | sed 's|^|export |' >> $HOME/.sshd_profile
+  echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.sshd_profile
+fi
+
+
 
 # Configure SSHD as non-root user
 
