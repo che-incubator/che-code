@@ -72,18 +72,19 @@ cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
 
-grep -q 'source $HOME/.sshd_profile' $HOME/.profile
-if [ ! $? -eq 0 ]; then
-  touch $HOME/.sshd_profile
-  echo "source $HOME/.sshd_profile" >> $HOME/.profile
-  echo "source $HOME/.sshd_profile" >> $HOME/.bashrc
-fi
+touch $HOME/.sshd_profile
 
-if [ -f $HOME/.sshd_profile ]; then
-  echo "" > $HOME/.sshd_profile
-  env | sed 's|^|export |' >> $HOME/.sshd_profile
-  echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.sshd_profile
-fi
+# Each file is validated independently, so a missing source line in either one
+# (or a deleted .sshd_profile) is repaired instead of skipping the whole block.
+for rc in $HOME/.profile $HOME/.bashrc; do
+  if ! grep -qsF '.sshd_profile' "$rc"; then
+    echo 'source $HOME/.sshd_profile' >> "$rc"
+  fi
+done
+
+echo "" > $HOME/.sshd_profile
+env | sed 's|^|export |' >> $HOME/.sshd_profile
+echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.sshd_profile
 
 # Configure SSHD as non-root user
 
