@@ -80,11 +80,10 @@ if [ ! $? -eq 0 ]; then
 fi
 
 if [ -f $HOME/.sshd_profile ]; then
+  echo "" > $HOME/.sshd_profile
   env | sed 's|^|export |' >> $HOME/.sshd_profile
   echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.sshd_profile
 fi
-
-
 
 # Configure SSHD as non-root user
 
