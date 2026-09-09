@@ -71,9 +71,6 @@ mkdir -p $HOME/bin
 cp $sshd_libdir/tar $sshd_libdir/gzip $sshd_libdir/which $HOME/bin/
 
 # Set up environment variables injected into PID 1 (.profile & .bashrc)
-
-touch $HOME/.sshd_profile
-
 # Each file is validated independently, so a missing source line in either one
 # (or a deleted .sshd_profile) is repaired instead of skipping the whole block.
 for rc in $HOME/.profile $HOME/.bashrc; do
