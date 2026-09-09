@@ -14,6 +14,16 @@ https://github.com/che-incubator/che-code/pull/796
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/791
+
+- code/package.json
+- code/build/vite/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/mermaid-markdown-features/package.json
+- code/test/monaco/package.json
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/797
 
 - code/extensions/mermaid-markdown-features/package.json
