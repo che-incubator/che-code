@@ -79,7 +79,7 @@ for rc in $HOME/.profile $HOME/.bashrc; do
   fi
 done
 
-env | sed 's|^|export |' > $HOME/.sshd_profile
+env | sed -e 's|^|export |' -e 's|=|="|' -e 's|$|"|' > $HOME/.sshd_profile
 echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.sshd_profile
 
 # Configure SSHD as non-root user
