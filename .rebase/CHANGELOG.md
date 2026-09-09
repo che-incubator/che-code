@@ -22,6 +22,7 @@ https://github.com/che-incubator/che-code/pull/791
 - code/extensions/copilot/chat-lib/package.json
 - code/extensions/mermaid-markdown-features/package.json
 - code/test/monaco/package.json
+---
 
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/797
