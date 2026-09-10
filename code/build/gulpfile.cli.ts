@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import es from 'event-stream';
-import { gulp } from './lib/gulp/facade.ts';
-import decompress from 'gulp-decompress';
+import { gulp, gunzip } from './lib/gulp/facade.ts';
 import * as path from 'path';
 import fancyLog from 'fancy-log';
 import ansiColors from 'ansi-colors';
@@ -14,7 +13,7 @@ import { tmpdir } from 'os';
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import * as task from './lib/gulp/task.ts';
 import watcher from './lib/watch/index.ts';
-import { debounce } from './lib/util.ts';
+import { debounce, untar } from './lib/util.ts';
 import { createReporter } from './lib/reporter.ts';
 
 const root = 'cli';
@@ -86,7 +85,8 @@ const acquireBuiltOpenSSL = (callback: (err?: unknown) => void) => {
 	);
 
 	gulp.src('*.tgz', { cwd: dir })
-		.pipe(decompress())
+		.pipe(gunzip())
+		.pipe(untar())
 		.pipe(gulp.dest(`${root}/openssl`))
 		.on('error', callback)
 		.on('end', () => {

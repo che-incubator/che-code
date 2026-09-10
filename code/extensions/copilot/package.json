@@ -7250,7 +7250,7 @@
     "zod": "3.25.76",
     "shell-quote": "^1.8.4",
     "qs": "6.15.2",
-    "ip-address": "^10.2.0",
+    "ip-address": "^10.5.0",
     "ws": "^8.21.0",
     "brace-expansion@1": "^1.1.18",
     "brace-expansion@2": "^2.1.4",
@@ -7261,6 +7261,9 @@
     },
     "@grpc/proto-loader": {
       "protobufjs": "^7.6.5"
+    },
+    "vite": {
+      "postcss": "^8.5.26"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",

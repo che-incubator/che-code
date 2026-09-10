@@ -221,7 +221,6 @@
     "gulp-azure-storage": "^0.12.1",
     "gulp-bom": "^3.0.0",
     "gulp-buffer": "0.0.2",
-    "gulp-decompress": "^3.0.0",
     "gulp-filter": "^5.1.0",
     "gulp-flatmap": "^1.0.2",
     "gulp-gunzip": "^1.0.0",
@@ -282,7 +281,7 @@
       "ws": "^7.5.11"
     },
     "@gulp-sourcemaps/identity-map": {
-      "postcss": "8.4.33"
+      "postcss": "^8.5.26"
     },
     "micromatch": "4.0.8",
     "braces": "3.0.3",
@@ -291,7 +290,7 @@
     "flatted": "^3.4.2",
     "shell-quote": "^1.8.4",
     "qs": "6.15.2",
-    "ip-address": "^10.2.0",
+    "ip-address": "^10.5.0",
     "brace-expansion@1": "^1.1.18",
     "brace-expansion@2": "^2.1.4",
     "test-exclude": {
