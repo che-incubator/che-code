@@ -1,0 +1,33 @@
+
+Window.paused @ <eval>/VM<xx>:4:9
+  > scope #0: Local: paused
+      > this: Window
+      y: 'paused'
+  scope #1: Global [expensive]
+
+Window.chained @ <eval>/VM<xx>:11:23
+  > scope #0: Local: chained
+      > this: Window
+      x: 'x1'
+  > scope #1: Closure (chain)
+      n: 1
+  scope #2: Global [expensive]
+
+Window.chained @ <eval>/VM<xx>:11:23
+  > scope #0: Local: chained
+      > this: Window
+      x: 'x2'
+  > scope #1: Closure (chain)
+      n: 2
+  scope #2: Global [expensive]
+
+Window.chained @ <eval>/VM<xx>:11:23
+  > scope #0: Local: chained
+      > this: Window
+      x: 'x3'
+  > scope #1: Closure (chain)
+      n: 3
+  scope #2: Global [expensive]
+
+<anonymous> @ <eval>/VM<xx>:14:15
+  scope #0: Global [expensive]

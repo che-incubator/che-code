@@ -1,0 +1,41 @@
+Evaluating#1:
+        function foo() {
+          for (let i = 0; i < 10; i++) {
+            console.log(i);
+            console.log(i);
+            console.log(i);
+          }
+        }
+
+{
+    breakpoints : [
+        [0] : {
+            column : 13
+            id : <number>
+            line : 4
+            source : {
+                name : localhost꞉8001/eval1.js
+                path : localhost꞉8001/eval1.js
+                sourceReference : <number>
+            }
+            verified : true
+        }
+    ]
+}
+{
+    breakpoints : [
+        [0] : {
+            column : 13
+            id : <number>
+            line : 4
+            source : {
+                name : localhost꞉8001/eval1.js
+                path : localhost꞉8001/eval1.js
+                sourceReference : <number>
+            }
+            verified : true
+        }
+    ]
+}
+Evaluating#2: foo();
+result: 7

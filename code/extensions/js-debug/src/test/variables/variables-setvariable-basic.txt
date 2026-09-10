@@ -1,0 +1,15 @@
+> result: {foo: 42}
+    foo: 42
+    > [[Prototype]]: Object
+
+Setting "foo" to "{bar: 17}"
+> <result>: Object
+    bar: 17
+    > [[Prototype]]: Object
+
+Original
+> result: {foo: 42}
+    > foo: {bar: 17}
+    > [[Prototype]]: Object
+
+setVariable failure: ReferenceError: baz is not defined
