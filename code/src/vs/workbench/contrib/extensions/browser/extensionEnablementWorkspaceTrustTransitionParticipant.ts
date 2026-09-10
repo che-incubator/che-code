@@ -29,14 +29,17 @@ export class ExtensionEnablementWorkspaceTrustTransitionParticipant extends Disp
 			// the participant as part of the initialization process, as the workspace
 			// trust state is initialized before starting the extension host.
 			workspaceTrustManagementService.workspaceTrustInitialized.then(() => {
+				console.log('[che-startup-debug] ExtensionEnablementWorkspaceTrustTransitionParticipant REGISTERED (workspaceTrustInitialized resolved)');
 				const workspaceTrustTransitionParticipant = new class implements IWorkspaceTrustTransitionParticipant {
 					async participate(trusted: boolean): Promise<void> {
 						if (trusted) {
 							// Untrusted -> Trusted
+							console.log('[che-startup-debug] TrustTransitionParticipant: untrusted → trusted, updating extension enablements');
 							await extensionEnablementService.updateExtensionsEnablementsWhenWorkspaceTrustChanges();
 						} else {
 							// Trusted -> Untrusted
 							if (environmentService.remoteAuthority) {
+								console.log('[che-startup-debug] TrustTransitionParticipant: trusted → untrusted (REMOTE) — calling reload()!');
 								hostService.reload();
 							} else {
 								const stopped = await extensionService.stopExtensionHosts(localize('restartExtensionHost.reason', "Changing workspace trust"));

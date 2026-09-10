@@ -139,6 +139,17 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 		this._trustStateInfo = this.loadTrustInfo();
 		this._isTrusted = this.calculateWorkspaceTrust();
 
+		console.log('[che-startup-debug] WorkspaceTrustManagementService constructor:', {
+			initialTrust: this._isTrusted,
+			canonicalUrisResolved: this._canonicalUrisResolved,
+			remoteAuthority: this.environmentService.remoteAuthority,
+			isEmptyWorkspace: this.isEmptyWorkspace(),
+			workspaceFolders: this._canonicalWorkspace.folders.map(f => f.uri.toString()),
+			workspaceConfig: this._canonicalWorkspace.configuration?.toString(),
+			workspaceUris: this.getWorkspaceUris().map(u => u.toString()),
+			trustStateInfo: JSON.stringify(this._trustStateInfo),
+		});
+
 		this.initializeWorkspaceTrust();
 		this.registerListeners();
 	}
@@ -150,6 +161,7 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 		this.resolveCanonicalUris()
 			.then(async () => {
 				this._canonicalUrisResolved = true;
+				console.log('[che-startup-debug] canonicalUrisResolved=true, calling updateWorkspaceTrust (source: resolveCanonicalUris)');
 				await this.updateWorkspaceTrust();
 			})
 			.finally(() => {
@@ -165,10 +177,16 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 			this.remoteAuthorityResolverService.resolveAuthority(this.environmentService.remoteAuthority)
 				.then(async result => {
 					this._remoteAuthority = result;
+					console.log('[che-startup-debug] remoteAuthority resolved:', {
+						authority: result.authority.authority,
+						isTrusted: result.options?.isTrusted,
+					});
 					await this.fileService.activateProvider(Schemas.vscodeRemote);
+					console.log('[che-startup-debug] vscodeRemote provider activated, calling updateWorkspaceTrust (source: remoteAuthorityResolved)');
 					await this.updateWorkspaceTrust();
 				})
 				.finally(() => {
+					console.log('[che-startup-debug] workspaceTrustInitialized resolving (remote path)');
 					this._workspaceTrustInitializedPromiseResolve();
 				});
 		}
@@ -188,7 +206,11 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 	//#region private interface
 
 	private registerListeners(): void {
-		this._register(this.workspaceService.onDidChangeWorkspaceFolders(async () => await this.updateWorkspaceTrust()));
+		this._register(this.workspaceService.onDidChangeWorkspaceFolders(async () => {
+			console.log('[che-startup-debug] onDidChangeWorkspaceFolders fired, calling updateWorkspaceTrust');
+			console.log('[che-startup-debug] current folders:', this._canonicalWorkspace.folders.map(f => f.uri.toString()));
+			await this.updateWorkspaceTrust();
+		}));
 		this._register(this.storageService.onDidChangeValue(StorageScope.APPLICATION_SHARED, this.storageKey, this._store)(async () => {
 			/* This will only execute if storage was changed by a user action in a separate window */
 			if (JSON.stringify(this._trustStateInfo) !== JSON.stringify(this.loadTrustInfo())) {
@@ -295,16 +317,19 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 	private calculateWorkspaceTrust(): boolean {
 		// Feature is disabled
 		if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
+			console.log('[che-startup-debug] calculateWorkspaceTrust → true (trust disabled)');
 			return true;
 		}
 
 		// Canonical Uris not yet resolved
 		if (!this._canonicalUrisResolved) {
+			console.log('[che-startup-debug] calculateWorkspaceTrust → false (canonical URIs not resolved)');
 			return false;
 		}
 
 		// Remote - resolver explicitly sets workspace trust to TRUE
 		if (this.environmentService.remoteAuthority && this._remoteAuthority?.options?.isTrusted) {
+			console.log('[che-startup-debug] calculateWorkspaceTrust →', this._remoteAuthority.options.isTrusted, '(remote isTrusted)');
 			return this._remoteAuthority.options.isTrusted;
 		}
 
@@ -312,19 +337,27 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 		if (this.isEmptyWorkspace()) {
 			// Use memento if present
 			if (this._storedTrustState.isEmptyWorkspaceTrusted !== undefined) {
+				console.log('[che-startup-debug] calculateWorkspaceTrust →', this._storedTrustState.isEmptyWorkspaceTrusted, '(empty workspace memento)');
 				return this._storedTrustState.isEmptyWorkspaceTrusted;
 			}
 
 			// Startup files
 			if (this._canonicalStartupFiles.length) {
-				return this.getUrisTrust(this._canonicalStartupFiles);
+				const result = this.getUrisTrust(this._canonicalStartupFiles);
+				console.log('[che-startup-debug] calculateWorkspaceTrust →', result, '(empty workspace startup files)');
+				return result;
 			}
 
 			// User setting
-			return !!this.configurationService.getValue(WORKSPACE_TRUST_EMPTY_WINDOW);
+			const emptyWindowTrust = !!this.configurationService.getValue(WORKSPACE_TRUST_EMPTY_WINDOW);
+			console.log('[che-startup-debug] calculateWorkspaceTrust →', emptyWindowTrust, '(empty workspace user setting)');
+			return emptyWindowTrust;
 		}
 
-		return this.getUrisTrust(this.getWorkspaceUris());
+		const uris = this.getWorkspaceUris();
+		const result = this.getUrisTrust(uris);
+		console.log('[che-startup-debug] calculateWorkspaceTrust →', result, '(getUrisTrust)', { uris: uris.map(u => u.toString()) });
+		return result;
 	}
 
 	private async updateWorkspaceTrust(trusted?: boolean): Promise<void> {
@@ -337,13 +370,22 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 			trusted = this.calculateWorkspaceTrust();
 		}
 
-		if (this.isWorkspaceTrusted() === trusted) { return; }
+		const currentTrust = this.isWorkspaceTrusted();
+		if (currentTrust === trusted) {
+			console.log('[che-startup-debug] updateWorkspaceTrust: NO CHANGE (trust stays', trusted, ')');
+			return;
+		}
+
+		console.log('[che-startup-debug] updateWorkspaceTrust: TRUST TRANSITION', currentTrust, '→', trusted);
+		console.trace('[che-startup-debug] updateWorkspaceTrust transition call stack');
 
 		// Update workspace trust
 		this.isTrusted = trusted;
 
 		// Run workspace trust transition participants
+		console.log('[che-startup-debug] updateWorkspaceTrust: running transition participants...');
 		await this._trustTransitionManager.participate(trusted);
+		console.log('[che-startup-debug] updateWorkspaceTrust: transition participants completed');
 
 		// Fire workspace trust change event
 		this._onDidChangeTrust.fire(trusted);
