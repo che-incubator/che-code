@@ -40,6 +40,8 @@ export class CodeWorkspace {
       return;
     }
 
+    const projectsRoot = env.PROJECTS_ROOT;
+
     let path: string | undefined;
     let workspace: Workspace | undefined;
 
@@ -109,6 +111,15 @@ export class CodeWorkspace {
       }
 
       if (await this.synchronizeProjects(workspace!, devfile.starterProjects)) {
+        saveRequired = true;
+      }
+
+      // Ensure the workspace always opens at least the projects root.
+      // Empty workspaces (no projects, dependentProjects or starterProjects) would
+      // otherwise produce a `.code-workspace` file with no `folders`, causing the
+      // editor to open with an empty Explorer and nothing mounted.
+      if (!workspace!.folders || workspace!.folders.length === 0) {
+        workspace!.folders = [{ name: 'projects', path: projectsRoot }];
         saveRequired = true;
       }
 
