@@ -47,11 +47,12 @@ if [ x"$USER_ID" != x"0" -a x"$USER_ID" != x"1001" ]; then
 
   if [ -z $USER_NAME ]; then
     cp /etc/passwd $NSS_WRAPPER_PASSWD
-    echo "$USER_ID:x:$USER_ID:$USER_ID::/var/tmp/user:/bin/bash" >> $NSS_WRAPPER_PASSWD
+    echo "$USER_ID::$USER_ID:$USER_ID::/var/tmp/user:/bin/bash" >> $NSS_WRAPPER_PASSWD
   else
     cat /etc/passwd | sed \
     -e "/$USER_ID/ s|/sbin/nologin|/bin/bash|" \
     -e "/$USER_ID/ s|:/:|:/var/tmp/user:|" \
+    -e "/$USER_ID/ s|:x:|::|" \
     -e "/$USER_NAME:/{/:$USER_ID:/!d;}" \
     > $NSS_WRAPPER_PASSWD
   fi
@@ -102,6 +103,7 @@ sed -i \
 -e 's|#PidFile /var/run/sshd.pid|PidFile /tmp/sshd.pid|' \
 -e 's|#LogLevel INFO|LogLevel DEBUG1|' \
 -e 's|/usr/libexec/openssh/sftp-server|internal-sftp|' \
+-e 's|#PermitEmptyPasswords no|PermitEmptyPasswords yes|' \
   /sshd/sshd_config
 
 # OpenSSH 9.8+
@@ -120,17 +122,6 @@ sed -i \
 -e 's|#HostKey /etc/ssh/ssh_host_ecdsa_key|HostKey /var/tmp/ssh/ssh_host_ecdsa_key|' \
 -e 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /var/tmp/ssh/ssh_host_ed25519_key|' \
   /sshd/sshd_config
-
-# Use keys that have been configured, and generate them otherwise
-mkdir -p $HOME/.ssh
-if [ -f /etc/ssh/dwo_ssh_key.pub ]; then
-  echo 'Using pre-configured SSH client key.'
-  cp /etc/ssh/dwo_ssh_key.pub $HOME/.ssh/authorized_keys
-else
-  echo 'Generating SSH client key..'
-  $sshd_libdir/ssh-keygen -q -N '' -t ecdsa -f /sshd/ssh_client_key
-  cp /sshd/ssh_client_key.pub $HOME/.ssh/authorized_keys
-fi
 
 cp /sshd/sshd_config /var/tmp/ssh/
 
