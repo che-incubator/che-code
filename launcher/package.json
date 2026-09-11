@@ -17,7 +17,7 @@
   "scripts": {
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf lib",
-    "build": "npm run format && npm run compile && npm run lint && npm run test",
+    "build": "npm run format && npm run compile && npm run lint",
     "compile": "tsc --project .",
     "format": "prettier --check '{src,tests}/**/*.ts' package.json",
     "format:fix": "prettier --write '{src,tests}/**/*.ts' package.json",

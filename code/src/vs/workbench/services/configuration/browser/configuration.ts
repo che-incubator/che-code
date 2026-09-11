@@ -668,8 +668,11 @@ export class WorkspaceConfiguration extends Disposable {
 		if (!this._initialized) {
 			if (this.configurationCache.needsCaching(this._workspaceIdentifier.configPath)) {
 				this._workspaceConfiguration = this._cachedConfiguration;
+				const cachedFolders = this._cachedConfiguration.getFolders();
+				console.log('[che-startup-debug] WorkspaceConfiguration.initialize() using cache, cachedFolders:', JSON.stringify(cachedFolders), 'configPath:', workspaceIdentifier.configPath.toString());
 				this.waitAndInitialize(this._workspaceIdentifier);
 			} else {
+				console.log('[che-startup-debug] WorkspaceConfiguration.initialize() no caching needed, using FileServiceBased directly');
 				this.doInitialize(new FileServiceBasedWorkspaceConfiguration(this.fileService, this.uriIdentityService, this.logService));
 			}
 		}
@@ -717,10 +720,14 @@ export class WorkspaceConfiguration extends Disposable {
 	}
 
 	private async waitAndInitialize(workspaceIdentifier: IWorkspaceIdentifier): Promise<void> {
+		console.log('[che-startup-debug] WorkspaceConfiguration.waitAndInitialize() started, waiting for provider:', workspaceIdentifier.configPath.toString());
 		await whenProviderRegistered(workspaceIdentifier.configPath, this.fileService);
+		console.log('[che-startup-debug] WorkspaceConfiguration.waitAndInitialize() provider registered');
 		if (!(this._workspaceConfiguration instanceof FileServiceBasedWorkspaceConfiguration)) {
 			const fileServiceBasedWorkspaceConfiguration = this._register(new FileServiceBasedWorkspaceConfiguration(this.fileService, this.uriIdentityService, this.logService));
 			await fileServiceBasedWorkspaceConfiguration.load(workspaceIdentifier, { scopes: WORKSPACE_SCOPES, skipRestricted: this.isUntrusted() });
+			const folders = fileServiceBasedWorkspaceConfiguration.getFolders();
+			console.log('[che-startup-debug] WorkspaceConfiguration.waitAndInitialize() loaded from remote, folders:', JSON.stringify(folders));
 			this.doInitialize(fileServiceBasedWorkspaceConfiguration);
 			this.onDidWorkspaceConfigurationChange(false, true);
 		}

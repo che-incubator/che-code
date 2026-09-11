@@ -480,6 +480,7 @@ class WorkspaceProvider implements IWorkspaceProvider {
 			}
 		}
 
+		console.log('[che-startup-debug] WorkspaceProvider.create():', { foundWorkspace, workspace, locationHref: document.location.href });
 		return new WorkspaceProvider(workspace, payload, config);
 	}
 
@@ -494,12 +495,15 @@ class WorkspaceProvider implements IWorkspaceProvider {
 
 	async open(workspace: IWorkspace, options?: { reuse?: boolean; payload?: object }): Promise<boolean> {
 		if (options?.reuse && !options.payload && this.isSame(this.workspace, workspace)) {
+			console.log('[che-startup-debug] WorkspaceProvider.open() called but isSame=true, no navigation needed');
 			return true; // return early if workspace and environment is not changing and we are reusing window
 		}
 
 		const targetHref = this.createTargetUrl(workspace, options);
 		if (targetHref) {
 			if (options?.reuse) {
+				console.log('[che-startup-debug] WorkspaceProvider.open() NAVIGATING via location.href', { targetHref, currentHref: mainWindow.location.href, workspace, options });
+				console.trace('[che-startup-debug] WorkspaceProvider.open() call stack');
 				mainWindow.location.href = targetHref;
 				return true;
 			} else {
@@ -567,13 +571,22 @@ class WorkspaceProvider implements IWorkspaceProvider {
 		}
 
 		if (isFolderToOpen(workspaceA) && isFolderToOpen(workspaceB)) {
-			return isEqual(workspaceA.folderUri, workspaceB.folderUri); // same workspace
+			const result = isEqual(workspaceA.folderUri, workspaceB.folderUri);
+			if (!result) {
+				console.log('[che-startup-debug] WorkspaceProvider.isSame() folder URIs differ:', workspaceA.folderUri.toString(), '!==', workspaceB.folderUri.toString());
+			}
+			return result; // same workspace
 		}
 
 		if (isWorkspaceToOpen(workspaceA) && isWorkspaceToOpen(workspaceB)) {
-			return isEqual(workspaceA.workspaceUri, workspaceB.workspaceUri); // same workspace
+			const result = isEqual(workspaceA.workspaceUri, workspaceB.workspaceUri);
+			if (!result) {
+				console.log('[che-startup-debug] WorkspaceProvider.isSame() workspace URIs differ:', workspaceA.workspaceUri.toString(), '!==', workspaceB.workspaceUri.toString());
+			}
+			return result; // same workspace
 		}
 
+		console.log('[che-startup-debug] WorkspaceProvider.isSame() workspace types differ:', workspaceA, workspaceB);
 		return false;
 	}
 
@@ -605,6 +618,14 @@ function readCookie(name: string): string | undefined {
 
 (function () {
 
+	console.log('[che-startup-debug] Workbench IIFE starting, location:', mainWindow.location.href);
+
+	// Early global listener to catch any navigation/unload before VS Code registers its own
+	mainWindow.addEventListener('beforeunload', () => {
+		console.log('[che-startup-debug] GLOBAL beforeunload fired (early listener)');
+		console.trace('[che-startup-debug] GLOBAL beforeunload call stack');
+	});
+
 	// Find config by checking for DOM
 	// eslint-disable-next-line no-restricted-syntax
 	const configElement = mainWindow.document.getElementById('vscode-workbench-web-configuration');
@@ -615,9 +636,12 @@ function readCookie(name: string): string | undefined {
 
 	const cheConfig = getCheConfig();
 	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
+	console.log('[che-startup-debug] Workbench config parsed:', { folderUri: config.folderUri, workspaceUri: config.workspaceUri, remoteAuthority: config.remoteAuthority });
+
 	const secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
+	console.log('[che-startup-debug] SecretStorage: keyPath=', secretStorageKeyPath, 'usingAES=', secretStorageKeyPath && ServerKeyedAESCrypto.supported());
 
 	// Create workbench
 	create(mainWindow.document.body, {

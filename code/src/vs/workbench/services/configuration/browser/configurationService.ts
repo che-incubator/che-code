@@ -905,6 +905,14 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		const change = this._configuration.compareAndUpdateWorkspaceConfiguration(configuration);
 		const changes = this.compareFolders(this.workspace.folders, workspaceFolders);
 		if (changes.added.length || changes.removed.length || changes.changed.length) {
+			console.log('[che-startup-debug] updateWorkspaceConfiguration: FOLDERS CHANGED', {
+				added: changes.added.map(f => f.uri.toString()),
+				removed: changes.removed.map(f => f.uri.toString()),
+				changed: changes.changed.map(f => f.uri.toString()),
+				fromCache,
+				previousFolders: this.workspace.folders.map(f => f.uri.toString()),
+				newFolders: workspaceFolders.map(f => f.uri.toString()),
+			});
 			this.workspace.folders = workspaceFolders;
 			const change = await this.onFoldersChanged();
 			await this.handleWillChangeWorkspaceFolders(changes, fromCache);
@@ -918,6 +926,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 
 	private async handleWillChangeWorkspaceFolders(changes: IWorkspaceFoldersChangeEvent, fromCache: boolean): Promise<void> {
 		const joiners: Promise<void>[] = [];
+		console.log('[che-startup-debug] handleWillChangeWorkspaceFolders: firing onWillChangeWorkspaceFolders, fromCache:', fromCache);
 		this._onWillChangeWorkspaceFolders.fire({
 			join(updateWorkspaceTrustStatePromise) {
 				joiners.push(updateWorkspaceTrustStatePromise);
