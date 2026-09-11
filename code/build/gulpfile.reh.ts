@@ -3,8 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { gulp, rename, replace, filter, jsonEditor } from './lib/gulp/facade.ts';
-import decompress from 'gulp-decompress';
+import { gulp, rename, replace, filter, flatmap, gunzip, jsonEditor } from './lib/gulp/facade.ts';
 import * as path from 'path';
 import es from 'event-stream';
 import * as util from './lib/util.ts';
@@ -18,6 +17,7 @@ import { getProductionDependencies } from './lib/dependencies.ts';
 import { readISODate } from './lib/date.ts';
 import vfs from 'vinyl-fs';
 import packageJson from '../package.json' with { type: 'json' };
+import { untar } from './lib/util.ts';
 import File from 'vinyl';
 import * as fs from 'fs';
 import glob from 'glob';
@@ -319,7 +319,7 @@ function nodejs(platform: string, arch: string): NodeJS.ReadWriteStream | undefi
 			const downloaded = (nodejsArtifactFeed ?
 				fetchNodejs(expectedName!, checksumSha256) :
 				fetchUrls(`/dist/v${nodeVersion}/node-v${nodeVersion}-${platform}-${arch}.tar.gz`, { base: 'https://nodejs.org', checksumSha256 })
-			).pipe(decompress())
+			).pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))
 				.pipe(filter('**/node'))
 				.pipe(util.setExecutableBit('**'))
 				.pipe(rename('node'));
@@ -328,7 +328,7 @@ function nodejs(platform: string, arch: string): NodeJS.ReadWriteStream | undefi
 		case 'alpine':
 			return nodejsArtifactFeed ?
 				fetchNodejs(expectedName!, checksumSha256)
-					.pipe(decompress())
+					.pipe(flatmap(stream => stream.pipe(gunzip()).pipe(untar())))
 					.pipe(filter('**/node'))
 					.pipe(util.setExecutableBit('**'))
 					.pipe(rename('node'))
