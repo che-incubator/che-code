@@ -353,20 +353,20 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     await this.storeSessions(updatedSessions);
     if (isDeviceAuth) {
-      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+      try {
+        const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
-      if (!deviceAuthSessionIds.includes(session.id)) {
-        try {
+        if (!deviceAuthSessionIds.includes(session.id)) {
           await this.storeDeviceAuthSessionIds([
             ...deviceAuthSessionIds,
             session.id,
           ]);
-        } catch (error) {
-          // Roll back the session because its Device Authentication
-          // tracking ID could not be persisted.
-          await this.storeSessions(sessions);
-          throw error;
         }
+      } catch (error) {
+        // Roll back the session because its Device Authentication
+        // tracking ID could not be persisted.
+        await this.storeSessions(sessions);
+        throw error;
       }
     }
 
