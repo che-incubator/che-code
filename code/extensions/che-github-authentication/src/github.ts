@@ -84,23 +84,27 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     let sessions = await this.sessionsPromise;
 
-    const isDeviceAuthToken = await this.githubService.isDeviceAuthToken();
+    const isDeviceAuthToken = await this.getDeviceAuthState();
     let deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
-    if (isDeviceAuthToken && sessions.length > 0) {
-      const currentToken = await this.githubService.getToken();
+    if (isDeviceAuthToken === true && sessions.length > 0) {
+      try{
+        const currentToken = await this.githubService.getToken();
 
-      const currentDeviceAuthSessions = sessions
-				.filter((session) => session.accessToken === currentToken)
-				.map((session) => session.id);
+        const currentDeviceAuthSessions = sessions
+          .filter((session) => session.accessToken === currentToken)
+          .map((session) => session.id);
 
-      const updatedDeviceAuthSessionIds = [
-        ...new Set([...deviceAuthSessionIds, ...currentDeviceAuthSessions]),
-      ];
+        const updatedDeviceAuthSessionIds = [
+          ...new Set([...deviceAuthSessionIds, ...currentDeviceAuthSessions]),
+        ];
 
-      if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
-        await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
-        deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+        if (updatedDeviceAuthSessionIds.length !== deviceAuthSessionIds.length) {
+          await this.storeDeviceAuthSessionIds(updatedDeviceAuthSessionIds);
+          deviceAuthSessionIds = updatedDeviceAuthSessionIds;
+        }
+      } catch (error) {
+        this.logger.warn(`GitHubAuthProvider: unable to retrieve current Device Authentication token: ${(error as Error).message}`);
       }
     }
 
@@ -111,7 +115,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 		 * If Device Authentication is no longer active, remove only
 		 * the sessions that were previously created using Device Authentication.
     */
-    if (!isDeviceAuthToken && deviceAuthSessionIds.length > 0) {
+    if (isDeviceAuthToken === false && deviceAuthSessionIds.length > 0) {
 			const removed = sessions.filter((session) =>
         deviceAuthSessionIds.includes(session.id),
       );
@@ -169,7 +173,16 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
     }
 
-    const token = await this.githubService.getToken();
+    let token: string;
+    try {
+      token = await this.githubService.getToken();
+    } catch (error) {
+      this.logger.info(
+        `GitHubAuthProvider: no GitHub token available during hydration: ${(error as Error).message}`,
+      );
+      return;
+    }
+
     const hydratedSessions = await this.doHydrateWithToken(token);
 
     if (isDeviceAuthToken && hydratedSessions.length > 0) {
@@ -328,18 +341,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       scopes,
     };
 
-    const isDeviceAuth = await this.githubService.isDeviceAuthToken();
-    if (isDeviceAuth) {
-      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
-
-      if (!deviceAuthSessionIds.includes(session.id)) {
-        await this.storeDeviceAuthSessionIds([
-          ...deviceAuthSessionIds,
-          session.id,
-        ]);
-      }
-    }
-
+    const isDeviceAuth = await this.getDeviceAuthState();
     const sessionIndex = sessions.findIndex(s => sessionMatchesRequestedScopes(s.scopes, sortedScopes));
     const removed: vscode.AuthenticationSession[] = [];
     const updatedSessions = [...sessions];
@@ -351,20 +353,20 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
     await this.storeSessions(updatedSessions);
     if (isDeviceAuth) {
-      const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
+      try {
+        const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
-      if (!deviceAuthSessionIds.includes(session.id)) {
-        try {
+        if (!deviceAuthSessionIds.includes(session.id)) {
           await this.storeDeviceAuthSessionIds([
             ...deviceAuthSessionIds,
             session.id,
           ]);
-        } catch (error) {
-          // Roll back the session because its Device Authentication
-          // tracking ID could not be persisted.
-          await this.storeSessions(sessions);
-          throw error;
         }
+      } catch (error) {
+        // Roll back the session because its Device Authentication
+        // tracking ID could not be persisted.
+        await this.storeSessions(sessions);
+        throw error;
       }
     }
 
@@ -391,8 +393,8 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         return undefined;
       }
 
-      const isDeviceAuth = await this.githubService.isDeviceAuthToken();
-      if (!isDeviceAuth) {
+      const isDeviceAuth = await this.getDeviceAuthState();
+      if (isDeviceAuth === false) {
         const sessions = await this.sessionsPromise;
         const hasExistingSession = sessions.some(s =>
           sessionMatchesRequestedScopes(s.scopes, sortedScopes)
@@ -444,8 +446,8 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       return;
     }
 
-    const isDeviceAuth = await this.githubService.isDeviceAuthToken();
-    if (!isDeviceAuth) {
+    const isDeviceAuth = await this.getDeviceAuthState();
+    if (isDeviceAuth === false) {
       this.logger.info('GitHubAuthProvider: skipping session clearing, existing sessions are from K8s token');
       return;
     }
@@ -496,4 +498,19 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       this.logger.warn(`GitHubAuthProvider: session for removing not found`);
     }
   }
+
+  private async getDeviceAuthState(): Promise<boolean | undefined> {
+    try {
+      return await this.githubService.isDeviceAuthToken();
+    } catch (error) {
+      this.logger.warn(
+        `GitHubAuthProvider: unable to determine Device Authentication state: ${
+          (error as Error).message
+        }`,
+      );
+
+      return undefined;
+    }
+  }
+
 }
