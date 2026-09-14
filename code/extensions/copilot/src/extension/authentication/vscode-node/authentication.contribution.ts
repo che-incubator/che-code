@@ -29,7 +29,7 @@ export class AuthenticationContrib extends Disposable {
  */
 class AuthUpgradeAsk extends Disposable {
 	private static readonly AUTH_UPGRADE_ASK_KEY = 'copilot.shownPermissiveTokenModal';
-	private static readonly COPILOT_INVALID_TOKEN = 'github.copilot.viewsWelcome.invalidToken';
+	private static readonly COPILOT_INVALID_TOKEN = 'github.copilot.interactiveSession.invalidToken';
 
 	constructor(
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
