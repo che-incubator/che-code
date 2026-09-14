@@ -16,6 +16,9 @@
         },
         "vite": {
             "postcss": "^8.5.26"
+        },
+        "markdown-it": {
+            "linkify-it": "^5.0.2"
         }
     }
 }
