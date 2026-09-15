@@ -20,8 +20,8 @@
         "test-exclude": {
             "brace-expansion@5": "5.0.9"
         },
-        "axios": {
-            "form-data": "^4.0.6"
+        "@microsoft/dev-tunnels-management": {
+            "axios": "^1.20.0"
         },
         "js-yaml@4": "^4.3.1"
     }
