@@ -14,7 +14,7 @@ https://github.com/che-incubator/che-code/pull/813
 ---
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/pull/
+https://github.com/che-incubator/che-code/pull/812
 
 - code/package.json
 - code/build/package.json
@@ -23,7 +23,6 @@ https://github.com/che-incubator/che-code/pull/
 - code/extensions/copilot/package.json
 - code/test/monaco/package.json
 - code/test/mcp/package.json
-- rebase.sh
 ---
 
 #### @sbouchet
