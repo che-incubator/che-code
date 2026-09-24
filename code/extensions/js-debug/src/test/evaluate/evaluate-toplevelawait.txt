@@ -1,0 +1,85 @@
+Evaluating: 'await Promise.resolve(1)'
+result: 1
+Evaluating: '{a:await Promise.resolve(1)}'
+> result: {a: 1}
+Evaluating: '4'
+result: 4
+Evaluating: '$_'
+result: 4
+Evaluating: 'let {a,b} = await Promise.resolve({a: 1, b:2}), f = 5;'
+result: undefined
+Evaluating: 'a'
+result: 1
+Evaluating: 'b'
+result: 2
+Evaluating: 'let c = await Promise.resolve(2)'
+result: undefined
+Evaluating: 'c'
+result: 2
+Evaluating: 'let d;'
+result: undefined
+Evaluating: 'd'
+result: undefined
+Evaluating: 'let [i,{abc:{k}}] = [0,{abc:{k:1}}];'
+result: undefined
+Evaluating: 'i'
+result: 0
+Evaluating: 'k'
+result: 1
+Evaluating: 'var l = await Promise.resolve(2);'
+result: undefined
+Evaluating: 'l'
+result: 2
+Evaluating: 'foo(await koo());'
+result: 4
+Evaluating: '$_'
+result: 4
+Evaluating: 'const m = foo(await koo());'
+result: undefined
+Evaluating: 'm'
+result: 4
+Evaluating: 'const n = foo(await
+koo());'
+result: undefined
+Evaluating: 'n'
+result: 4
+Evaluating: '`status: ${(await Promise.resolve({status:200})).status}`'
+result: 'status: 200'
+Evaluating: 'for (let i = 0; i < 2; ++i) await i'
+result: undefined
+Evaluating: 'for (let i = 0; i < 2; ++i) { await i }'
+result: undefined
+Evaluating: 'await 0'
+result: 0
+Evaluating: 'await 0;function foo(){}'
+> result: ƒ foo() {}
+Evaluating: 'foo'
+> result: ƒ foo() {}
+Evaluating: 'class Foo{}; await 1;'
+result: 1
+Evaluating: 'Foo'
+> result: class Foo {}
+Evaluating: 'await 0;function* gen(){}'
+> result: ƒ* gen() {}
+Evaluating: 'for (var i = 0; i < 10; ++i) { await i; }'
+result: undefined
+Evaluating: 'i'
+result: 0
+Evaluating: 'for (let j = 0; j < 5; ++j) { await j; }'
+result: undefined
+Evaluating: 'j'
+result:
+Evaluating: 'gen'
+> result: ƒ* gen() {}
+Evaluating: 'await 5; return 42;'
+result:
+Evaluating: 'let o = await 1, p'
+result: undefined
+Evaluating: 'p'
+result: undefined
+Evaluating: 'let q = 1, s = await 2'
+result: undefined
+Evaluating: 's'
+result: 2
+Evaluating: 'await {...{foo: 42}}'
+> result: {foo: 42}

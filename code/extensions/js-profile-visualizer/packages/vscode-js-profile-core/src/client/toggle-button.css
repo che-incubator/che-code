@@ -1,0 +1,37 @@
+.button {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  border: 1px solid transparent;
+  outline: 0 !important;
+  margin-left: 2px;
+  margin-right: 2px;
+  padding: 1px;
+  cursor: pointer;
+  color: var(--vscode-editorWidget-foreground);
+  border-radius: 3px;
+}
+
+.button + .button {
+  margin-left: 0;
+}
+
+.button:hover {
+  background-color: var(--vscode-inputOption-hoverBackground);
+}
+
+.button:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.button[aria-checked='true'] {
+  background: var(--vscode-inputOption-activeBackground) !important;
+  color: var(--vscode-inputOption-activeForeground);
+  border: 1px solid var(--vscode-inputOption-activeBorder);
+}
+
+.button > svg {
+  width: 16px;
+  height: 16px;
+}

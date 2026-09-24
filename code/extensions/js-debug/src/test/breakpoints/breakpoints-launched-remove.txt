@@ -1,0 +1,12 @@
+Evaluating#1:
+        function foo() {
+          return 2;
+        }
+
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+<anonymous> @ localhost꞉8001/test.js:2:1

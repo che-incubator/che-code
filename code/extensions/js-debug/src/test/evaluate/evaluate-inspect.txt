@@ -1,0 +1,9 @@
+{
+    column : 13
+    line : 1
+    source : {
+        name : test.js
+        path : test.js
+        sourceReference : <number>
+    }
+}

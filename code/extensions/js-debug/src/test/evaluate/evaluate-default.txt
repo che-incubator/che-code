@@ -1,0 +1,135 @@
+result: 42
+
+result: 'foo'
+
+result: 1234567890n
+
+<error>: Uncaught Error: foo
+
+<error>: Uncaught Object
+
+<error>: Uncaught 42
+
+result: 3
+
+<error>: Uncaught ReferenceError: baz is not defined
+
+result: '\x1b[2m'
+
+> result: Uint8Array(3) [1, 2, 3, buffer: ArrayBuffer(3), byteLength: 3, byteOffset: 0, length: 3, Symbol(Symbol.toStringTag): 'Uint8Array']
+    0: 1
+    1: 2
+    2: 3
+    > buffer: (...)
+    > byteLength: (...)
+    > byteOffset: (...)
+    > length: (...)
+    Symbol(Symbol.toStringTag): undefined
+    > [[Prototype]]: TypedArray
+    > [[Prototype]]: Object
+
+> result: ArrayBuffer(3) {byteLength: 3, maxByteLength: 3, resizable: false, detached: false}
+    byteLength: 3
+    detached: false
+    maxByteLength: 3
+    resizable: false
+    [[ArrayBufferByteLength]]: 3
+    > [[Int8Array]]: Int8Array(3)
+    > [[Prototype]]: ArrayBuffer
+    > [[Uint8Array]]: Uint8Array(3)
+
+> result: Proxy(Object) {a: 1}
+    > [[Handler]]: Object
+    [[IsRevoked]]: false
+    > [[Target]]: Object
+
+> result: {}
+    > foo: write-only
+        > arguments: (...)
+        > caller: (...)
+        length: 1
+        name: 'set foo'
+        [[FunctionLocation]]: @ <eval>/VM<xx>:1
+        > [[Prototype]]: ƒ ()
+        > [[Scopes]]: Scopes[1]
+    > [[Prototype]]: Object
+        > foo: write-only
+        > [[Prototype]]: Object
+
+> result: {}
+    > foo: (...)
+        foo: 42
+    > [[Prototype]]: Object
+        > foo: (...)
+        > [[Prototype]]: Object
+
+> result: {}
+    > foo: (...)
+        > arguments: (...)
+        > caller: (...)
+        length: 0
+        name: 'get foo'
+        [[FunctionLocation]]: @ <eval>/VM<xx>:1
+        > [[Prototype]]: ƒ ()
+        > [[Scopes]]: Scopes[1]
+    > [[Prototype]]: Object
+        > foo: (...)
+        > [[Prototype]]: Object
+
+> result: {}
+    > Symbol(Symbol.toStringTag): (...)
+        Symbol(Symbol.toStringTag): 42
+    > [[Prototype]]: Object
+        > Symbol(Symbol.toStringTag): (...)
+        > [[Prototype]]: Object
+
+Evaluating#1: setTimeout(() => { throw new Error('bar')}, 0)
+stderr> Uncaught Error Error: bar
+    at <anonymous> (localhost꞉8001/eval1.js:1:26)
+    --- setTimeout ---
+    at <anonymous> (localhost꞉8001/eval1.js:1:1)
+stderr>
+> Uncaught Error Error: bar
+    at <anonymous> (localhost꞉8001/eval1.js:1:26)
+    --- setTimeout ---
+    at <anonymous> (localhost꞉8001/eval1.js:1:1)
+stderr>
+<anonymous> @ localhost꞉8001/eval1.js:1:26
+◀ setTimeout ▶
+<anonymous> @ localhost꞉8001/eval1.js:1
+
+stderr> Uncaught Error Error: baz
+    at <anonymous> (<eval>/VM<xx>:1:26)
+    --- setTimeout ---
+    at <anonymous> (<eval>/VM<xx>:1:1)
+stderr>
+> Uncaught Error Error: baz
+    at <anonymous> (<eval>/VM<xx>:1:26)
+    --- setTimeout ---
+    at <anonymous> (<eval>/VM<xx>:1:1)
+stderr>
+<anonymous> @ <eval>/VM<xx>:1:26
+◀ setTimeout ▶
+<anonymous> @ <eval>/VM<xx>:1
+
+<error>: Uncaught Error: error1
+
+<error>: Uncaught Object
+
+stderr> Uncaught Error Error: error2
+    at throwError (${workspaceFolder}/web/browserify/module1.ts:6:9)
+    at <anonymous> (<eval>/VM<xx>:1:27)
+    --- setTimeout ---
+    at <anonymous> (<eval>/VM<xx>:1:1)
+stderr>
+> Uncaught Error Error: error2
+    at throwError (${workspaceFolder}/web/browserify/module1.ts:6:9)
+    at <anonymous> (<eval>/VM<xx>:1:27)
+    --- setTimeout ---
+    at <anonymous> (<eval>/VM<xx>:1:1)
+stderr>
+throwError @ ${workspaceFolder}/web/browserify/module1.ts:6:9
+<anonymous> @ <eval>/VM<xx>:1:27
+◀ setTimeout ▶
+<anonymous> @ <eval>/VM<xx>:1
+

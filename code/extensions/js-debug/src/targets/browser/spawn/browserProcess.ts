@@ -1,0 +1,272 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+import { ChildProcessWithoutNullStreams } from 'child_process';
+import * as readline from 'readline';
+import { Readable, Writable } from 'stream';
+import { CancellationToken, Event } from 'vscode';
+import { RawPipeTransport } from '../../../cdp/rawPipeTransport';
+import { ITransport } from '../../../cdp/transport';
+import { WebSocketTransport } from '../../../cdp/webSocketTransport';
+import { TaskCancelledError } from '../../../common/cancellation';
+import { DisposableList } from '../../../common/disposable';
+import { EventEmitter } from '../../../common/events';
+import { ILogger } from '../../../common/logging';
+import { PidLiveness } from '../../../common/pidLiveness';
+import { delay } from '../../../common/promiseUtil';
+import { KillBehavior } from '../../../configuration';
+import { killTree } from '../../node/killTree';
+import { constructInspectorWSUri } from '../constructInspectorWSUri';
+import { retryGetBrowserEndpoint } from './endpoints';
+
+interface ITransportOptions {
+  connection: 'pipe' | number;
+  inspectUri?: string;
+  url?: string | null;
+}
+
+/**
+ * A Browser processed launched through some mechanism.
+ */
+export interface IBrowserProcess {
+  /**
+   * Standard error stream, if available.
+   */
+  readonly stderr?: NodeJS.ReadableStream;
+
+  /**
+   * Standard output stream, if available.
+   */
+  readonly stdout?: NodeJS.ReadableStream;
+
+  /**
+   * Emitter that fires when the process exits.
+   */
+  readonly onExit: Event<number>;
+
+  /**
+   * Emitter that fires if the process errors.
+   */
+  readonly onError: Event<Error>;
+
+  /**
+   * Gets the CDP transport for the process.
+   */
+  transport(options: ITransportOptions, cancellation: CancellationToken): Promise<ITransport>;
+
+  /**
+   * Terminates the process;
+   */
+  kill(): void;
+}
+
+const inspectWsConnection = async (
+  logger: ILogger,
+  process: IBrowserProcess,
+  options: ITransportOptions,
+  cancellationToken: CancellationToken,
+) => {
+  const endpoint = options.connection === 0
+    ? await waitForWSEndpoint(process, cancellationToken)
+    : await retryGetBrowserEndpoint(
+      `http://localhost:${options.connection}`,
+      cancellationToken,
+      logger,
+    );
+
+  const inspectWs = options.inspectUri
+    ? constructInspectorWSUri(options.inspectUri, options.url, endpoint)
+    : endpoint;
+
+  while (true) {
+    try {
+      return await WebSocketTransport.create(inspectWs, cancellationToken);
+    } catch (e) {
+      if (cancellationToken.isCancellationRequested) {
+        throw e;
+      }
+
+      await delay(200);
+    }
+  }
+};
+
+export class NonTrackedBrowserProcess implements IBrowserProcess {
+  public readonly pid = undefined;
+  public readonly onExit = new EventEmitter<number>().event;
+  public readonly onError = new EventEmitter<Error>().event;
+
+  constructor(private readonly logger: ILogger) {}
+
+  /**
+   * @inheritdoc
+   */
+  public async transport(
+    options: ITransportOptions,
+    cancellationToken: CancellationToken,
+  ): Promise<ITransport> {
+    return inspectWsConnection(this.logger, this, options, cancellationToken);
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public kill() {
+    // noop
+  }
+}
+
+/**
+ * Browser process tracked using PID liveness polling (used for unelevated launches).
+ */
+export class PidTrackedBrowserProcess implements IBrowserProcess {
+  public readonly stderr = undefined;
+  public readonly stdout = undefined;
+
+  private readonly exitEmitter = new EventEmitter<number>();
+  public readonly onExit = this.exitEmitter.event;
+
+  private readonly errorEmitter = new EventEmitter<Error>();
+  public readonly onError = this.errorEmitter.event;
+
+  private readonly liveness: PidLiveness;
+
+  constructor(private readonly pid: number, private readonly logger: ILogger) {
+    this.liveness = new PidLiveness(pid, () => this.exitEmitter.fire(0), 1000);
+  }
+
+  public async transport(
+    options: ITransportOptions,
+    cancellationToken: CancellationToken,
+  ): Promise<ITransport> {
+    return inspectWsConnection(this.logger, this, options, cancellationToken);
+  }
+
+  public kill(): void {
+    try {
+      process.kill(this.pid);
+    } catch {
+      // ignore
+    }
+    this.liveness.updateInterval(200);
+  }
+}
+
+/**
+ * Browser process
+ */
+export class ChildProcessBrowserProcess implements IBrowserProcess {
+  public readonly pid = undefined;
+
+  private readonly exitEmitter = new EventEmitter<number>();
+  public readonly onExit = this.exitEmitter.event;
+
+  private readonly errorEmitter = new EventEmitter<Error>();
+  public readonly onError = this.errorEmitter.event;
+
+  constructor(
+    private readonly cp: ChildProcessWithoutNullStreams,
+    private readonly logger: ILogger,
+    private readonly killBehavior: KillBehavior,
+  ) {
+    cp.on('exit', code => this.exitEmitter.fire(code || 0));
+    cp.on('error', error => this.errorEmitter.fire(error));
+  }
+
+  public get stderr() {
+    return this.cp.stderr;
+  }
+
+  public get stdio() {
+    return this.cp.stdio;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public async transport(
+    options: ITransportOptions,
+    cancellationToken: CancellationToken,
+  ): Promise<ITransport> {
+    if (options.connection === 'pipe') {
+      return new RawPipeTransport(
+        this.logger,
+        this.cp.stdio[3] as Writable,
+        this.cp.stdio[4] as Readable,
+      );
+    }
+
+    return inspectWsConnection(this.logger, this, options, cancellationToken);
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public kill() {
+    killTree(this.cp.pid as number, this.logger, this.killBehavior);
+  }
+}
+
+function waitForWSEndpoint(
+  browserProcess: IBrowserProcess,
+  cancellationToken: CancellationToken,
+): Promise<string> {
+  if (!browserProcess.stderr) {
+    throw new Error('Cannot wait for a websocket for a target that lacks stderr');
+  }
+
+  return new Promise((resolve, reject) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const rl = readline.createInterface({ input: browserProcess.stderr! });
+    let stderr = '';
+    const onClose = () => onDone();
+
+    rl.on('line', onLine);
+    rl.on('close', onClose);
+
+    const disposable = new DisposableList([
+      browserProcess.onExit(() => onDone()),
+      browserProcess.onError(onDone),
+    ]);
+
+    const timeout = cancellationToken.onCancellationRequested(() => {
+      cleanup();
+      reject(
+        new TaskCancelledError(
+          `Timed out after ${timeout} ms while trying to connect to the browser!`,
+        ),
+      );
+    });
+
+    function onDone(error?: Error) {
+      cleanup();
+      reject(
+        new Error(
+          [
+            'Failed to launch browser!' + (error ? ' ' + error.message : ''),
+            stderr,
+            '',
+            'TROUBLESHOOTING: https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md',
+            '',
+          ].join('\n'),
+        ),
+      );
+    }
+
+    function onLine(line: string) {
+      stderr += line + '\n';
+      const match = line.match(/^DevTools listening on (ws:\/\/.*)$/);
+      if (!match) return;
+      cleanup();
+      resolve(match[1]);
+    }
+
+    function cleanup() {
+      timeout.dispose();
+      rl.removeListener('line', onLine);
+      rl.removeListener('close', onClose);
+      disposable.dispose();
+    }
+  });
+}

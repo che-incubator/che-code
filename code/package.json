@@ -17,7 +17,7 @@
     "test-extension": "vscode-test",
     "test-build-scripts": "cd build && npm run test",
     "check-cyclic-dependencies": "node build/lib/checkCyclicDependencies.ts out",
-    "preinstall": "node build/npm/preinstall.ts",
+    "preinstall": "node build/npm/preinstall.ts && node build/copy-extension-build-scripts.js",
     "postinstall": "node build/npm/postinstall.ts",
     "compile": "npm-run-all2 -lp compile-client compile-copilot",
     "compile-client": "npm run gulp compile",

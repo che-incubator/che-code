@@ -1,0 +1,43 @@
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+<anonymous> @ localhost꞉8001/test.js:2:9
+
+step over
+[
+    [0] : {
+        allThreadsContinued : false
+        threadId : <number>
+    }
+    [1] : {
+        allThreadsStopped : false
+        description : Paused
+        reason : step
+        threadId : <number>
+    }
+]
+<anonymous> @ localhost꞉8001/test.js:3:9
+
+step in
+{
+    allThreadsContinued : false
+    threadId : <number>
+}
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+<anonymous> @ ${workspaceFolder}/web/worker.js:1:1
+----Worker Created----
+<anonymous> @ localhost꞉8001/test.js:3:20
+
+resume
+{
+    allThreadsContinued : false
+    threadId : <number>
+}

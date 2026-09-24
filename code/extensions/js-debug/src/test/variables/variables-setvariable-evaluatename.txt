@@ -1,0 +1,40 @@
+stopped: {
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+undefined
+  a
+  b
+    b[0]
+    b[1]
+    b[2]
+    b[3]
+    b.prop
+    b.length
+    b["[[Prototype]]"]
+    b["[[Prototype]]"]
+  c
+    c[Symbol.for("debug.properties")]()[2]
+    c[Symbol.for("debug.properties")]().a
+    c[Symbol.for("debug.properties")]()["c c"]
+    c
+      c._b
+      c.$a
+      c[42]
+      c.c
+      c["d d"]
+      c.e
+        c.e.nested
+          c.e.nested[0]
+            c.e.nested[0].obj
+            c.e.nested[0]["[[Prototype]]"]
+          c.e.nested.length
+          c.e.nested["[[Prototype]]"]
+          c.e.nested["[[Prototype]]"]
+        c.e["[[Prototype]]"]
+      c["Symbol(wut)"]
+      c["[[Prototype]]"]
+    c["[[Prototype]]"]
+  this
