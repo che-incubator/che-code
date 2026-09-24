@@ -115,6 +115,7 @@ describe('Test generating VS Code Workspace file:', () => {
     delete env.PROJECTS_ROOT;
     delete env.DEVWORKSPACE_FLATTENED_DEVFILE;
     delete env.VSCODE_DEFAULT_WORKSPACE;
+    delete env.CHE_OPEN_PROJECTS_ROOT_ON_EMPTY;
 
     Object.assign(fs, {
       pathExists: jest.fn(),
@@ -471,8 +472,44 @@ describe('Test generating VS Code Workspace file:', () => {
     expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_DEPENDENT_PROJECTS);
   });
 
-  test('should add PROJECTS_ROOT as a default folder when the workspace has no projects', async () => {
+  test('should not add PROJECTS_ROOT when the workspace has no projects and CHE_OPEN_PROJECTS_ROOT_ON_EMPTY is not set', async () => {
     env.PROJECTS_ROOT = '/tmp/projects';
+
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.empty.yaml');
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation(async () => false);
+
+    const codeWorkspace = new CodeWorkspace();
+    await codeWorkspace.generate();
+
+    expect(readFileMock).toBeCalledTimes(1);
+    expect(readFileMock).toBeCalledWith(env.DEVWORKSPACE_FLATTENED_DEVFILE);
+
+    // should create a workspace file with no folders (empty workspace is intentional)
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{}');
+  });
+
+  test('should add PROJECTS_ROOT as a default folder when the workspace has no projects and CHE_OPEN_PROJECTS_ROOT_ON_EMPTY is enabled', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.CHE_OPEN_PROJECTS_ROOT_ON_EMPTY = 'true';
 
     env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.empty.yaml');
 
