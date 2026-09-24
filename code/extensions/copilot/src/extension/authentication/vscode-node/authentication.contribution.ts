@@ -7,7 +7,6 @@ import { IAuthenticationService } from '../../../platform/authentication/common/
 import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { ILogService } from '../../../platform/log/common/logService';
-import { Event } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 
@@ -30,6 +29,7 @@ export class AuthenticationContrib extends Disposable {
  */
 class AuthUpgradeAsk extends Disposable {
 	private static readonly AUTH_UPGRADE_ASK_KEY = 'copilot.shownPermissiveTokenModal';
+	private static readonly COPILOT_INVALID_TOKEN = 'github.copilot.interactiveSession.invalidToken';
 
 	constructor(
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
@@ -62,16 +62,15 @@ class AuthUpgradeAsk extends Disposable {
 			this._logService.error(error, 'Failed to get copilot token');
 		}
 
-		await Event.toPromise(
-			Event.filter(
-				this._authenticationService.onDidAuthenticationChange,
-				() => this._authenticationService.copilotToken !== undefined
-			)
-		);
+		await commands.executeCommand('setContext', AuthUpgradeAsk.COPILOT_INVALID_TOKEN, this._authenticationService.copilotToken === undefined);
 	}
 
 	private registerListeners() {
 		this._register(this._authenticationService.onDidAuthenticationChange(async () => {
+			
+			const inValid = this._authenticationService.copilotToken === undefined;
+			await commands.executeCommand('setContext', AuthUpgradeAsk.COPILOT_INVALID_TOKEN, inValid);
+
 			if (this._authenticationService.permissiveGitHubSession) {
 				return;
 			}
