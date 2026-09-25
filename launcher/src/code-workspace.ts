@@ -114,8 +114,18 @@ export class CodeWorkspace {
         saveRequired = true;
       }
 
-      // When OPEN_PROJECTS_ROOT_ON_EMPTY is enabled, default empty workspaces opens PROJECTS_ROOT folder.
-      if (env.OPEN_PROJECTS_ROOT_ON_EMPTY === 'true' && (!workspace!.folders || workspace!.folders.length === 0)) {
+      const hasDevfileProjects =
+        (devfile.projects && devfile.projects.length > 0) ||
+        (devfile.dependentProjects && devfile.dependentProjects.length > 0) ||
+        (devfile.starterProjects && devfile.starterProjects.length > 0);
+
+      // When OPEN_PROJECTS_ROOT_ON_EMPTY is enabled and the devfile declares no projects,
+      // default empty workspaces opens PROJECTS_ROOT folder.
+      if (
+        env.OPEN_PROJECTS_ROOT_ON_EMPTY === 'true' &&
+        !hasDevfileProjects &&
+        (!workspace!.folders || workspace!.folders.length === 0)
+      ) {
         console.log(
           `  > env.OPEN_PROJECTS_ROOT_ON_EMPTY is set and workspace has no folders. Opening ${projectsRoot} folder.`
         );
