@@ -545,6 +545,40 @@ describe('Test generating VS Code Workspace file:', () => {
     expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_PROJECTS_ROOT);
   });
 
+  test('should not add PROJECTS_ROOT when OPEN_PROJECTS_ROOT_ON_EMPTY is enabled but devfile declares projects', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.OPEN_PROJECTS_ROOT_ON_EMPTY = 'true';
+
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+
+      return undefined;
+    });
+
+    // devfile declares projects but none exist on disk yet
+    pathExistsMock.mockImplementation(async () => false);
+
+    const codeWorkspace = new CodeWorkspace();
+    await codeWorkspace.generate();
+
+    // should create a workspace with empty folders (not add PROJECTS_ROOT) because the devfile has projects declared
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{\n\t"folders": []\n}');
+  });
+
   test('should parse .code-workspace file if the file has extra characters', async () => {
     env.PROJECTS_ROOT = '/tmp/projects';
 
