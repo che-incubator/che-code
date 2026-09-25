@@ -114,10 +114,10 @@ export class CodeWorkspace {
         saveRequired = true;
       }
 
-      // When CHE_OPEN_PROJECTS_ROOT_ON_EMPTY is enabled, default empty workspaces opens PROJECTS_ROOT folder.
-      if (env.CHE_OPEN_PROJECTS_ROOT_ON_EMPTY === 'true' && (!workspace!.folders || workspace!.folders.length === 0)) {
+      // When OPEN_PROJECTS_ROOT_ON_EMPTY is enabled, default empty workspaces opens PROJECTS_ROOT folder.
+      if (env.OPEN_PROJECTS_ROOT_ON_EMPTY === 'true' && (!workspace!.folders || workspace!.folders.length === 0)) {
         console.log(
-          `  > env.CHE_OPEN_PROJECTS_ROOT_ON_EMPTY is set and workspace has no folders. Opening ${projectsRoot} folder.`
+          `  > env.OPEN_PROJECTS_ROOT_ON_EMPTY is set and workspace has no folders. Opening ${projectsRoot} folder.`
         );
         workspace!.folders = [{ name: 'projects', path: projectsRoot }];
         saveRequired = true;
