@@ -169,7 +169,20 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
     }
 
-    const token = await this.githubService.getToken();
+    let token;
+    try {
+      token = await this.githubService.getToken();
+      if (token) {
+        this.logger.info('++++ GitHubAuthProvider: token is present');
+      }
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        this.logger.info('++++ GitHubAuthProvider: token is not valid');
+      } else {
+        this.logger.info('++++ GitHubAuthProvider: no token available');
+      }
+      throw error;
+    }
     const hydratedSessions = await this.doHydrateWithToken(token);
 
     if (isDeviceAuthToken && hydratedSessions.length > 0) {
