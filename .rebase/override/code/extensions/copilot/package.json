@@ -4,6 +4,6 @@
     },
     "devDependencies": {
         "tar": "^7.5.22",
-        "js-yaml": "^4.3.1"
+        "js-yaml": "^4.3.2"
     }
 }

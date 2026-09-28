@@ -69,6 +69,11 @@
     "@types/markdown-it": "^14",
     "@types/node": "24.x"
   },
+  "overrides": {
+    "markdown-it": {
+      "linkify-it": "^5.0.2"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
