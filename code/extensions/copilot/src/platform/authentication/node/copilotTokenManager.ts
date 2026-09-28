@@ -191,6 +191,10 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 				this._logService.warn('Failed to get copilot token due to 401 status');
 				this._telemetryService.sendGHTelemetryErrorEvent('auth.unknown_401');
 				return { kind: 'failure', reason: 'HTTP401' };
+			} else if (result.status === 403) {
+				this._logService.warn('Failed to get copilot token due to 403 status');
+				this._telemetryService.sendGHTelemetryErrorEvent('forbidden_403');
+				return { kind: 'failure', reason: 'ParseFailed' };
 			}
 		}
 
