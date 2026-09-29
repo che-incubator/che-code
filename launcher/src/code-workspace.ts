@@ -11,6 +11,7 @@
 import * as fs from './fs-extra.js';
 import { env } from 'process';
 import { FlattenedDevfile, Project } from './flattened-devfile.js';
+import { parseJSON } from './json-utils.js';
 
 export interface Workspace {
   folders: Folder[];
@@ -27,6 +28,7 @@ export interface KeyValue {
 }
 
 export class CodeWorkspace {
+  constructor(private readonly configmapData?: Record<string, string>) {}
   /*****************************************************************************************************************
    *
    * If does not exist, creates `.code-workspace` file in projects directory.
@@ -119,15 +121,13 @@ export class CodeWorkspace {
         (devfile.dependentProjects && devfile.dependentProjects.length > 0) ||
         (devfile.starterProjects && devfile.starterProjects.length > 0);
 
-      // When OPEN_PROJECTS_ROOT_ON_EMPTY is enabled and the devfile declares no projects,
-      // default empty workspaces opens PROJECTS_ROOT folder.
       if (
-        env.OPEN_PROJECTS_ROOT_ON_EMPTY === 'true' &&
+        this.isOpenProjectsRootOnEmpty() &&
         !hasDevfileProjects &&
         (!workspace!.folders || workspace!.folders.length === 0)
       ) {
         console.log(
-          `  > env.OPEN_PROJECTS_ROOT_ON_EMPTY is set and workspace has no folders. Opening ${projectsRoot} folder.`
+          `  > workspace.openProjectsRootOnEmpty setting is enabled and workspace has no folders. Opening ${projectsRoot} folder.`
         );
         workspace!.folders = [{ name: 'projects', path: projectsRoot }];
         saveRequired = true;
@@ -160,6 +160,22 @@ export class CodeWorkspace {
     }
 
     return false;
+  }
+
+  private isOpenProjectsRootOnEmpty(): boolean {
+    if (!this.configmapData?.['settings.json']) {
+      return false;
+    }
+
+    try {
+      const settings = parseJSON(this.configmapData['settings.json'], {
+        errorMessage: 'Configmap settings.json is not valid.',
+      });
+      return settings['workspace.openProjectsRootOnEmpty'] === true;
+    } catch (error) {
+      console.log(`  > Failed to read workspace.openProjectsRootOnEmpty setting: ${error.message}`);
+      return false;
+    }
   }
 
   async synchronizeProjects(workspace: Workspace, projects?: Project[]): Promise<boolean> {

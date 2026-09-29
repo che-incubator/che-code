@@ -59,6 +59,14 @@ jest.mock('../src/trusted-extensions', () => ({
   },
 }));
 
+const readEditorConfigMapMock = jest.fn();
+jest.mock('../src/editor-configmap', () => ({
+  __esModule: true,
+  EditorConfigMap: function () {
+    return { read: readEditorConfigMapMock };
+  },
+}));
+
 const generateCodeWorkspace = jest.fn();
 jest.mock('../src/code-workspace', () => ({
   CodeWorkspace: function () {
@@ -92,6 +100,7 @@ describe('Test main flow:', () => {
     expect(compressPostPatch).toBeCalled();
     expect(configureTustedExtensions).toBeCalled();
 
+    expect(readEditorConfigMapMock).toBeCalled();
     expect(generateCodeWorkspace).toBeCalled();
     expect(configureEditorConfigurations).toBeCalled();
 
