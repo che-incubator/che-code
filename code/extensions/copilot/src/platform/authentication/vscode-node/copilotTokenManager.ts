@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { env, window } from 'vscode';
+import { commands, env, window } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
@@ -21,6 +21,7 @@ import { getAnyAuthSession } from './session';
 
 //Flag if we've shown message about broken oauth token.
 let shown401Message = false;
+let shown403Message = false;
 
 export class NotSignedUpError extends Error { }
 export class SubscriptionExpiredError extends Error { }
@@ -134,7 +135,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 					throw new ContactSupportError(message);
 			}
 		}
-		if (tokenResult.kind === 'failure' && (tokenResult.reason === 'HTTP401' || tokenResult.reason === 'HTTP403')) {
+		if (tokenResult.kind === 'failure' && tokenResult.reason === 'HTTP401') {
 			const message =
 				'Your GitHub token is invalid. Please sign out from your GitHub account using the VS Code accounts menu and try again.';
 			if (!shown401Message) {
@@ -143,6 +144,30 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 			}
 			throw new InvalidTokenError(message);
 		}
+
+		if (tokenResult.kind === 'failure' && tokenResult.reason === 'HTTP403') {
+			const message = 'Your GitHub token is invalid. Please do the Device Authentication.';
+
+			if (!shown403Message) {
+				shown403Message = true;
+
+				const action = await window.showWarningMessage(message, 'Device Authentication');
+
+				if (action === 'Device Authentication') {
+					try {
+						await commands.executeCommand(
+							'github-authentication.device-code-flow.authentication'
+						);
+					} catch (error) {
+						this._logService.error(
+							`Failed to start Device Authentication: ${error}`
+						);
+					}
+				}
+			}
+			throw new InvalidTokenError(message);
+		}
+		
 
 		if (tokenResult.kind === 'failure' && tokenResult.reason === 'GitHubLoginFailed') {
 			throw new GitHubLoginFailedError('GitHubLoginFailed');
