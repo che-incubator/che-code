@@ -194,7 +194,7 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 			} else if (result.status === 403) {
 				this._logService.warn('Failed to get copilot token due to 403 status');
 				this._telemetryService.sendGHTelemetryErrorEvent('forbidden_403');
-				return { kind: 'failure', reason: 'ParseFailed' };
+				return { kind: 'failure', reason: 'HTTP403' };
 			}
 		}
 

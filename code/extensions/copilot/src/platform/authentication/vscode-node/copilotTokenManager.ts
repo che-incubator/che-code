@@ -87,7 +87,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				`reason=${tokenResult.kind === 'failure' ? tokenResult.reason : 'none'}, ` +
 				`notification_id=${tokenResult.kind === 'failure' ? tokenResult.notification_id ?? 'none' : 'none'}`
 			);
-			
+
 			if (tokenResult.kind === 'success') {
 				this._logService.info(`Got Copilot token for ${session.account.label}`);
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
@@ -134,7 +134,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 					throw new ContactSupportError(message);
 			}
 		}
-		if (tokenResult.kind === 'failure' && tokenResult.reason === 'HTTP401') {
+		if (tokenResult.kind === 'failure' && (tokenResult.reason === 'HTTP401' || tokenResult.reason === 'HTTP403')) {
 			const message =
 				'Your GitHub token is invalid. Please sign out from your GitHub account using the VS Code accounts menu and try again.';
 			if (!shown401Message) {

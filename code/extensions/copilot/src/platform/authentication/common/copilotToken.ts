@@ -595,6 +595,8 @@ export type TokenErrorReason =
 	'GitHubLoginFailed' |
 	/** Server returned 401 Unauthorized HTTP status. */
 	'HTTP401' |
+	/** Server returned 403 Forbidden HTTP status. */
+	'HTTP403' |
 	/** GitHub API rate limit exceeded (403 status with rate limit message). */
 	'RateLimited';
 
