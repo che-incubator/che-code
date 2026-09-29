@@ -201,8 +201,9 @@ export class CodeWorkspace {
     for (const project of projects) {
       const pathProject = project.clonePath || project.name;
       const fullPath = path.resolve(basePath, pathProject);
+      const baseWithSep = basePath.endsWith(path.sep) ? basePath : basePath + path.sep;
 
-      if (!fullPath.startsWith(basePath) || !path.isAbsolute(fullPath) || fullPath.startsWith('..')) {
+      if (fullPath !== basePath && !fullPath.startsWith(baseWithSep)) {
         console.log(`> Skipping project ${project.name}: clonePath escapes projects root`);
         continue;
       }
