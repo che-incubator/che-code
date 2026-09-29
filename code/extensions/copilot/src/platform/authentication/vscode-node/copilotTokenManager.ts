@@ -82,6 +82,12 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 			// Log the steps by default, but only log actual token values when the log level is set to debug.
 			this._logService.info(`Logged in as ${session.account.label}`);
 			const tokenResult = await this.authFromGitHubToken(session.accessToken, session.account.label);
+			this._logService.info(
+				`Copilot token result: kind=${tokenResult.kind}, ` +
+				`reason=${tokenResult.kind === 'failure' ? tokenResult.reason : 'none'}, ` +
+				`notification_id=${tokenResult.kind === 'failure' ? tokenResult.notification_id ?? 'none' : 'none'}`
+			);
+			
 			if (tokenResult.kind === 'success') {
 				this._logService.info(`Got Copilot token for ${session.account.label}`);
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);

@@ -148,11 +148,6 @@ export class ContextKeysContribution extends Disposable {
 				this._logService.debug(SESSION_LOGIN_MESSAGE);
 			} else {
 				this._logService.error(`GitHub Copilot could not connect to server. Extension activation failed: "${reason}"`);
-				if (reason.includes('ParseFailed')) {
-					error = new InvalidTokenError(
-						`GitHub Copilot could not connect to server. Extension activation failed: "${reason}"`
-					);
-				}
 			}
 		}
 
