@@ -2,7 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { LanguageModelChatInformation, LanguageModelChatProvider, lm } from 'vscode';
+import { commands, LanguageModelChatInformation, LanguageModelChatProvider, lm } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { ILogService } from '../../../platform/log/common/logService';
@@ -94,6 +94,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 				this._providerRegistrations.add(lm.registerLanguageModelChatProvider(providerId, provider));
 			}
 			this._providersRegistered = true;
+			commands.executeCommand('setContext', 'github.copilot.hasByokModels', this._providersRegistered);
 			this._logService.info(`BYOK: registered ${this._providers.size} provider(s): ${Array.from(this._providers.keys()).join(', ')}`);
 			if (!this._knownModelsRefreshed) {
 				this._knownModelsRefreshed = true;
@@ -105,6 +106,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 		} else if (!allowed && this._providersRegistered) {
 			this._providerRegistrations.clear();
 			this._providersRegistered = false;
+			commands.executeCommand('setContext', 'github.copilot.hasByokModels', this._providersRegistered);
 			this._logService.info('BYOK: unregistered providers due to enterprise policy.');
 		}
 	}
