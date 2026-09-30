@@ -276,7 +276,9 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 			callSite: 'copilot-token-github',
 			headers: {
 				Authorization: `token ${githubToken}`,
-				'X-GitHub-Api-Version': '2025-04-01'
+				'X-GitHub-Api-Version': '2025-04-01',
+				'User-Agent': 'GitHubCopilotChat/0.46.0',
+				'X-VSCode-User-Agent-Library-Version': 'electron-fetch'
 			},
 			retryFallbacks: true,
 			expectJSON: true,
