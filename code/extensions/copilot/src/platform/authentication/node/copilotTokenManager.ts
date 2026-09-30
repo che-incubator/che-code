@@ -165,6 +165,10 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 		try {
 			if ('githubToken' in context) {
 				ghUsername = context.ghUsername;
+				this._logService.info(
+					`GitHub token exists for ${ghUsername || 'unknown'}: ${context.githubToken !== undefined && context.githubToken !== ''} 
+					Length: ${context.githubToken?.length || 0}}`
+				);
 				[result, userInfo] = (await Promise.all([
 					this.fetchCopilotTokenFromGitHubToken(context.githubToken).catch(e => {
 						this._logService.warn('Failed to fetch Copilot token from GitHub token');
