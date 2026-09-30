@@ -288,7 +288,7 @@
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
     "flatted": "^3.4.2",
     "shell-quote": "^1.8.4",
-    "qs": "6.15.2",
+    "qs": "^6.16.0",
     "ip-address": "^10.5.0",
     "brace-expansion@1": "^1.1.18",
     "brace-expansion@2": "^2.1.4",
