@@ -19,6 +19,7 @@ import product from '../../../platform/product/common/product.js';
 import { ISecretStorageProvider } from '../../../platform/secrets/common/secrets.js';
 import { isFolderToOpen, isWorkspaceToOpen } from '../../../platform/window/common/window.js';
 import type { IWorkbenchConstructionOptions, IWorkspace, IWorkspaceProvider } from '../../../workbench/browser/web.api.js';
+import type { ITunnelOptions, TunnelCreationOptions, ITunnel } from '../../../workbench/browser/web.api.js';
 import { AuthenticationSessionInfo } from '../../../workbench/services/authentication/browser/authenticationService.js';
 import type { IURLCallbackProvider } from '../../../workbench/services/url/browser/urlService.js';
 import { create } from '../../../workbench/workbench.web.main.internal.js';
@@ -603,6 +604,67 @@ function readCookie(name: string): string | undefined {
 	return undefined;
 }
 
+interface CheCodeRedirectEndpoint {
+	targetPort: number;
+	url: string;
+}
+
+/**
+ * Creates a tunnel factory that maps localhost ports to DevWorkspace
+ * code-redirect endpoint URLs. This enables extensions that start localhost
+ * HTTP servers to work in browser-based VS Code by rewriting localhost
+ * URLs to publicly accessible redirect endpoints.
+ */
+function createCheTunnelFactory(endpoints: CheCodeRedirectEndpoint[]): {
+	tunnelFactory: (tunnelOptions: ITunnelOptions, tunnelCreationOptions: TunnelCreationOptions) => Promise<ITunnel> | undefined;
+} {
+	const availableEndpoints = [...endpoints];
+	const activeMapping = new Map<number, { endpoint: CheCodeRedirectEndpoint; onDidDisposeEmitter: Emitter<void> }>();
+
+	const tunnelFactory = (tunnelOptions: ITunnelOptions, _tunnelCreationOptions: TunnelCreationOptions): Promise<ITunnel> | undefined => {
+		const targetPort = tunnelOptions.remoteAddress.port;
+
+		const existing = activeMapping.get(targetPort);
+		if (existing) {
+			const emitter = new Emitter<void>();
+			return Promise.resolve({
+				remoteAddress: tunnelOptions.remoteAddress,
+				localAddress: existing.endpoint.url,
+				privacy: 'public',
+				protocol: tunnelOptions.protocol,
+				onDidDispose: emitter.event,
+				dispose: () => { emitter.fire(); emitter.dispose(); }
+			});
+		}
+
+		const endpoint = availableEndpoints.pop();
+		if (!endpoint) {
+			return undefined;
+		}
+
+		const onDidDisposeEmitter = new Emitter<void>();
+		activeMapping.set(targetPort, { endpoint, onDidDisposeEmitter });
+
+		return Promise.resolve({
+			remoteAddress: tunnelOptions.remoteAddress,
+			localAddress: endpoint.url,
+			privacy: 'public',
+			protocol: tunnelOptions.protocol,
+			onDidDispose: onDidDisposeEmitter.event,
+			dispose: () => {
+				activeMapping.delete(targetPort);
+				availableEndpoints.push(endpoint);
+				onDidDisposeEmitter.fire();
+				onDidDisposeEmitter.dispose();
+			}
+		});
+	};
+
+	return {
+		tunnelFactory,
+	};
+}
+
 (function () {
 
 	// Find config by checking for DOM
@@ -614,10 +676,14 @@ function readCookie(name: string): string | undefined {
 	}
 
 	const cheConfig = getCheConfig();
-	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string } = JSON.parse(configElementAttribute);
+	const config: IWorkbenchConstructionOptions & { folderUri?: UriComponents; workspaceUri?: UriComponents; callbackRoute: string; cheCodeRedirectEndpoints?: CheCodeRedirectEndpoint[] } = JSON.parse(configElementAttribute);
 	const secretStorageKeyPath = readCookie('vscode-secret-key-path') || '/';
 	const secretStorageCrypto = secretStorageKeyPath && ServerKeyedAESCrypto.supported()
 		? new ServerKeyedAESCrypto(secretStorageKeyPath) : new TransparentCrypto();
+
+	const cheTunnel = config.cheCodeRedirectEndpoints?.length
+		? createCheTunnelFactory(config.cheCodeRedirectEndpoints)
+		: undefined;
 
 	// Create workbench
 	create(mainWindow.document.body, {
@@ -630,5 +696,6 @@ function readCookie(name: string): string | undefined {
 		secretStorageProvider: config.remoteAuthority && !secretStorageKeyPath
 			? undefined /* with a remote without embedder-preferred storage, store on the remote */
 			: new LocalStorageSecretStorageProvider(secretStorageCrypto),
+		...(cheTunnel ? { tunnelProvider: { tunnelFactory: cheTunnel.tunnelFactory, features: { elevation: false, public: true, privacyOptions: [], protocol: true } } } : {}),
 	});
 })();
