@@ -3,6 +3,16 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
+CVE-2026-82417, CVE-2026-82562: update qs override to ^6.16.0
+
+- code/package.json
+- code/build/package.json
+- code/extensions/copilot/package.json
+- code/build/agent-sdk/agents/claude/package.json
+- code/test/mcp/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/813
 
 - code/package.json
