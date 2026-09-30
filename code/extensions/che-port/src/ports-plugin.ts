@@ -21,6 +21,7 @@ import { EndpointsTreeDataProvider } from './endpoints-tree-data-provider';
 import { ListeningPort } from './listening-port';
 import { PortChangesDetector } from './port-changes-detector';
 import { PortForwardServer } from './port-forward-server';
+import { RedirectPortManager } from './tunnel-provider';
 
 /**
  * Plugin that is monitoring new port being opened and closed.
@@ -35,7 +36,7 @@ export interface ForwardedPort {
   endpoint: Endpoint;
 }
 
-export class PortsPlugin {
+export class PortsPlugin implements RedirectPortManager {
   // constants
   public static readonly LISTEN_ALL_IPV4 = '0.0.0.0';
   public static readonly LISTEN_ALL_IPV6 = '::';
@@ -299,4 +300,39 @@ export class PortsPlugin {
   }
 
   async stop(): Promise<void> { }
+
+  // RedirectPortManager interface implementation
+
+  /**
+   * Acquire an available code-redirect endpoint for tunnel provider.
+   * This is used by CheTunnelProvider to get a redirect slot.
+   */
+  acquireRedirectEndpoint(): Endpoint | undefined {
+    if (this.redirectPorts.length === 0) {
+      return undefined;
+    }
+    return this.redirectPorts.pop();
+  }
+
+  /**
+   * Release a previously acquired redirect endpoint back to the pool.
+   * Called when a tunnel is disposed.
+   */
+  releaseRedirectEndpoint(endpoint: Endpoint): void {
+    // Only add back if it's a valid redirect endpoint and not already in the pool
+    if (endpoint.name.startsWith(PortsPlugin.SERVER_REDIRECT_PATTERN)) {
+      const alreadyExists = this.redirectPorts.some(e => e.targetPort === endpoint.targetPort);
+      if (!alreadyExists) {
+        this.redirectPorts.push(endpoint);
+        this.outputChannel.appendLine(`[PortsPlugin] Released redirect endpoint ${endpoint.name} back to pool`);
+      }
+    }
+  }
+
+  /**
+   * Get the output channel for logging from tunnel provider.
+   */
+  getOutputChannel(): vscode.OutputChannel {
+    return this.outputChannel;
+  }
 }

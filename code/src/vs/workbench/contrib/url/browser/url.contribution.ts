@@ -13,6 +13,7 @@ import { Registry } from '../../../../platform/registry/common/platform.js';
 import { IURLService } from '../../../../platform/url/common/url.js';
 import { Extensions as WorkbenchExtensions, IWorkbenchContributionsRegistry, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';
 import { ExternalUriResolverContribution } from './externalUriResolver.js';
+import { CheTunnelResolverContribution } from './cheTunnelResolver.js';
 import { manageTrustedDomainSettingsCommand } from './trustedDomains.js';
 import { TrustedDomainsFileSystemProvider } from './trustedDomainsFileSystemProvider.js';
 import { OpenerValidatorContributions } from './trustedDomainsValidator.js';
@@ -80,6 +81,11 @@ registerWorkbenchContribution2(
 registerWorkbenchContribution2(
 	ExternalUriResolverContribution.ID,
 	ExternalUriResolverContribution,
+	WorkbenchPhase.BlockRestore // registration only
+);
+registerWorkbenchContribution2(
+	CheTunnelResolverContribution.ID,
+	CheTunnelResolverContribution,
 	WorkbenchPhase.BlockRestore // registration only
 );
 
