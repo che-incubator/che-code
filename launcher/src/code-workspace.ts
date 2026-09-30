@@ -127,7 +127,7 @@ export class CodeWorkspace {
         (!workspace!.folders || workspace!.folders.length === 0)
       ) {
         console.log(
-          `  > workspace.openProjectsRootOnEmpty setting is enabled and workspace has no folders. Opening ${projectsRoot} folder.`
+          `  > workspace.openProjectsRootOnEmpty configuration is enabled and workspace has no folders. Opening ${projectsRoot} folder.`
         );
         workspace!.folders = [{ name: 'projects', path: projectsRoot }];
         saveRequired = true;
@@ -163,17 +163,17 @@ export class CodeWorkspace {
   }
 
   private isOpenProjectsRootOnEmpty(): boolean {
-    if (!this.configmapData?.['settings.json']) {
+    if (!this.configmapData?.['configurations.json']) {
       return false;
     }
 
     try {
-      const settings = parseJSON(this.configmapData['settings.json'], {
-        errorMessage: 'Configmap settings.json is not valid.',
+      const configurations = parseJSON(this.configmapData['configurations.json'], {
+        errorMessage: 'Configmap configurations.json is not valid.',
       });
-      return settings['workspace.openProjectsRootOnEmpty'] === true;
+      return configurations['workspace.openProjectsRootOnEmpty'] === true;
     } catch (error) {
-      console.log(`  > Failed to read workspace.openProjectsRootOnEmpty setting: ${error.message}`);
+      console.log(`  > Failed to read workspace.openProjectsRootOnEmpty configuration: ${error.message}`);
       return false;
     }
   }

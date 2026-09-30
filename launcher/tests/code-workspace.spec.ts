@@ -532,7 +532,7 @@ describe('Test generating VS Code Workspace file:', () => {
     pathExistsMock.mockImplementation(async () => false);
 
     const configmapData = {
-      'settings.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
+      'configurations.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
     };
 
     const codeWorkspace = new CodeWorkspace(configmapData);
@@ -571,7 +571,7 @@ describe('Test generating VS Code Workspace file:', () => {
     pathExistsMock.mockImplementation(async () => false);
 
     const configmapData = {
-      'settings.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
+      'configurations.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
     };
 
     const codeWorkspace = new CodeWorkspace(configmapData);
@@ -579,6 +579,109 @@ describe('Test generating VS Code Workspace file:', () => {
 
     // should create a workspace with empty folders (not add PROJECTS_ROOT) because the devfile has projects declared
     expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{\n\t"folders": []\n}');
+  });
+
+  test('should not add PROJECTS_ROOT when workspace.openProjectsRootOnEmpty is enabled but devfile declares starterProjects', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.with-starter-project.yaml');
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation(async () => false);
+
+    const configmapData = {
+      'configurations.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
+    };
+
+    const codeWorkspace = new CodeWorkspace(configmapData);
+    await codeWorkspace.generate();
+
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{\n\t"folders": []\n}');
+  });
+
+  test('should not add PROJECTS_ROOT when workspace.openProjectsRootOnEmpty is enabled but devfile declares dependentProjects', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
+      __dirname,
+      '_data',
+      'flattened.devworkspace.with-dependent-project.yaml'
+    );
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation(async () => false);
+
+    const configmapData = {
+      'configurations.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': true }),
+    };
+
+    const codeWorkspace = new CodeWorkspace(configmapData);
+    await codeWorkspace.generate();
+
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{\n\t"folders": []\n}');
+  });
+
+  test('should not add PROJECTS_ROOT when workspace.openProjectsRootOnEmpty is explicitly set to false', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.empty.yaml');
+
+    const pathExistsMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (path) => {
+      if (path === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(path);
+      }
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation(async () => false);
+
+    const configmapData = {
+      'configurations.json': JSON.stringify({ 'workspace.openProjectsRootOnEmpty': false }),
+    };
+
+    const codeWorkspace = new CodeWorkspace(configmapData);
+    await codeWorkspace.generate();
+
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', '{}');
   });
 
   test('should parse .code-workspace file if the file has extra characters', async () => {
