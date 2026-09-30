@@ -2343,7 +2343,7 @@
         "icon": "$(chat-sparkle)",
         "title": "%copilot.title%",
         "content": "%github.copilot.viewsWelcome.invalidToken%",
-        "when": "github.copilot.interactiveSession.invalidToken"
+        "when": "github.copilot.interactiveSession.invalidToken && !github.copilot.hasByokModels"
       },
       {
         "icon": "$(chat-sparkle)",

@@ -313,14 +313,8 @@ export class DestroyableStream<T> implements AsyncIterable<T> {
 	}
 }
 
-export async function jsonVerboseError(resp: Response, logService?: ILogService): Promise<any> {
+export async function jsonVerboseError(resp: Response): Promise<any> {
 	const text = await resp.text();
-	logService?.warn(
-		`jsonVerboseError: status=${resp.status}, ` +
-		`statusText=${resp.statusText}, ` +
-		`response=${text}`
-	);
-
 	try {
 		return JSON.parse(text);
 	} catch (err) {

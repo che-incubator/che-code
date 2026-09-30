@@ -170,14 +170,8 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 					Length: ${context.githubToken?.length || 0}}`
 				);
 				[result, userInfo] = (await Promise.all([
-					this.fetchCopilotTokenFromGitHubToken(context.githubToken).catch(e => {
-						this._logService.warn('Failed to fetch Copilot token from GitHub token');
-						throw e;
-					}),
-					this.fetchCopilotUserInfo(context.githubToken).catch(e => {
-						this._logService.warn('Failed to fetch Copilot user info from GitHub token');
-						throw e;
-					})
+					this.fetchCopilotTokenFromGitHubToken(context.githubToken),
+					this.fetchCopilotUserInfo(context.githubToken)
 				]));
 			} else {
 				result = await this.fetchCopilotTokenFromDevDeviceId(context.devDeviceId);
@@ -282,11 +276,6 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 			expectJSON: true,
 		};
 		const response = await this._capiClientService.makeRequest<Response>(options, { type: RequestType.CopilotToken });
-
-		this._logService.info(
-			`Copilot token response headers: ${JSON.stringify(response.headers)}`
-		);
-
 		return this.parseTokenResponse(response);
 	}
 
@@ -313,17 +302,8 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 
 		let parsed: unknown;
 		try {
-			parsed = await jsonVerboseError(response, this._logService);
+			parsed = await jsonVerboseError(response);
 		} catch (err) {
-			const parseError = err instanceof Error ? err.message : String(err);
-
-			this._logService.warn(
-				`Failed to parse Copilot token response: ` +
-				`status=${response.status}, ` +
-				`statusText=${response.statusText}, ` +
-				`error=${parseError}`
-			);
-
 			return { ...httpInfo, body: undefined, kind: 'parse-failed', parseError: err.message || String(err) };
 		}
 
