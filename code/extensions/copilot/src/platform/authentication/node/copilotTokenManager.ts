@@ -304,7 +304,7 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 
 		let parsed: unknown;
 		try {
-			parsed = await jsonVerboseError(response);
+			parsed = await jsonVerboseError(response, this._logService);
 		} catch (err) {
 			const parseError = err instanceof Error ? err.message : String(err);
 

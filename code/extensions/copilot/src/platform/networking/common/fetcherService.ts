@@ -5,6 +5,7 @@
 
 import { createServiceIdentifier } from '../../../util/common/services';
 import { Event } from '../../../util/vs/base/common/event';
+import { ILogService } from '../../log/common/logService';
 
 export const IFetcherService = createServiceIdentifier<IFetcherService>('IFetcherService');
 
@@ -312,8 +313,14 @@ export class DestroyableStream<T> implements AsyncIterable<T> {
 	}
 }
 
-export async function jsonVerboseError(resp: Response) {
+export async function jsonVerboseError(resp: Response, logService?: ILogService): Promise<any> {
 	const text = await resp.text();
+	logService?.warn(
+		`jsonVerboseError: status=${resp.status}, ` +
+		`statusText=${resp.statusText}, ` +
+		`response=${text}`
+	);
+
 	try {
 		return JSON.parse(text);
 	} catch (err) {
