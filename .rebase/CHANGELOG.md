@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-CVE-2026-19534, CVE-2026-84961 — undici update
+https://github.com/che-incubator/che-code/pull/819
 
 - code/package.json
 - code/remote/package.json
