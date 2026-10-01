@@ -1,5 +1,5 @@
 {
     "overrides": {
-        "undici": "^7.28.0"
+        "undici": "^7.30.0"
     }
 }
