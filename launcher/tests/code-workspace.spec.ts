@@ -583,7 +583,11 @@ describe('Test generating VS Code Workspace file:', () => {
 
   test('should not add PROJECTS_ROOT when workspace.openProjectsRootOnEmpty is enabled but devfile declares starterProjects', async () => {
     env.PROJECTS_ROOT = '/tmp/projects';
-    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.with-starter-project.yaml');
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(
+      __dirname,
+      '_data',
+      'flattened.devworkspace.with-starter-project.yaml'
+    );
 
     const pathExistsMock = jest.fn();
     const writeFileMock = jest.fn();
