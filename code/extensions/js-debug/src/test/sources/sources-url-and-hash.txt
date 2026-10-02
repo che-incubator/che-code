@@ -1,0 +1,81 @@
+
+Source event for foo.js
+{
+    reason : new
+    source : {
+        name : localhost꞉8001/foo.js
+        path : localhost꞉8001/foo.js
+        sourceReference : <number>
+    }
+}
+a
+//# sourceURL=foo.js
+---------
+
+Source event for foo.js
+{
+    reason : new
+    source : {
+        name : localhost꞉8001/foo.js
+        path : localhost꞉8001/foo.js
+        sourceReference : <number>
+    }
+}
+b
+//# sourceURL=foo.js
+---------
+
+Source event for empty.js
+{
+    reason : new
+    source : {
+        name : localhost꞉8001/empty.js
+        path : ${workspaceFolder}/web/empty.js
+        sourceReference : <number>
+    }
+}
+"111111111111111111111111111111111111111111111111111"
+
+---------
+
+Source event for empty2.js
+{
+    reason : new
+    source : {
+        name : localhost꞉8001/empty2.js
+        path : localhost꞉8001/empty2.js
+        sourceReference : <number>
+    }
+}
+
+---------
+
+Loaded sources: {
+    sources : [
+        [0] : {
+            name : localhost꞉8001/foo.js
+            path : localhost꞉8001/foo.js
+            sourceReference : <number>
+        }
+        [1] : {
+            name : <eval>/VM<xx>
+            path : <eval>/VM<xx>
+            sourceReference : <number>
+        }
+        [2] : {
+            name : localhost꞉8001/empty.js
+            path : ${workspaceFolder}/web/empty.js
+            sourceReference : <number>
+        }
+        [3] : {
+            name : <eval>/VM<xx>
+            path : <eval>/VM<xx>
+            sourceReference : <number>
+        }
+        [4] : {
+            name : localhost꞉8001/empty2.js
+            path : localhost꞉8001/empty2.js
+            sourceReference : <number>
+        }
+    ]
+}

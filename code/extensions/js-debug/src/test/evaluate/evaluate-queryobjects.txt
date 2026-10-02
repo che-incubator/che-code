@@ -1,0 +1,6 @@
+stdout> > (2) [Foo, Foo]
+stdout>     > 0: Foo {value: 1}
+stdout>     > 1: Foo {value: 2}
+stdout>     length: 2
+stdout>     > [[Prototype]]: Array(0)
+stdout>     > [[Prototype]]: Object

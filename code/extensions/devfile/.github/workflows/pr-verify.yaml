@@ -1,0 +1,21 @@
+name: pr-verify
+
+on: [push, pull_request]
+
+jobs:
+  pr-verify-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Code
+        uses: actions/checkout@v2
+      - name: Set Up NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      - run: npm install -g typescript "vsce"
+      - run: npm install
+      - run: npm run compile
+      - run: npm run vscode:prepublish
+      - run: npm run build-vsix
+      - run: ls -ll *.vsix
+      - run: npm run eslint

@@ -1,0 +1,63 @@
+
+Source event for
+{
+    reason : new
+    source : {
+        name : browserify/index.ts
+        path : ${workspaceFolder}/web/browserify/index.ts
+        sourceReference : <number>
+    }
+}
+import * as m1 from './module1';
+import * as m2 from './module2';
+
+window['throwError'] = m1.throwError;
+window['throwValue'] = m1.throwValue;
+window['pause'] = m1.foo;
+window['callBack'] = m2.bar;
+window['logSome'] = function logSome() {
+  console.log(m1.kModule1 + m2.kModule2);
+}
+
+---------
+
+Source event for
+{
+    reason : new
+    source : {
+        name : browserify/module1.ts
+        path : ${workspaceFolder}/web/browserify/module1.ts
+        sourceReference : <number>
+    }
+}
+export const kModule1 = 1;
+export function foo() {
+  debugger;
+}
+export function throwError(s) {
+  throw new Error(s);
+}
+export function throwValue(v) {
+  throw v;
+}
+
+---------
+
+Source event for
+{
+    reason : new
+    source : {
+        name : browserify/module2.ts
+        path : ${workspaceFolder}/web/browserify/module2.ts
+        sourceReference : <number>
+    }
+}
+export const kModule2 = 2;
+export function bar(callback) {
+  callback();
+}
+export function pause() {
+  debugger;
+}
+
+---------

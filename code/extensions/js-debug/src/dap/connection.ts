@@ -1,0 +1,256 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+import { IDisposable } from '../common/disposable';
+import { HrTime } from '../common/hrnow';
+import { ILogger, LogTag } from '../common/logging';
+import { getDeferred } from '../common/promiseUtil';
+import { ITelemetryReporter } from '../telemetry/telemetryReporter';
+import Dap from './api';
+import { isDapError } from './errors';
+import { logOmittedCalls } from './logOmittedCalls';
+import { ProtocolError } from './protocolError';
+import { IDapTransport, Message } from './transport';
+
+const requestSuffix = 'Request';
+export const isRequest = (req: string) => req.endsWith('Request');
+
+/**
+ * Symbol injected to get the closest DAP connection.
+ */
+export const IDapApi = Symbol('IDapApi');
+
+/**
+ * Symbol to get the DAP connection for the top-level logical session.
+ */
+export const IRootDapApi = Symbol('IRootDapApi');
+
+export default class Connection {
+  private _sequence: number;
+
+  private telemetryReporter?: ITelemetryReporter;
+  private _pendingRequests = new Map<number, (result: string | object) => void>();
+  private _requestHandlers = new Map<string, (params: object) => Promise<object>>();
+  private _eventListeners = new Map<string, Set<(params: object) => void>>();
+  private _dap: Dap.Api;
+  private disposables: IDisposable[] = [];
+
+  private _initialized = getDeferred<Connection>();
+  private closed = false;
+
+  /**
+   * Get a promise which will resolve with this connection after the session has responded to initialize
+   */
+  public get initializedBlocker() {
+    return this._initialized.promise;
+  }
+
+  constructor(protected readonly transport: IDapTransport, protected readonly logger: ILogger) {
+    this._sequence = 1;
+
+    this.disposables.push(
+      this.transport.messageReceived(event => this._onMessage(event.message, event.receivedTime)),
+    );
+    this._dap = this._createApi();
+  }
+
+  public attachTelemetry(telemetryReporter: ITelemetryReporter) {
+    this.telemetryReporter = telemetryReporter;
+    telemetryReporter.attachDap(this._dap);
+  }
+
+  public dap(): Dap.Api {
+    return this._dap;
+  }
+
+  _createApi(): Dap.Api {
+    return new Proxy(
+      {},
+      {
+        get: (_target, methodName: string) => {
+          if (methodName === 'then') return;
+          if (methodName === 'on') {
+            return (requestName: string, handler: (params: object) => Promise<object>) => {
+              this._requestHandlers.set(requestName, handler);
+              return () => this._requestHandlers.delete(requestName);
+            };
+          }
+          if (methodName === 'off') {
+            return (requestName: string) => this._requestHandlers.delete(requestName);
+          }
+          return (params: object) => {
+            if (isRequest(methodName)) {
+              return this.enqueueRequest(methodName.slice(0, -requestSuffix.length), params);
+            }
+
+            this._send({ seq: 0, type: 'event', event: methodName, body: params });
+          };
+        },
+      },
+    ) as Dap.Api;
+  }
+
+  createTestApi(): Dap.TestApi {
+    const on = (eventName: string, listener: () => void) => {
+      let listeners = this._eventListeners.get(eventName);
+      if (!listeners) {
+        listeners = new Set();
+        this._eventListeners.set(eventName, listeners);
+      }
+      listeners.add(listener);
+    };
+    const off = (eventName: string, listener: () => void) => {
+      const listeners = this._eventListeners.get(eventName);
+      if (listeners) listeners.delete(listener);
+    };
+    const once = (eventName: string, filter: (params?: object) => boolean) => {
+      return new Promise(cb => {
+        const listener = (params?: object) => {
+          if (filter && !filter(params)) return;
+          off(eventName, listener);
+          cb(params);
+        };
+        on(eventName, listener);
+      });
+    };
+    return new Proxy(
+      {},
+      {
+        get: (_target, methodName: string) => {
+          if (methodName === 'on') return on;
+          if (methodName === 'off') return off;
+          if (methodName === 'once') return once;
+          return (params?: object) => this.enqueueRequest(methodName, params);
+        },
+      },
+    ) as Dap.TestApi;
+  }
+
+  private enqueueRequest(command: string, params?: object) {
+    return new Promise(cb => {
+      const request: Message = { seq: 0, type: 'request', command, arguments: params || {} };
+      this._send(request); // this updates request.seq
+      this._pendingRequests.set(request.seq, cb);
+    });
+  }
+
+  public stop(): void {
+    this.closed = true;
+    this.transport.close();
+  }
+
+  _send(message: Message, onDidWrite?: () => void) {
+    if (!this.closed) {
+      message.seq = this._sequence++;
+
+      const shouldLog = message.type !== 'event' || !logOmittedCalls.has(message.body);
+      this.transport.send(message, shouldLog, onDidWrite);
+    } else {
+      this.logger.warn(
+        LogTag.DapSend,
+        `Not sending message because the connection has ended`,
+        message,
+      );
+      onDidWrite?.();
+    }
+  }
+
+  async _onMessage(msg: Message, receivedTime: HrTime): Promise<void> {
+    if (msg.type === 'request') {
+      const response = {
+        seq: 0,
+        type: 'response' as const,
+        request_seq: msg.seq,
+        command: msg.command,
+        success: true,
+      };
+
+      try {
+        const callback = this._requestHandlers.get(msg.command);
+        if (!callback) {
+          console.error(`Unknown request: ${msg.command}`);
+        } else {
+          const result = await callback(msg.arguments);
+          if (isDapError(result)) {
+            this._send({
+              ...response,
+              success: false,
+              message: result.error.format,
+              body: { error: result.error },
+            });
+          } else {
+            const msg = { ...response, body: result };
+            if (response.command === 'initialize') {
+              this._send(msg);
+              this._initialized.resolve(this);
+            } else if (response.command === 'disconnect') {
+              // close the DAP connection after we respond to disconnect so that
+              // no more messages are allowed to go through.
+              this._send({ ...response, body: result }, () => {
+                this.stop();
+              });
+            } else {
+              this._send(msg);
+            }
+          }
+        }
+        this.telemetryReporter?.reportOperation(
+          'dapOperation',
+          msg.command,
+          receivedTime.elapsed().ms,
+        );
+      } catch (e) {
+        if (e instanceof ProtocolError) {
+          this._send({
+            ...response,
+            success: false,
+            body: { error: e.cause },
+          });
+        } else {
+          console.error(e);
+          this._send({
+            ...response,
+            success: false,
+            body: {
+              error: {
+                id: 9221,
+                format: `Error processing ${msg.command}: ${e.stack || e.message}`,
+                showUser: false,
+                sendTelemetry: false,
+              },
+            },
+          });
+        }
+
+        this.telemetryReporter?.reportOperation(
+          'dapOperation',
+          msg.command,
+          receivedTime.elapsed().ms,
+          e,
+        );
+      }
+    }
+    if (msg.type === 'event') {
+      const listeners = this._eventListeners.get(msg.event) || new Set();
+      for (const listener of listeners) listener(msg.body);
+    }
+    if (msg.type === 'response') {
+      const cb = this._pendingRequests.get(msg.request_seq);
+      if (
+        !this.logger.assert(cb, `Expected callback for request sequence ID ${msg.request_seq}`)
+      ) {
+        return;
+      }
+
+      this._pendingRequests.delete(msg.request_seq);
+      if (msg.success) {
+        cb(msg.body);
+      } else {
+        // eslint-disable-next-line
+        const format: string | undefined = (msg.body as any)?.error?.format;
+        cb(format || msg.message || `Unknown error`);
+      }
+    }
+  }
+}

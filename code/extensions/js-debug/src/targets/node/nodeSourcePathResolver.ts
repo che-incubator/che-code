@@ -1,0 +1,188 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+import * as path from 'path';
+import { URL } from 'url';
+import { IFsUtils } from '../../common/fsUtils';
+import { ILogger } from '../../common/logging';
+import { nodeInternalsToken } from '../../common/node15Internal';
+import { fixDriveLetter, fixDriveLetterAndSlashes, properResolve } from '../../common/pathUtils';
+import { SourceMap } from '../../common/sourceMaps/sourceMap';
+import {
+  getComputedSourceRoot,
+  getFullSourceEntry,
+  moduleAwarePathMappingResolver,
+} from '../../common/sourceMaps/sourceMapResolutionUtils';
+import { IUrlResolution } from '../../common/sourcePathResolver';
+import * as urlUtils from '../../common/urlUtils';
+import { AnyLaunchConfiguration, AnyNodeConfiguration } from '../../configuration';
+import { ILinkedBreakpointLocation } from '../../ui/linkedBreakpointLocation';
+import { ISourcePathResolverOptions, SourcePathResolverBase } from '../sourcePathResolver';
+
+interface IOptions extends ISourcePathResolverOptions {
+  basePath?: string;
+}
+
+const localNodeInternalsPrefix = 'node:';
+
+export class NodeSourcePathResolver extends SourcePathResolverBase<IOptions> {
+  public static shouldWarnAboutSymlinks(config: AnyLaunchConfiguration) {
+    return 'runtimeArgs' in config && !config.runtimeArgs?.includes('--preserve-symlinks');
+  }
+
+  public static getOptions(c: AnyNodeConfiguration) {
+    return {
+      workspaceFolder: c.__workspaceFolder,
+      resolveSourceMapLocations: c.resolveSourceMapLocations,
+      basePath: c.cwd,
+      sourceMapOverrides: c.sourceMapPathOverrides,
+      remoteRoot: c.remoteRoot,
+      localRoot: c.localRoot,
+    };
+  }
+
+  public constructor(
+    private readonly fsUtils: IFsUtils,
+    public readonly linkedBp: ILinkedBreakpointLocation | undefined,
+    protected readonly options: IOptions,
+    protected readonly logger: ILogger,
+  ) {
+    super(options, logger);
+  }
+
+  /**
+   * Creates a new resolver by apply the options change to the current resolver.
+   */
+  public derive(newOptions: Partial<IOptions>) {
+    return new NodeSourcePathResolver(
+      this.fsUtils,
+      this.linkedBp,
+      { ...this.options, ...newOptions },
+      this.logger,
+    );
+  }
+
+  public get resolutionOptions() {
+    return this.options;
+  }
+
+  /**
+   * @override
+   */
+  public async urlToAbsolutePath({ url, map }: IUrlResolution): Promise<string | undefined> {
+    url = this.normalizeSourceMapUrl(url);
+
+    // It's possible the source might be using the `sourceURL`, so apply
+    // any source map overrides now (fixes vscode#204784) and before file
+    // URIs (vscode-dwarf-debugging-ext#7)
+    const mapped = this.sourceMapOverrides.apply(url);
+    const wasMapped = mapped !== url;
+    url = mapped;
+
+    // Allow debugging of externally loaded Node internals
+    // [ by building Node with ./configure --node-builtin-modules-path $(pwd) ]
+    if (url.startsWith(localNodeInternalsPrefix) && this.options.basePath) {
+      url = path.join(this.options.basePath, 'lib', url.slice(localNodeInternalsPrefix.length));
+      if (!url.endsWith('.js')) {
+        url += '.js';
+      }
+
+      return url;
+    }
+
+    if (map) {
+      return this.sourceMapSourceToAbsolute(url, map, wasMapped);
+    }
+
+    const absolutePath = urlUtils.fileUrlToAbsolutePath(url);
+    if (absolutePath) {
+      return this.rebaseRemoteToLocal(absolutePath);
+    }
+
+    // It's possible the source might be an HTTP if using the `sourceURL`
+    // attribute. If this is the case, apply a source map override if it
+    // applies, otherwise just assume it's relative to the basePath.
+    if (urlUtils.isValidUrl(url)) {
+      url = wasMapped ? mapped : new URL(url).pathname.slice(1);
+    } // Node internals are given us us as relative path, for example
+    // require('cluster') will import a file simply named "cluster". For these
+    // paths, prefix them as internal.
+    else if (!path.isAbsolute(url)) {
+      return `${nodeInternalsToken}/${url}`;
+    } // Otherwise, use default overrides.
+    else {
+      url = this.sourceMapOverrides.apply(url);
+    }
+
+    const withBase = properResolve(this.options.basePath ?? '', url);
+    return this.rebaseRemoteToLocal(withBase);
+  }
+
+  private absolutePathToUrl(absolutePath: string) {
+    return urlUtils.absolutePathToFileUrl(
+      this.rebaseLocalToRemote(path.normalize(absolutePath)),
+    );
+  }
+
+  /**
+   * @override
+   */
+  public async absolutePathToUrlRegexp(absolutePath: string): Promise<string | undefined> {
+    let realPath = absolutePath;
+    try {
+      realPath = await this.fsUtils.realPath(absolutePath);
+    } catch {
+      // ignored
+    }
+
+    if (urlUtils.comparePathsWithoutCasing(realPath, absolutePath)) {
+      return urlUtils.urlToRegex(this.absolutePathToUrl(absolutePath));
+    }
+
+    this.linkedBp?.warn();
+
+    return (
+      urlUtils.urlToRegex(this.absolutePathToUrl(absolutePath))
+      + '|'
+      + urlUtils.urlToRegex(this.absolutePathToUrl(realPath))
+    );
+  }
+
+  private async sourceMapSourceToAbsolute(url: string, map: SourceMap, wasMapped: boolean) {
+    if (!this.shouldResolveSourceMap(map.metadata)) {
+      return undefined;
+    }
+
+    if (wasMapped) {
+      return fixDriveLetter(url);
+    }
+
+    const fullSourceEntry = getFullSourceEntry(map.sourceRoot, url);
+    const mappedFullSourceEntry = this.sourceMapOverrides.apply(fullSourceEntry);
+    if (mappedFullSourceEntry !== fullSourceEntry) {
+      return fixDriveLetterAndSlashes(mappedFullSourceEntry);
+    }
+
+    if (urlUtils.isFileUrl(url)) {
+      return this.rebaseRemoteToLocal(urlUtils.fileUrlToAbsolutePath(url));
+    }
+
+    if (!path.isAbsolute(url) && this.options.basePath) {
+      return properResolve(
+        await getComputedSourceRoot(
+          this.options.remoteRoot && urlUtils.isAbsolute(map.sourceRoot)
+            ? this.rebaseRemoteToLocal(map.sourceRoot) || map.sourceRoot
+            : map.sourceRoot,
+          map.metadata.compiledPath,
+          { '/': this.options.basePath },
+          moduleAwarePathMappingResolver(this.fsUtils, map.metadata.compiledPath),
+          this.logger,
+        ),
+        url,
+      );
+    }
+
+    return this.rebaseRemoteToLocal(url) || url;
+  }
+}

@@ -1,0 +1,9 @@
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+foo @ ${workspaceFolder}/web/browserify/module1.ts:3:3
+Window.bar @ ${workspaceFolder}/web/browserify/module2.ts:3:3
+<anonymous> @ localhost꞉8001/browserify/test.js:1:8

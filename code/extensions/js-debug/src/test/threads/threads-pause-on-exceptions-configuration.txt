@@ -1,0 +1,16 @@
+{
+    allThreadsStopped : false
+    description : Paused on exception
+    reason : exception
+    threadId : <number>
+}
+{
+    breakMode : all
+    details : {
+        stackTrace :   at <data-url>:7:17
+    }
+    exceptionId : Error: this error is uncaught
+}
+{
+    allThreadsContinued : false
+}

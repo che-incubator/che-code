@@ -1,0 +1,34 @@
+schemaVersion: 2.2.0
+metadata:
+  name: vscode-devfile
+components:
+  - name: tools
+    container:
+      image: quay.io/devfile/universal-developer-image:ubi8-latest
+      memoryRequest: 1G
+      memoryLimit: 4G
+      cpuRequest: '1'
+      cpuLimit: '2'
+
+commands:
+  - id: install-dependencies
+    exec:
+      label: 1. Install dependencies
+      component: tools
+      commandLine: npm install
+  - id: compile
+    exec:
+      label: 2. Compile
+      component: tools
+      commandLine: npm run compile
+      group:
+        kind: build
+        isDefault: true
+  - id: build-vsix
+    exec:
+      label: 3. Build vsix binary
+      component: tools
+      commandLine: npm run build-vsix
+      group:
+        kind: build
+        isDefault: false

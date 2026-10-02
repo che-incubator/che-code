@@ -1,0 +1,13 @@
+{
+    allThreadsStopped : false
+    description : Paused on debugger statement
+    reason : pause
+    threadId : <number>
+}
+> result: (3) ['--some', 'very fancy', '--arguments']
+    0: '--some'
+    1: 'very fancy'
+    2: '--arguments'
+    length: 3
+    > [[Prototype]]: Array(0)
+    > [[Prototype]]: Object
