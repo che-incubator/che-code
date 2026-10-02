@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { pickRemoteSource } from './remoteSource';
-import { l10n, workspace, window, Uri, ProgressLocation, commands } from 'vscode';
+import { l10n, workspace, window, Uri, ProgressLocation, commands, LogOutputChannel } from 'vscode';
 import { RepositoryCache, RepositoryCacheInfo } from './repositoryCache';
 import TelemetryReporter from '@vscode/extension-telemetry';
 import { Model } from './model';
@@ -25,7 +25,8 @@ export interface CloneOptions {
 export class CloneManager {
 	constructor(private readonly model: Model,
 		private readonly telemetryReporter: TelemetryReporter,
-		private readonly repositoryCache: RepositoryCache) { }
+		private readonly repositoryCache: RepositoryCache,
+		private readonly logger: LogOutputChannel) { }
 
 	async clone(url?: string, options: CloneOptions = {}) {
 		if (!url || typeof url !== 'string') {
@@ -210,8 +211,22 @@ export class CloneManager {
 	}
 
 	private async tryOpenExistingRepository(cachedRepository: RepositoryCacheInfo[], url: string, postCloneAction?: ApiPostCloneAction, parentPath?: string, ref?: string): Promise<string | undefined> {
+
+		this.logger.info(`Found cached repository for ${url}: ${cachedRepository.map(repo => repo.workspacePath).join(', ')}`);
+		this.logger.info(`Workspace folders: ${workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join(', ') ?? 'none'}`);
+		this.logger.info(`Workspace file: ${workspace.workspaceFile?.fsPath ?? 'none'}`);
+		this.logger.info(`Length of cached repositories: ${cachedRepository.length}`);
+		this.logger.info(`Length of workspace folders: ${workspace.workspaceFolders?.length ?? 0}`);
+
+		// If no workspace folder is currently open, allow cloning the repository again.
+		if (!workspace.workspaceFolders?.length) {
+			this.logger.info('No workspace folder is currently open, allowing cloning the repository again.');
+			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction })) ?? undefined;
+		}
+
 		// Gather existing folders/workspace files (ignore ones that no longer exist)
 		const existingCachedRepositories: RepositoryCacheInfo[] = (await Promise.all<RepositoryCacheInfo | undefined>(cachedRepository.map(async folder => {
+			this.logger.info(`Checking existence of cached repository: ${folder.workspacePath}`);
 			const stat = await fs.promises.stat(folder.workspacePath).catch(() => undefined);
 			if (stat) {
 				return folder;
@@ -221,7 +236,7 @@ export class CloneManager {
 		))).filter<RepositoryCacheInfo>((folder): folder is RepositoryCacheInfo => folder !== undefined);
 
 		if (!existingCachedRepositories.length) {
-			// fallback to clone
+			this.logger.info('No existing cached repositories found, falling back to cloning.');
 			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction }) ?? undefined);
 		}
 
