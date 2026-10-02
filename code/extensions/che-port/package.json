@@ -13,7 +13,13 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "*",
+    "onTunnel"
+  ],
+  "enabledApiProposals": [
+    "tunnels",
+    "tunnelFactory",
+    "resolvers"
   ],
   "capabilities": {
     "virtualWorkspaces": true,
