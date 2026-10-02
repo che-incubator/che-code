@@ -11,6 +11,7 @@
 import * as fs from './fs-extra.js';
 import { env } from 'process';
 import { FlattenedDevfile, Project } from './flattened-devfile.js';
+import { parseJSON } from './json-utils.js';
 
 export interface Workspace {
   folders: Folder[];
@@ -27,6 +28,7 @@ export interface KeyValue {
 }
 
 export class CodeWorkspace {
+  constructor(private readonly configmapData?: Record<string, string>) {}
   /*****************************************************************************************************************
    *
    * If does not exist, creates `.code-workspace` file in projects directory.
@@ -39,6 +41,8 @@ export class CodeWorkspace {
       console.log('  > env.PROJECTS_ROOT is not set, skip this step');
       return;
     }
+
+    const projectsRoot = env.PROJECTS_ROOT;
 
     let path: string | undefined;
     let workspace: Workspace | undefined;
@@ -112,6 +116,23 @@ export class CodeWorkspace {
         saveRequired = true;
       }
 
+      const hasDevfileProjects =
+        (devfile.projects && devfile.projects.length > 0) ||
+        (devfile.dependentProjects && devfile.dependentProjects.length > 0) ||
+        (devfile.starterProjects && devfile.starterProjects.length > 0);
+
+      if (
+        this.isOpenProjectsRootOnEmpty() &&
+        !hasDevfileProjects &&
+        (!workspace!.folders || workspace!.folders.length === 0)
+      ) {
+        console.log(
+          `  > workspace.openProjectsRootOnEmpty configuration is enabled and workspace has no folders. Opening ${projectsRoot} folder.`
+        );
+        workspace!.folders = [{ name: 'projects', path: projectsRoot }];
+        saveRequired = true;
+      }
+
       // write workspace file only if it has been changed
       if (saveRequired) {
         const json = JSON.stringify(workspace, null, '\t');
@@ -139,6 +160,22 @@ export class CodeWorkspace {
     }
 
     return false;
+  }
+
+  private isOpenProjectsRootOnEmpty(): boolean {
+    if (!this.configmapData?.['configurations.json']) {
+      return false;
+    }
+
+    try {
+      const configurations = parseJSON(this.configmapData['configurations.json'], {
+        errorMessage: 'Configmap configurations.json is not valid.',
+      });
+      return configurations['workspace.openProjectsRootOnEmpty'] === true;
+    } catch (error) {
+      console.log(`  > Failed to read workspace.openProjectsRootOnEmpty configuration: ${error.message}`);
+      return false;
+    }
   }
 
   async synchronizeProjects(workspace: Workspace, projects?: Project[]): Promise<boolean> {

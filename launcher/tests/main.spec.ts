@@ -59,9 +59,19 @@ jest.mock('../src/trusted-extensions', () => ({
   },
 }));
 
+const readEditorConfigMapMock = jest.fn();
+jest.mock('../src/editor-configmap', () => ({
+  __esModule: true,
+  EditorConfigMap: function () {
+    return { read: readEditorConfigMapMock };
+  },
+}));
+
 const generateCodeWorkspace = jest.fn();
+const codeWorkspaceConstructorArgs: unknown[][] = [];
 jest.mock('../src/code-workspace', () => ({
-  CodeWorkspace: function () {
+  CodeWorkspace: function (...args: unknown[]) {
+    codeWorkspaceConstructorArgs.push(args);
     return { generate: generateCodeWorkspace };
   },
 }));
@@ -74,14 +84,26 @@ jest.mock('../src/vscode-launcher', () => ({
 }));
 
 const configureEditorConfigurations = jest.fn();
+const editorConfigurationsConstructorArgs: unknown[][] = [];
 jest.mock('../src/editor-configurations', () => ({
-  EditorConfigurations: function () {
+  EditorConfigurations: function (...args: unknown[]) {
+    editorConfigurationsConstructorArgs.push(args);
     return { configure: configureEditorConfigurations };
   },
 }));
 
 describe('Test main flow:', () => {
+  beforeEach(() => {
+    codeWorkspaceConstructorArgs.length = 0;
+    editorConfigurationsConstructorArgs.length = 0;
+  });
+
   test('should configure all the stuff', async () => {
+    const configmapData = { sentinel: 'configmap' };
+    const workspaceFile = '/workspace.code-workspace';
+    readEditorConfigMapMock.mockResolvedValue(configmapData);
+    generateCodeWorkspace.mockResolvedValue(workspaceFile);
+
     await new Main().start();
 
     expect(setDevWorkspaceIdMock).toBeCalled();
@@ -92,8 +114,11 @@ describe('Test main flow:', () => {
     expect(compressPostPatch).toBeCalled();
     expect(configureTustedExtensions).toBeCalled();
 
-    expect(generateCodeWorkspace).toBeCalled();
-    expect(configureEditorConfigurations).toBeCalled();
+    expect(readEditorConfigMapMock).toHaveBeenCalledTimes(1);
+    expect(codeWorkspaceConstructorArgs).toEqual([[configmapData]]);
+    expect(editorConfigurationsConstructorArgs).toEqual([[workspaceFile, configmapData]]);
+    expect(generateCodeWorkspace).toHaveBeenCalledTimes(1);
+    expect(configureEditorConfigurations).toHaveBeenCalledTimes(1);
 
     expect(launchVsCode).toBeCalled();
   });
