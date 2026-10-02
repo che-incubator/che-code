@@ -210,6 +210,12 @@ export class CloneManager {
 	}
 
 	private async tryOpenExistingRepository(cachedRepository: RepositoryCacheInfo[], url: string, postCloneAction?: ApiPostCloneAction, parentPath?: string, ref?: string): Promise<string | undefined> {
+
+		// If no workspace folder is currently open, allow cloning the repository again.
+		if (!workspace.workspaceFolders?.length) {
+			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction })) ?? undefined;
+		}
+
 		// Gather existing folders/workspace files (ignore ones that no longer exist)
 		const existingCachedRepositories: RepositoryCacheInfo[] = (await Promise.all<RepositoryCacheInfo | undefined>(cachedRepository.map(async folder => {
 			const stat = await fs.promises.stat(folder.workspacePath).catch(() => undefined);
