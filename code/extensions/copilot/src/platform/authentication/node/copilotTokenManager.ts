@@ -165,6 +165,10 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 		try {
 			if ('githubToken' in context) {
 				ghUsername = context.ghUsername;
+				this._logService.info(
+					`GitHub token exists for ${ghUsername || 'unknown'}: ${context.githubToken !== undefined && context.githubToken !== ''} 
+					Length: ${context.githubToken?.length || 0}}`
+				);
 				[result, userInfo] = (await Promise.all([
 					this.fetchCopilotTokenFromGitHubToken(context.githubToken),
 					this.fetchCopilotUserInfo(context.githubToken)
@@ -191,6 +195,10 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 				this._logService.warn('Failed to get copilot token due to 401 status');
 				this._telemetryService.sendGHTelemetryErrorEvent('auth.unknown_401');
 				return { kind: 'failure', reason: 'HTTP401' };
+			} else if (result.status === 403) {
+				this._logService.warn('Failed to get copilot token due to 403 status');
+				this._telemetryService.sendGHTelemetryErrorEvent('forbidden_403');
+				return { kind: 'failure', reason: 'HTTP403' };
 			}
 		}
 
@@ -353,6 +361,7 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 			expectJSON: true,
 		};
 		const response = await this._capiClientService.makeRequest<Response>(options, { type: RequestType.CopilotUserInfo });
+		this._logService.info(`Copilot user info response: status=${response.status}, statusText=${response.statusText}`);
 		const data = await response.json();
 		return data;
 	}
