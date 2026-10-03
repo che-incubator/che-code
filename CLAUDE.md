@@ -133,3 +133,34 @@ The final image is assembled from three platform-specific builds:
 - **linux-libc-ubi9** — Red Hat UBI 9
 
 The `assembly.Dockerfile` combines all three into a single image that selects the right binary at runtime.
+
+## Git Commit Rules
+
+- **Always** use `git commit -s` (or `--signoff`) to add `Signed-off-by:` trailer
+- This is required by the project's DCO (Developer Certificate of Origin) policy
+- Example: `git commit -s -m "fix: description"`
+
+## Shell Portability Rules
+
+All shell scripts and ad-hoc terminal commands must work on both **macOS** (zsh default, bash 3.2) and **Linux** (bash 4+/5+). Violations lead to silently wrong results that corrupt analysis and conclusions.
+
+### Forbidden patterns
+
+| Pattern | Problem | Replacement |
+|---------|---------|-------------|
+| `grep -P` | Not available on macOS | `grep -E` or `sed` |
+| `declare -A` | Requires bash 4+ (macOS has 3.2) | Use temp files or `grep -qxF` |
+| `readarray` / `mapfile` | Requires bash 4+ | `while IFS= read -r` loop |
+| `sed -i ''` (macOS) vs `sed -i` (Linux) | Incompatible across platforms | Write to temp file + mv |
+
+### Running scripts
+
+- Always invoke via `bash script.sh` or `./script.sh` (shebang `#!/bin/bash`)
+- Never rely on the current interactive shell (zsh) to interpret bash scripts
+- When running ad-hoc shell pipelines in the terminal, remember the terminal uses **zsh** — test that grep/sed/awk produce expected output before drawing conclusions
+
+### Verification discipline
+
+- If a grep/pipe result seems unexpectedly large or empty, **verify** with a simpler command before acting on it
+- Always sanity-check exclusion lists and counts against known baselines
+- When building file lists for comparison, use `sort` + `comm` rather than nested loops with grep
