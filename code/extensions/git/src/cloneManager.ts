@@ -253,13 +253,21 @@ export class CloneManager {
 		});
 
 		if (matchingInCurrentWorkspace) {
+			this.logger.info(`Found matching cached repository in current workspace: ${matchingInCurrentWorkspace.workspacePath}`);
 			return matchingInCurrentWorkspace.workspacePath;
 		}
 
-		let repoForWorkspace: string | undefined = (existingCachedRepositories.length === 1 ? existingCachedRepositories[0].workspacePath : undefined);
-		if (!repoForWorkspace) {
-			repoForWorkspace = await this.chooseExistingRepository(url, existingCachedRepositories, ref, parentPath, postCloneAction);
+		// A single cached repository exists, but it belongs to another workspace.
+		// Clone it instead of silently opening/reusing that cached workspace.
+		if (existingCachedRepositories.length === 1) {
+			this.logger.info(`Cached repository does not belong to the current workspace, allowing cloning: ${url}`);
+			return ((await this.cloneRepository(url, parentPath, {ref, postCloneAction})) ?? undefined);
 		}
+
+		// Multiple cached repositories exist and none belongs to the current
+		// workspace. Preserve the existing selection behavior.
+		const repoForWorkspace = await this.chooseExistingRepository(url, existingCachedRepositories, ref, parentPath, postCloneAction);
+
 		if (repoForWorkspace) {
 			await this.doPostCloneAction(repoForWorkspace, postCloneAction);
 			return repoForWorkspace;
