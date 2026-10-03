@@ -58,11 +58,14 @@ export class CloneManager {
 	}
 
 	private async cloneRepository(url: string, parentPath?: string, options: { recursive?: boolean; ref?: string; postCloneAction?: ApiPostCloneAction } = {}): Promise<string | undefined> {
+		this.logger.info(`Cloning repository from ${url} into ${parentPath ?? 'default location'}`);
+		this.logger.info(`Clone options: recursive=${options.recursive ?? false}, ref=${options.ref ?? 'none'}, postCloneAction=${options.postCloneAction ?? 'none'}`);
 		if (!parentPath) {
 			const config = workspace.getConfiguration('git');
 			let defaultCloneDirectory = config.get<string>('defaultCloneDirectory') || os.homedir();
 			defaultCloneDirectory = defaultCloneDirectory.replace(/^~/, os.homedir());
 
+			this.logger.info(`No parent path provided, using default clone directory: ${defaultCloneDirectory}`);
 			const uris = await window.showOpenDialog({
 				canSelectFiles: false,
 				canSelectFolders: true,
@@ -72,7 +75,9 @@ export class CloneManager {
 				openLabel: l10n.t('Select as Repository Destination')
 			});
 
+			this.logger.info(`Selected URIs from open dialog: ${uris?.length ?? 0}`);
 			if (!uris || uris.length === 0) {
+				this.logger.info('No folder selected for cloning, aborting operation.');
 				/* __GDPR__
 					"clone" : {
 						"owner": "lszomoru",
@@ -83,7 +88,7 @@ export class CloneManager {
 				this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'no_directory' });
 				return;
 			}
-
+			this.logger.info(`Folder selected for cloning: ${uris[0].fsPath}`);
 			const uri = uris[0];
 			parentPath = uri.fsPath;
 		}
@@ -100,10 +105,12 @@ export class CloneManager {
 				(progress, token) => this.model.git.clone(url!, { parentPath: parentPath!, progress, recursive: options.recursive, ref: options.ref }, token)
 			);
 
+			this.logger.info(`Clone completed successfully. Repository path: ${repositoryPath}`);
 			await this.doPostCloneAction(repositoryPath, options.postCloneAction);
 
 			return repositoryPath;
 		} catch (err) {
+			this.logger.error(`Error occurred while cloning repository: ${err.message || err.stderr || ''}`);
 			if (/already exists and is not an empty directory/.test(err && err.stderr || '')) {
 				/* __GDPR__
 					"clone" : {
