@@ -59,3 +59,8 @@ jobs:
           docker run --rm -t \
             -v $PWD/code/extensions/che-terminal:/workspace/project \
             quay.io/che-incubator/dash-licenses:next --check          
+      - name: Check che-keybindings dependencies usage restrictions
+        run: |
+          docker run --rm -t \
+            -v $PWD/code/extensions/che-keybindings:/workspace/project \
+            quay.io/che-incubator/dash-licenses:next --check          
