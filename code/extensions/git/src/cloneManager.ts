@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { pickRemoteSource } from './remoteSource';
-import { l10n, workspace, window, Uri, ProgressLocation, commands, LogOutputChannel } from 'vscode';
+import { l10n, workspace, window, Uri, ProgressLocation, commands } from 'vscode';
 import { RepositoryCache, RepositoryCacheInfo } from './repositoryCache';
 import TelemetryReporter from '@vscode/extension-telemetry';
 import { Model } from './model';
@@ -26,8 +26,7 @@ export interface CloneOptions {
 export class CloneManager {
 	constructor(private readonly model: Model,
 		private readonly telemetryReporter: TelemetryReporter,
-		private readonly repositoryCache: RepositoryCache,
-		private readonly logger: LogOutputChannel) { }
+		private readonly repositoryCache: RepositoryCache) { }
 
 	async clone(url?: string, options: CloneOptions = {}) {
 		if (!url || typeof url !== 'string') {
@@ -59,14 +58,11 @@ export class CloneManager {
 	}
 
 	private async cloneRepository(url: string, parentPath?: string, options: { recursive?: boolean; ref?: string; postCloneAction?: ApiPostCloneAction } = {}): Promise<string | undefined> {
-		this.logger.info(`Cloning repository from ${url} into ${parentPath ?? 'default location'}`);
-		this.logger.info(`Clone options: recursive=${options.recursive ?? false}, ref=${options.ref ?? 'none'}, postCloneAction=${options.postCloneAction ?? 'none'}`);
 		if (!parentPath) {
 			const config = workspace.getConfiguration('git');
 			let defaultCloneDirectory = config.get<string>('defaultCloneDirectory') || os.homedir();
 			defaultCloneDirectory = defaultCloneDirectory.replace(/^~/, os.homedir());
 
-			this.logger.info(`No parent path provided, using default clone directory: ${defaultCloneDirectory}`);
 			const uris = await window.showOpenDialog({
 				canSelectFiles: false,
 				canSelectFolders: true,
@@ -76,9 +72,7 @@ export class CloneManager {
 				openLabel: l10n.t('Select as Repository Destination')
 			});
 
-			this.logger.info(`Selected URIs from open dialog: ${uris?.length ?? 0}`);
 			if (!uris || uris.length === 0) {
-				this.logger.info('No folder selected for cloning, aborting operation.');
 				/* __GDPR__
 					"clone" : {
 						"owner": "lszomoru",
@@ -89,7 +83,6 @@ export class CloneManager {
 				this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'no_directory' });
 				return;
 			}
-			this.logger.info(`Folder selected for cloning: ${uris[0].fsPath}`);
 			const uri = uris[0];
 			parentPath = uri.fsPath;
 		}
@@ -106,12 +99,10 @@ export class CloneManager {
 				(progress, token) => this.model.git.clone(url!, { parentPath: parentPath!, progress, recursive: options.recursive, ref: options.ref }, token)
 			);
 
-			this.logger.info(`Clone completed successfully. Repository path: ${repositoryPath}`);
 			await this.doPostCloneAction(repositoryPath, options.postCloneAction);
 
 			return repositoryPath;
 		} catch (err) {
-			this.logger.error(`Error occurred while cloning repository: ${err.message || err.stderr || ''}`);
 			if (/already exists and is not an empty directory/.test(err && err.stderr || '')) {
 				/* __GDPR__
 					"clone" : {
@@ -220,33 +211,22 @@ export class CloneManager {
 
 	private async tryOpenExistingRepository(cachedRepository: RepositoryCacheInfo[], url: string, postCloneAction?: ApiPostCloneAction, parentPath?: string, ref?: string): Promise<string | undefined> {
 
-		this.logger.info(`Found cached repository for ${url}: ${cachedRepository.map(repo => repo.workspacePath).join(', ')}`);
-		this.logger.info(`Workspace folders: ${workspace.workspaceFolders?.map(folder => folder.uri.fsPath).join(', ') ?? 'none'}`);
-		this.logger.info(`Workspace file: ${workspace.workspaceFile?.fsPath ?? 'none'}`);
-		this.logger.info(`Length of cached repositories: ${cachedRepository.length}`);
-		this.logger.info(`Length of workspace folders: ${workspace.workspaceFolders?.length ?? 0}`);
-
 		// If no workspace folder is currently open, allow cloning the repository again.
 		if (!workspace.workspaceFolders?.length) {
-			this.logger.info('No workspace folder is currently open, allowing cloning the repository again.');
 			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction })) ?? undefined;
 		}
 
 		// Gather existing folders/workspace files (ignore ones that no longer exist)
 		const existingCachedRepositories: RepositoryCacheInfo[] = (await Promise.all<RepositoryCacheInfo | undefined>(cachedRepository.map(async repository => {
-			this.logger.info(`Checking existence of cached repository: ${repository.repositoryPath}`);
 			const stat = await fs.promises.stat(repository.repositoryPath).catch(() => undefined);
 			if (stat) {
-				this.logger.info(`Cached repository exists: ${repository.repositoryPath}`);
 				return repository;
 			}
-			this.logger.info(`Cached repository does not exist: ${repository.repositoryPath}`);
 			return undefined;
 		}
 		))).filter((repository): repository is RepositoryCacheInfo => repository !== undefined);
 
 		if (!existingCachedRepositories.length) {
-			this.logger.info('No existing cached repositories found, falling back to cloning.');
 			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction }) ?? undefined);
 		}
 
@@ -265,13 +245,11 @@ export class CloneManager {
 		);
 
 		if (matchingInCurrentWorkspace) {
-			this.logger.info(`Found matching cached repository in current workspace: ${matchingInCurrentWorkspace.repositoryPath}`);
 			return matchingInCurrentWorkspace.repositoryPath;
 		}
 
 		// Only one cached repository exists and it does not belong to the current workspace. Clone the repository again.
 		if (existingCachedRepositories.length === 1) {
-			this.logger.info(`Cached repository does not belong to the current workspace, allowing cloning: ${url}`);
 			return ((await this.cloneRepository(url, parentPath, {ref, postCloneAction})) ?? undefined);
 		}
 
