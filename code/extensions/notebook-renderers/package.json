@@ -53,7 +53,7 @@
 		"jsdom": "^28.1.0"
 	},
 	"overrides": {
-		"undici": "^7.28.0"
+		"undici": "^7.30.0"
 	},
 	"repository": {
 		"type": "git",
