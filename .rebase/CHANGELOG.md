@@ -4,7 +4,6 @@ The file to keep a list of changed files which will potentially help to resolve 
 
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/819
-https://github.com/che-incubator/che-code/pull/818
 
 - code/package.json
 - code/remote/package.json
@@ -14,6 +13,8 @@ https://github.com/che-incubator/che-code/pull/818
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/818
+
 - code/package.json
 - code/build/package.json
 - code/extensions/copilot/package.json
