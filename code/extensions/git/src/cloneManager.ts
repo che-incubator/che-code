@@ -11,6 +11,7 @@ import { l10n, workspace, window, Uri, ProgressLocation, commands, LogOutputChan
 import { RepositoryCache, RepositoryCacheInfo } from './repositoryCache';
 import TelemetryReporter from '@vscode/extension-telemetry';
 import { Model } from './model';
+import { isDescendant } from './util';
 
 type ApiPostCloneAction = 'none';
 enum PostCloneAction { Open, OpenNewWindow, AddToWorkspace, None }
@@ -232,40 +233,49 @@ export class CloneManager {
 		}
 
 		// Gather existing folders/workspace files (ignore ones that no longer exist)
-		const existingCachedRepositories: RepositoryCacheInfo[] = (await Promise.all<RepositoryCacheInfo | undefined>(cachedRepository.map(async folder => {
-			this.logger.info(`Checking existence of cached repository: ${folder.workspacePath}`);
-			const stat = await fs.promises.stat(folder.workspacePath).catch(() => undefined);
+		const existingCachedRepositories: RepositoryCacheInfo[] = (await Promise.all<RepositoryCacheInfo | undefined>(cachedRepository.map(async repository => {
+			this.logger.info(`Checking existence of cached repository: ${repository.repositoryPath}`);
+			const stat = await fs.promises.stat(repository.repositoryPath).catch(() => undefined);
 			if (stat) {
-				return folder;
+				this.logger.info(`Cached repository exists: ${repository.repositoryPath}`);
+				return repository;
 			}
+			this.logger.info(`Cached repository does not exist: ${repository.repositoryPath}`);
 			return undefined;
 		}
-		))).filter<RepositoryCacheInfo>((folder): folder is RepositoryCacheInfo => folder !== undefined);
+		))).filter((repository): repository is RepositoryCacheInfo => repository !== undefined);
 
 		if (!existingCachedRepositories.length) {
 			this.logger.info('No existing cached repositories found, falling back to cloning.');
 			return (await this.cloneRepository(url, parentPath, { ref, postCloneAction }) ?? undefined);
 		}
 
-		// First, find the cached repo that exists in the current workspace
-		const matchingInCurrentWorkspace = existingCachedRepositories?.find(cachedRepo => {
-			return workspace.workspaceFolders?.some(workspaceFolder => workspaceFolder.uri.fsPath === cachedRepo.workspacePath);
-		});
+		// Check whether a cached repository belongs to the current workspace.
+		const matchingInCurrentWorkspace = existingCachedRepositories.find(cachedRepository =>
+			workspace.workspaceFolders?.some(workspaceFolder => {
+				const workspacePath = workspaceFolder.uri.fsPath;
+				const repositoryPath = cachedRepository.repositoryPath;
+
+				return (
+					repositoryPath === workspacePath ||
+					isDescendant(workspacePath, repositoryPath) ||
+					isDescendant(repositoryPath, workspacePath)
+				);
+			})
+		);
 
 		if (matchingInCurrentWorkspace) {
-			this.logger.info(`Found matching cached repository in current workspace: ${matchingInCurrentWorkspace.workspacePath}`);
-			return matchingInCurrentWorkspace.workspacePath;
+			this.logger.info(`Found matching cached repository in current workspace: ${matchingInCurrentWorkspace.repositoryPath}`);
+			return matchingInCurrentWorkspace.repositoryPath;
 		}
 
-		// A single cached repository exists, but it belongs to another workspace.
-		// Clone it instead of silently opening/reusing that cached workspace.
+		// Only one cached repository exists and it does not belong to the current workspace. Clone the repository again.
 		if (existingCachedRepositories.length === 1) {
 			this.logger.info(`Cached repository does not belong to the current workspace, allowing cloning: ${url}`);
 			return ((await this.cloneRepository(url, parentPath, {ref, postCloneAction})) ?? undefined);
 		}
 
-		// Multiple cached repositories exist and none belongs to the current
-		// workspace. Preserve the existing selection behavior.
+		// Multiple cached repositories exist and none belongs to the current workspace. Preserve the existing selection behavior.
 		const repoForWorkspace = await this.chooseExistingRepository(url, existingCachedRepositories, ref, parentPath, postCloneAction);
 
 		if (repoForWorkspace) {
