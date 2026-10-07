@@ -1,0 +1,16 @@
+diff --git a/code/extensions/devfile/package.json b/code/extensions/devfile/package.json
+index 8f3bc698387..e1c9ad6873d 100644
+--- a/code/extensions/devfile/package.json
++++ b/code/extensions/devfile/package.json
+@@ -45,6 +45,9 @@
+     "typescript": "^4.9.4",
+     "vsce": "^2.15.0"
+   },
++  "overrides": {
++    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
++  },
+   "contributes": {
+     "commands": [
+       {
+-- 
+2.55.0
