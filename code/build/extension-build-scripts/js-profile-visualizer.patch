@@ -1,0 +1,251 @@
+diff --git a/code/extensions/js-profile-visualizer/package.json b/code/extensions/js-profile-visualizer/package.json
+index 7a7bf706eb3..edbc2a2ad76 100644
+--- a/code/extensions/js-profile-visualizer/package.json
++++ b/code/extensions/js-profile-visualizer/package.json
+@@ -3,7 +3,6 @@
+   "private": true,
+   "workspaces": [
+     "packages/vscode-js-profile-core",
+-    "packages/vscode-js-profile-flame",
+     "packages/vscode-js-profile-table"
+   ],
+   "scripts": {
+@@ -32,11 +31,12 @@
+     "tabWidth": 2
+   },
+   "overrides": {
+-    "serialize-javascript": "^7.0.3"
++    "serialize-javascript": "^7.0.3",
++    "es5-ext": "npm:@unes/es5-ext@0.10.64-1"
+   },
+   "devDependencies": {
+     "@types/glob": "^8.1.0",
+-    "@types/node": "^20.9.0",
++    "@types/node": "^20.19.0",
+     "@types/vscode": "^1.84.1",
+     "@typescript-eslint/eslint-plugin": "^6.10.0",
+     "@typescript-eslint/parser": "^6.10.0",
+diff --git a/code/extensions/js-profile-visualizer/package-lock.json b/code/extensions/js-profile-visualizer/package-lock.json
+index 45449ad..4c5f4e4 100644
+--- a/code/extensions/js-profile-visualizer/package-lock.json
++++ b/code/extensions/js-profile-visualizer/package-lock.json
+@@ -7,12 +7,11 @@
+       "name": "js-profile-visualizer",
+       "workspaces": [
+         "packages/vscode-js-profile-core",
+-        "packages/vscode-js-profile-flame",
+         "packages/vscode-js-profile-table"
+       ],
+       "devDependencies": {
+         "@types/glob": "^8.1.0",
+-        "@types/node": "^20.9.0",
++        "@types/node": "^20.19.0",
+         "@types/vscode": "^1.84.1",
+         "@typescript-eslint/eslint-plugin": "^6.10.0",
+         "@typescript-eslint/parser": "^6.10.0",
+@@ -1058,13 +1057,6 @@
+         "assertion-error": "^2.0.1"
+       }
+     },
+-    "node_modules/@types/chroma-js": {
+-      "version": "2.4.3",
+-      "resolved": "https://registry.npmjs.org/@types/chroma-js/-/chroma-js-2.4.3.tgz",
+-      "integrity": "sha512-1ly5ly/7S/YF8aD7MxUQnFOZxdegimuOunJl0xDsLlguu5JrwuSTVGVH3UpIUlh6YauI0RMNT4cqjBonhgbdIQ==",
+-      "dev": true,
+-      "license": "MIT"
+-    },
+     "node_modules/@types/connect": {
+       "version": "3.4.35",
+       "resolved": "https://registry.npmjs.org/@types/connect/-/connect-3.4.35.tgz",
+@@ -1085,13 +1077,6 @@
+         "@types/node": "*"
+       }
+     },
+-    "node_modules/@types/cytoscape": {
+-      "version": "3.19.15",
+-      "resolved": "https://registry.npmjs.org/@types/cytoscape/-/cytoscape-3.19.15.tgz",
+-      "integrity": "sha512-v1PNoMBzoIrOGZfuU/PFwDEPxfP4GnfVCTrZPx4M2G4EFS7BV/FLCCoVMOzdBG98MJbNBXpx1LCrs8wh0vybEw==",
+-      "dev": true,
+-      "license": "MIT"
+-    },
+     "node_modules/@types/deep-eql": {
+       "version": "4.0.2",
+       "resolved": "https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz",
+@@ -1209,13 +1194,13 @@
+       "license": "MIT"
+     },
+     "node_modules/@types/node": {
+-      "version": "20.9.0",
+-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.9.0.tgz",
+-      "integrity": "sha512-nekiGu2NDb1BcVofVcEKMIwzlx4NjHlcjhoxxKBNLtz15Y1z7MYf549DFvkHSId02Ax6kGwWntIBPC3l/JZcmw==",
++      "version": "20.19.43",
++      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
++      "integrity": "sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+-        "undici-types": "~5.26.4"
++        "undici-types": "~6.21.0"
+       }
+     },
+     "node_modules/@types/qs": {
+@@ -1232,13 +1217,6 @@
+       "dev": true,
+       "license": "MIT"
+     },
+-    "node_modules/@types/resize-observer-browser": {
+-      "version": "0.1.7",
+-      "resolved": "https://registry.npmjs.org/@types/resize-observer-browser/-/resize-observer-browser-0.1.7.tgz",
+-      "integrity": "sha512-G9eN0Sn0ii9PWQ3Vl72jDPgeJwRWhv2Qk/nQkJuWmRmOB4HX3/BhD5SE1dZs/hzPZL/WKnvF0RHdTSG54QJFyg==",
+-      "dev": true,
+-      "license": "MIT"
+-    },
+     "node_modules/@types/retry": {
+       "version": "0.12.2",
+       "resolved": "https://registry.npmjs.org/@types/retry/-/retry-0.12.2.tgz",
+@@ -2668,12 +2646,6 @@
+         "node": ">= 8.10.0"
+       }
+     },
+-    "node_modules/chroma-js": {
+-      "version": "2.4.2",
+-      "resolved": "https://registry.npmjs.org/chroma-js/-/chroma-js-2.4.2.tgz",
+-      "integrity": "sha512-U9eDw6+wt7V8z5NncY2jJfZa+hUH8XEj8FQHgFJTrUFnJfXYf4Ml4adI2vXZOjqRDpFWtYVWypDfZwnJ+HIR4A==",
+-      "license": "(BSD-3-Clause AND Apache-2.0)"
+-    },
+     "node_modules/chrome-trace-event": {
+       "version": "1.0.2",
+       "resolved": "https://registry.npmjs.org/chrome-trace-event/-/chrome-trace-event-1.0.2.tgz",
+@@ -3596,31 +3568,6 @@
+       "dev": true,
+       "license": "CC0-1.0"
+     },
+-    "node_modules/cytoscape": {
+-      "version": "3.27.0",
+-      "resolved": "https://registry.npmjs.org/cytoscape/-/cytoscape-3.27.0.tgz",
+-      "integrity": "sha512-pPZJilfX9BxESwujODz5pydeGi+FBrXq1rcaB1mfhFXXFJ9GjE6CNndAk+8jPzoXGD+16LtSS4xlYEIUiW4Abg==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "heap": "^0.2.6",
+-        "lodash": "^4.17.21"
+-      },
+-      "engines": {
+-        "node": ">=0.10"
+-      }
+-    },
+-    "node_modules/cytoscape-elk": {
+-      "version": "2.3.0",
+-      "resolved": "https://registry.npmjs.org/cytoscape-elk/-/cytoscape-elk-2.3.0.tgz",
+-      "integrity": "sha512-1h2ZmPOy5HD2+mrfF3P2ICxfnDyPCWg/xLVs7fIjTOzdQu51ydrMtm6Sb7KnhFwLBzhGIVYI2Gbns0njggBarQ==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "elkjs": "^0.9.3"
+-      },
+-      "peerDependencies": {
+-        "cytoscape": "^3.2.0"
+-      }
+-    },
+     "node_modules/debug": {
+       "version": "4.4.0",
+       "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.0.tgz",
+@@ -3981,12 +3928,6 @@
+       "dev": true,
+       "license": "ISC"
+     },
+-    "node_modules/elkjs": {
+-      "version": "0.9.3",
+-      "resolved": "https://registry.npmjs.org/elkjs/-/elkjs-0.9.3.tgz",
+-      "integrity": "sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==",
+-      "license": "EPL-2.0"
+-    },
+     "node_modules/emoji-regex": {
+       "version": "9.2.2",
+       "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-9.2.2.tgz",
+@@ -5592,12 +5533,6 @@
+         "he": "bin/he"
+       }
+     },
+-    "node_modules/heap": {
+-      "version": "0.2.7",
+-      "resolved": "https://registry.npmjs.org/heap/-/heap-0.2.7.tgz",
+-      "integrity": "sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==",
+-      "license": "MIT"
+-    },
+     "node_modules/hpack.js": {
+       "version": "2.1.6",
+       "resolved": "https://registry.npmjs.org/hpack.js/-/hpack.js-2.1.6.tgz",
+@@ -6999,6 +6934,7 @@
+       "version": "4.18.1",
+       "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz",
+       "integrity": "sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==",
++      "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/lodash.debounce": {
+@@ -11283,9 +11219,9 @@
+       }
+     },
+     "node_modules/undici-types": {
+-      "version": "5.26.5",
+-      "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-5.26.5.tgz",
+-      "integrity": "sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==",
++      "version": "6.21.0",
++      "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz",
++      "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==",
+       "dev": true,
+       "license": "MIT"
+     },
+@@ -11595,10 +11531,6 @@
+       "resolved": "packages/vscode-js-profile-core",
+       "link": true
+     },
+-    "node_modules/vscode-js-profile-flame": {
+-      "resolved": "packages/vscode-js-profile-flame",
+-      "link": true
+-    },
+     "node_modules/vscode-js-profile-table": {
+       "resolved": "packages/vscode-js-profile-table",
+       "link": true
+@@ -11652,12 +11584,6 @@
+         "rimraf": "bin.js"
+       }
+     },
+-    "node_modules/vscode-webview-tools": {
+-      "version": "0.1.1",
+-      "resolved": "https://registry.npmjs.org/vscode-webview-tools/-/vscode-webview-tools-0.1.1.tgz",
+-      "integrity": "sha512-gKCVz/hIV19XwudhTHiWvcmSEC1PtptHm+pmT6M0Epwu6oRQo+aEdpiUuefTYaR25+A76vQHzff8RAuxkkrGfQ==",
+-      "license": "MIT"
+-    },
+     "node_modules/watchpack": {
+       "version": "2.5.1",
+       "resolved": "https://registry.npmjs.org/watchpack/-/watchpack-2.5.1.tgz",
+@@ -12516,26 +12442,6 @@
+       "integrity": "sha512-3EvQak7EIOLyIGz+IP9qSwRmP08ZRWgTeoRgAXPVkkDXZ8riqJ7LDtkgx++uHBiJ3MUaSdlUYPZcLFFw7E6zGg==",
+       "license": "BSD-3-Clause"
+     },
+-    "packages/vscode-js-profile-flame": {
+-      "version": "1.0.11",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@vscode/codicons": "^0.0.35",
+-        "chroma-js": "^2.4.2",
+-        "cytoscape": "^3.27.0",
+-        "cytoscape-elk": "^2.3.0",
+-        "vscode-js-profile-core": "*",
+-        "vscode-webview-tools": "^0.1.1"
+-      },
+-      "devDependencies": {
+-        "@types/chroma-js": "^2.4.3",
+-        "@types/cytoscape": "^3.19.15",
+-        "@types/resize-observer-browser": "^0.1.7"
+-      },
+-      "engines": {
+-        "vscode": "^1.74.0"
+-      }
+-    },
+     "packages/vscode-js-profile-table": {
+       "version": "1.0.10",
+       "license": "MIT",
+-- 
+2.55.0
+
