@@ -139,24 +139,15 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 							}));
 						}
 
-						// Proactively clear panel agents when Copilot reports GitHub login failure
+						// Clear panel agents if Copilot reports GitHub login failure at startup
 						// (e.g. workspace PAT cannot be exchanged for a Copilot token)
-						const gitHubLoginFailedKey = 'github.copilot.interactiveSession.gitHubLoginFailed';
-						const checkGitHubLoginFailed = () => {
-							if (this.contextKeyService.getContextKeyValue<boolean>(gitHubLoginFailedKey)) {
-								const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
-								if (panelAgentHasGuidance) {
-									this.logService.error('[chat setup] GitHub login failed detected, clearing panel agent registration to show welcome view.');
-									panelAgentDisposables.dispose();
-								}
+						if (this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed')) {
+							const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
+							if (panelAgentHasGuidance) {
+								this.logService.error('[chat setup] GitHub login failed detected, clearing panel agent registration to show welcome view.');
+								panelAgentDisposables.dispose();
 							}
-						};
-						panelAgentDisposables.add(this.contextKeyService.onDidChangeContext(e => {
-							if (e.affectsSome(new Set([gitHubLoginFailedKey]))) {
-								checkGitHubLoginFailed();
-							}
-						}));
-						checkGitHubLoginFailed();
+						}
 
 						// Inline Agents
 						disposables.add(SetupAgent.registerDefaultAgents(this.instantiationService, ChatAgentLocation.Terminal, ChatModeKind.Ask, context, controller).disposable);
@@ -203,6 +194,22 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 		};
 
 		this._register(Event.runAndSubscribe(context.onDidChange, () => updateRegistration()));
+
+		// Re-create panel agents when GitHub login state changes
+		// (e.g. after completing Device Authentication or when the token is removed)
+		this._register(this.contextKeyService.onDidChangeContext(e => {
+			if (e.affectsSome(new Set(['github.copilot.interactiveSession.gitHubLoginFailed']))) {
+				const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
+				if (gitHubLoginFailed) {
+					const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
+					if (!panelAgentHasGuidance) {
+						return;
+					}
+				}
+				defaultAgentDisposables.clear();
+				updateRegistration();
+			}
+		}));
 	}
 
 	private registerGrowthSession(chatEntitlementService: ChatEntitlementService): void {
