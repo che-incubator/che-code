@@ -142,7 +142,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
           changed: [],
         });
 
-        // Do not recreate a session using the fallback PAT.
+        sessions = kept;
+        try {
+          const token = await this.githubService.getToken();
+          await this.doHydrateWithToken(token);
+        } catch (error) {
+          this.logger.warn(`GitHubAuthProvider: PAT re-hydration failed: ${(error as Error).message}`);
+        }
         return;
       }
 
@@ -395,14 +401,8 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
       const isDeviceAuth = await this.getDeviceAuthState();
       if (isDeviceAuth === false) {
-        const sessions = await this.sessionsPromise;
-        const hasExistingSession = sessions.some(s =>
-          sessionMatchesRequestedScopes(s.scopes, sortedScopes)
-        );
-        if (hasExistingSession) {
-          this.logger.info('GitHubAuthProvider: PAT session already exists for requested scopes, starting device auth flow');
-          return undefined;
-        }
+        this.logger.info('GitHubAuthProvider: current token is PAT (not device-auth), deferring to device auth flow');
+        return undefined;
       }
 
       return token;
