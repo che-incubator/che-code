@@ -401,16 +401,11 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
       const isDeviceAuth = await this.getDeviceAuthState();
       if (isDeviceAuth === false) {
-        const sessions = await this.sessionsPromise;
-        const hasExistingSession = sessions.some(s =>
-          sessionMatchesRequestedScopes(s.scopes, sortedScopes)
-        );
-        if (hasExistingSession) {
-          this.logger.info('GitHubAuthProvider: PAT session already exists for requested scopes, starting device auth flow');
-          return undefined;
-        }
+        this.logger.info('GitHubAuthProvider: current token is PAT (not device-auth), deferring to device auth flow');
+        return undefined;
       }
 
+      this.logger.info(`GitHubAuthProvider: using current token (isDeviceAuth=${isDeviceAuth})`);
       return token;
     } catch (error) {
       if (isUnauthorizedError(error)) {
@@ -465,6 +460,12 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
       if (removed.length > 0) {
         this.logger.info(`GitHubAuthProvider: clearing ${removed.length} device-auth sessions, keeping ${kept.length} K8s sessions`);
+        for (const s of kept) {
+          this.logger.info(`GitHubAuthProvider: kept session scopes: [${s.scopes.join(',')}]`);
+        }
+        for (const s of removed) {
+          this.logger.info(`GitHubAuthProvider: removed session scopes: [${s.scopes.join(',')}]`);
+        }
         await this.storeSessions(kept);
         const deviceAuthSessionIds = await this.getDeviceAuthSessionIds();
 
