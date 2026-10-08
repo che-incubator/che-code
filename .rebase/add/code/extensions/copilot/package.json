@@ -22,6 +22,9 @@
         },
         "ajv": {
             "fast-uri": "^3.1.8"
+        },
+        "express": {
+            "proxy-addr": "^2.0.8"
         }
     }
 }
