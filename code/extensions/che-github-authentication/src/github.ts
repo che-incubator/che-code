@@ -142,10 +142,9 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
           changed: [],
         });
 
-        sessions = kept;
         try {
           const token = await this.githubService.getToken();
-          await this.doHydrateWithToken(token);
+          await this.rehydrateMissingSessions(kept, token);
         } catch (error) {
           this.logger.warn(`GitHubAuthProvider: PAT re-hydration failed: ${(error as Error).message}`);
         }
@@ -293,6 +292,44 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
       return [];
     }
+  }
+
+  private async rehydrateMissingSessions(
+    existingSessions: vscode.AuthenticationSession[],
+    token: string,
+  ): Promise<void> {
+    const tokenScopes = await this.githubService.getTokenScopes(token);
+    if (tokenScopes.length === 0) {
+      return;
+    }
+
+    const githubUser = await this.githubService.getUser();
+    const matchingBundles = getMatchingHydrationScopeBundles(tokenScopes);
+
+    const missingBundles = matchingBundles.filter(
+      bundle => !existingSessions.some(s => sessionMatchesRequestedScopes(s.scopes, bundle)),
+    );
+
+    if (missingBundles.length === 0) {
+      this.logger.info('GitHubAuthProvider: all scope bundles already covered by existing sessions');
+      return;
+    }
+
+    const account = { label: githubUser.login, id: githubUser.id.toString() };
+    const newSessions = missingBundles.map(scopes => ({
+      id: v4(),
+      accessToken: token,
+      account,
+      scopes,
+    }));
+
+    const merged = [...existingSessions, ...newSessions];
+    await this.storeSessions(merged);
+    this.sessionChangeEmitter.fire({ added: newSessions, removed: [], changed: [] });
+    this.logger.info(
+      `GitHubAuthProvider: re-hydrated ${newSessions.length} missing session(s), ` +
+      `total ${merged.length} session(s)`,
+    );
   }
 
   async getSessions(sessionScopes?: string[]): Promise<vscode.AuthenticationSession[]> {

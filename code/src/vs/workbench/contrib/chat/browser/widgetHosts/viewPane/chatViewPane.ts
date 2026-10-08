@@ -858,9 +858,8 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 
 		const updateWidgetVisibility = (reader?: IReader) => {
 			const isWelcomeShowing = this.welcomeController?.isShowingWelcome.read(reader);
-			const widgetVisible = this.isBodyVisible() && !isWelcomeShowing;
-			this._widget.setVisible(!!widgetVisible);
-			chatControlsContainer.style.display = widgetVisible ? '' : 'none';
+			chatControlsContainer.style.display = isWelcomeShowing ? 'none' : '';
+			this._widget.setVisible(this.isBodyVisible() && !isWelcomeShowing);
 		};
 		this._register(this.onDidChangeBodyVisibility(() => updateWidgetVisibility()));
 		this._register(autorun(reader => updateWidgetVisibility(reader)));
@@ -1517,7 +1516,7 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 
 	override shouldShowWelcome(): boolean {
 		const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
-		if (gitHubLoginFailed) {
+		if (gitHubLoginFailed && !this._widget?.viewModel) {
 			return true;
 		}
 
