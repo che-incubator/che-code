@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-CVE-2026-90711: proxy-addr override (express scoped)
+https://github.com/che-incubator/che-code/pull/824
 
 - code/package.json
 - code/extensions/copilot/package.json
