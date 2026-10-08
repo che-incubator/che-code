@@ -143,7 +143,12 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         });
 
         sessions = kept;
-        await this.rehydrateFromPat();
+        try {
+          const token = await this.githubService.getToken();
+          await this.doHydrateWithToken(token);
+        } catch (error) {
+          this.logger.warn(`GitHubAuthProvider: PAT re-hydration failed: ${(error as Error).message}`);
+        }
         return;
       }
 
@@ -287,15 +292,6 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         this.logger.warn(`GitHubAuthProvider: hydrate failed: ${(error as Error).message}`);
       }
       return [];
-    }
-  }
-
-  async rehydrateFromPat(): Promise<void> {
-    try {
-      const token = await this.githubService.getToken();
-      await this.doHydrateWithToken(token);
-    } catch (error) {
-      this.logger.warn(`GitHubAuthProvider: PAT re-hydration failed: ${(error as Error).message}`);
     }
   }
 
