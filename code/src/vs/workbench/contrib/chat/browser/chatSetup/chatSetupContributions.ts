@@ -195,21 +195,36 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 
 		this._register(Event.runAndSubscribe(context.onDidChange, () => updateRegistration()));
 
+		const triggerLoginFailedUpdate = () => {
+			if (!this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed')) {
+				return false;
+			}
+			const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
+			if (!panelAgentHasGuidance) {
+				return false;
+			}
+			defaultAgentDisposables.clear();
+			updateRegistration();
+			return true;
+		};
+
 		// Re-create panel agents when GitHub login state changes
 		// (e.g. after completing Device Authentication or when the token is removed)
 		this._register(this.contextKeyService.onDidChangeContext(e => {
 			if (e.affectsSome(new Set(['github.copilot.interactiveSession.gitHubLoginFailed']))) {
 				const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
-				if (gitHubLoginFailed) {
-					const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
-					if (!panelAgentHasGuidance) {
-						return;
-					}
+				if (!gitHubLoginFailed) {
+					defaultAgentDisposables.clear();
+					updateRegistration();
+					return;
 				}
-				defaultAgentDisposables.clear();
-				updateRegistration();
+				triggerLoginFailedUpdate();
 			}
 		}));
+
+		// Safety net: if gitHubLoginFailed was set before welcome descriptors
+		// were registered, retry when the registry changes
+		this._register(chatViewsWelcomeRegistry.onDidChange(() => triggerLoginFailedUpdate()));
 	}
 
 	private registerGrowthSession(chatEntitlementService: ChatEntitlementService): void {
