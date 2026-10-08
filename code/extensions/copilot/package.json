@@ -7270,6 +7270,9 @@
     },
     "ajv": {
       "fast-uri": "^3.1.8"
+    },
+    "express": {
+      "proxy-addr": "^2.0.8"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",
