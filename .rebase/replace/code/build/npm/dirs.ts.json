@@ -1,6 +1,10 @@
 [
   {
-    "from": "'extensions',\n\t'extensions/configuration-editing',",
-    "by": "'extensions',\n\t'extensions/che-activity-tracker',\n\t'extensions/che-api',\n\t'extensions/che-commands',\n\t'extensions/che-port',\n\t'extensions/che-remote',\n\t'extensions/che-resource-monitor',\n\t'extensions/che-terminal',\n\t'extensions/che-github-authentication',\n\t'extensions/configuration-editing',"
+    "from": "\t'extensions/debug-server-ready',\n\t'extensions/emmet',",
+    "by": "\t'extensions/debug-server-ready',\n\t'extensions/devfile',\n\t'extensions/emmet',"
+  },
+  {
+    "from": "\t'extensions/jake',\n\t'extensions/json-language-features',",
+    "by": "\t'extensions/jake',\n\t'extensions/js-debug',\n\t'extensions/js-debug-companion',\n\t'extensions/js-profile-visualizer',\n\t'extensions/json-language-features',"
   }
 ]
