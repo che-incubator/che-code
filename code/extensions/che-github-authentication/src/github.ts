@@ -530,6 +530,11 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
   async rehydrateAfterDeviceAuthRemoval(): Promise<void> {
     try {
+      const isDeviceAuth = await this.getDeviceAuthState();
+      if (isDeviceAuth !== false) {
+        this.logger.warn(`GitHubAuthProvider: skipping PAT re-hydration, current token is not PAT (isDeviceAuth=${isDeviceAuth})`);
+        return;
+      }
       const token = await this.githubService.getToken();
       const sessions = await this.sessionsPromise;
       await this.rehydrateMissingSessions(sessions, token);
