@@ -17,7 +17,7 @@ import type { DeviceAuthentication } from './device-authentication';
 import { ErrorHandler } from './error-handler';
 import { ExtensionContext } from './extension-context';
 import { Logger } from './logger';
-import { getMatchingHydrationScopeBundles, hasAllScopes, isUnauthorizedError, sessionMatchesRequestedScopes } from './utils';
+import { arrayEquals, getMatchingHydrationScopeBundles, hasAllScopes, isUnauthorizedError, sessionMatchesRequestedScopes } from './utils';
 import { AuthenticationSession } from 'vscode';
 
 export interface GithubUser {
@@ -274,16 +274,36 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       }
 
       const account = { label: githubUser.login, id: githubUser.id.toString() };
-      const hydratedSessions = matchingBundles.map(scopes => ({
-        id: v4(),
-        accessToken: token,
-        account,
-        scopes,
-      }));
-
       const previousSessions = await this.sessionsPromise;
+
+      // Keep the id of a previous session with the same scopes and account, so the
+      // replacement is reported as `changed` instead of `removed` + `added`
+      const hydratedSessions = matchingBundles.map(scopes => {
+        const previousSession = previousSessions.find(session =>
+          session.account.id === account.id && arrayEquals([...session.scopes].sort(), [...scopes].sort()),
+        );
+        return {
+          id: previousSession?.id ?? v4(),
+          accessToken: token,
+          account,
+          scopes,
+        };
+      });
+
+      const previousIds = new Set(previousSessions.map(session => session.id));
+      const hydratedIds = new Set(hydratedSessions.map(session => session.id));
+      const removed = previousSessions.filter(session => !hydratedIds.has(session.id));
+      const added = hydratedSessions.filter(session => !previousIds.has(session.id));
+      const changed = hydratedSessions.filter(session => previousIds.has(session.id));
+
       await this.storeSessions(hydratedSessions);
-      this.sessionChangeEmitter.fire({ added: hydratedSessions, removed: previousSessions, changed: [] });
+
+      // Fire `removed` separately and first: DefaultAccountService resets the default
+      // account when its session is removed and ignores `added` from the same event
+      if (removed.length > 0) {
+        this.sessionChangeEmitter.fire({ added: [], removed, changed: [] });
+      }
+      this.sessionChangeEmitter.fire({ added, removed: [], changed });
       this.logger.info(`GitHubAuthProvider: hydrated ${hydratedSessions.length} session(s) from K8s token`);
       return hydratedSessions;
     } catch (error) {
