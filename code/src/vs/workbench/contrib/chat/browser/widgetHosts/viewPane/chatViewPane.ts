@@ -905,14 +905,10 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}
 		}));
 
-		// Re-evaluate `shouldShowWelcome` when the GitHub login state or the shown chat changes
-		// (e.g. Device Authentication completed, token removed, New Chat after a conversation)
+		// Re-evaluate `shouldShowWelcome` when the GitHub login state changes
+		// (e.g. Device Authentication completed or token removed)
 		const gitHubLoginFailedContextKeys = new Set(['github.copilot.interactiveSession.gitHubLoginFailed']);
-		this._register(Event.any(
-			Event.filter(this.contextKeyService.onDidChangeContext, e => e.affectsSome(gitHubLoginFailedContextKeys)),
-			chatWidget.onDidChangeViewModel,
-			chatWidget.onDidChangeEmptyState
-		)(() => this._onDidChangeViewWelcomeState.fire()));
+		this._register(Event.filter(this.contextKeyService.onDidChangeContext, e => e.affectsSome(gitHubLoginFailedContextKeys))(() => this._onDidChangeViewWelcomeState.fire()));
 
 		// Track the active chat model and reveal it in the sessions control if side-by-side
 		this._register(chatWidget.onDidChangeViewModel(() => {
@@ -1524,15 +1520,14 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 	}
 
 	override shouldShowWelcome(): boolean {
-		// Show the Copilot "Sign In" welcome view when the GitHub token cannot be exchanged for a Copilot token,
-		// but only over an empty chat (a new session always exists, so `viewModel` alone is not a signal)
-		// and only when a welcome descriptor actually matches (e.g. not when BYOK models are available)
+		// Show the Copilot "Sign In" welcome view when the GitHub token cannot be exchanged for a Copilot token.
+		// Copilot cannot serve any request then, so the current chat is replaced until sign-in (it stays in history).
+		// Only when a welcome descriptor actually matches (e.g. not when BYOK models are available)
 		const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
 		if (gitHubLoginFailed) {
-			const hasRequests = !!this._widget?.viewModel?.model.hasRequests;
 			const hasMatchingWelcomeView = !!this.getMatchingWelcomeView();
-			this.logService.info(`[ChatViewPane] shouldShowWelcome: gitHubLoginFailed=true hasRequests=${hasRequests} hasMatchingWelcomeView=${hasMatchingWelcomeView}`);
-			if (!hasRequests && hasMatchingWelcomeView) {
+			this.logService.info(`[ChatViewPane] shouldShowWelcome: gitHubLoginFailed=true hasMatchingWelcomeView=${hasMatchingWelcomeView}`);
+			if (hasMatchingWelcomeView) {
 				return true;
 			}
 		}
