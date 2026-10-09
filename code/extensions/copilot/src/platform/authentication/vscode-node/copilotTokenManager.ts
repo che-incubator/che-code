@@ -92,7 +92,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				return { kind: 'failure', reason: 'GitHubLoginFailed' };
 			}
 
-			if (tokenResult.kind === 'failure' && tokenResult.reason === 'ParseFailed' && tokenResult.message?.includes('403')) {
+			if (tokenResult.kind === 'failure' && tokenResult.reason === 'ParseFailed' && tokenResult.status === 403) {
 				this._logService.info(`Copilot token exchange returned 403 block, triggering sign-in flow`);
 				return { kind: 'failure', reason: 'GitHubLoginFailed' };
 			}
