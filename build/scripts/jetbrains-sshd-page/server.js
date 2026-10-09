@@ -13,36 +13,10 @@ const fs = require('fs');
 const hostname = '127.0.0.1';
 const port = 3400;
 
-let username = "UNKNOWN";
-try {
-  username = fs.readFileSync(`/sshd/username`, 'utf8');
-} catch (error) {
-  // continue
-}
-
 const server = http.createServer((req, res) => {
     if (req.url === '/') {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-
-    let hasUserPrefSSHKey = fs.existsSync('/etc/ssh/dwo_ssh_key.pub');
-
-    let pubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
-    try {
-      pubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let genKey = "PRIVATE KEY NOT FOUND";
-    try {
-      genKey = fs.readFileSync(`/sshd/ssh_client_ed25519_key`, 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let keyMessage = hasUserPrefSSHKey ? pubKey : genKey;
-
     res.end(`
 <!DOCTYPE html>
 <html lang="en">
@@ -60,7 +34,7 @@ const server = http.createServer((req, res) => {
       }())
 
       function openToolbox() {
-        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}&dwName=${process.env['DEVWORKSPACE_NAME']}&username=${username}&key=${encodeURIComponent(keyMessage)}&project=${process.env['PROJECT_SOURCE']}"
+        const tbxLink = "jetbrains://gateway/com.redhat.devtools.toolbox?dwID=${process.env['DEVWORKSPACE_ID']}"
         console.log("Opening Toolbox App...");
         window.open(tbxLink, "_self");
       }
