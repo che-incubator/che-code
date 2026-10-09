@@ -118,6 +118,7 @@ Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / l
    - Determine the upstream ref from `rebase.sh` and use that exact ref for validation (do not hardcode a release branch in the skill output).
      - Example source of truth in `rebase.sh`: `UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)`
      - If the script later points to `upstream-code/main` or another release branch, use that new ref instead.
+   - If the upstream-code remote doesn't exist or the needed ref isn't available, add it temporarily and/or fetch.
    - `bash -n rebase.sh`
    - JSON validation for changed `.rebase/**/*.json` files (`jq empty <file>`)
    - For each changed `.rebase/replace/**/*.json`, verify every `from` exists in the upstream file content before finishing.
@@ -130,6 +131,7 @@ Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / l
      - no rules for `code/extensions/che-*`
      - no rules for `package-lock.json`
    - Ensure every changed rule file is actually referenced by logic in `rebase.sh` when required.
+   - **After validation completes, clean temporary data:** `git remote remove upstream-code 2>/dev/null; rm -f .git/shallow .git/FETCH_HEAD` to prevent git log performance degradation from shallow clone markers. However, if upstream-code existed prior, no cleanup should be performed.
 
 8. Verify completeness — no uncovered Che-specific changes
    - For each file that was updated or created in `.rebase/replace/`, simulate the **full** rule application:
