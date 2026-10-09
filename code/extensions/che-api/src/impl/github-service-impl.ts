@@ -214,7 +214,7 @@ export class GithubServiceImpl implements GithubService {
     await this.deleteDeviceAuthSecrets(deviceAuthSecrets);
 
     // another token should be used by the Github Service after removing the Device Authentication token
-    this.initializeToken();
+    await this.initializeToken();
   }
 
   private async deleteDeviceAuthSecrets(secrets?: k8s.V1Secret[]): Promise<void> {
