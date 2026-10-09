@@ -2,6 +2,14 @@
 
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
+#### @rgrunber
+https://github.com/che-incubator/che-code/pull/775
+
+- code/build/gulpfile.extensions.ts
+- code/build/npm/dirs.ts
+- code/package.json
+- code/product.json
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/823
 
