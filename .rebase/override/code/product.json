@@ -13,6 +13,7 @@
 	"darwinBundleIdentifier": "org.eclipse.che.code",
 	"linuxIconName": "org.eclipse.che.code",
 	"urlProtocol": "checode",
+	"builtInExtensions": [],
 	"extensionEnabledApiProposals": {
 		"genuitecllc.codetogether": [
 			"fileSearchProvider",
