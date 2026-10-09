@@ -118,6 +118,8 @@ Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / l
    - Determine the upstream ref from `rebase.sh` and use that exact ref for validation (do not hardcode a release branch in the skill output).
      - Example source of truth in `rebase.sh`: `UPSTREAM_VERSION=$(git rev-parse upstream-code/release/1.108)`
      - If the script later points to `upstream-code/main` or another release branch, use that new ref instead.
+   - If the upstream-code remote doesn't exist or the needed ref isn't available, add it temporarily and fetch.
+   - **After validation completes, always clean up:** `git remote remove upstream-code 2>/dev/null; rm -f .git/shallow .git/FETCH_HEAD` to prevent git log performance degradation from shallow clone markers.
    - `bash -n rebase.sh`
    - JSON validation for changed `.rebase/**/*.json` files (`jq empty <file>`)
    - For each changed `.rebase/replace/**/*.json`, verify every `from` exists in the upstream file content before finishing.
