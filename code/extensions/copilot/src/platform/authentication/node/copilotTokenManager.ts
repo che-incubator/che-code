@@ -216,7 +216,7 @@ export abstract class BaseCopilotTokenManager extends Disposable implements ICop
 		if (result.kind === 'parse-failed') {
 			this._logService.warn(`Failed to get copilot token due to: ${result.parseError}`);
 			this._telemetryService.sendGHTelemetryErrorEvent('auth.request_read_failed');
-			return { kind: 'failure', reason: 'ParseFailed', message: result.parseError };
+			return { kind: 'failure', reason: 'ParseFailed', message: result.parseError, status: result.status };
 		}
 
 		// Success - we have a validated TokenEnvelope

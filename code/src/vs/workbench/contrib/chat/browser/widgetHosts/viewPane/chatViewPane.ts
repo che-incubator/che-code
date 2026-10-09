@@ -856,7 +856,11 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}));
 		this._widget.render(chatControlsContainer);
 
-		const updateWidgetVisibility = (reader?: IReader) => this._widget.setVisible(this.isBodyVisible() && !this.welcomeController?.isShowingWelcome.read(reader));
+		const updateWidgetVisibility = (reader?: IReader) => {
+			const isWelcomeShowing = this.welcomeController?.isShowingWelcome.read(reader);
+			chatControlsContainer.style.display = isWelcomeShowing ? 'none' : '';
+			this._widget.setVisible(this.isBodyVisible() && !isWelcomeShowing);
+		};
 		this._register(this.onDidChangeBodyVisibility(() => updateWidgetVisibility()));
 		this._register(autorun(reader => updateWidgetVisibility(reader)));
 
@@ -900,6 +904,11 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 				this.relayout();
 			}
 		}));
+
+		// Re-evaluate `shouldShowWelcome` when the GitHub login state changes
+		// (e.g. Device Authentication completed or token removed)
+		const gitHubLoginFailedContextKeys = new Set(['github.copilot.interactiveSession.gitHubLoginFailed']);
+		this._register(Event.filter(this.contextKeyService.onDidChangeContext, e => e.affectsSome(gitHubLoginFailedContextKeys))(() => this._onDidChangeViewWelcomeState.fire()));
 
 		// Track the active chat model and reveal it in the sessions control if side-by-side
 		this._register(chatWidget.onDidChangeViewModel(() => {
@@ -1511,6 +1520,18 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 	}
 
 	override shouldShowWelcome(): boolean {
+		// Show the Copilot "Sign In" welcome view when the GitHub token cannot be exchanged for a Copilot token.
+		// Copilot cannot serve any request then, so the current chat is replaced until sign-in (it stays in history).
+		// Only when a welcome descriptor actually matches (e.g. not when BYOK models are available)
+		const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
+		if (gitHubLoginFailed) {
+			const hasMatchingWelcomeView = !!this.getMatchingWelcomeView();
+			this.logService.info(`[ChatViewPane] shouldShowWelcome: gitHubLoginFailed=true hasMatchingWelcomeView=${hasMatchingWelcomeView}`);
+			if (hasMatchingWelcomeView) {
+				return true;
+			}
+		}
+
 		const noPersistedSessions = !this.chatService.hasSessions();
 		const hasCoreAgent = this.chatAgentService.getAgents().some(agent => agent.isCore && agent.locations.includes(ChatAgentLocation.Chat));
 		const hasDefaultAgent = this.chatAgentService.getDefaultAgent(ChatAgentLocation.Chat) !== undefined; // only false when Hide AI Features has run and unregistered the setup agents

@@ -147,6 +147,24 @@ describe('Copilot token unit tests', function () {
 			kind: 'failure',
 			message: 'Response is not valid: null',
 			reason: 'ParseFailed',
+			status: 200,
+		});
+	});
+
+	it('parse failure keeps HTTP status', async function () {
+		const fetcher = new StaticFetcherService('403 Forbidden', 403); // non-JSON-envelope body with a 403 status
+
+		const testingServiceCollection = createPlatformServices();
+		testingServiceCollection.define(IFetcherService, fetcher);
+		accessor = disposables.add(testingServiceCollection.createTestingAccessor());
+
+		const tokenManager = accessor.get(IInstantiationService).createInstance(CopilotTokenManagerFromGitHubToken, 'valid', 'valid-user');
+		const result = await tokenManager.checkCopilotToken();
+		expect(result).toEqual({
+			kind: 'failure',
+			message: 'Response is not valid: "403 Forbidden"',
+			reason: 'ParseFailed',
+			status: 403,
 		});
 	});
 
@@ -631,7 +649,7 @@ class StaticFetcherService implements IFetcherService {
 	readonly onDidCompleteFetch = Event.None;
 
 	public requests = new Map<string, FetchOptions>();
-	constructor(readonly tokenResponse: any) {
+	constructor(readonly tokenResponse: any, readonly tokenStatus = 200) {
 	}
 
 	fetchWithPagination<T>(baseUrl: string, options: PaginationOptions<T>): Promise<T[]> {
@@ -649,7 +667,7 @@ class StaticFetcherService implements IFetcherService {
 				throw new Error('Network request failed');
 			}
 			// null will parse successfully as JSON (returns null) but fails tokenInfo check
-			return createFakeResponse(200, this.tokenResponse);
+			return createFakeResponse(this.tokenStatus, this.tokenResponse);
 		} else if (url.endsWith('copilot_internal/notification')) {
 			return createFakeResponse(200, '');
 		}
