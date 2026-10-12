@@ -7245,6 +7245,7 @@
     "web-tree-sitter": "^0.23.0"
   },
   "overrides": {
+    "source-map-js": "^1.2.2",
     "string_decoder": "npm:string_decoder@1.2.0",
     "yauzl": "^3.3.1",
     "zod": "3.25.76",
