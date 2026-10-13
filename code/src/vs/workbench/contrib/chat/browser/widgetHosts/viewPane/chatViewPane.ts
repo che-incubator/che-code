@@ -856,10 +856,17 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}));
 		this._widget.render(chatControlsContainer);
 
+		let wasWelcomeShowing = false;
 		const updateWidgetVisibility = (reader?: IReader) => {
-			const isWelcomeShowing = this.welcomeController?.isShowingWelcome.read(reader);
+			const isWelcomeShowing = !!this.welcomeController?.isShowingWelcome.read(reader);
 			chatControlsContainer.style.display = isWelcomeShowing ? 'none' : '';
 			this._widget.setVisible(this.isBodyVisible() && !isWelcomeShowing);
+
+			// A layout while the welcome view was showing measured the hidden title as 0 high
+			if (wasWelcomeShowing && !isWelcomeShowing) {
+				this.relayout();
+			}
+			wasWelcomeShowing = isWelcomeShowing;
 		};
 		this._register(this.onDidChangeBodyVisibility(() => updateWidgetVisibility()));
 		this._register(autorun(reader => updateWidgetVisibility(reader)));
