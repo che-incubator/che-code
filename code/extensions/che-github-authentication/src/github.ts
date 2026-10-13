@@ -518,6 +518,30 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     }
   }
 
+  /**
+   * Checks whether the session uses the current Device Authentication token.
+   * Returns `undefined` if the session is unknown or the token state cannot be determined.
+   */
+  async isDeviceAuthSession(sessionId: string): Promise<boolean | undefined> {
+    const sessions = await this.sessionsPromise;
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) {
+      return undefined;
+    }
+
+    const isDeviceAuth = await this.getDeviceAuthState();
+    if (isDeviceAuth === undefined) {
+      return undefined;
+    }
+
+    try {
+      return isDeviceAuth && session.accessToken === await this.githubService.getToken();
+    } catch (error) {
+      this.logger.warn(`GitHubAuthProvider: unable to determine if the session uses Device Authentication token: ${(error as Error).message}`);
+      return undefined;
+    }
+  }
+
   async removeSession(id: string) {
     this.logger.info(`GitHubAuthProvider: REMOVE SESSION `);
 
