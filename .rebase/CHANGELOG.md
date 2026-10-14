@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-source-map-js override for CVE-2026-93749 (commit 30c5ef96edb)
+https://github.com/che-incubator/che-code/pull/829
 
 - code/package.json
 - code/build/vite/package.json
@@ -13,6 +13,15 @@ source-map-js override for CVE-2026-93749 (commit 30c5ef96edb)
 - code/extensions/notebook-renderers/package.json
 - code/extensions/mermaid-markdown-features/package.json
 - code/test/monaco/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/824
+
+- code/package.json
+- code/extensions/copilot/package.json
+- code/build/agent-sdk/agents/claude/package.json
+- code/test/mcp/package.json
 ---
 
 #### @sbouchet
