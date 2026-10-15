@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { commands, env, window } from 'vscode';
+import { env, window } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
@@ -17,6 +17,7 @@ import { CopilotToken, ExtendedTokenInfo, TokenErrorNotificationId, TokenInfoOrE
 import { ErrorNoTelemetry } from '../../../util/vs/base/common/errors';
 import { nowSeconds } from '../common/copilotTokenManager';
 import { BaseCopilotTokenManager } from '../node/copilotTokenManager';
+import { handleCheTokenExchangeResult } from './che/copilotTokenManager';
 import { getAnyAuthSession } from './session';
 
 //Flag if we've shown message about broken oauth token.
@@ -87,26 +88,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
 			}
 
-			if (tokenResult.kind === 'failure' && (
-				(tokenResult.reason === 'NotAuthorized' && !tokenResult.notification_id) ||
-				(tokenResult.reason === 'ParseFailed' && tokenResult.status === 403)
-			)) {
-				// A Device Authentication token can be exchanged for a Copilot token, so the failure is temporary:
-				// keep the chat and let the offline check retry instead of asking to sign in again
-				if (await this._isCheDeviceAuthSession(session.id)) {
-					this._logService.info(`Copilot token exchange failed for Device Authentication token (reason: ${tokenResult.reason}), treating as a temporary failure`);
-					return tokenResult;
-				}
-
-				if (tokenResult.reason === 'ParseFailed') {
-					this._logService.info(`Copilot token exchange returned 403 block, triggering sign-in flow`);
-				} else {
-					this._logService.info('Copilot token exchange failed (workspace token cannot be exchanged for Copilot token), triggering sign-in flow');
-				}
-				return { kind: 'failure', reason: 'GitHubLoginFailed' };
-			}
-
-			return tokenResult;
+			return handleCheTokenExchangeResult(tokenResult, session.id, this._logService);
 		} else {
 			this._logService.info(`Allowing anonymous access with devDeviceId`);
 			const tokenResult = await this.authFromDevDeviceId(env.devDeviceId);
@@ -118,18 +100,6 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				return { kind: 'failure', reason: 'GitHubLoginFailed' };
 			}
 			return tokenResult;
-		}
-	}
-
-	/**
-	 * Asks the Che GitHub authentication provider whether the session uses a Device Authentication token.
-	 * Returns `undefined` outside of Che or when it can not be determined.
-	 */
-	private async _isCheDeviceAuthSession(sessionId: string): Promise<boolean | undefined> {
-		try {
-			return await commands.executeCommand<boolean | undefined>('github-authentication.device-code-flow.is-device-auth-session', sessionId);
-		} catch {
-			return undefined;
 		}
 	}
 
