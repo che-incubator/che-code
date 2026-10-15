@@ -306,6 +306,12 @@
     },
     "express": {
       "proxy-addr": "^2.0.8"
+    },
+    "@github/copilot-sdk": {
+      "zod": "^4.6.7"
+    },
+    "@vscode/component-explorer-cli": {
+      "zod": "^4.6.7"
     }
   },
   "repository": {
