@@ -94,7 +94,7 @@ jobs:
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Download editor artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: linux-*
           merge-multiple: true

@@ -81,7 +81,7 @@ jobs:
             echo "tag_suffix=${{ env.BRANCH_NAME }}" >> $GITHUB_ENV
           fi
       - name: Download image artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           # Downloads all platform-specific images: linux-{dist}-{arch}.tgz
           # Matches artifacts uploaded by the 'build' job above
