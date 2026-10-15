@@ -47,6 +47,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
   }
 
   private deviceAuthentication?: DeviceAuthentication;
+  private deviceAuthTokenRemoval: Promise<void> | undefined;
 
   private readonly storageKey: string;
   private readonly deviceAuthSessionStorageKey: string;
@@ -333,6 +334,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     this.logger.info(`GitHubAuthProvider: CREATE SESSION for scopes: ${JSON.stringify(scopes)}`);
     const sortedScopes = [...scopes].sort();
 
+    // Sign In right after Remove Device Authentication Token must see the final state
+    // (PAT active and PAT sessions re-hydrated), otherwise Device Authentication is skipped
+    if (this.deviceAuthTokenRemoval) {
+      this.logger.info('GitHubAuthProvider: waiting for Device Authentication token removal to complete');
+      await this.deviceAuthTokenRemoval.catch(() => undefined);
+    }
+
     let token: string;
     try {
       token = await this.resolveToken(sortedScopes);
@@ -504,7 +512,29 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     }
   }
 
-  async rehydrateAfterDeviceAuthRemoval(): Promise<void> {
+  /**
+   * Removes the Device Authentication token and its sessions, then re-hydrates PAT sessions.
+   * Session creation waits for this to complete.
+   */
+  async removeDeviceAuthToken(): Promise<void> {
+    const removal = this.doRemoveDeviceAuthToken();
+    this.deviceAuthTokenRemoval = removal;
+    try {
+      await removal;
+    } finally {
+      if (this.deviceAuthTokenRemoval === removal) {
+        this.deviceAuthTokenRemoval = undefined;
+      }
+    }
+  }
+
+  private async doRemoveDeviceAuthToken(): Promise<void> {
+    await this.clearDeviceAuthSessions();
+    await this.githubService.removeDeviceAuthToken();
+    await this.rehydrateAfterDeviceAuthRemoval();
+  }
+
+  private async rehydrateAfterDeviceAuthRemoval(): Promise<void> {
     try {
       const isDeviceAuth = await this.getDeviceAuthState();
       if (isDeviceAuth !== false) {
