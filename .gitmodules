@@ -1,0 +1,12 @@
+[submodule "code/extensions/devfile"]
+	path = code/extensions/devfile
+	url = https://github.com/devfile/vscode-walkthrough-extension.git
+[submodule "code/extensions/js-debug"]
+	path = code/extensions/js-debug
+	url = https://github.com/microsoft/vscode-js-debug.git
+[submodule "code/extensions/js-debug-companion"]
+	path = code/extensions/js-debug-companion
+	url = https://github.com/microsoft/vscode-js-debug-companion.git
+[submodule "code/extensions/js-profile-visualizer"]
+	path = code/extensions/js-profile-visualizer
+	url = https://github.com/microsoft/vscode-js-profile-visualizer.git
