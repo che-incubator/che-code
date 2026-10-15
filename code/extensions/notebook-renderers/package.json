@@ -53,6 +53,7 @@
 		"jsdom": "^28.1.0"
 	},
 	"overrides": {
+		"source-map-js": "^1.2.2",
 		"undici": "^7.30.0"
 	},
 	"repository": {
