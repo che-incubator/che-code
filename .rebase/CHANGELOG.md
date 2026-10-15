@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/commit/7d8aa4fd906
+https://github.com/che-incubator/che-code/pull/833
 
 - code/extensions/copilot/package.json
 ---
