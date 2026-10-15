@@ -38,7 +38,20 @@ RUN chmod -R g-w /mnt/rootfs/etc/passwd
 COPY --from=machine-exec --chown=0:0 /go/ubi8/bin/che-machine-exec /mnt/rootfs/checode-linux-libc/ubi8/machine-exec
 COPY --from=machine-exec --chown=0:0 /go/ubi9/bin/che-machine-exec /mnt/rootfs/checode-linux-libc/ubi9/machine-exec
 COPY --from=machine-exec --chown=0:0 /go/bin/che-machine-exec /mnt/rootfs/checode-linux-musl/machine-exec
+# Version key of the assemblies, read by entrypoint-init-container.sh to skip the copy when unchanged
+RUN cd /mnt/rootfs \
+    && version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' checode-linux-libc/ubi9/package.json | head -1) \
+    && hash=$(find checode-linux-musl checode-linux-libc -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1) \
+    && printf '%s-%s' "$version" "$hash" > checode.version
 COPY --chmod=755 /build/scripts/*.sh /mnt/rootfs/
+# The init container must restore every file the launcher patches in place (launcher/src/files.ts)
+RUN cd /mnt/rootfs \
+    && patched=$(sed -n '/^PATCHED_FILES="/,/"$/p' entrypoint-init-container.sh | sed 's/^PATCHED_FILES="//; s/"$//') \
+    && launcher=$(sed -n "s/^export const FILE_[A-Z_]* = '\(.*\)';/\1/p" checode-linux-libc/ubi9/launcher/files.js) \
+    && [ -n "$launcher" ] \
+    && for f in product.json $launcher; do \
+         echo "$patched" | grep -qxF "$f" || { echo "[ERROR] $f is patched by the launcher but missing from PATCHED_FILES"; exit 1; }; \
+       done
 COPY --chmod=755 /build/remote-config /mnt/rootfs/remote/data/Machine/
 
 # Create all-in-one image
