@@ -30,6 +30,24 @@ export function shouldShowGitHubLoginFailedWelcome(contextKeyService: IContextKe
 }
 
 /**
+ * Creates a function that hides the chat controls (title and chat widget) while the welcome view is showing:
+ * the chat widget hides only its list and input, and the CSS rules that hid the controls do not match
+ * the current DOM structure. It relayouts when the welcome view is hidden again, because a layout while
+ * it was showing measured the hidden title as 0 high.
+ */
+export function createChatControlsVisibilityUpdater(chatControlsContainer: HTMLElement, setWidgetVisible: (visible: boolean) => void, relayout: () => void): (isWelcomeShowing: boolean) => void {
+	let wasWelcomeShowing = false;
+	return isWelcomeShowing => {
+		chatControlsContainer.style.display = isWelcomeShowing ? 'none' : '';
+		setWidgetVisible(!isWelcomeShowing);
+		if (wasWelcomeShowing && !isWelcomeShowing) {
+			relayout();
+		}
+		wasWelcomeShowing = isWelcomeShowing;
+	};
+}
+
+/**
  * Fires when {@link shouldShowGitHubLoginFailedWelcome} may change: the GitHub login state changes
  * (e.g. Device Authentication completed or token removed) or BYOK models come and go.
  */

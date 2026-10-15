@@ -75,7 +75,7 @@ import { IVoiceSessionController } from '../../voiceClient/voiceSessionControlle
 import { IAgentTitleBarStatusService } from '../../agentSessions/experiments/agentTitleBarStatusService.js';
 import { IVoicePlaybackService } from '../../../common/voicePlaybackService.js';
 import { IWorkbenchEnvironmentService } from '../../../../../services/environment/common/environmentService.js';
-import { onDidChangeGitHubLoginFailedWelcome, shouldShowGitHubLoginFailedWelcome } from './che/chatViewPane.js';
+import { createChatControlsVisibilityUpdater, onDidChangeGitHubLoginFailedWelcome, shouldShowGitHubLoginFailedWelcome } from './che/chatViewPane.js';
 
 interface IChatViewPaneState extends Partial<IChatModelInputState> {
 	/**
@@ -857,18 +857,8 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}));
 		this._widget.render(chatControlsContainer);
 
-		let wasWelcomeShowing = false;
-		const updateWidgetVisibility = (reader?: IReader) => {
-			const isWelcomeShowing = !!this.welcomeController?.isShowingWelcome.read(reader);
-			chatControlsContainer.style.display = isWelcomeShowing ? 'none' : '';
-			this._widget.setVisible(this.isBodyVisible() && !isWelcomeShowing);
-
-			// A layout while the welcome view was showing measured the hidden title as 0 high
-			if (wasWelcomeShowing && !isWelcomeShowing) {
-				this.relayout();
-			}
-			wasWelcomeShowing = isWelcomeShowing;
-		};
+		const updateChatControlsVisibility = createChatControlsVisibilityUpdater(chatControlsContainer, visible => this._widget.setVisible(this.isBodyVisible() && visible), () => this.relayout());
+		const updateWidgetVisibility = (reader?: IReader) => updateChatControlsVisibility(!!this.welcomeController?.isShowingWelcome.read(reader));
 		this._register(this.onDidChangeBodyVisibility(() => updateWidgetVisibility()));
 		this._register(autorun(reader => updateWidgetVisibility(reader)));
 
