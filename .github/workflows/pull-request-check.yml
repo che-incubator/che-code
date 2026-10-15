@@ -19,7 +19,7 @@ jobs:
       - name: Checkout che-code source code
         uses: actions/checkout@v6
       - name: Install jq
-        uses: dcarbone/install-jq-action@v3
+        uses: dcarbone/install-jq-action@v4
         with:
           version: 1.7
           force: true
