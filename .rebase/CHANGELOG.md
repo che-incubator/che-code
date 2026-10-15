@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-aac7e19f464
+https://github.com/che-incubator/che-code/pull/835
 
 - code/package.json
 - code/remote/package.json
