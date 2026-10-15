@@ -81,7 +81,8 @@
     "@types/node-fetch": {
       "form-data": "^4.0.6"
     },
-    "js-yaml": "^4.3.2"
+    "js-yaml": "^4.3.2",
+    "fb-watchman": "2.0.2"
   },
   "repository": {
     "type": "git",
