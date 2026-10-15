@@ -4,6 +4,7 @@
         "@types/minimatch": "^3.0.5"
     },
     "overrides": {
+        "source-map-js": "^1.2.2",
         "@gulp-sourcemaps/identity-map": {
             "postcss": "^8.5.26"
         },

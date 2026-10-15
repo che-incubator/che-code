@@ -3,6 +3,19 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/829
+
+- code/package.json
+- code/build/vite/package.json
+- code/build/rspack/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
+- code/extensions/mermaid-markdown-features/package.json
+- code/test/monaco/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/824
 
 - code/package.json
