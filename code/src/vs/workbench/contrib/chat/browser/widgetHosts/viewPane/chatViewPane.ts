@@ -55,7 +55,7 @@ import { AgentSessionsControl } from '../../agentSessions/agentSessionsControl.j
 import { ACTION_ID_NEW_CHAT } from '../../actions/chatActions.js';
 import { ChatWidget } from '../../widget/chatWidget.js';
 import { ChatViewWelcomeController, IViewWelcomeDelegate } from '../../viewsWelcome/chatViewWelcomeController.js';
-import { chatViewsWelcomeRegistry, IChatViewsWelcomeDescriptor } from '../../viewsWelcome/chatViewsWelcome.js';
+import { IChatViewsWelcomeDescriptor } from '../../viewsWelcome/chatViewsWelcome.js';
 import { IWorkbenchLayoutService, LayoutSettings, Position } from '../../../../../services/layout/browser/layoutService.js';
 import { AgentSessionsViewerOrientation, AgentSessionsViewerPosition } from '../../agentSessions/agentSessions.js';
 import { IProgressService } from '../../../../../../platform/progress/common/progress.js';
@@ -75,6 +75,7 @@ import { IVoiceSessionController } from '../../voiceClient/voiceSessionControlle
 import { IAgentTitleBarStatusService } from '../../agentSessions/experiments/agentTitleBarStatusService.js';
 import { IVoicePlaybackService } from '../../../common/voicePlaybackService.js';
 import { IWorkbenchEnvironmentService } from '../../../../../services/environment/common/environmentService.js';
+import { onDidChangeGitHubLoginFailedWelcome, shouldShowGitHubLoginFailedWelcome } from './che/chatViewPane.js';
 
 interface IChatViewPaneState extends Partial<IChatModelInputState> {
 	/**
@@ -912,10 +913,7 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}
 		}));
 
-		// Re-evaluate `shouldShowWelcome` when the GitHub login state changes
-		// (e.g. Device Authentication completed or token removed) or BYOK models come and go
-		const welcomeStateContextKeys = new Set(['github.copilot.interactiveSession.gitHubLoginFailed', ChatEntitlementContextKeys.hasByokModels.key]);
-		this._register(Event.filter(this.contextKeyService.onDidChangeContext, e => e.affectsSome(welcomeStateContextKeys))(() => this._onDidChangeViewWelcomeState.fire()));
+		this._register(onDidChangeGitHubLoginFailedWelcome(this.contextKeyService)(() => this._onDidChangeViewWelcomeState.fire()));
 
 		// Track the active chat model and reveal it in the sessions control if side-by-side
 		this._register(chatWidget.onDidChangeViewModel(() => {
@@ -1527,16 +1525,8 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 	}
 
 	override shouldShowWelcome(): boolean {
-		// Show the Copilot "Sign In" welcome view when the GitHub token cannot be exchanged for a Copilot token.
-		// Copilot cannot serve any request then, so the current chat is replaced until sign-in (it stays in history).
-		// Only when the GitHub login failed welcome descriptor actually matches (e.g. not when BYOK models are available)
-		const gitHubLoginFailedKey = 'github.copilot.interactiveSession.gitHubLoginFailed';
-		if (this.contextKeyService.getContextKeyValue<boolean>(gitHubLoginFailedKey)) {
-			const hasGitHubLoginFailedWelcomeView = chatViewsWelcomeRegistry.get().some(descriptor =>
-				descriptor.when.keys().includes(gitHubLoginFailedKey) && this.contextKeyService.contextMatchesRules(descriptor.when));
-			if (hasGitHubLoginFailedWelcomeView) {
-				return true;
-			}
+		if (shouldShowGitHubLoginFailedWelcome(this.contextKeyService)) {
+			return true;
 		}
 
 		const noPersistedSessions = !this.chatService.hasSessions();
