@@ -278,8 +278,8 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       const previousSessions = await this.sessionsPromise;
 
       // Keep the id of a previous session with the same scopes and account, so the
-      // replacement is reported as `changed` instead of `removed` + `added`
-      const hydratedSessions = matchingBundles.map(scopes => {
+      // replacement is not reported as `removed` + `added` (only as `changed` if the token changed)
+      const bundleSessions = matchingBundles.map(scopes => {
         const previousSession = previousSessions.find(session =>
           session.account.id === account.id && arrayEquals([...session.scopes].sort(), [...scopes].sort()),
         );
@@ -291,11 +291,27 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
         };
       });
 
-      const previousIds = new Set(previousSessions.map(session => session.id));
+      // Keep other sessions of the same account (e.g. created by createSession() for scopes
+      // outside the bundles) when the token covers their scopes
+      const bundleSessionIds = new Set(bundleSessions.map(session => session.id));
+      const keptSessions = previousSessions
+        .filter(session =>
+          !bundleSessionIds.has(session.id) &&
+          session.account.id === account.id &&
+          hasAllScopes(tokenScopes, [...session.scopes]),
+        )
+        .map(session => ({ ...session, accessToken: token, account }));
+
+      const hydratedSessions = [...bundleSessions, ...keptSessions];
+
+      const previousSessionsById = new Map(previousSessions.map(session => [session.id, session]));
       const hydratedIds = new Set(hydratedSessions.map(session => session.id));
       const removed = previousSessions.filter(session => !hydratedIds.has(session.id));
-      const added = hydratedSessions.filter(session => !previousIds.has(session.id));
-      const changed = hydratedSessions.filter(session => previousIds.has(session.id));
+      const added = hydratedSessions.filter(session => !previousSessionsById.has(session.id));
+      const changed = hydratedSessions.filter(session => {
+        const previousSession = previousSessionsById.get(session.id);
+        return previousSession !== undefined && previousSession.accessToken !== session.accessToken;
+      });
 
       await this.storeSessions(hydratedSessions);
 
@@ -304,8 +320,13 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       if (removed.length > 0) {
         this.sessionChangeEmitter.fire({ added: [], removed, changed: [] });
       }
-      this.sessionChangeEmitter.fire({ added, removed: [], changed });
-      this.logger.info(`GitHubAuthProvider: hydrated ${hydratedSessions.length} session(s) from K8s token`);
+      if (added.length > 0 || changed.length > 0) {
+        this.sessionChangeEmitter.fire({ added, removed: [], changed });
+      }
+      this.logger.info(
+        `GitHubAuthProvider: hydrated ${hydratedSessions.length} session(s) from K8s token ` +
+        `(${keptSessions.length} kept outside scope bundles)`,
+      );
       return hydratedSessions;
     } catch (error) {
       if (isUnauthorizedError(error)) {
