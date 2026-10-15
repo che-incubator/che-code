@@ -209,10 +209,17 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 		};
 
 		// Re-create panel agents when GitHub login state changes
-		// (e.g. after completing Device Authentication or when the token is removed)
+		// (e.g. after completing Device Authentication or when the token is removed).
+		// Only react to real transitions: Copilot sets the key from `undefined` to `false`
+		// on every startup, which must not re-register the setup agents
+		let gitHubLoginFailed = !!this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
 		this._register(this.contextKeyService.onDidChangeContext(e => {
 			if (e.affectsSome(new Set(['github.copilot.interactiveSession.gitHubLoginFailed']))) {
-				const gitHubLoginFailed = this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
+				const newGitHubLoginFailed = !!this.contextKeyService.getContextKeyValue<boolean>('github.copilot.interactiveSession.gitHubLoginFailed');
+				if (newGitHubLoginFailed === gitHubLoginFailed) {
+					return;
+				}
+				gitHubLoginFailed = newGitHubLoginFailed;
 				if (!gitHubLoginFailed) {
 					defaultAgentDisposables.clear();
 					updateRegistration();
