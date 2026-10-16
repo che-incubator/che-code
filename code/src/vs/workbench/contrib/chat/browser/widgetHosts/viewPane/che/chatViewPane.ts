@@ -12,9 +12,7 @@
 import { Event } from '../../../../../../../base/common/event.js';
 import { IContextKeyService } from '../../../../../../../platform/contextkey/common/contextkey.js';
 import { ChatEntitlementContextKeys } from '../../../../../../services/chat/common/chatEntitlementService.js';
-import { chatViewsWelcomeRegistry } from '../../../viewsWelcome/chatViewsWelcome.js';
-
-const GITHUB_LOGIN_FAILED_CONTEXT_KEY = 'github.copilot.interactiveSession.gitHubLoginFailed';
+import { GITHUB_LOGIN_FAILED_CONTEXT_KEY, hasGitHubLoginFailedWelcome } from '../../../viewsWelcome/che/chatViewsWelcome.js';
 
 /**
  * Whether the Copilot "Sign In" welcome view should be shown because the GitHub token cannot be exchanged for a Copilot token.
@@ -22,11 +20,7 @@ const GITHUB_LOGIN_FAILED_CONTEXT_KEY = 'github.copilot.interactiveSession.gitHu
  * Only when the GitHub login failed welcome descriptor actually matches (e.g. not when BYOK models are available).
  */
 export function shouldShowGitHubLoginFailedWelcome(contextKeyService: IContextKeyService): boolean {
-	if (!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY)) {
-		return false;
-	}
-	return chatViewsWelcomeRegistry.get().some(descriptor =>
-		descriptor.when.keys().includes(GITHUB_LOGIN_FAILED_CONTEXT_KEY) && contextKeyService.contextMatchesRules(descriptor.when));
+	return hasGitHubLoginFailedWelcome(contextKeyService);
 }
 
 /**
