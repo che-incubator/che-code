@@ -9,10 +9,17 @@
  ***********************************************************************/
 /* eslint-disable header/header */
 
-import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { IContextKeyService, IReadableSet } from '../../../../../../platform/contextkey/common/contextkey.js';
+import { ChatEntitlementContextKeys } from '../../../../../services/chat/common/chatEntitlementService.js';
 import { chatViewsWelcomeRegistry } from '../chatViewsWelcome.js';
 
 export const GITHUB_LOGIN_FAILED_CONTEXT_KEY = 'github.copilot.interactiveSession.gitHubLoginFailed';
+
+/**
+ * Context keys {@link hasGitHubLoginFailedWelcome} depends on (besides the welcome descriptors registry):
+ * the GitHub login state and the BYOK models, which the welcome view is not shown for.
+ */
+export const GITHUB_LOGIN_FAILED_WELCOME_CONTEXT_KEYS: IReadableSet<string> = new Set([GITHUB_LOGIN_FAILED_CONTEXT_KEY, ChatEntitlementContextKeys.hasByokModels.key]);
 
 /**
  * Whether Copilot reports a GitHub login failure and its welcome view (offering Sign In) matches.
