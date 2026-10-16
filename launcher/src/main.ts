@@ -19,6 +19,7 @@ import { TrustedExtensions } from './trusted-extensions.js';
 import { VSCodeLauncher } from './vscode-launcher.js';
 import { WebviewResources } from './webview-resources.js';
 import { EditorConfigurations } from './editor-configurations.js';
+import { restorePatchables } from './fs-extra.js';
 
 /**
  * Mandatory environment variables:
@@ -28,6 +29,7 @@ import { EditorConfigurations } from './editor-configurations.js';
  */
 export class Main {
   async start(): Promise<void> {
+    await restorePatchables();
     await new DevWorkspaceId().configure();
     await new OpenVSIXRegistry().configure();
     await new WebviewResources().configure();

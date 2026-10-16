@@ -17,13 +17,17 @@ import * as fs from '../src/fs-extra';
 const PRISTINE = 'id={{ID}} url={{URL}}';
 
 describe('Test reading patchable files:', () => {
+  const cwd = process.cwd();
   let file: string;
 
+  // The launcher runs from the assembly: the list of patched files is relative to it
   beforeEach(() => {
-    const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'launcher-'));
-    file = path.join(dir, 'workbench.js');
+    process.chdir(nodeFs.mkdtempSync(path.join(os.tmpdir(), 'launcher-')));
+    file = 'workbench.js';
     nodeFs.writeFileSync(file, PRISTINE);
   });
+
+  afterEach(() => process.chdir(cwd));
 
   // Each start runs in a new process: give it a fresh copy of the module
   async function newStart(): Promise<typeof fs> {
@@ -64,6 +68,16 @@ describe('Test reading patchable files:', () => {
     await patch(second, '{{URL}}', 'https://registry.example.com');
 
     expect(nodeFs.readFileSync(file, 'utf8')).toBe('id=ws-2 url=https://registry.example.com');
+  });
+
+  test('should restore the files of a patcher disabled on the next start', async () => {
+    const first = await newStart();
+    await patch(first, '{{URL}}', 'https://open-vsx.org');
+
+    const second = await newStart();
+    await second.restorePatchables();
+
+    expect(nodeFs.readFileSync(file, 'utf8')).toBe(PRISTINE);
   });
 
   test('should ignore a copy left by an interrupted start', async () => {
