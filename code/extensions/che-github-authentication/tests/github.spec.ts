@@ -46,6 +46,7 @@ describe('GitHubAuthProvider session hydration', () => {
   let currentToken: string;
   let tokenScopes: Record<string, string[]>;
   let isDeviceAuthToken: boolean;
+  let removeDeviceAuthToken: jest.Mock<Promise<void>, []>;
   let events: vscode.AuthenticationProviderAuthenticationSessionsChangeEvent[];
 
   function createProvider(): GitHubAuthProvider {
@@ -53,7 +54,7 @@ describe('GitHubAuthProvider session hydration', () => {
       whenReady: Promise.resolve(),
       getToken: async () => currentToken,
       persistDeviceAuthToken: async () => { },
-      removeDeviceAuthToken: async () => { },
+      removeDeviceAuthToken: () => removeDeviceAuthToken(),
       getUser: async () => ({ login: ACCOUNT.label, id: Number(ACCOUNT.id), name: '', email: '' }),
       getTokenScopes: async (token: string) => tokenScopes[token] ?? [],
       isDeviceAuthToken: async () => isDeviceAuthToken,
@@ -80,6 +81,7 @@ describe('GitHubAuthProvider session hydration', () => {
     secrets = new Map();
     tokenScopes = {};
     isDeviceAuthToken = false;
+    removeDeviceAuthToken = jest.fn(async () => { });
     events = [];
   });
 
@@ -144,5 +146,25 @@ describe('GitHubAuthProvider session hydration', () => {
       { added: ['read:user user:email repo workflow', 'read:user user:email', 'user:email'], removed: [], changed: [] },
     ]);
     expect(await provider.getSessions(['gist'])).toEqual([session('gist-session', 'pat', GIST_SCOPES)]);
+  });
+
+  test('joins a Device Authentication token removal that is already running', async () => {
+    secrets.set(SESSIONS_KEY, JSON.stringify([session('device-auth-session', 'device-auth-token', STANDARD_SCOPES)]));
+    secrets.set(DEVICE_AUTH_SESSION_IDS_KEY, JSON.stringify(['device-auth-session']));
+    tokenScopes = { 'device-auth-token': STANDARD_SCOPES, 'pat': STANDARD_SCOPES };
+    currentToken = 'device-auth-token';
+    isDeviceAuthToken = true;
+    removeDeviceAuthToken.mockImplementation(async () => {
+      currentToken = 'pat';
+      isDeviceAuthToken = false;
+    });
+
+    const provider = createProvider();
+    await Promise.all([provider.removeDeviceAuthToken(), provider.removeDeviceAuthToken()]);
+    expect(removeDeviceAuthToken).toHaveBeenCalledTimes(1);
+
+    // A removal requested after the previous one completed runs again
+    await provider.removeDeviceAuthToken();
+    expect(removeDeviceAuthToken).toHaveBeenCalledTimes(2);
   });
 });

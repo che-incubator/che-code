@@ -535,18 +535,16 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
 
   /**
    * Removes the Device Authentication token and its sessions, then re-hydrates PAT sessions.
-   * Session creation waits for this to complete.
+   * Session creation waits for this to complete, and a removal requested meanwhile joins it.
    */
   async removeDeviceAuthToken(): Promise<void> {
-    const removal = this.doRemoveDeviceAuthToken();
-    this.deviceAuthTokenRemoval = removal;
-    try {
-      await removal;
-    } finally {
-      if (this.deviceAuthTokenRemoval === removal) {
+    // A removal requested while another one is running joins it instead of starting over
+    if (!this.deviceAuthTokenRemoval) {
+      this.deviceAuthTokenRemoval = this.doRemoveDeviceAuthToken().finally(() => {
         this.deviceAuthTokenRemoval = undefined;
-      }
+      });
     }
+    return this.deviceAuthTokenRemoval;
   }
 
   private async doRemoveDeviceAuthToken(): Promise<void> {
