@@ -34,7 +34,7 @@ export class DevWorkspaceId {
   }
 
   async update(file: string, text: string, newText: string): Promise<void> {
-    const content = await fs.readFile(file);
+    const content = await fs.readPatchable(file);
     const newContent = content.replace(text, newText);
     await fs.writeFile(file, newContent);
   }
