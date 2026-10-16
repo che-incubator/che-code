@@ -3,6 +3,14 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/835
+
+- code/package.json
+- code/remote/package.json
+- code/build/agent-sdk/agents/claude/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/829
 
 - code/package.json

@@ -7,6 +7,9 @@
         },
         "express": {
             "proxy-addr": "^2.0.8"
+        },
+        "@anthropic-ai/claude-agent-sdk": {
+            "zod": "^4.6.7"
         }
     }
 }
