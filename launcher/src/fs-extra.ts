@@ -22,6 +22,29 @@ export async function readFile(file: string): Promise<string> {
   return fs.readFileSync(file, 'utf8');
 }
 
+const restored = new Set<string>();
+
+/**
+ * Reads a file of the assembly that the launcher patches in place.
+ * The assembly persists between starts, so the first read in this process restores the file
+ * from `<file>.orig` (created on first use): every start patches the content of the image.
+ * Later reads in the same process return the file with the previous patchers' changes.
+ */
+export async function readPatchable(file: string): Promise<string> {
+  if (!restored.has(file)) {
+    const orig = `${file}.orig`;
+    if (fs.existsSync(orig)) {
+      fs.copyFileSync(orig, file);
+    } else {
+      // Copy then rename: a start killed mid-copy must not leave a truncated .orig behind
+      fs.copyFileSync(file, `${orig}.tmp`);
+      fs.renameSync(`${orig}.tmp`, orig);
+    }
+    restored.add(file);
+  }
+  return readFile(file);
+}
+
 export async function writeFile(file: string, content: string): Promise<void> {
   fs.writeFileSync(file, content, 'utf8');
 }

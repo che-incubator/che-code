@@ -13,14 +13,6 @@
 
 set -e
 
-# Files the launcher patches in place on every start: always restore them from the image.
-# Keep in sync with launcher/src/files.ts and launcher/src/product-json.ts.
-PATCHED_FILES="product.json
-out/vs/code/browser/workbench/workbench.js
-out/vs/workbench/workbench.web.main.internal.js
-out/vs/workbench/api/node/extensionHostProcess.js"
-ASSEMBLIES="checode-linux-musl checode-linux-libc/ubi8 checode-linux-libc/ubi9"
-
 # Copy checode stuff to the shared volume, unless the volume already holds this version
 version=$(cat /checode.version)
 if [ "$(cat /checode/.checode.version 2>/dev/null)" != "$version" ]; then
@@ -31,13 +23,7 @@ if [ "$(cat /checode/.checode.version 2>/dev/null)" != "$version" ]; then
   cp -r /checode-* /checode/
   printf '%s' "$version" > /checode/.checode.version
 else
-  echo "[INFO] checode $version already on the volume, restoring patched files"
-  for assembly in $ASSEMBLIES; do
-    for file in $PATCHED_FILES; do
-      cp "/$assembly/$file" "/checode/$assembly/$file"
-      rm -f "/checode/$assembly/$file.gz"
-    done
-  done
+  echo "[INFO] checode $version already on the volume"
 fi
 
 # Copy entrypoint

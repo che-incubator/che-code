@@ -32,6 +32,8 @@ export class PostPatchCompression {
       } catch (err) {
         console.warn(`  > WARNING: failed to compress ${file}, skipping (server will serve uncompressed): ${err}`);
         await unlink(tmpFile).catch(() => {});
+        // A stale .gz would serve the previous start's values
+        await unlink(gzFile).catch(() => {});
       }
     }
 
