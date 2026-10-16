@@ -423,6 +423,10 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupContributions.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/viewsWelcome/chatViewWelcomeController.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/widgetHosts/viewPane/chatViewPane.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/agentSessions/experiments/agentTitleBarStatusWidget.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/agentSessions/experiments/media/agenttitlebarstatuswidget.css" ]]; then
@@ -484,6 +488,12 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/build/npm/preinstall.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/node/copilotTokenManager.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/common/copilotToken.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/test/node/copilotToken.spec.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
