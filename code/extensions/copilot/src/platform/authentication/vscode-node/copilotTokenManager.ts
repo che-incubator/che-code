@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { env, window } from 'vscode';
+import { commands, env, window } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
@@ -21,6 +21,7 @@ import { getAnyAuthSession } from './session';
 
 //Flag if we've shown message about broken oauth token.
 let shown401Message = false;
+let shown403Message = false;
 
 export class NotSignedUpError extends Error { }
 export class SubscriptionExpiredError extends Error { }
@@ -82,6 +83,12 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 			// Log the steps by default, but only log actual token values when the log level is set to debug.
 			this._logService.info(`Logged in as ${session.account.label}`);
 			const tokenResult = await this.authFromGitHubToken(session.accessToken, session.account.label);
+			this._logService.info(
+				`Copilot token result: kind=${tokenResult.kind}, ` +
+				`reason=${tokenResult.kind === 'failure' ? tokenResult.reason : 'none'}, ` +
+				`notification_id=${tokenResult.kind === 'failure' ? tokenResult.notification_id ?? 'none' : 'none'}`
+			);
+
 			if (tokenResult.kind === 'success') {
 				this._logService.info(`Got Copilot token for ${session.account.label}`);
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
@@ -137,6 +144,30 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 			}
 			throw new InvalidTokenError(message);
 		}
+
+		if (tokenResult.kind === 'failure' && tokenResult.reason === 'HTTP403') {
+			const message = 'Your GitHub token is invalid. Please do the Device Authentication.';
+
+			if (!shown403Message) {
+				shown403Message = true;
+
+				const action = await window.showWarningMessage(message, 'Device Authentication');
+
+				if (action === 'Device Authentication') {
+					try {
+						await commands.executeCommand(
+							'github-authentication.device-code-flow.authentication'
+						);
+					} catch (error) {
+						this._logService.error(
+							`Failed to start Device Authentication: ${error}`
+						);
+					}
+				}
+			}
+			throw new InvalidTokenError(message);
+		}
+		
 
 		if (tokenResult.kind === 'failure' && tokenResult.reason === 'GitHubLoginFailed') {
 			throw new GitHubLoginFailedError('GitHubLoginFailed');
