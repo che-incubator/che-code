@@ -213,8 +213,17 @@ export class GithubServiceImpl implements GithubService {
 
     await this.deleteDeviceAuthSecrets(deviceAuthSecrets);
 
+    // the removed Device Authentication token must not be used anymore, even if re-initialization fails
+    if (this.tokenInfo?.source === 'device-auth') {
+      this.tokenInfo = undefined;
+    }
+
     // another token should be used by the Github Service after removing the Device Authentication token
-    this.initializeToken();
+    try {
+      await this.initializeToken();
+    } catch (error: any) {
+      this.logger.error(`Github Service: failed to re-initialize token after removing the device-authentication secret: ${error.message}`);
+    }
   }
 
   private async deleteDeviceAuthSecrets(secrets?: k8s.V1Secret[]): Promise<void> {

@@ -78,6 +78,7 @@ export class ChatViewWelcomeController extends Disposable {
 		if (!enabled) {
 			this.container.classList.toggle('chat-view-welcome-visible', false);
 			this.renderDisposables.clear();
+			dom.clearNode(this.element!);
 			this._isShowingWelcome.set(false, undefined);
 			return;
 		}

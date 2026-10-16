@@ -34,6 +34,12 @@ export class DeviceAuthentication {
       vscode.commands.registerCommand('github-authentication.device-code-flow.remove-token', async () => this.removeDeviceAuthToken()),
     );
     this.logger.info('Remove Device Authentication Token command has been registered');
+
+    // Used by the Copilot extension to tell a temporary token exchange failure of a Device Authentication token
+    // from a token (PAT) that can not be exchanged for a Copilot token at all
+    this.extensionContext.getContext().subscriptions.push(
+      vscode.commands.registerCommand('github-authentication.device-code-flow.is-device-auth-session', async (sessionId: string) => this.gitHubAuthProvider.isDeviceAuthSession(sessionId)),
+    );
   }
 
   async runInteractiveFlow(scopes: string[]): Promise<string> {
@@ -76,8 +82,7 @@ export class DeviceAuthentication {
 
   async removeDeviceAuthToken(): Promise<void> {
     try {
-      await this.gitHubAuthProvider.clearDeviceAuthSessions();
-      await this.githubService.removeDeviceAuthToken();
+      await this.gitHubAuthProvider.removeDeviceAuthToken();
       const message = 'The token was deleted successfully. Some operations may require Github Sign Out => Sign In to use another token.'
       vscode.window.showInformationMessage(message);
     } catch (error) {
