@@ -13,7 +13,7 @@ import { DisposableStore, IDisposable } from '../../../../../../base/common/life
 import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { chatViewsWelcomeRegistry } from '../../viewsWelcome/chatViewsWelcome.js';
-import { GITHUB_LOGIN_FAILED_CONTEXT_KEY, hasGitHubLoginFailedWelcome } from '../../viewsWelcome/che/chatViewsWelcome.js';
+import { GITHUB_LOGIN_FAILED_CONTEXT_KEY, GITHUB_LOGIN_FAILED_WELCOME_CONTEXT_KEYS, hasGitHubLoginFailedWelcome } from '../../viewsWelcome/che/chatViewsWelcome.js';
 
 /**
  * Clears the panel agents when Copilot reports a GitHub login failure (e.g. the workspace PAT
@@ -27,41 +27,37 @@ export function clearPanelAgentsIfGitHubLoginFailed(contextKeyService: IContextK
 }
 
 /**
- * Re-creates the setup agents when the GitHub login state changes
- * (e.g. after completing Device Authentication or when the token is removed).
+ * Re-creates the setup agents when the Sign In welcome view comes or goes (e.g. after completing
+ * Device Authentication, when the token is removed or when BYOK models come and go), or when the
+ * GitHub login recovers.
  */
 export function registerGitHubLoginStateListeners(contextKeyService: IContextKeyService, recreateAgents: () => void): IDisposable {
 	const disposables = new DisposableStore();
 
-	const recreateAgentsIfGitHubLoginFailed = () => {
-		if (hasGitHubLoginFailedWelcome(contextKeyService)) {
+	// Only react to real changes: Copilot sets the login failed key from `undefined` to `false`
+	// on every startup, which must not re-register the setup agents
+	let gitHubLoginFailed = !!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY);
+	let hasWelcome = hasGitHubLoginFailedWelcome(contextKeyService);
+	const update = () => {
+		const newGitHubLoginFailed = !!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY);
+		const newHasWelcome = hasGitHubLoginFailedWelcome(contextKeyService);
+		// A recovered login also restores panel agents that were cleared while the welcome view was not shown
+		const shouldRecreateAgents = newHasWelcome !== hasWelcome || (gitHubLoginFailed && !newGitHubLoginFailed);
+		gitHubLoginFailed = newGitHubLoginFailed;
+		hasWelcome = newHasWelcome;
+		if (shouldRecreateAgents) {
 			recreateAgents();
 		}
 	};
 
-	// Only react to real transitions: Copilot sets the key from `undefined` to `false`
-	// on every startup, which must not re-register the setup agents
-	const gitHubLoginFailedContextKeys = new Set([GITHUB_LOGIN_FAILED_CONTEXT_KEY]);
-	let gitHubLoginFailed = !!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY);
 	disposables.add(contextKeyService.onDidChangeContext(e => {
-		if (!e.affectsSome(gitHubLoginFailedContextKeys)) {
-			return;
-		}
-		const newGitHubLoginFailed = !!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY);
-		if (newGitHubLoginFailed === gitHubLoginFailed) {
-			return;
-		}
-		gitHubLoginFailed = newGitHubLoginFailed;
-		if (gitHubLoginFailed) {
-			recreateAgentsIfGitHubLoginFailed();
-		} else {
-			recreateAgents();
+		if (e.affectsSome(GITHUB_LOGIN_FAILED_WELCOME_CONTEXT_KEYS)) {
+			update();
 		}
 	}));
 
-	// Safety net: if gitHubLoginFailed was set before welcome descriptors
-	// were registered, retry when the registry changes
-	disposables.add(chatViewsWelcomeRegistry.onDidChange(() => recreateAgentsIfGitHubLoginFailed()));
+	// Welcome descriptors may be registered after gitHubLoginFailed was set
+	disposables.add(chatViewsWelcomeRegistry.onDidChange(() => update()));
 
 	return disposables;
 }
