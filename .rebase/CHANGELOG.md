@@ -9,6 +9,14 @@ https://github.com/che-incubator/che-code/pull/833
 ---
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/835
+
+- code/package.json
+- code/remote/package.json
+- code/build/agent-sdk/agents/claude/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/829
 
 - code/package.json
