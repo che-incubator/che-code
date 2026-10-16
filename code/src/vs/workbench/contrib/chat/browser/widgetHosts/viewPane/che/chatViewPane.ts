@@ -11,8 +11,7 @@
 
 import { Event } from '../../../../../../../base/common/event.js';
 import { IContextKeyService } from '../../../../../../../platform/contextkey/common/contextkey.js';
-import { ChatEntitlementContextKeys } from '../../../../../../services/chat/common/chatEntitlementService.js';
-import { GITHUB_LOGIN_FAILED_CONTEXT_KEY, hasGitHubLoginFailedWelcome } from '../../../viewsWelcome/che/chatViewsWelcome.js';
+import { GITHUB_LOGIN_FAILED_WELCOME_CONTEXT_KEYS, hasGitHubLoginFailedWelcome } from '../../../viewsWelcome/che/chatViewsWelcome.js';
 
 /**
  * Whether the Copilot "Sign In" welcome view should be shown because the GitHub token cannot be exchanged for a Copilot token.
@@ -46,6 +45,5 @@ export function createChatControlsVisibilityUpdater(chatControlsContainer: HTMLE
  * (e.g. Device Authentication completed or token removed) or BYOK models come and go.
  */
 export function onDidChangeGitHubLoginFailedWelcome(contextKeyService: IContextKeyService): Event<void> {
-	const contextKeys = new Set([GITHUB_LOGIN_FAILED_CONTEXT_KEY, ChatEntitlementContextKeys.hasByokModels.key]);
-	return Event.signal(Event.filter(contextKeyService.onDidChangeContext, e => e.affectsSome(contextKeys)));
+	return Event.signal(Event.filter(contextKeyService.onDidChangeContext, e => e.affectsSome(GITHUB_LOGIN_FAILED_WELCOME_CONTEXT_KEYS)));
 }
