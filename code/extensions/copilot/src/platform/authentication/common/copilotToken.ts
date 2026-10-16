@@ -633,6 +633,8 @@ export type TokenError = {
 	reason: TokenErrorReason;
 	notification_id?: TokenErrorNotificationId | string;
 	message?: string;
+	/** HTTP status of the token endpoint response, when known. */
+	status?: number;
 	/** URL for action button to help user resolve the error. */
 	url?: string;
 	/** Title for the action button. */

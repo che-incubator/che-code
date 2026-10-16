@@ -1,0 +1,6 @@
+[
+	{
+		"from": "this.renderDisposables.clear();\n\t\t\tthis._isShowingWelcome.set(false, undefined);",
+		"by": "this.renderDisposables.clear();\n\t\t\tdom.clearNode(this.element!);\n\t\t\tthis._isShowingWelcome.set(false, undefined);"
+	}
+]

@@ -75,6 +75,7 @@ import { IVoiceSessionController } from '../../voiceClient/voiceSessionControlle
 import { IAgentTitleBarStatusService } from '../../agentSessions/experiments/agentTitleBarStatusService.js';
 import { IVoicePlaybackService } from '../../../common/voicePlaybackService.js';
 import { IWorkbenchEnvironmentService } from '../../../../../services/environment/common/environmentService.js';
+import { createChatControlsVisibilityUpdater, onDidChangeGitHubLoginFailedWelcome, shouldShowGitHubLoginFailedWelcome } from './che/chatViewPane.js';
 
 interface IChatViewPaneState extends Partial<IChatModelInputState> {
 	/**
@@ -856,7 +857,8 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 			}));
 		this._widget.render(chatControlsContainer);
 
-		const updateWidgetVisibility = (reader?: IReader) => this._widget.setVisible(this.isBodyVisible() && !this.welcomeController?.isShowingWelcome.read(reader));
+		const updateChatControlsVisibility = createChatControlsVisibilityUpdater(chatControlsContainer, visible => this._widget.setVisible(this.isBodyVisible() && visible), () => this.relayout());
+		const updateWidgetVisibility = (reader?: IReader) => updateChatControlsVisibility(!!this.welcomeController?.isShowingWelcome.read(reader));
 		this._register(this.onDidChangeBodyVisibility(() => updateWidgetVisibility()));
 		this._register(autorun(reader => updateWidgetVisibility(reader)));
 
@@ -900,6 +902,8 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 				this.relayout();
 			}
 		}));
+
+		this._register(onDidChangeGitHubLoginFailedWelcome(this.contextKeyService)(() => this._onDidChangeViewWelcomeState.fire()));
 
 		// Track the active chat model and reveal it in the sessions control if side-by-side
 		this._register(chatWidget.onDidChangeViewModel(() => {
@@ -1511,6 +1515,10 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 	}
 
 	override shouldShowWelcome(): boolean {
+		if (shouldShowGitHubLoginFailedWelcome(this.contextKeyService)) {
+			return true;
+		}
+
 		const noPersistedSessions = !this.chatService.hasSessions();
 		const hasCoreAgent = this.chatAgentService.getAgents().some(agent => agent.isCore && agent.locations.includes(ChatAgentLocation.Chat));
 		const hasDefaultAgent = this.chatAgentService.getDefaultAgent(ChatAgentLocation.Chat) !== undefined; // only false when Hide AI Features has run and unregistered the setup agents

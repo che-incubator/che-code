@@ -2,6 +2,18 @@
 
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/823
+
+- code/extensions/copilot/src/platform/authentication/common/copilotToken.ts
+- code/extensions/copilot/src/platform/authentication/node/copilotTokenManager.ts
+- code/extensions/copilot/src/platform/authentication/test/node/copilotToken.spec.ts
+- code/extensions/copilot/src/platform/authentication/vscode-node/copilotTokenManager.ts
+- code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupContributions.ts
+- code/src/vs/workbench/contrib/chat/browser/viewsWelcome/chatViewWelcomeController.ts
+- code/src/vs/workbench/contrib/chat/browser/widgetHosts/viewPane/chatViewPane.ts
+---
+
 #### @sbouchet
 https://github.com/che-incubator/che-code/pull/829
 

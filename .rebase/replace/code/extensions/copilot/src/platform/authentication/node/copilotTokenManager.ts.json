@@ -1,0 +1,6 @@
+[
+	{
+		"from": "return { kind: 'failure', reason: 'ParseFailed', message: result.parseError };",
+		"by": "return { kind: 'failure', reason: 'ParseFailed', message: result.parseError, status: result.status };"
+	}
+]

@@ -1,0 +1,6 @@
+[
+	{
+		"from": "\tmessage?: string;\n\t/** URL for action button to help user resolve the error. */",
+		"by": "\tmessage?: string;\n\t/** HTTP status of the token endpoint response, when known. */\n\tstatus?: number;\n\t/** URL for action button to help user resolve the error. */"
+	}
+]

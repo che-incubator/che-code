@@ -2,6 +2,9 @@ src/**
 !src/common/config.json
 out/**
 build/**
+tests/**
+__mocks__/**
+coverage/**
 esbuild*
 tsconfig.json
 package-lock.json

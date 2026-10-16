@@ -1,0 +1,18 @@
+[
+	{
+		"from": "import { IWorkbenchEnvironmentService } from '../../../../../services/environment/common/environmentService.js';",
+		"by": "import { IWorkbenchEnvironmentService } from '../../../../../services/environment/common/environmentService.js';\nimport { createChatControlsVisibilityUpdater, onDidChangeGitHubLoginFailedWelcome, shouldShowGitHubLoginFailedWelcome } from './che/chatViewPane.js';"
+	},
+	{
+		"from": "const updateWidgetVisibility = (reader?: IReader) => this._widget.setVisible(this.isBodyVisible() && !this.welcomeController?.isShowingWelcome.read(reader));",
+		"by": "const updateChatControlsVisibility = createChatControlsVisibilityUpdater(chatControlsContainer, visible => this._widget.setVisible(this.isBodyVisible() && visible), () => this.relayout());\n\t\tconst updateWidgetVisibility = (reader?: IReader) => updateChatControlsVisibility(!!this.welcomeController?.isShowingWelcome.read(reader));"
+	},
+	{
+		"from": "// Track the active chat model and reveal it in the sessions control if side-by-side",
+		"by": "this._register(onDidChangeGitHubLoginFailedWelcome(this.contextKeyService)(() => this._onDidChangeViewWelcomeState.fire()));\n\n\t\t// Track the active chat model and reveal it in the sessions control if side-by-side"
+	},
+	{
+		"from": "override shouldShowWelcome(): boolean {\n\t\tconst noPersistedSessions",
+		"by": "override shouldShowWelcome(): boolean {\n\t\tif (shouldShowGitHubLoginFailedWelcome(this.contextKeyService)) {\n\t\t\treturn true;\n\t\t}\n\n\t\tconst noPersistedSessions"
+	}
+]
