@@ -13,26 +13,14 @@ import { DisposableStore, IDisposable } from '../../../../../../base/common/life
 import { IContextKeyService } from '../../../../../../platform/contextkey/common/contextkey.js';
 import { ILogService } from '../../../../../../platform/log/common/log.js';
 import { chatViewsWelcomeRegistry } from '../../viewsWelcome/chatViewsWelcome.js';
-
-const GITHUB_LOGIN_FAILED_CONTEXT_KEY = 'github.copilot.interactiveSession.gitHubLoginFailed';
-
-/**
- * Whether Copilot reports a GitHub login failure and a welcome view gives guidance for it
- * (not the case e.g. when BYOK models are available).
- */
-function isGitHubLoginFailedWithGuidance(contextKeyService: IContextKeyService): boolean {
-	if (!contextKeyService.getContextKeyValue<boolean>(GITHUB_LOGIN_FAILED_CONTEXT_KEY)) {
-		return false;
-	}
-	return chatViewsWelcomeRegistry.get().some(descriptor => contextKeyService.contextMatchesRules(descriptor.when));
-}
+import { GITHUB_LOGIN_FAILED_CONTEXT_KEY, hasGitHubLoginFailedWelcome } from '../../viewsWelcome/che/chatViewsWelcome.js';
 
 /**
  * Clears the panel agents when Copilot reports a GitHub login failure (e.g. the workspace PAT
  * cannot be exchanged for a Copilot token), so that the Sign In welcome view is shown.
  */
 export function clearPanelAgentsIfGitHubLoginFailed(contextKeyService: IContextKeyService, logService: ILogService, panelAgentDisposables: IDisposable): void {
-	if (isGitHubLoginFailedWithGuidance(contextKeyService)) {
+	if (hasGitHubLoginFailedWelcome(contextKeyService)) {
 		logService.error('[chat setup] GitHub login failed detected, clearing panel agent registration to show welcome view.');
 		panelAgentDisposables.dispose();
 	}
@@ -46,7 +34,7 @@ export function registerGitHubLoginStateListeners(contextKeyService: IContextKey
 	const disposables = new DisposableStore();
 
 	const recreateAgentsIfGitHubLoginFailed = () => {
-		if (isGitHubLoginFailedWithGuidance(contextKeyService)) {
+		if (hasGitHubLoginFailedWelcome(contextKeyService)) {
 			recreateAgents();
 		}
 	};
