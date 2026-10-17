@@ -1,0 +1,6 @@
+[
+  {
+    "from": "\"preinstall\": \"node build/npm/preinstall.ts\",",
+    "by": "\"preinstall\": \"node build/npm/preinstall.ts && node build/copy-extension-build-scripts.js && node build/apply-extension-patches.js\","
+  }
+]

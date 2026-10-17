@@ -1,6 +1,10 @@
 [
   {
-    "from": "const compilations = [\n\t'extensions/configuration-editing/tsconfig.json',",
-    "by": "const compilations = [\n\t'extensions/che-activity-tracker/tsconfig.json',\n    'extensions/che-api/tsconfig.json',\n    'extensions/che-commands/tsconfig.json',\n    'extensions/che-port/tsconfig.json',\n    'extensions/che-remote/tsconfig.json',\n    'extensions/che-resource-monitor/tsconfig.json',\n    'extensions/che-terminal/tsconfig.json',\n    'extensions/che-telemetry/tsconfig.json',\n    'extensions/che-github-authentication/tsconfig.json',\n\t'extensions/configuration-editing/tsconfig.json',"
+    "from": "\t'extensions/debug-server-ready/tsconfig.json',\n\t'extensions/emmet/tsconfig.json',",
+    "by": "\t'extensions/debug-server-ready/tsconfig.json',\n\t'extensions/devfile/tsconfig.json',\n\t'extensions/emmet/tsconfig.json',"
+  },
+  {
+    "from": "\t'extensions/jake/tsconfig.json',\n\t'extensions/json-language-features/client/tsconfig.json',",
+    "by": "\t'extensions/jake/tsconfig.json',\n\t'extensions/js-debug/tsconfig.json',\n\t'extensions/js-debug-companion/tsconfig.json',\n\t'extensions/js-profile-visualizer/packages/vscode-js-profile-table/tsconfig.json',\n\t'extensions/json-language-features/client/tsconfig.json',"
   }
 ]
