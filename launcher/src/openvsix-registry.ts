@@ -80,7 +80,7 @@ export class OpenVSIXRegistry {
     currentItemURL: string,
     newItemURL: string
   ): Promise<void> {
-    const content = await fs.readFile(file);
+    const content = await fs.readPatchable(file);
     const newContent = content.replace(
       `extensionsGallery:{serviceUrl:"${currentServiceURL}",itemUrl:"${currentItemURL}"}`,
       `extensionsGallery:{serviceUrl:"${newServiceURL}",itemUrl:"${newItemURL}"}`

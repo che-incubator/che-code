@@ -47,6 +47,9 @@ const PRODUCT_JSON_WITH_EXTENSIONS_ALTERNATIVE = `{
 	}
 }`;
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test Configuring of Trusted Extensions Auth Access:', () => {
   const originalReadFile = fs.readFile;
   const originalWriteFile = fs.writeFile;

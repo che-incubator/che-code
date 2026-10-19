@@ -21,6 +21,9 @@ const NEW_WORKBENCH = `
 some code, some code, a mask to be replaced test-workspace-1234567890, some code
 `;
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test setting DevWorkspace ID to VS Code', () => {
   beforeEach(() => {
     delete env.DEVWORKSPACE_ID;
