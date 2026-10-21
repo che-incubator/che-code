@@ -263,7 +263,7 @@ To determine if a rule uses sed: check `rebase.sh`'s `resolve_conflicts()` if/el
 
 ## Version pinning policy
 
-See `.claude/skills/dependency-rebase-rules/SKILL.md` for full dependency handling guidelines. Key points:
+See `.agents/skills/dependency-rebase-rules/SKILL.md` for full dependency handling guidelines. Key points:
 
 - **Do NOT change any dependency version without asking the user.** Pins exist for CVE fixes or compatibility.
 - Run the dependency pin audit (described in the dependency skill) to classify each pin as ACTIVE, REDUNDANT, or OUTDATED against the target upstream.
