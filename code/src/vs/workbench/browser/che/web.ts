@@ -37,7 +37,9 @@ interface KeybindingEntry {
  * array so they take priority over user keybindings (VS Code processes
  * keybindings top-to-bottom, later entries win). Admin entries are tagged with
  * `"_source": "configmap"` so they can be identified and replaced on the next
- * start when the ConfigMap content changes. Keybindings are written to the
+ * start when the ConfigMap content changes. When the ConfigMap content is
+ * absent, previously injected entries are removed while user entries are
+ * preserved. Keybindings are written to the
  * keybindings resource of the profile active at startup, following the same
  * pattern as upstream's UserDataProfileInitializer. If the ConfigMap content
  * or the existing keybindings file fails to parse, the initializer aborts
@@ -46,7 +48,7 @@ interface KeybindingEntry {
 export class CheKeybindingsInitializer implements IUserDataInitializer {
 
     constructor(
-        private readonly initialKeybindings: string,
+        private readonly initialKeybindings: string | undefined,
         private readonly fileService: IFileService,
         private readonly userDataProfileService: IUserDataProfileService,
         private readonly logService: ILogService,
@@ -61,24 +63,31 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
     async initializeRequiredResources(): Promise<void> {
         const resource = this.userDataProfileService.currentProfile.keybindingsResource;
 
-        // json.parse is fault-tolerant: it records syntax errors into the errors
-        // array and returns a partial result instead of throwing, so the array
-        // must be checked before using the parsed value.
-        const configmapParseErrors: json.ParseError[] = [];
-        const parsed = json.parse(this.initialKeybindings, configmapParseErrors);
-        if (configmapParseErrors.length > 0) {
-            this.logService.warn('[Che] ConfigMap keybindings.json is not valid JSON, skipping.', configmapParseErrors);
-            return;
+        // An absent ConfigMap means an empty admin list: previously injected
+        // entries are still stripped below, so removing keybindings.json from
+        // the ConfigMap removes them from user profiles on the next start.
+        let configmapEntries: KeybindingEntry[] = [];
+        if (this.initialKeybindings !== undefined) {
+            // json.parse is fault-tolerant: it records syntax errors into the errors
+            // array and returns a partial result instead of throwing, so the array
+            // must be checked before using the parsed value.
+            const configmapParseErrors: json.ParseError[] = [];
+            const parsed = json.parse(this.initialKeybindings, configmapParseErrors);
+            if (configmapParseErrors.length > 0) {
+                this.logService.warn('[Che] ConfigMap keybindings.json is not valid JSON, skipping.', configmapParseErrors);
+                return;
+            }
+            if (!Array.isArray(parsed)) {
+                this.logService.warn('[Che] ConfigMap keybindings.json is not a JSON array, skipping.');
+                return;
+            }
+            configmapEntries = parsed;
         }
-        if (!Array.isArray(parsed)) {
-            this.logService.warn('[Che] ConfigMap keybindings.json is not a JSON array, skipping.');
-            return;
-        }
-        const configmapEntries: KeybindingEntry[] = parsed;
 
         const markedEntries: KeybindingEntry[] = configmapEntries.map(entry => ({ ...entry, _source: CONFIGMAP_SOURCE_MARKER }));
 
         let userEntries: KeybindingEntry[] = [];
+        let hadMarkedEntries = false;
         if (await this.fileService.exists(resource)) {
             let content: string;
             try {
@@ -97,7 +106,15 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
                 this.logService.warn('[Che] Existing keybindings is not a JSON array. Aborting to prevent data loss.');
                 return;
             }
-            userEntries = existing.filter((e: KeybindingEntry) => e._source !== CONFIGMAP_SOURCE_MARKER);
+            const filtered = existing.filter((e: KeybindingEntry) => e._source !== CONFIGMAP_SOURCE_MARKER);
+            hadMarkedEntries = filtered.length !== existing.length;
+            userEntries = filtered;
+        }
+
+        // Nothing to inject or clean up — do not touch the user's file, so its
+        // formatting and comments are preserved unless a write is required.
+        if (markedEntries.length === 0 && !hadMarkedEntries) {
+            return;
         }
 
         const merged = [...userEntries, ...markedEntries];

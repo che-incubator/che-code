@@ -432,9 +432,7 @@ export class BrowserMain extends Disposable {
 		if (environmentService.options?.profile) {
 			userDataInitializers.push(new UserDataProfileInitializer(environmentService, fileService, userDataProfileService, storageService, logService, uriIdentityService, requestService));
 		}
-		if (environmentService.options?.cheInitialKeybindings) {
-			userDataInitializers.push(new CheKeybindingsInitializer(environmentService.options.cheInitialKeybindings, fileService, userDataProfileService, logService));
-		}
+		userDataInitializers.push(new CheKeybindingsInitializer(environmentService.options?.cheInitialKeybindings, fileService, userDataProfileService, logService));
 		const userDataInitializationService = new UserDataInitializationService(userDataInitializers);
 		serviceCollection.set(IUserDataInitializationService, userDataInitializationService);
 

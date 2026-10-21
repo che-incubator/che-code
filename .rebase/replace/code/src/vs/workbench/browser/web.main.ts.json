@@ -9,6 +9,6 @@
   },
   {
     "from": "const userDataInitializationService = new UserDataInitializationService(userDataInitializers);",
-    "by": "if (environmentService.options?.cheInitialKeybindings) {\n\t\t\tuserDataInitializers.push(new CheKeybindingsInitializer(environmentService.options.cheInitialKeybindings, fileService, userDataProfileService, logService));\n\t\t}\n\t\tconst userDataInitializationService = new UserDataInitializationService(userDataInitializers);"
+    "by": "userDataInitializers.push(new CheKeybindingsInitializer(environmentService.options?.cheInitialKeybindings, fileService, userDataProfileService, logService));\n\t\tconst userDataInitializationService = new UserDataInitializationService(userDataInitializers);"
   }
 ]
