@@ -39,7 +39,9 @@ interface KeybindingEntry {
  * `"_source": "configmap"` so they can be identified and replaced on the next
  * start when the ConfigMap content changes. Keybindings are written to the
  * keybindings resource of the profile active at startup, following the same
- * pattern as upstream's UserDataProfileInitializer.
+ * pattern as upstream's UserDataProfileInitializer. If the ConfigMap content
+ * or the existing keybindings file fails to parse, the initializer aborts
+ * without writing anything, so user data is never lost.
  */
 export class CheKeybindingsInitializer implements IUserDataInitializer {
 
@@ -59,33 +61,43 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
     async initializeRequiredResources(): Promise<void> {
         const resource = this.userDataProfileService.currentProfile.keybindingsResource;
 
-        let configmapEntries: KeybindingEntry[];
-        try {
-            const parsed = json.parse(this.initialKeybindings);
-            if (!Array.isArray(parsed)) {
-                this.logService.warn('[Che] ConfigMap keybindings.json is not a JSON array, skipping.');
-                return;
-            }
-            configmapEntries = parsed;
-        } catch (e) {
-            this.logService.warn('[Che] ConfigMap keybindings.json is not valid JSON, skipping.', e);
+        // json.parse is fault-tolerant: it records syntax errors into the errors
+        // array and returns a partial result instead of throwing, so the array
+        // must be checked before using the parsed value.
+        const configmapParseErrors: json.ParseError[] = [];
+        const parsed = json.parse(this.initialKeybindings, configmapParseErrors);
+        if (configmapParseErrors.length > 0) {
+            this.logService.warn('[Che] ConfigMap keybindings.json is not valid JSON, skipping.', configmapParseErrors);
             return;
         }
+        if (!Array.isArray(parsed)) {
+            this.logService.warn('[Che] ConfigMap keybindings.json is not a JSON array, skipping.');
+            return;
+        }
+        const configmapEntries: KeybindingEntry[] = parsed;
 
         const markedEntries: KeybindingEntry[] = configmapEntries.map(entry => ({ ...entry, _source: CONFIGMAP_SOURCE_MARKER }));
 
         let userEntries: KeybindingEntry[] = [];
         if (await this.fileService.exists(resource)) {
+            let content: string;
             try {
-                const content = (await this.fileService.readFile(resource)).value.toString();
-                const existing = json.parse(content);
-                if (Array.isArray(existing)) {
-                    userEntries = existing.filter((e: KeybindingEntry) => e._source !== CONFIGMAP_SOURCE_MARKER);
-                }
+                content = (await this.fileService.readFile(resource)).value.toString();
             } catch (e) {
-                this.logService.warn('[Che] Failed to parse existing keybindings. Aborting to prevent data loss.', e);
+                this.logService.warn('[Che] Failed to read existing keybindings. Aborting to prevent data loss.', e);
                 return;
             }
+            const parseErrors: json.ParseError[] = [];
+            const existing = json.parse(content, parseErrors);
+            if (parseErrors.length > 0) {
+                this.logService.warn('[Che] Failed to parse existing keybindings. Aborting to prevent data loss.', parseErrors);
+                return;
+            }
+            if (!Array.isArray(existing)) {
+                this.logService.warn('[Che] Existing keybindings is not a JSON array. Aborting to prevent data loss.');
+                return;
+            }
+            userEntries = existing.filter((e: KeybindingEntry) => e._source !== CONFIGMAP_SOURCE_MARKER);
         }
 
         const merged = [...userEntries, ...markedEntries];
