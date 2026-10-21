@@ -34,7 +34,7 @@ If any check fails: inform user what went wrong and ask for the correct version.
 
 After validating the target version:
 
-1. Read `target_remote` from `.claude/skills/rebase/rebase-config.yaml` and ensure it is configured as a git remote named `target` (add it if not: `git remote add target <url>`)
+1. Read `target_remote` from `.agents/skills/rebase/rebase-config.yaml` and ensure it is configured as a git remote named `target` (add it if not: `git remote add target <url>`)
 2. Fetch the target remote's main: `git fetch target main`
 3. Check current branch: `git branch --show-current`
 4. If on `main`: create and switch to a new branch based on `target/main`:
@@ -135,7 +135,7 @@ If `pre-rebase.sh` exits with code 1, there are NEEDS_RULE files — proceed to 
 
 ### Step 3b: Audit dependency pins
 
-Audit all dependency version pins in `.rebase/add/` and `.rebase/override/` files against the new upstream. Follow the process in `.claude/skills/dependency-rebase-rules/SKILL.md`:
+Audit all dependency version pins in `.rebase/add/` and `.rebase/override/` files against the new upstream. Follow the process in `.agents/skills/dependency-rebase-rules/SKILL.md`:
 
 1. Compare every pinned version against what upstream uses at the target release
 2. Classify each pin as ACTIVE, REDUNDANT, or OUTDATED
@@ -149,7 +149,7 @@ Do not stop for user confirmation — apply changes and document everything in t
 
 ### Step 4: Create missing rules (if NEEDS_RULE files exist)
 
-For each NEEDS_RULE file in the pre-rebase report, use the `fix-rebase-rules` skill (read `.claude/skills/fix-rebase-rules/SKILL.md`), specifically its "Handling uncovered Che-specific changes" workflow:
+For each NEEDS_RULE file in the pre-rebase report, use the `fix-rebase-rules` skill (read `.agents/skills/fix-rebase-rules/SKILL.md`), specifically its "Handling uncovered Che-specific changes" workflow:
 
 1. Read the che-code file to understand the che-specific modification
 2. Read the upstream file at `PREVIOUS_UPSTREAM_VERSION` to see the original code
@@ -168,13 +168,13 @@ For files that have `.rebase/` rules but no `elif` entry in `resolve_conflicts()
 
 ### Step 6: Validate existing rules against the NEW upstream
 
-Run the `validate-rebase-rules` skill (read `.claude/skills/validate-rebase-rules/SKILL.md`). This produces `rebase-rules-validation.md`.
+Run the `validate-rebase-rules` skill (read `.agents/skills/validate-rebase-rules/SKILL.md`). This produces `rebase-rules-validation.md`.
 
 Key point: the validation now runs against the **new** `CURRENT_UPSTREAM_VERSION`, so it will catch all `from` values that changed between the old and new upstream.
 
 ### Step 7: Fix stale rules
 
-If the validation report has ERROR-level items, run the `fix-rebase-rules` skill (read `.claude/skills/fix-rebase-rules/SKILL.md`).
+If the validation report has ERROR-level items, run the `fix-rebase-rules` skill (read `.agents/skills/fix-rebase-rules/SKILL.md`).
 
 Common issues:
 - **Stale `from` values** — upstream changed the code that `from` was matching. The fix skill updates `from` to match the new upstream and `by` to produce the current che-code result.
@@ -187,7 +187,7 @@ If a fix fails for a file: same logic as Step 4 — if the file conflicts in the
 Run the `test-rebase-rules` skill (or directly):
 
 ```bash
-bash .claude/skills/test-rebase-rules/run-all-tests.sh
+bash .agents/skills/test-rebase-rules/run-all-tests.sh
 ```
 
 All tests must pass (or show only cosmetic warnings) before proceeding. If a test fails, re-fix the rule and re-test (retry loop). If repeated attempts fail, apply the same conflict/no-conflict logic from Steps 4 and 7.
@@ -273,7 +273,7 @@ npm run test-node
 ### Step 14: Run rebase rule tests against the final state
 
 ```bash
-bash .claude/skills/test-rebase-rules/run-all-tests.sh
+bash .agents/skills/test-rebase-rules/run-all-tests.sh
 ```
 
 This verifies that the rules still produce the correct output against the now-current upstream. All tests should pass.
@@ -294,7 +294,7 @@ This updates versions and checksums in `artifacts.lock.yaml` to reflect the new 
 
 ### Step 16: Create Pull Request
 
-1. Read `.claude/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
+1. Read `.agents/skills/rebase/rebase-config.yaml` for `target_remote` and testing config
 2. Read `code/package.json` to get the `version` field (e.g. `1.120.0`)
 3. Collect all commit hashes created during this rebase (from `git log`)
 4. Push the branch to the target remote:
@@ -358,7 +358,7 @@ Test starting a workspace and basic functionality for the following images
 
 ### Test table generation
 
-Read `.claude/skills/rebase/rebase-config.yaml` to build the test table. For each image group:
+Read `.agents/skills/rebase/rebase-config.yaml` to build the test table. For each image group:
 
 1. Add a row with the group label in bold (e.g. `**udi**`) — no link
 2. For each image entry, generate a workspace link:
