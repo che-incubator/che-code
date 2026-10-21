@@ -15,7 +15,7 @@ import { IFileService } from '../../../platform/files/common/files.js';
 import { ILogService } from '../../../platform/log/common/log.js';
 import { IPolicyService, NullPolicyService } from '../../../platform/policy/common/policy.js';
 import { PolicyChannelClient } from '../../../platform/policy/common/policyIpc.js';
-import { IUserDataProfilesService } from '../../../platform/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfileService } from '../../services/userDataProfile/common/userDataProfile.js';
 import { IRemoteAgentService } from '../../services/remote/common/remoteAgentService.js';
 import { IUserDataInitializer } from '../../services/userData/browser/userDataInit.js';
 import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
@@ -37,14 +37,16 @@ interface KeybindingEntry {
  * array so they take priority over user keybindings (VS Code processes
  * keybindings top-to-bottom, later entries win). Admin entries are tagged with
  * `"_source": "configmap"` so they can be identified and replaced on the next
- * start when the ConfigMap content changes.
+ * start when the ConfigMap content changes. Keybindings are written to the
+ * keybindings resource of the profile active at startup, following the same
+ * pattern as upstream's UserDataProfileInitializer.
  */
 export class CheKeybindingsInitializer implements IUserDataInitializer {
 
     constructor(
         private readonly initialKeybindings: string,
         private readonly fileService: IFileService,
-        private readonly userDataProfilesService: IUserDataProfilesService,
+        private readonly userDataProfileService: IUserDataProfileService,
         private readonly logService: ILogService,
     ) { }
 
@@ -55,7 +57,7 @@ export class CheKeybindingsInitializer implements IUserDataInitializer {
     async whenInitializationFinished(): Promise<void> { }
 
     async initializeRequiredResources(): Promise<void> {
-        const resource = this.userDataProfilesService.defaultProfile.keybindingsResource;
+        const resource = this.userDataProfileService.currentProfile.keybindingsResource;
 
         let configmapEntries: KeybindingEntry[];
         try {
