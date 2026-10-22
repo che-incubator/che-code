@@ -61,6 +61,7 @@ import { ChatSetupController } from './chatSetupController.js';
 import { GrowthSessionController, registerGrowthSession } from './chatSetupGrowthSession.js';
 import { AICodeActionsHelper, AINewSymbolNamesProvider, ChatCodeActionsProvider, SetupAgent } from './chatSetupProviders.js';
 import { ChatSetup } from './chatSetupRunner.js';
+import { clearPanelAgentsIfGitHubLoginFailed, registerGitHubLoginStateListeners } from './che/chatSetupContributions.js';
 
 const defaultChat = {
 	chatExtensionId: product.defaultChatAgent?.chatExtensionId ?? '',
@@ -139,24 +140,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 							}));
 						}
 
-						// Proactively clear panel agents when Copilot reports GitHub login failure
-						// (e.g. workspace PAT cannot be exchanged for a Copilot token)
-						const gitHubLoginFailedKey = 'github.copilot.interactiveSession.gitHubLoginFailed';
-						const checkGitHubLoginFailed = () => {
-							if (this.contextKeyService.getContextKeyValue<boolean>(gitHubLoginFailedKey)) {
-								const panelAgentHasGuidance = chatViewsWelcomeRegistry.get().some(descriptor => this.contextKeyService.contextMatchesRules(descriptor.when));
-								if (panelAgentHasGuidance) {
-									this.logService.error('[chat setup] GitHub login failed detected, clearing panel agent registration to show welcome view.');
-									panelAgentDisposables.dispose();
-								}
-							}
-						};
-						panelAgentDisposables.add(this.contextKeyService.onDidChangeContext(e => {
-							if (e.affectsSome(new Set([gitHubLoginFailedKey]))) {
-								checkGitHubLoginFailed();
-							}
-						}));
-						checkGitHubLoginFailed();
+						clearPanelAgentsIfGitHubLoginFailed(this.contextKeyService, this.logService, panelAgentDisposables);
 
 						// Inline Agents
 						disposables.add(SetupAgent.registerDefaultAgents(this.instantiationService, ChatAgentLocation.Terminal, ChatModeKind.Ask, context, controller).disposable);
@@ -203,6 +187,10 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 		};
 
 		this._register(Event.runAndSubscribe(context.onDidChange, () => updateRegistration()));
+		this._register(registerGitHubLoginStateListeners(this.contextKeyService, () => {
+			defaultAgentDisposables.clear();
+			updateRegistration();
+		}));
 	}
 
 	private registerGrowthSession(chatEntitlementService: ChatEntitlementService): void {

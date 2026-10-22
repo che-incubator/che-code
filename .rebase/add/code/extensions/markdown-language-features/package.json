@@ -1,5 +1,8 @@
 {
     "overrides": {
-        "brace-expansion@1": "^1.1.18"
+        "brace-expansion@1": "^1.1.18",
+        "markdown-it": {
+            "linkify-it": "^5.0.2"
+        }
     }
 }

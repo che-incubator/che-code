@@ -7161,7 +7161,7 @@
     "esbuild": "0.28.1",
     "fastq": "^1.19.1",
     "glob": "^11.1.0",
-    "js-yaml": "^4.3.1",
+    "js-yaml": "^4.3.2",
     "minimist": "^1.2.8",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
@@ -7240,22 +7240,24 @@
     "lru-cache": "^11.1.0",
     "markdown-it": "^14.2.0",
     "minimatch": "^10.2.1",
-    "undici": "^7.28.0",
+    "undici": "^7.30.0",
     "vscode-tas-client": "^0.1.84",
     "web-tree-sitter": "^0.23.0"
   },
   "overrides": {
+    "source-map-js": "^1.2.2",
     "string_decoder": "npm:string_decoder@1.2.0",
     "yauzl": "^3.3.1",
     "zod": "3.25.76",
     "shell-quote": "^1.8.4",
-    "qs": "6.15.2",
+    "qs": "^6.16.0",
     "ip-address": "^10.5.0",
     "ws": "^8.21.0",
     "brace-expansion@1": "^1.1.18",
     "brace-expansion@2": "^2.1.4",
     "brace-expansion@5": "5.0.9",
     "form-data@4": "^4.0.6",
+    "@grpc/grpc-js": "^1.14.6",
     "@vscode/vsce": {
       "form-data": "^4.0.6"
     },
@@ -7264,6 +7266,15 @@
     },
     "vite": {
       "postcss": "^8.5.26"
+    },
+    "markdown-it": {
+      "linkify-it": "^5.0.2"
+    },
+    "ajv": {
+      "fast-uri": "^3.1.8"
+    },
+    "express": {
+      "proxy-addr": "^2.0.8"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",

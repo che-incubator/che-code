@@ -2,6 +2,7 @@
     "name": "che-code",
     "bin": "out/vs/server/main.js",
     "dependencies": {
+      "undici": "^7.30.0",
       "ws": "^8.21.0"
     },
     "devDependencies": {

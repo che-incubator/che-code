@@ -1,0 +1,7 @@
+{
+    "overrides": {
+        "markdown-it": {
+            "linkify-it": "^5.0.2"
+        }
+    }
+}

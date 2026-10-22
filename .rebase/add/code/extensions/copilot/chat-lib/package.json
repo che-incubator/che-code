@@ -1,5 +1,6 @@
 {
     "overrides": {
+        "source-map-js": "^1.2.2",
         "shell-quote": "^1.8.4",
         "vite": {
             "postcss": "^8.5.26"

@@ -147,6 +147,7 @@ describe('Copilot token unit tests', function () {
 			kind: 'failure',
 			message: 'Response is not valid: null',
 			reason: 'ParseFailed',
+			status: 200,
 		});
 	});
 

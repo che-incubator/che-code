@@ -37,31 +37,6 @@ const server = http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
 
-    let hasUserPrefSSHKey = fs.existsSync('/etc/ssh/dwo_ssh_key.pub');
-
-    let userPubKey = "PUBLIC KEY COULD NOT BE DISPLAYED";
-    try {
-      userPubKey = fs.readFileSync('/etc/ssh/dwo_ssh_key.pub', 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let userKey = '';
-    try {
-      userKey = fs.readFileSync('/etc/ssh/dwo_ssh_key', 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let genKey = "PRIVATE KEY NOT FOUND";
-    try {
-      genKey = fs.readFileSync('/sshd/ssh_client_key', 'utf8');
-    } catch (err) {
-     // continue
-    }
-
-    let keyMessage = hasUserPrefSSHKey ? userPubKey : genKey;
-    let encodedKeyMessage = Buffer.from(hasUserPrefSSHKey ? userKey : genKey).toString('base64url');
     let encodedUrl = encodeURIComponent(process.env["CHE_DASHBOARD_URL"]);
     getHostURL((hostURL) => {
 
@@ -99,8 +74,8 @@ const server = http.createServer((req, res) => {
         <li class="extension-li">Click the URI below (you may need to accept the prompt allowing this page to open the link with your VS Code-based editor) <b>OR</b> from the "Remote Explorer" view, select the <code>Connect to Dev Spaces</code> command and input the URI below.</li>
         <div class="parent">
           <div>
-            <a href="${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}">
-              <pre id="uri-connection">${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&key=${encodedKeyMessage}&url=${encodedUrl}</pre>
+            <a href="${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&url=${encodedUrl}">
+              <pre id="uri-connection">${uriScheme}://redhat.devspaces-remote-ssh?namespace=${process.env["DEVWORKSPACE_NAMESPACE"]}&podName=${process.env["HOSTNAME"]}&userName=${username}&dwName=${process.env["DEVWORKSPACE_NAME"]}&url=${encodedUrl}</pre>
             </a>
           </div>
           <div class="clipboard">
@@ -122,23 +97,7 @@ const server = http.createServer((req, res) => {
             <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
           </svg></a>. This establishes a connection to the workspace.</p></li>
         <li>
-        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${username}</code> ${hasUserPrefSSHKey ? `. The SSH key, corresponding to the following public key, configured in the "SSH Keys" tab of "User Preferences" has been authorized to connect :` : `and the following identity file :`}
-        <div class="parent">
-        <div>
-        <pre id="key">${keyMessage}</pre>
-        </div>
-        <div class="clipboard">
-          <a href="#">
-          <svg class="clipboard-img-pre" onclick="copyToClipboard('key')" title="Copy" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 20 20">
-            <path fill="currentColor" d="M12 0H2C.9 0 0 .9 0 2v10h1V2c0-.6.4-1 1-1h10V0z"></path>
-            <path fill="currentColor" d="M18 20H8c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2zM8 7c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h10c.6 0 1-.4 1-1V8c0-.6-.4-1-1-1H8z"></path>
-          </svg>
-          </a>
-        </div>
-        </div>
-        <p>
-        <b>&#9888; Please ensure the permissions on the private key used are restricted to allow only the file owner to read/write. The SSH service may fail to correctly authenticate otherwise.</b>
-        </p>
+        In your local VS Code instance, with either <a href="https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh">"Remote - SSH"</a> (for VS Code), or <a href="https://open-vsx.org/extension/jeanp413/open-remote-ssh">"Open Remote - SSH"</a> (for Code-OSS), connect to <code>localhost</code> on port <code>2022</code> with user <code>${username}.</code>
         This can also be configured locally in the client SSH configuration file (eg. <code class="path">$\{HOME\}/.ssh/config</code>) with the following :
         <div class="parent">
         <div>
@@ -146,7 +105,6 @@ const server = http.createServer((req, res) => {
   HostName 127.0.0.1
   User ${username}
   Port 2022
-  IdentityFile "$\{HOME\}/.ssh/ssh_client_key"
   UserKnownHostsFile /dev/null
   StrictHostKeyChecking no</pre>
         </div>
@@ -159,9 +117,6 @@ const server = http.createServer((req, res) => {
           </a>
         </div>
         </div>
-        <p>
-        Where <code class="path">$\{HOME\}/.ssh/ssh_client_key</code> should be replaced by the absolute path to the private key file on your local system.
-        </p>
         </li>
       </ol>
       <h3>Troubleshooting</h3>
@@ -171,7 +126,7 @@ const server = http.createServer((req, res) => {
     </div>
     <script>
       initializePlatformContent();
-      openDevspacesURI("${uriScheme}", "${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedKeyMessage}", "${encodedUrl}");
+      openDevspacesURI("${uriScheme}", "${process.env["DEVWORKSPACE_NAMESPACE"]}", "${process.env["HOSTNAME"]}", "${username}", "${process.env["DEVWORKSPACE_NAME"]}", "${encodedUrl}");
     </script>
   </body>
 </html>

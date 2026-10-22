@@ -17,6 +17,7 @@ import { CopilotToken, ExtendedTokenInfo, TokenErrorNotificationId, TokenInfoOrE
 import { ErrorNoTelemetry } from '../../../util/vs/base/common/errors';
 import { nowSeconds } from '../common/copilotTokenManager';
 import { BaseCopilotTokenManager } from '../node/copilotTokenManager';
+import { handleCheTokenExchangeResult } from './che/copilotTokenManager';
 import { getAnyAuthSession } from './session';
 
 //Flag if we've shown message about broken oauth token.
@@ -87,12 +88,7 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
 			}
 
-			if (tokenResult.kind === 'failure' && tokenResult.reason === 'NotAuthorized' && !tokenResult.notification_id) {
-				this._logService.info('Copilot token exchange failed (workspace token cannot be exchanged for Copilot token), triggering sign-in flow');
-				return { kind: 'failure', reason: 'GitHubLoginFailed' };
-			}
-
-			return tokenResult;
+			return handleCheTokenExchangeResult(tokenResult, session.id, this._logService);
 		} else {
 			this._logService.info(`Allowing anonymous access with devDeviceId`);
 			const tokenResult = await this.authFromDevDeviceId(env.devDeviceId);

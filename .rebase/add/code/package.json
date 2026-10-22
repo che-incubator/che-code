@@ -4,6 +4,7 @@
         "@types/minimatch": "^3.0.5"
     },
     "overrides": {
+        "source-map-js": "^1.2.2",
         "@gulp-sourcemaps/identity-map": {
             "postcss": "^8.5.26"
         },
@@ -13,16 +14,29 @@
         "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
         "flatted": "^3.4.2",
         "shell-quote": "^1.8.4",
-        "qs": "6.15.2",
+        "qs": "^6.16.0",
         "ip-address": "^10.5.0",
         "brace-expansion@1": "^1.1.18",
         "brace-expansion@2": "^2.1.4",
         "test-exclude": {
             "brace-expansion@5": "5.0.9"
         },
-        "axios": {
-            "form-data": "^4.0.6"
+        "@microsoft/dev-tunnels-management": {
+            "axios": "^1.20.0"
         },
-        "js-yaml@4": "^4.3.1"
+        "js-yaml@4": "^4.3.2",
+        "js-yaml@3": "^3.15.2",
+        "ajv": {
+            "fast-uri": "^3.1.8"
+        },
+        "express": {
+            "proxy-addr": "^2.0.8"
+        },
+        "@github/copilot-sdk": {
+            "zod": "^4.6.7"
+        },
+        "@vscode/component-explorer-cli": {
+            "zod": "^4.6.7"
+        }
     }
 }

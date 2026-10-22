@@ -1,0 +1,16 @@
+attributes:
+  controller.devfile.io/storage-type: per-workspace
+components:
+- attributes:
+    app.kubernetes.io/component: che-code-runtime
+    app.kubernetes.io/part-of: che-code.eclipse.org
+    controller.devfile.io/merged-contributions: editor
+  container:
+    image: quay.io/che-incubator/che-code-dev:insiders
+    sourceMapping: /projects
+  name: dev
+starterProjects:
+- name: starter-app
+  git:
+    remotes:
+      url: https://github.com/example/starter-app.git
