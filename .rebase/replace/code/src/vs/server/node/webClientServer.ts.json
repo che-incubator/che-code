@@ -1,7 +1,7 @@
 [
     {
         "from": "import type * as http from 'http';",
-        "by": "import * as http from 'http';\nimport { getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';"
+        "by": "import * as http from 'http';\nimport { getCheInitialKeybindings, getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';"
     },
     {
         "from": "\t\tconst stat = await promises.stat(filePath); // throws an error if file doesn't exist\n\t\tif (cacheControl === CacheControl.ETAG) {\n\n\t\t\t// Check if file modified since\n\t\t\tconst etag = `W/\"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}\"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)\n\t\t\tif (req.headers['if-none-match'] === etag) {\n\t\t\t\tres.writeHead(304);\n\t\t\t\treturn void res.end();\n\t\t\t}",
@@ -14,5 +14,9 @@
     {
         "from": "\t\t\tconst newLocation = url.format({ pathname: basePath, query: newQuery });\n\t\t\tresponseHeaders['Location'] = newLocation;",
         "by": "\t\t\tresponseHeaders['Location'] = getCheRedirectLocation(req, newQuery);"
+    },
+    {
+        "from": "callbackRoute: callbackRoute\n\t\t};",
+        "by": "callbackRoute: callbackRoute,\n\t\t\tcheInitialKeybindings: await getCheInitialKeybindings(),\n\t\t};"
     }
 ]

@@ -309,6 +309,12 @@ export interface IWorkbenchConstructionOptions {
 
 	//#endregion
 
+	/**
+	 * Initial keybindings content from ConfigMap (JSON array string).
+	 * When set, keybindings are merged into IndexedDB on every workspace start.
+	 */
+	readonly cheInitialKeybindings?: string;
+
 	//#region Profile options
 
 	/**
