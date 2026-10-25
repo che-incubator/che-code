@@ -37,6 +37,9 @@ const TEST_APPLY_CHE_PLUGIN_REISTRY = `{
 const originalReadFile = fs.readFile;
 const originalWriteFile = fs.writeFile;
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test Configuring of OpenVSIX registry:', () => {
   beforeEach(() => {
     delete env.OPENVSX_REGISTRY_URL;

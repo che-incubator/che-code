@@ -20,7 +20,7 @@ export class ProductJSON {
   private product: any;
 
   async load(): Promise<ProductJSON> {
-    const content = await fs.readFile(PRODUCT_JSON);
+    const content = await fs.readPatchable(PRODUCT_JSON);
     this.product = JSON.parse(content);
 
     return this;
