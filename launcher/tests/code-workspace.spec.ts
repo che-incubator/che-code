@@ -118,6 +118,90 @@ const WORKSPACE_WITH_DEPENDENT_PROJECTS = `{
 \t]
 }`;
 
+const WORKSPACE_SKIP_PROJECT_SYNC = `{
+	"folders": [
+		{
+			"name": "home",
+			"path": "/home/user"
+		}
+	],
+	"settings": {
+		"workspace.skipProjectSync": true
+	}
+}`;
+
+const WORKSPACE_SKIP_PROJECT_SYNC_FALSE = `{
+	"folders": [
+		{
+			"name": "home",
+			"path": "/home/user"
+		}
+	],
+	"settings": {
+		"workspace.skipProjectSync": false
+	}
+}`;
+
+const WORKSPACE_SKIP_PROJECT_SYNC_STRING = `{
+	"folders": [
+		{
+			"name": "home",
+			"path": "/home/user"
+		}
+	],
+	"settings": {
+		"workspace.skipProjectSync": "true"
+	}
+}`;
+
+const WORKSPACE_WITH_FALSE_SETTING_AND_PROJECTS = `{
+	"folders": [
+		{
+			"name": "home",
+			"path": "/home/user"
+		},
+		{
+			"name": "che-code",
+			"path": "/tmp/projects/che-code"
+		},
+		{
+			"name": "che-devfile-registry",
+			"path": "/tmp/projects/che-devfile-registry"
+		},
+		{
+			"name": "web-nodejs-sample",
+			"path": "/tmp/projects/web-nodejs-sample"
+		}
+	],
+	"settings": {
+		"workspace.skipProjectSync": false
+	}
+}`;
+
+const WORKSPACE_WITH_STRING_SETTING_AND_PROJECTS = `{
+	"folders": [
+		{
+			"name": "home",
+			"path": "/home/user"
+		},
+		{
+			"name": "che-code",
+			"path": "/tmp/projects/che-code"
+		},
+		{
+			"name": "che-devfile-registry",
+			"path": "/tmp/projects/che-devfile-registry"
+		},
+		{
+			"name": "web-nodejs-sample",
+			"path": "/tmp/projects/web-nodejs-sample"
+		}
+	],
+	"settings": {
+		"workspace.skipProjectSync": "true"
+	}
+}`;
+
 describe('Test generating VS Code Workspace file:', () => {
   const originalReadFile = fs.readFile;
 
@@ -875,6 +959,152 @@ describe('Test generating VS Code Workspace file:', () => {
 
     // should update existing workspace file
     expect(writeFileMock).toBeCalledWith(env.VSCODE_DEFAULT_WORKSPACE, WORKSPACE_WITH_TWO_PROJECTS);
+  });
+
+  test('should not add projects when workspace.skipProjectSync is true', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.VSCODE_DEFAULT_WORKSPACE = '/tmp/custom.code-workspace-file';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'dependentProjects.devworkspace.yaml');
+
+    const pathExistsMock = jest.fn();
+    const isFileMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      isFile: isFileMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (filePath) => {
+      if (filePath === env.VSCODE_DEFAULT_WORKSPACE) {
+        return WORKSPACE_SKIP_PROJECT_SYNC;
+      }
+
+      if (filePath === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(filePath);
+      }
+
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation((filePath) => {
+      return (
+        '/tmp/custom.code-workspace-file' === filePath ||
+        '/tmp/projects/che-code' === filePath ||
+        '/tmp/projects/che-devfile-registry' === filePath ||
+        '/tmp/projects/web-nodejs-sample' === filePath ||
+        '/tmp/projects/dependent-project' === filePath
+      );
+    });
+
+    isFileMock.mockImplementation((filePath) => {
+      return '/tmp/custom.code-workspace-file' === filePath;
+    });
+
+    const codeWorkspace = new CodeWorkspace();
+    const workspaceFile = await codeWorkspace.generate();
+
+    expect(workspaceFile).toEqual('/tmp/custom.code-workspace-file');
+    expect(writeFileMock).not.toHaveBeenCalled();
+    expect(pathExistsMock).not.toBeCalledWith('/tmp/projects/che-code');
+    expect(pathExistsMock).not.toBeCalledWith('/tmp/projects/dependent-project');
+  });
+
+  test('should add projects when workspace.skipProjectSync is false', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
+
+    const pathExistsMock = jest.fn();
+    const isFileMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      isFile: isFileMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (filePath) => {
+      if (filePath === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(filePath);
+      }
+
+      if (filePath === '/tmp/projects/.code-workspace') {
+        return WORKSPACE_SKIP_PROJECT_SYNC_FALSE;
+      }
+
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation((filePath) => {
+      return (
+        '/tmp/projects/.code-workspace' === filePath ||
+        '/tmp/projects/che-code' === filePath ||
+        '/tmp/projects/che-devfile-registry' === filePath ||
+        '/tmp/projects/web-nodejs-sample' === filePath
+      );
+    });
+
+    isFileMock.mockImplementation((filePath) => {
+      return '/tmp/projects/.code-workspace' === filePath;
+    });
+
+    const codeWorkspace = new CodeWorkspace();
+    await codeWorkspace.generate();
+
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_FALSE_SETTING_AND_PROJECTS);
+  });
+
+  test('should add projects when workspace.skipProjectSync is the string "true"', async () => {
+    env.PROJECTS_ROOT = '/tmp/projects';
+    env.DEVWORKSPACE_FLATTENED_DEVFILE = path.join(__dirname, '_data', 'flattened.devworkspace.yaml');
+
+    const pathExistsMock = jest.fn();
+    const isFileMock = jest.fn();
+    const writeFileMock = jest.fn();
+    const readFileMock = jest.fn();
+
+    Object.assign(fs, {
+      pathExists: pathExistsMock,
+      isFile: isFileMock,
+      writeFile: writeFileMock,
+      readFile: readFileMock,
+    });
+
+    readFileMock.mockImplementation(async (filePath) => {
+      if (filePath === env.DEVWORKSPACE_FLATTENED_DEVFILE) {
+        return originalReadFile(filePath);
+      }
+
+      if (filePath === '/tmp/projects/.code-workspace') {
+        return WORKSPACE_SKIP_PROJECT_SYNC_STRING;
+      }
+
+      return undefined;
+    });
+
+    pathExistsMock.mockImplementation((filePath) => {
+      return (
+        '/tmp/projects/.code-workspace' === filePath ||
+        '/tmp/projects/che-code' === filePath ||
+        '/tmp/projects/che-devfile-registry' === filePath ||
+        '/tmp/projects/web-nodejs-sample' === filePath
+      );
+    });
+
+    isFileMock.mockImplementation((filePath) => {
+      return '/tmp/projects/.code-workspace' === filePath;
+    });
+
+    const codeWorkspace = new CodeWorkspace();
+    await codeWorkspace.generate();
+
+    expect(writeFileMock).toBeCalledWith('/tmp/projects/.code-workspace', WORKSPACE_WITH_STRING_SETTING_AND_PROJECTS);
   });
 });
 
