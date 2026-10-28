@@ -298,10 +298,10 @@ Run immediately after conflicts are resolved. This detects files that `git subtr
 **Run:**
 
 ```bash
-bash post-rebase-verify.sh --dry-run
+bash post-rebase.sh --dry-run
 ```
 
-This generates `.rebase/<ver>/post-rebase-verify-report.md` listing all mismatched files with diffs.
+This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs.
 
 **Classification algorithm — for each detected mismatch:**
 
@@ -322,13 +322,13 @@ This generates `.rebase/<ver>/post-rebase-verify-report.md` listing all mismatch
 
 **After all mismatches are processed:**
 
-1. Re-run `bash post-rebase-verify.sh --dry-run` to confirm 0 mismatches remain
+1. Re-run `bash post-rebase.sh --dry-run` to confirm 0 mismatches remain
 2. Commit "align with upstream" fixes in one commit: "Fix auto-resolution errors: align N files with upstream"
 3. Commit new rebase rules individually (one commit per rule)
 
 **Final report format:**
 
-Update `.rebase/<ver>/post-rebase-verify-report.md` to include a decisions table:
+Update `.rebase/<ver>/post-rebase-report.md` to include a decisions table:
 
 ```markdown
 ## Decisions
@@ -517,7 +517,7 @@ Build the body using the `.github/PULL_REQUEST_TEMPLATE.md` structure. All commi
 - [x] Update artifacts lock: <commit-hash>
 - [x] Update Dockerfile images to Node.js <MAJOR>: <commit-hash>
 - [x] Post-rebase verification: <commit-hash>
-    - [Post-rebase-verify-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/post-rebase-verify-report.md)
+    - [Post-rebase-report](https://github.com/che-incubator/che-code/blob/<branch-name>/.rebase/<ver>/post-rebase-report.md)
 
 ### What issues does this PR fix?
 
