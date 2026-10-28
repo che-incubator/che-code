@@ -49,8 +49,8 @@ npm run smoketest          # Full smoke test suite
 ### Linting (inside `code/`)
 ```bash
 cd code
-node build/eslint          # ESLint
-node build/stylelint       # Stylelint
+npm run eslint             # ESLint
+npm run stylelint          # Stylelint
 npm run hygiene            # Full hygiene check (formatting, imports, layers)
 npm run valid-layers-check # Architecture layer validation
 ```

@@ -355,7 +355,7 @@ Verify that the correct Node.js version (from Step 9) is still active — `node 
 ```bash
 cd code
 npm install
-node --max-old-space-size=8192 ./node_modules/gulp/bin/gulp.js compile-build-without-mangling
+npm run gulp compile-build-without-mangling
 ```
 
 Always use `compile-build-without-mangling` (~2-3 min). Do NOT use the full build with mangling (`vscode-reh-web-linux-x64`) — it takes ~40 min and the mangler may break upstream mixin patterns that are unrelated to Che changes. The mangled production build is done separately in CI.
