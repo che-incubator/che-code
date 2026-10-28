@@ -350,15 +350,23 @@ This report serves as a self-contained audit trail — the reviewer can quickly 
 
 Verify that the correct Node.js version (from Step 9) is still active — `node --version` must match `code/.nvmrc`. Upstream's `preinstall.ts` enforces this and `npm install` will fail immediately otherwise.
 
-**Compilation check:**
+**Compilation check — three commands, one per layer where Che changes live:**
 
 ```bash
 cd code
 npm install
-npm run gulp compile-build-without-mangling
+npm run typecheck-client          # src/: core + Che modifications in core (~5 s)
+npm run gulp compile-extensions   # all extensions incl. che-*, against the current src/vscode-dts/vscode.d.ts (~10 s)
+(cd build && npm run typecheck)   # build/ scripts — Che has .rebase rules on build/*.ts (~1 s)
 ```
 
-Always use `compile-build-without-mangling` (~2-3 min). Do NOT use the full build with mangling (`vscode-reh-web-linux-x64`) — it takes ~40 min and the mangler may break upstream mixin patterns that are unrelated to Che changes. The mangled production build is done separately in CI.
+This is upstream's own validation set (see "Validating TypeScript changes" in `code/.claude/CLAUDE.md`) — any failure is reproducible with a command upstream recognizes. Run in this order (fastest first); all three must exit 0. Together they take ~15-20 s. Errors come with exact positions (`file(line,col): error TSxxxx`); typical post-rebase breakage: upstream removed a type/file or renamed a method that Che code references (TS2307/TS2339).
+
+Notes:
+- `compile-extensions` compiles every extension **with emit** into its `out/`, cleaning `out/` first. The parallel task aborts on the first error, so a failed run leaves `out/` half-cleaned — fix the reported errors and re-run. A green run also refreshes the local dev artifacts used by `npm run server`.
+- Do NOT use `npm run gulp compile-build-without-mangling` — dead upstream since the 1.128 build-system change (referenced nowhere), and its declaration-emit stage produces false TS2742 errors in vanilla upstream files that look like Che regressions.
+- Do NOT use `npm run build` / `vscode-reh-web-linux-x64` — still the old tsb pipeline, hits the same TS2742 locally; the product build is the Docker pipeline, not a compile check.
+- Do NOT use `npm run compile` — forbidden by upstream's agent instructions.
 
 **CRITICAL — Do NOT edit vanilla VS Code files.** If a compilation error occurs in a file that is NOT Che-specific (i.e. it exists identically in upstream VS Code), do NOT fix it by modifying that file. Upstream VS Code compiles successfully, so the error indicates a deeper root cause — typically a Che-specific dependency version pin (in `.rebase/add/` or `.rebase/override/`) that conflicts with what upstream expects, or a Che rebase rule that incorrectly strips a needed import/type. Investigate why the error occurs only in our build before changing any code.
 
