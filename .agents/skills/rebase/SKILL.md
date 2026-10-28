@@ -360,7 +360,7 @@ npm run gulp compile-extensions   # all extensions incl. che-*, against the curr
 (cd build && npm run typecheck)   # build/ scripts — Che has .rebase rules on build/*.ts (~1 s)
 ```
 
-This is upstream's own validation set (see "Validating TypeScript changes" in `code/.claude/CLAUDE.md`) — any failure is reproducible with a command upstream recognizes. Run in this order (fastest first); all three must exit 0. Together they take ~15-20 s. Errors come with exact positions (`file(line,col): error TSxxxx`); typical post-rebase breakage: upstream removed a type/file or renamed a method that Che code references (TS2307/TS2339).
+This is upstream's own validation set (see "Validating TypeScript changes" in `code/.github/copilot-instructions.md`) — any failure is reproducible with a command upstream recognizes. (`code/.claude/CLAUDE.md` is just a gitignored symlink to that file, created by `npm postinstall` in `code/build/npm/postinstall.ts` — it is absent on a fresh clone and on GitHub, so always reference the tracked `.github/copilot-instructions.md`.) Run in this order (fastest first); all three must exit 0. Together they take ~15-20 s. Errors come with exact positions (`file(line,col): error TSxxxx`); typical post-rebase breakage: upstream removed a type/file or renamed a method that Che code references (TS2307/TS2339).
 
 Notes:
 - `compile-extensions` compiles every extension **with emit** into its `out/`, cleaning `out/` first. The parallel task aborts on the first error, so a failed run leaves `out/` half-cleaned — fix the reported errors and re-run. A green run also refreshes the local dev artifacts used by `npm run server`.
