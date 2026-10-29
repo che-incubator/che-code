@@ -242,22 +242,22 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  try {
+  /*try {
     await vscode.commands.executeCommand('che-remote.command.prepareForRestart');
   } catch (error) {
     // Best-effort: if the signal doesn't reach the browser, the restart
     // flow falls back to the normal disconnection handling.
-  }
+  }*/
 
   try {
     await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
   } catch (error) {
-    try {
+    /*try {
       await vscode.commands.executeCommand('che-remote.command.cancelRestart');
     } catch (_) {
       // best-effort cleanup
-    }
-
+    }*/
+    console.error(`Failed to update Devfile: ${error}`);
     if (error.body && error.body.message) {
       const action = await vscode.window.showErrorMessage('Failed to update Devfile.', {
         modal: true,
