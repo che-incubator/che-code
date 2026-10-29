@@ -126,6 +126,7 @@ export class CheDisconnectionHandler {
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
 		if (this.canHandle(millisSinceLastIncomingData)) {
+			console.log(`RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: handleStateChange`);	
 			this.handle(type);
 			return true;
 		}

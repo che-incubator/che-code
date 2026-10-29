@@ -806,6 +806,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 		@ITelemetryService telemetryService: ITelemetryService
 	) {
 		super();
+		console.log('RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: constructor');
 		this.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);
 		const connection = remoteAgentService.getConnection();
 		if (connection) {
