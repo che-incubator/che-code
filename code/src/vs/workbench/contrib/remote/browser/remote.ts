@@ -900,7 +900,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 			this._register(connection.onDidStateChange((e) => {
 				visibleProgress?.stopTimer();
 				disposableListener.clear();
-				
+
 				switch (e.type) {
 					case PersistentConnectionEventType.ConnectionLost:
 						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
