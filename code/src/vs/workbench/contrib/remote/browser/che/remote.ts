@@ -96,7 +96,17 @@ export class CheDisconnectionHandler {
 		}
 
 		const pendingAction = this.devWorkspaceAssistant.pendingAction;
-		if (pendingAction === 'restartPending') {
+		let devWorkspace;
+		try {
+			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+		} catch (error) {
+			this.status = DisconnectionHandlerStatus.FAILED;
+		}
+		if (!devWorkspace || !devWorkspace.status) {
+			return;
+		}
+		const workspacePhase = devWorkspace?.status.phase;
+		if (pendingAction === 'restartPending' && (workspacePhase !== DevWorkspaceStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING)) {
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
@@ -105,28 +115,14 @@ export class CheDisconnectionHandler {
 		}
 
 		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
-		let devWorkspace;
-		try {
-			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
-		} catch (error) {
-			this.status = DisconnectionHandlerStatus.FAILED;
-		}
-
-		if (!devWorkspace || !devWorkspace.status) {
-			return;
-		}
-
-		const workspacePhase = devWorkspace.status.phase;
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			return this.onDisconnectionRunningWorkspace(type);
 		}
-		console.log(`RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: handle, dev workspace phase: ${workspacePhase}`);
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
 		if (this.canHandle(millisSinceLastIncomingData)) {
-			console.log(`RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: handleStateChange`);	
 			this.handle(type);
 			return true;
 		}
@@ -192,7 +188,6 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		console.log(`Dev workspace phase[CheDisconnectionHandler]: ${workspacePhase}, message: ${statusMessage}`);
 		if ((workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}

@@ -806,7 +806,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 		@ITelemetryService telemetryService: ITelemetryService
 	) {
 		super();
-		console.log('RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: constructor');
 		this.cheDisconnectionHandler = new CheDisconnectionHandler(commandService, dialogService, notificationService, requestService, environmentVariableService, progressService);
 		const connection = remoteAgentService.getConnection();
 		if (connection) {
@@ -901,7 +900,6 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 			this._register(connection.onDidStateChange((e) => {
 				visibleProgress?.stopTimer();
 				disposableListener.clear();
-				console.log('RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: onDidStateChange', e.type, e.millisSinceLastIncomingData);
 				switch (e.type) {
 					case PersistentConnectionEventType.ConnectionLost:
 						if (this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type)) {
