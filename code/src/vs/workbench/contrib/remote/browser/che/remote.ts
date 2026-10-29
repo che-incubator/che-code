@@ -191,7 +191,8 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		if (workspacePhase === DevWorkspaceStatus.FAILED && statusMessage) {
+		console.log(`Dev workspace phase[CheDisconnectionHandler]: ${workspacePhase}, message: ${statusMessage}`);
+		if ((workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
