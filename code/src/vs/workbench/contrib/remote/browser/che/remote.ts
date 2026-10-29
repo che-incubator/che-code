@@ -120,7 +120,7 @@ export class CheDisconnectionHandler {
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			return this.onDisconnectionRunningWorkspace(type);
 		}
-
+		console.log(`RemoteAgentConnectionStatusListener[CheDisconnectionHandler]: handle, dev workspace phase: ${workspacePhase}`);
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
 	}
 
