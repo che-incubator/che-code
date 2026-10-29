@@ -11,19 +11,20 @@
 # Post-rebase verification script.
 # Detects files that git subtree merge auto-resolved incorrectly.
 # Files without Che-specific rebase rules must be identical to upstream.
-# Any differences are overwritten with upstream content.
+# Differences are reported; overwriting requires --apply.
 #
-# Usage: bash post-rebase.sh [--dry-run]
-#   --dry-run: only report differences, do not overwrite files
+# Usage: bash post-rebase.sh [--dry-run|--apply]
+#   --dry-run: only report differences, do not overwrite files (default)
+#   --apply: overwrite mismatched files with upstream content
 
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Parse arguments
-DRY_RUN=false
-if [[ "${1:-}" == "--dry-run" ]]; then
-  DRY_RUN=true
+# Parse arguments (dry-run by default; overwriting is opt-in)
+DRY_RUN=true
+if [[ "${1:-}" == "--apply" ]]; then
+  DRY_RUN=false
 fi
 
 # Read versions from rebase.sh
@@ -154,7 +155,7 @@ echo "========================================="
 
 if [[ "$DRY_RUN" == "true" && $fixed -gt 0 ]]; then
   echo ""
-  echo "DRY RUN mode — files were NOT overwritten. Run without --dry-run to fix."
+  echo "DRY RUN mode — files were NOT overwritten. Run with --apply to fix."
 fi
 
 # Generate report

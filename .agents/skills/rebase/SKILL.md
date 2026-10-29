@@ -305,7 +305,7 @@ Run immediately after conflicts are resolved. This detects files that `git subtr
 **Run:**
 
 ```bash
-bash post-rebase.sh --dry-run
+bash post-rebase.sh
 ```
 
 This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs.
@@ -327,9 +327,11 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
      ```
    - **Create rebase rule:** create `.rebase/replace/<file>.json` with `from`/`by` patterns, add `elif` entry to `rebase.sh`, test with `run-all-tests.sh`
 
+   Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
+
 **After all mismatches are processed:**
 
-1. Re-run `bash post-rebase.sh --dry-run` to confirm 0 mismatches remain
+1. Re-run `bash post-rebase.sh` to confirm 0 mismatches remain
 2. Commit "align with upstream" fixes in one commit: "Fix auto-resolution errors: align N files with upstream"
 3. Commit new rebase rules individually (one commit per rule)
 
