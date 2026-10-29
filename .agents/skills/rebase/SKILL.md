@@ -212,14 +212,17 @@ All tests must pass (or show only cosmetic warnings) before proceeding. If a tes
 git status --short | wc -l   # must be 0
 ```
 
-If there are modifications or "unmerged paths" (from a previous failed run), abort first:
+If there are modifications or "unmerged paths" (from a previous failed run), clear the state in this order:
 
 ```bash
-git merge --abort   # if merge in progress
-git checkout -- .   # discard any leftover modifications
+git merge --abort                  # if merge in progress
+find code -name '*.bak' -delete    # debris left by failed rule applications
+git status --short                 # must now show only your own work
 ```
 
-`rebase.sh` performs a `git merge` internally (subtree merge). If it fails mid-merge (e.g. a rule application error), the merge stays in progress and all upstream changes remain staged/modified. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
+`rebase.sh` performs a `git merge` internally (subtree merge) and never aborts it itself: any failure after the merge starts (a rule application error, a missing rule, an `npm install` failure) exits while the merge is still in progress, with upstream changes staged/unmerged under `code/`. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
+
+The abort restores every `code/` file the merge touched but **keeps unstaged edits and new files outside `code/`** — a rule fix made after the failed run survives it. `git stash` and `git commit` cannot run with unmerged paths, so the abort has to come first; commit what remains afterwards, then re-check. Never clean up with `git checkout -- .` — after the abort, what remains modified is your uncommitted work, and it destroys exactly that.
 
 **Switch to the required Node.js version:** `rebase.sh` runs `npm install` internally to regenerate lock files. It must use the same Node.js (and npm) version that upstream uses, otherwise lock files will be regenerated in a different format (e.g. npm 10 vs npm 11) and require a separate fixup commit later.
 
@@ -247,6 +250,8 @@ bash rebase.sh
 ### Step 10: Handle remaining conflicts (if any)
 
 If `rebase.sh` failed, try to fix automatically. If the fix succeeds, it becomes a commit. If not, document in `.rebase/<ver>/rebase-errors.md` and continue.
+
+A failed run leaves the merge in progress (Step 9), so a fix that requires re-running `rebase.sh` must follow this order: **apply the fix → `git merge --abort` → commit the fix → re-run `bash rebase.sh`**. The abort clears the stale merge but keeps the fix (unstaged edits and new files outside `code/` survive it), and committing before the re-run means the fix cannot be lost if the next run fails elsewhere. Do not stage the fix before the abort — staged changes do not survive it.
 
 **a) Replace rule failed (`Unable to perform the replace`):**
 A rule's `from` value didn't match the file content. This should not happen if Phase 1 was done correctly. Fix the specific rule and re-run `rebase.sh`.
