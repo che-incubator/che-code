@@ -226,12 +226,14 @@ The abort restores every `code/` file the merge touched but **keeps unstaged edi
 
 **Switch to the required Node.js version:** `rebase.sh` runs `npm install` internally to regenerate lock files. It must use the same Node.js (and npm) version that upstream uses, otherwise lock files will be regenerated in a different format (e.g. npm 10 vs npm 11) and require a separate fixup commit later.
 
+At this point the working tree still holds the **previous** version's `code/.nvmrc` — the new one lands in the tree only after the merge that `rebase.sh` itself performs. Read the target version from the ref fetched in Step 2 instead:
+
 ```bash
-nvm install $(cat code/.nvmrc)
-nvm use $(cat code/.nvmrc)
+nvm install $(git show upstream-code/<target-version>:.nvmrc)
+nvm use $(git show upstream-code/<target-version>:.nvmrc)
 ```
 
-The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128). Check `code/.nvmrc` after fetching the new upstream in Step 2.
+The required version often changes during large version jumps (e.g. v22 → v24 between 1.116 and 1.128).
 
 **Run:**
 
