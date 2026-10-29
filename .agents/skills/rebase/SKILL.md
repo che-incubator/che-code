@@ -61,7 +61,7 @@ Each logical step produces a separate commit following single responsibility. Ev
 1. **Update upstream version references** — `rebase.sh` (`PREVIOUS_UPSTREAM_VERSION`, `CURRENT_UPSTREAM_VERSION`)
 2. **Pre-rebase conflict analysis** — `.rebase/<ver>/pre-rebase-report.md`
 3. **Audit and update dependency pins (CVE fixes)** — `.rebase/<ver>/dependency-audit.md` + `.rebase/add/`, `.rebase/override/`, `code/` changes
-4. **Create rebase rules for uncovered files** — new `.rebase/replace/` + `elif` entries *(conditional)*
+4. **Create rebase rules for uncovered files** — new rebase rules + `elif` entries *(conditional)*
 5. **Fix and update rebase rules** — fixed `.rebase/replace/` + missing `elif` entries *(conditional)*
 6. **Rebase against upstream** — merge commit from `rebase.sh`
 7. **Fix rebase errors** — npm install / EOVERRIDE fixes *(conditional)*
@@ -327,7 +327,7 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
      ```bash
      git show upstream-code/<target-version>:<path-without-code-prefix> > <file>
      ```
-   - **Create rebase rule:** create `.rebase/replace/<file>.json` with `from`/`by` patterns, add `elif` entry to `rebase.sh`, test with `run-all-tests.sh`
+   - **Create rebase rule:** follow the `add-rebase-rules` skill (read `.agents/skills/add-rebase-rules/SKILL.md`), passing the source commit found in step 1 — it creates the rule kind matching the file (`package.json` → `.rebase/add/`/`.rebase/override/`, source files → `.rebase/replace/`) and the `elif` routing. Test with `run-all-tests.sh`.
 
    Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
 
@@ -685,7 +685,7 @@ Sometimes `pre-rebase.sh` reports NEEDS_RULE for a file where the "che-specific 
 1. `git log --oneline -- <file>` shows only rebase commits, no feature PR
 2. `git blame` points to a rebase commit for the changed lines
 3. The change looks like a debugging aid or manual conflict resolution leftover
-4. There is no `.rebase/replace/` rule for this file
+4. There is no rebase rule for this file
 
 **How to verify:**
 ```bash
@@ -712,7 +712,7 @@ git show upstream-code/PREVIOUS_UPSTREAM_VERSION:<path-without-code-prefix> > <c
 
 If a new che-specific extension is added under `code/extensions/che-*`, it does NOT need rebase rules (those directories are not affected by `git checkout --theirs`).
 
-If che-specific code is added to an upstream file, a new `.rebase/replace/` rule MUST be created, otherwise the change will be lost on next rebase.
+If che-specific code is added to an upstream file, a new rebase rule matching the file's mechanism MUST be created (see the `add-rebase-rules` skill), otherwise the change will be lost on next rebase.
 
 ## How `resolve_conflicts()` works (for reference)
 

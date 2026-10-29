@@ -284,6 +284,7 @@ For each uncovered change:
    - `from`: the upstream snippet that the Che change replaces or extends.
    - `by`: the Che-modified version from the working tree.
    - Ensure `from` is unique in the upstream file.
+   - For `package.json` and other JSON files, do not create a replace rule — use the JSON merge mechanism (`.rebase/add/`/`.rebase/override/` + `elif` → `apply_package_changes_by_path`), following the `add-rebase-rules` skill.
 4. **If the file uses a custom function** in `rebase.sh` (e.g. `apply_code_*_changes()`), consider adding the replacement as an inline perl block in that function instead of a JSON entry, especially if the change needs multiline context to target uniquely.
 5. **Validate** using the same dry-run steps as Step 9 — apply all rules to upstream and diff against che-code. The uncovered diff should now be empty.
 
