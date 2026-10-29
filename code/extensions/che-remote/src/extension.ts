@@ -176,14 +176,6 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  const action = await vscode.window.showInformationMessage(
-    'Workspace restart', {
-      modal: true, detail: `Your workspace will be restarted from ${devfilePath}. This action is not revertable.`
-    }, 'Restart');
-  if ('Restart' !== action) {
-    return false;
-  }
-
   let devfileContext: DevfileContext | undefined = undefined;
   try {
     devfileContext = await devWorkspaceGenerator.generateDevfileContext(
@@ -242,22 +234,15 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     return false;
   }
 
-  /*try {
-    await vscode.commands.executeCommand('che-remote.command.prepareForRestart');
-  } catch (error) {
-    // Best-effort: if the signal doesn't reach the browser, the restart
-    // flow falls back to the normal disconnection handling.
-  }*/
-
   try {
     await devfileService.updateDevfile(devfileContext.devWorkspace.spec?.template);
   } catch (error) {
-    /*try {
+    try {
       await vscode.commands.executeCommand('che-remote.command.cancelRestart');
     } catch (_) {
       // best-effort cleanup
-    }*/
-    console.error(`Failed to update Devfile: ${error}`);
+    }
+
     if (error.body && error.body.message) {
       const action = await vscode.window.showErrorMessage('Failed to update Devfile.', {
         modal: true,
@@ -273,6 +258,21 @@ async function updateDevfile(cheApi: any): Promise<boolean> {
     }
 
     return false;
+  }
+
+  const action = await vscode.window.showInformationMessage(
+    'Workspace restart', {
+      modal: true, detail: `Your workspace will be restarted from ${devfilePath}. This action is not revertable.`
+    }, 'Restart');
+  if ('Restart' !== action) {
+    return false;
+  }
+
+  try {
+    await vscode.commands.executeCommand('che-remote.command.prepareForRestart');
+  } catch (error) {
+    // Best-effort: if the signal doesn't reach the browser, the restart
+    // flow falls back to the normal disconnection handling.
   }
 
   return true;
