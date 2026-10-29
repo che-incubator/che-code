@@ -106,19 +106,9 @@ while IFS= read -r upstream_file; do
 
   local_file="code/$upstream_file"
 
-  # Skip package-lock.json files (regenerated separately)
-  if [[ "$upstream_file" == */package-lock.json || "$upstream_file" == "package-lock.json" ]]; then
-    skipped_lock=$((skipped_lock + 1))
-    continue
-  fi
-
-  # Skip files with Che-specific rules (check exclusion list)
-  if grep -qxF "$local_file" "$EXCLUSION_FILE" 2>/dev/null; then
-    skipped_rules=$((skipped_rules + 1))
-    continue
-  fi
-
-  # File deleted by upstream between the two versions
+  # File deleted by upstream between the two versions — checked before the
+  # rule/lock exclusions so a kept file that has a rule still surfaces for
+  # its delete-or-keep decision
   if ! git cat-file -e "$CURR_REF:$upstream_file" 2>/dev/null; then
     if [[ -f "$SCRIPT_DIR/$local_file" ]]; then
       # Kept after an upstream deletion — needs an explicit delete-or-keep
@@ -129,6 +119,18 @@ while IFS= read -r upstream_file; do
       # The merge removed it together with upstream — nothing to decide
       skipped_deleted=$((skipped_deleted + 1))
     fi
+    continue
+  fi
+
+  # Skip package-lock.json files (regenerated separately)
+  if [[ "$upstream_file" == */package-lock.json || "$upstream_file" == "package-lock.json" ]]; then
+    skipped_lock=$((skipped_lock + 1))
+    continue
+  fi
+
+  # Skip files with Che-specific rules (check exclusion list)
+  if grep -qxF "$local_file" "$EXCLUSION_FILE" 2>/dev/null; then
+    skipped_rules=$((skipped_rules + 1))
     continue
   fi
 
