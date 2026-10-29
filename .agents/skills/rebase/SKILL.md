@@ -302,13 +302,15 @@ Run immediately after conflicts are resolved. This detects files that `git subtr
 - Are NOT `package-lock.json` files
 - Currently differ from the upstream content
 
+The report also lists **files kept after an upstream deletion** — files upstream deleted between the two versions that are still present locally. Each needs an explicit delete-or-keep decision (see below).
+
 **Run:**
 
 ```bash
 bash post-rebase.sh
 ```
 
-This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs.
+This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs, plus the paths of any files kept after an upstream deletion.
 
 **Classification algorithm — for each detected mismatch:**
 
@@ -329,9 +331,16 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
 
    Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
 
+**Files kept after an upstream deletion** (the report's "Kept After Upstream Deletion" section lists their paths) — same `git log` investigation, then one of two decisions:
+
+- **Delete (align with upstream):** the local change is obsolete → `git rm <file>`
+- **Keep (intentional):** leave the file and record a `keep` decision in the Decisions table. A kept file survives future rebases on its own — the merge base never contains it, so it behaves like any other Che-added file
+
+`bash post-rebase.sh --apply` never deletes these files — deletion is a per-file decision, not a bulk operation.
+
 **After all mismatches are processed:**
 
-1. Re-run `bash post-rebase.sh` to confirm 0 mismatches remain
+1. Re-run `bash post-rebase.sh` to confirm 0 mismatches remain and the kept-after-deletion list contains only files already recorded as keep decisions
 2. Commit "align with upstream" fixes in one commit: "Fix auto-resolution errors: align N files with upstream"
 3. Commit new rebase rules individually (one commit per rule)
 
@@ -346,10 +355,11 @@ Update `.rebase/<ver>/post-rebase-report.md` to include a decisions table:
 |------|----------|--------|---------------|------------|
 | `code/path/file.ts` | align with upstream | merge commit leftover, no PR | abc1234 | def5678 |
 | `code/path/other.ts` | create rule | "fix: disable telemetry" (che#21122) | 31e901d | 17a4e94 |
+| `code/path/legacy.ts` | keep | upstream deleted it, still needed by che-remote (che#21150) | 9f2c8b1 | — |
 ```
 
 The "Source commit" links to the commit that introduced the Che difference.
-The "Fix commit" links to the commit that resolved the mismatch.
+The "Fix commit" links to the commit that resolved the mismatch (for keep decisions there is no fix commit — the file is left unchanged, so the cell holds `—`).
 
 This report serves as a self-contained audit trail — the reviewer can quickly verify each decision by checking the linked commits.
 

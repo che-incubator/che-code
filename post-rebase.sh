@@ -12,6 +12,8 @@
 # Detects files that git subtree merge auto-resolved incorrectly.
 # Files without Che-specific rebase rules must be identical to upstream.
 # Differences are reported; overwriting requires --apply.
+# Files kept locally after upstream deleted them are listed by path for an
+# explicit delete-or-keep decision; --apply never deletes them.
 #
 # Usage: bash post-rebase.sh [--dry-run|--apply]
 #   --dry-run: only report differences, do not overwrite files (default)
@@ -90,10 +92,12 @@ skipped_rules=0
 skipped_lock=0
 skipped_missing=0
 skipped_deleted=0
+kept_deleted=0
 
-# Temp file for fixed files list
+# Temp files for fixed and kept-after-deletion file lists
 FIXED_LIST=$(mktemp)
-trap "rm -f $EXCLUSION_FILE $FIXED_LIST" EXIT
+KEPT_DELETED_LIST=$(mktemp)
+trap "rm -f $EXCLUSION_FILE $FIXED_LIST $KEPT_DELETED_LIST" EXIT
 
 echo "Scanning..."
 
@@ -114,9 +118,17 @@ while IFS= read -r upstream_file; do
     continue
   fi
 
-  # Check if file exists in upstream at current version
+  # File deleted by upstream between the two versions
   if ! git cat-file -e "$CURR_REF:$upstream_file" 2>/dev/null; then
-    skipped_deleted=$((skipped_deleted + 1))
+    if [[ -f "$SCRIPT_DIR/$local_file" ]]; then
+      # Kept after an upstream deletion — needs an explicit delete-or-keep
+      # decision (--apply never touches these files)
+      kept_deleted=$((kept_deleted + 1))
+      echo "$local_file" >> "$KEPT_DELETED_LIST"
+    else
+      # The merge removed it together with upstream — nothing to decide
+      skipped_deleted=$((skipped_deleted + 1))
+    fi
     continue
   fi
 
@@ -150,12 +162,21 @@ echo "  Fixed (auto-resolution errors): $fixed"
 echo "  Skipped (have rules):         $skipped_rules"
 echo "  Skipped (lock files):         $skipped_lock"
 echo "  Skipped (deleted in upstream): $skipped_deleted"
+echo "  Kept after upstream deletion: $kept_deleted"
 echo "  Skipped (missing locally):    $skipped_missing"
 echo "========================================="
 
 if [[ "$DRY_RUN" == "true" && $fixed -gt 0 ]]; then
   echo ""
   echo "DRY RUN mode — files were NOT overwritten. Run with --apply to fix."
+fi
+
+if [[ $kept_deleted -gt 0 ]]; then
+  echo ""
+  echo "Kept after upstream deletion — each needs an explicit delete-or-keep decision:"
+  while IFS= read -r f; do
+    echo "  - $f"
+  done < "$KEPT_DELETED_LIST"
 fi
 
 # Generate report
@@ -182,6 +203,7 @@ REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
   echo "| Skipped (have Che-specific rules) | $skipped_rules |"
   echo "| Skipped (package-lock.json) | $skipped_lock |"
   echo "| Skipped (deleted in upstream) | $skipped_deleted |"
+  echo "| Kept after upstream deletion | $kept_deleted |"
   echo "| Skipped (missing locally) | $skipped_missing |"
   echo ""
 
@@ -204,10 +226,21 @@ REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
       echo "\`\`\`"
       echo ""
     done < "$FIXED_LIST"
-  else
+  elif [[ $kept_deleted -eq 0 ]]; then
     echo "## Result"
     echo ""
     echo "All files without Che-specific rules are identical to upstream. No mismatches detected."
+  fi
+
+  if [[ $kept_deleted -gt 0 ]]; then
+    echo "## Kept After Upstream Deletion"
+    echo ""
+    echo "Upstream deleted these files between $PREVIOUS_UPSTREAM_VERSION and $CURRENT_UPSTREAM_VERSION, but they are still present locally. Each needs an explicit decision: delete (align with upstream) or keep (intentional divergence)."
+    echo ""
+    while IFS= read -r kept_file; do
+      echo "- \`$kept_file\`"
+    done < "$KEPT_DELETED_LIST"
+    echo ""
   fi
 } > "$REPORT_FILE"
 
