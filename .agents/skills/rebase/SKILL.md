@@ -471,7 +471,7 @@ podman run --rm <candidate-image> node --version
 
 The build runs `npm install` inside the container, and upstream's `preinstall.ts` requires the same major and at least the minor/patch from `code/.nvmrc`. Registry images are rebuilt on their own schedule, so the newest tag is not guaranteed to be new enough.
 
-**Always update to the newest available tag regardless** — it is the best available base, and keeping an older image is never better. If the checked version lags `code/.nvmrc`, do not stop: update anyway and record the gap in `.rebase/<ver>/rebase-errors.md` (it resolves when the registry rebuilds the image; the follow-up is a tag bump). The check exists to produce that report entry — it turns a late, confusing Docker build failure into a documented known issue for the reviewer.
+**Always update to the newest available tag regardless** — it is the best available base, and keeping an older image is never better: the Dockerfile's current lines match the **previous** `code/.nvmrc`, so if the newest tag lags the new target, the old image lags at least as much and `npm install` fails either way. Updating cannot make the build state worse — only closer to the target. If the checked version lags `code/.nvmrc`, do not stop: update anyway and record the gap in `.rebase/<ver>/rebase-errors.md` (it resolves when the registry rebuilds the image; the follow-up is a tag bump). The check exists to produce that report entry — it turns a late, confusing Docker build failure into a documented known issue for the reviewer.
 
 **Files to update (5 Dockerfiles):**
 
