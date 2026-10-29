@@ -451,6 +451,16 @@ skopeo list-tags docker://docker.io/library/node \
 
 Pick the latest non-source tag for each image. For Red Hat images, prefer tags with the highest build number (e.g. `9.8-1784075995` > `9.8-1783399045`). For Alpine, follow the existing pattern: `<major>-alpine<alpine_version>` (e.g. `24-alpine3.24`).
 
+**Verify the Node.js version inside each candidate image before updating its Dockerfile:**
+
+```bash
+podman run --rm <candidate-image> node --version
+```
+
+The build runs `npm install` inside the container, and upstream's `preinstall.ts` requires the same major and at least the minor/patch from `code/.nvmrc`. Registry images are rebuilt on their own schedule, so the newest tag is not guaranteed to be new enough.
+
+**Always update to the newest available tag regardless** — it is the best available base, and keeping an older image is never better. If the checked version lags `code/.nvmrc`, do not stop: update anyway and record the gap in `.rebase/<ver>/rebase-errors.md` (it resolves when the registry rebuilds the image; the follow-up is a tag bump). The check exists to produce that report entry — it turns a late, confusing Docker build failure into a documented known issue for the reviewer.
+
 **Files to update (5 Dockerfiles):**
 
 | File | Image pattern | Example |
