@@ -155,7 +155,7 @@ For each NEEDS_RULE file in the pre-rebase report, use the `fix-rebase-rules` sk
 2. Read the upstream file at `PREVIOUS_UPSTREAM_VERSION` to see the original code
 3. Create a rule: `from` = upstream snippet, `by` = che-modified version
 4. For source files (.ts, .html, etc.) — creates `.rebase/replace/<path>.json`
-5. For JSON files (package.json) — creates `.rebase/add/` and/or `.rebase/override/` rules
+5. For `package.json` — creates `.rebase/add/` and/or `.rebase/override/` rules
 6. Also updates `rebase.sh` routing — adds the `elif` entry
 
 If rule creation fails for a file: check whether that file actually conflicts in the rebase (from the pre-rebase report conflict list). If it conflicts, this is a real blocker — stop for manual review. If it does not conflict, log as ERROR in the pre-rebase report and continue.
@@ -327,7 +327,7 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
      ```bash
      git show upstream-code/<target-version>:<path-without-code-prefix> > <file>
      ```
-   - **Create rebase rule:** follow the `add-rebase-rules` skill (read `.agents/skills/add-rebase-rules/SKILL.md`), passing the source commit found in step 1 — it creates the rule kind matching the file (`package.json` → `.rebase/add/`/`.rebase/override/`, source files → `.rebase/replace/`) and the `elif` routing. Test with `run-all-tests.sh`.
+   - **Create rebase rule:** follow the `add-rebase-rules` skill (read `.agents/skills/add-rebase-rules/SKILL.md`), passing the source commit found in step 1 — it creates the rule kind matching the file (`package.json` → `.rebase/add/`/`.rebase/override/`, everything else → `.rebase/replace/`) and the `elif` routing. Test with `run-all-tests.sh`.
 
    Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
 
@@ -639,7 +639,7 @@ If many rules fail, it may be more efficient to:
 ### Files with custom handlers in rebase.sh
 
 Some files have special handler functions in `rebase.sh` with inline logic beyond `.rebase/` rules. These may need code updates when upstream changes the target code:
-- `apply_code_package_changes` — code/package.json (override + add + replace)
+- `apply_code_package_changes` — code/package.json (override + add)
 - `apply_code_product_changes` — product.json (jq merge + builtInExtensions append + key reorder)
 - `apply_github_auth_package_changes` — removes `.contributes` key
 - `apply_code_vs_extensions_contribution_changes` — sed + inline perl for CommandPalette when clause
