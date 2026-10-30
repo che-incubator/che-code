@@ -219,9 +219,11 @@ If there are modifications or "unmerged paths" (from a previous failed run), cle
 
 ```bash
 git merge --abort                  # if merge in progress
-find code -name '*.bak' -delete    # debris left by failed rule applications
+find code -name '*.bak'            # debris left by failed rule applications (delete selectively — see below)
 git status --short                 # must now show only your own work
 ```
+
+The `.bak` line is a list, not a delete. The replace handlers back up each file they rework (`sed -i.bak` in `apply_replace`, `cp <file> <file>.bak` in the perl handlers) and remove the backup on success, so a failed run can leave `<file>.bak` debris — but `.bak` is neither gitignored nor reserved by the repo, so your own backup under `code/` looks exactly the same. Delete only the debris: a backup the failed run created sits next to a path named in its `⚙️ reworking <path>...` log lines — `rm` those `<path>.bak` files and nothing else. Any remaining `.bak` is not rebase debris: leave it in place and tell the user, who decides where it goes — it cannot stay in the tree either, since the pre-flight check requires an empty `git status`.
 
 `rebase.sh` performs a `git merge` internally (subtree merge) and never aborts it itself: any failure after the merge starts (a rule application error, a missing rule, an `npm install` failure) exits while the merge is still in progress, with upstream changes staged/unmerged under `code/`. The next `rebase.sh` run will immediately fail with `fatal: working tree has modifications. Cannot add.` — you must abort the stale merge before retrying.
 
