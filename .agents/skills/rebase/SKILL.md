@@ -187,7 +187,11 @@ After fixing stale rules, **always re-run full validation** to confirm no rules 
 
 1. **Re-validate all `from` values** against the new upstream (quick check — iterate all rule files, verify each `from` is found in the corresponding upstream file). This catches typos, missed fixes, or side-effects of multi-rule files where fixing one rule may invalidate another.
 
-2. **Verify elif integrity** — every `elif` entry that calls `apply_changes*` must have a corresponding `.rebase/replace/<path>.json` file on disk. Flag orphan entries (e.g. from reverted features where the elif was left behind).
+2. **Verify elif integrity** — every `if`/`elif` entry in the `resolve_conflicts()` chain must have its rule file(s) on disk, matched to the handler the entry calls:
+   - replace-family handlers (`apply_changes`, `apply_changes_multi_line`, and the custom handlers — the current custom ones read a replace rule on top of their inline edits) → a `.rebase/replace/<path>.json` file;
+   - package handlers (`apply_package_changes_by_path`, `apply_code_package_changes`, `apply_code_product_changes`, `apply_github_auth_package_changes`) → at least one of `.rebase/override/<path>` or `.rebase/add/<path>` (for `code/product.json`, `.rebase/add/code/product.builtInExtensions.json` also counts).
+
+   Every handler first resets the file to upstream (`git checkout --theirs`) and re-applies the Che change from the rule files, so an entry without its rule file silently resolves the conflict to pure upstream content — byte-identical to a clean merge, invisible to any post-rebase scan. Flag orphan entries (e.g. from reverted features where the elif was left behind).
 
 3. **Run rule tests** (optional, provides deeper validation):
 
@@ -621,7 +625,7 @@ The process should never fully stop. All issues are either auto-fixed (with a co
 
 ### Stale elif entries (reverted changes with orphaned routing)
 
-Before running `rebase.sh`, verify that every `elif` entry in `rebase.sh` has a corresponding replace rule file AND that the Che-specific change actually exists in the working tree. A common failure mode:
+Before running `rebase.sh`, verify that every `elif` entry in `rebase.sh` has its rule file(s) on disk (the elif-integrity check from Step 8) AND that the Che-specific change actually exists in the working tree. A common failure mode:
 
 1. A Che-specific change is committed → an `elif` entry + replace rule is added
 2. The change is later **reverted** (e.g. feature removed)
