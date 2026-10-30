@@ -50,6 +50,7 @@ const WORKSPACE_HANDLING_TIME = 30 * 1000; // 30 seconds
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
+	private workspaceStartupWaitTime = 0;
 	private progressService: IProgressService;
 	private reloadWindowHandler = () => {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
@@ -76,7 +77,7 @@ export class CheDisconnectionHandler {
 	}
 
 	private canHandle(millisSinceLastIncomingData: number): boolean {
-		// the Che handler is waiting for the user action - so, the default behaviour should NOT be applied
+		// the Che handler is waiting for the user action or workspace start - so, the default behaviour should NOT be applied
 		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING || this.status === DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START) {
 			return true;
 		}
@@ -87,7 +88,9 @@ export class CheDisconnectionHandler {
 		}
 
 		// the default behaviour should be applied if the Che handler can not detect the state of the workspace during this time
-		if (millisSinceLastIncomingData > DISCONNECTION_HANDLING_TIME) {
+		const totalHandlingTime = DISCONNECTION_HANDLING_TIME + this.workspaceStartupWaitTime;
+		console.log(`[CheDisconnectionHandler] millisSinceLastIncomingData=${millisSinceLastIncomingData}, totalHandlingTime=${totalHandlingTime}`);
+		if (millisSinceLastIncomingData > totalHandlingTime) {
 			return false;
 		}
 		return true;
@@ -145,14 +148,14 @@ export class CheDisconnectionHandler {
 	 * @throws An error if the workspace cannot be retrieved or remains in the 'STARTING' phase until the timeout expires.
 	 */
 	private async getDevWorkspaceUntilNotStarting(): Promise<DevWorkspaceLike> {
-		return this.progressService.withProgress(
+		const startTime = Date.now();
+		try {
+			return this.progressService.withProgress(
 			{
 				location: ProgressLocation.Notification,
 				title: 'Waiting for DevWorkspace',
 			},
 			async progress => {
-				const startTime = Date.now();
-
 				while (Date.now() - startTime < WORKSPACE_HANDLING_TIME) {
 					progress.report({
 						message: 'Checking DevWorkspace status...'
@@ -176,8 +179,11 @@ export class CheDisconnectionHandler {
 				}
 
 				throw new Error('Timed out waiting for DevWorkspace to finish starting');
-			}
-		);
+			});
+		} finally {
+			this.workspaceStartupWaitTime += Date.now() - startTime;
+		}
+
 	}
 
 	// handle disconnection when dev workspace is not stopped
