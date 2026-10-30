@@ -95,7 +95,7 @@ export class CheDisconnectionHandler {
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
 		console.log(`[CheDisconnectionHandler] Status: ${this.status}`);
-		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
+		if (this.status !== DisconnectionHandlerStatus.AVAILABLE && this.status !== DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START) {
 			return;
 		}
 
