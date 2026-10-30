@@ -77,8 +77,8 @@ export class CheDisconnectionHandler {
 	}
 
 	private canHandle(millisSinceLastIncomingData: number): boolean {
-		// the Che handler is waiting for the user action or workspace start - so, the default behaviour should NOT be applied
-		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING || this.status === DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START) {
+		// the Che handler is waiting for the user action - so, the default behaviour should NOT be applied
+		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING) {
 			return true;
 		}
 
@@ -98,7 +98,7 @@ export class CheDisconnectionHandler {
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
 		console.log(`[CheDisconnectionHandler] Status: ${this.status}`);
-		if (this.status !== DisconnectionHandlerStatus.AVAILABLE && this.status !== DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START) {
+		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
 			return;
 		}
 
