@@ -257,11 +257,11 @@ For each uncovered change:
 
 1. **Read the che-code file** at the reported line range to understand the Che-specific modification.
 2. **Read the upstream file** at the same location to see what the original code looks like.
-3. **Create a new rule entry** in the existing `.rebase/replace/<code-path>.json` file:
-   - `from`: the upstream snippet that the Che change replaces or extends.
-   - `by`: the Che-modified version from the working tree.
-   - Ensure `from` is unique in the upstream file.
-   - Which mechanism fits the file — JSON merge (`.rebase/add/`/`.rebase/override/`) vs replace — is defined in the `add-rebase-rules` skill's Rule kinds reference (read `.agents/skills/add-rebase-rules/SKILL.md`). Consult it before creating a rule for any JSON file: it covers the package-manifest default, the exceptions where a package manifest still needs a replace rule, and JSON files that must stay on their dedicated handler instead of the generic package handler.
+3. **Create or extend the rule the file's mechanism calls for.** Which mechanism fits the file — JSON merge vs replace, the package-manifest default and its exceptions, and the JSON files that stay on dedicated handlers — is defined in the `add-rebase-rules` skill's Rule kinds reference (read `.agents/skills/add-rebase-rules/SKILL.md`); consult it before creating anything:
+   - **JSON merge** (`apply_package_changes_by_path` and the dedicated package handlers) → add the values to the file's `.rebase/add/<code-path>` or `.rebase/override/<code-path>` rule — which one, per the reference's `add` vs `override` section.
+   - **Replace** (`apply_changes` / `apply_changes_multi_line`) → add an entry to the file's `.rebase/replace/<code-path>.json` (create the file if this is its first rule): `from` = the upstream snippet that the Che change replaces or extends; `by` = the Che-modified version from the working tree; ensure `from` is unique in the upstream file.
+
+   A file's **first** rule also needs its `elif` entry in `rebase.sh` (the reference's conflict-routing section) — without it the next rebase stops on the file with `has che-specific changes but no rebase rule!`.
 4. **If the file uses a custom function** in `rebase.sh` (e.g. `apply_code_*_changes()`), consider adding the replacement as an inline perl block in that function instead of a JSON entry, especially if the change needs multiline context to target uniquely.
 5. **Validate** using the same dry-run steps as Step 9 — apply all rules to upstream and diff against che-code. The uncovered diff should now be empty.
 
