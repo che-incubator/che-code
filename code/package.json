@@ -285,6 +285,7 @@
     "koffi": "3.2.1",
     "serialize-javascript": "^7.0.3",
     "yauzl": "^3.3.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "source-map-js": "^1.2.2",
     "@gulp-sourcemaps/identity-map": {
       "postcss": "^8.5.26"
