@@ -101,12 +101,15 @@ export class CheDisconnectionHandler {
 			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
 		} catch (error) {
 			this.status = DisconnectionHandlerStatus.FAILED;
+			console.log('The dev workspace status[CheDisconnectionHandler]::', this.status);
 		}
 		if (!devWorkspace || !devWorkspace.status) {
 			return;
 		}
 		const workspacePhase = devWorkspace?.status.phase;
-		if (pendingAction === 'restartPending' && (workspacePhase !== DevWorkspaceStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING)) {
+		console.log(`The dev workspace phase [CheDisconnectionHandler]:: ${workspacePhase}`);
+		if (pendingAction === 'restartPending' && workspacePhase !== DevWorkspaceStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING) {
+			console.log('The workspace is restarting[CheDisconnectionHandler], so the default behaviour should NOT be applied');
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
