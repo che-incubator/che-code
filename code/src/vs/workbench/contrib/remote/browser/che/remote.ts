@@ -96,20 +96,20 @@ export class CheDisconnectionHandler {
 		}
 
 		const pendingAction = this.devWorkspaceAssistant.pendingAction;
-		let devWorkspace;
+		let devWorkspace: DevWorkspaceLike;
 		try {
-			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+			devWorkspace = await this.getDevWorkspaceUntilNotStarting();
 		} catch (error) {
 			this.status = DisconnectionHandlerStatus.FAILED;
-			console.log('The dev workspace status[CheDisconnectionHandler]::', this.status);
+			return;
 		}
 		if (!devWorkspace || !devWorkspace.status) {
 			return;
 		}
-		const workspacePhase = devWorkspace?.status.phase;
-		console.log(`The dev workspace phase [CheDisconnectionHandler]:: ${workspacePhase}`);
-		if (pendingAction === 'restartPending' && workspacePhase !== DevWorkspaceStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING) {
-			console.log('The workspace is restarting[CheDisconnectionHandler], so the default behaviour should NOT be applied');
+
+		const workspacePhase = devWorkspace.status.phase;
+		console.log(`[CheDisconnectionHandler]: workspacePhase=${workspacePhase}, pendingAction=${pendingAction}`);
+		if (pendingAction === 'restartPending' && workspacePhase !== DisconnectionHandlerStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING) {
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
@@ -131,6 +131,28 @@ export class CheDisconnectionHandler {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Retrieves the DevWorkspace, waiting until it transitions out of the 'STARTING' phase.
+	 * The operation retries until the workspace reaches another phase or the disconnection handling timeout expires.
+	 * @returns A promise resolving to the DevWorkspace once it is no longer in the 'STARTING' phase.
+	 * @throws An error if the workspace cannot be retrieved or remains in the 'STARTING' phase until the timeout expires.
+	 */
+	private async getDevWorkspaceUntilNotStarting(): Promise<DevWorkspaceLike> {
+		const startTime = Date.now();
+
+		while (Date.now() - startTime < DISCONNECTION_HANDLING_TIME) {
+			const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+
+			if (devWorkspace.status?.phase !== DevWorkspaceStatus.STARTING) {
+				return devWorkspace;
+			}
+
+			await new Promise(resolve => setTimeout(resolve, 2000));
+		}
+
+		throw new Error('Timed out waiting for DevWorkspace to finish starting');
 	}
 
 	// handle disconnection when dev workspace is not stopped
@@ -191,7 +213,7 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		if ((workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
+		if (workspacePhase === DevWorkspaceStatus.FAILED && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
