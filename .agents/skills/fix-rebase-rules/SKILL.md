@@ -155,9 +155,9 @@ When writing new rule values, match the handler used in `rebase.sh` for this fil
 
 | Handler in rebase.sh | Function | Encoding |
 |----------------------|----------|----------|
-| `apply_changes` | sed-based, single-line | See Sed encoding table below |
-| `apply_changes_multi_line` | perl-based, wraps git checkout + apply + git add | See Perl encoding table below |
-| `apply_multi_line_replace` | perl-based, raw replacement only | See Perl encoding table below |
+| `apply_changes` | sed-based, single-line | See the encoding reference |
+| `apply_changes_multi_line` | perl-based, wraps git checkout + apply + git add | See the encoding reference |
+| `apply_multi_line_replace` | perl-based, raw replacement only | See the encoding reference |
 
 ### When to switch handler
 
@@ -165,32 +165,9 @@ When writing new rule values, match the handler used in `rebase.sh` for this fil
 - If the fix is single-line and the current handler is sed, keep sed.
 - **Prefer multiline (perl) for new or rewritten rules** — simpler encoding, handles all cases.
 
-### Sed encoding (`apply_changes`)
+### Encoding
 
-Values go through: JSON parse → `jq -r` → `escape_litteral` → sed.
-
-| Character in target | `from` encoding | `by` encoding |
-|---------------------|----------------|---------------|
-| Newline | `\\\n` | `\\\n` |
-| Tab | `\\\t` | `\\\t` |
-| `&` | literal | `\\&` |
-| `*` | `\\*` | literal |
-| `$`, `[`, `]` | literal (`escape_litteral` handles) | literal |
-| `"` | `\\\"` | `\\\"` |
-
-**Common pitfall — `&` in sed `by` values:** In sed replacement strings, `&` means "the entire matched text". Writing `&&` in a `by` value produces the matched `from` text repeated twice instead of a literal `&&`. Always escape as `\\&\\&`. This applies to any `&` in `by`, not just `&&`.
-
-### Perl encoding (`apply_changes_multi_line` / `apply_multi_line_replace`)
-
-Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / literal (by).
-
-| Character in target | `from` encoding | `by` encoding |
-|---------------------|----------------|---------------|
-| Newline | `\n` | `\n` |
-| Tab | `\t` | `\t` |
-| Any special char | literal | literal |
-
-**Key constraint:** Shell `$()` strips trailing newlines. Ensure `from`/`by` values don't end with `\n` — include following non-whitespace text as anchor.
+How to encode special characters in `from`/`by` values per handler — the sed and perl encoding tables, the `&` pitfall in sed `by` values, the trailing-newline constraint — is defined once in the `add-rebase-rules` skill's Rule kinds reference (read `.agents/skills/add-rebase-rules/SKILL.md`, section "Encoding special characters in replace rules"). Consult it before writing new rule values.
 
 ## Step 7 — Write the fix
 
@@ -284,8 +261,7 @@ For each uncovered change:
    - `from`: the upstream snippet that the Che change replaces or extends.
    - `by`: the Che-modified version from the working tree.
    - Ensure `from` is unique in the upstream file.
-   - For `package.json`, do not create a replace rule — use the JSON merge mechanism (`.rebase/add/`/`.rebase/override/`), following the `add-rebase-rules` skill (including the `elif` routing).
-   - Do not route other JSON files through the generic package handler: jq's `*` merge replaces arrays wholesale, and custom handler logic would be bypassed (`code/product.json` → `apply_code_product_changes`, which appends `builtInExtensions` and reorders keys). Route such files to their existing custom handler, or create a replace rule as for any non-package file.
+   - Which mechanism fits the file — JSON merge (`.rebase/add/`/`.rebase/override/`) vs replace — is defined in the `add-rebase-rules` skill's Rule kinds reference (read `.agents/skills/add-rebase-rules/SKILL.md`). Consult it before creating a rule for any JSON file: it covers the package-manifest default, the exceptions where a package manifest still needs a replace rule, and JSON files that must stay on their dedicated handler instead of the generic package handler.
 4. **If the file uses a custom function** in `rebase.sh` (e.g. `apply_code_*_changes()`), consider adding the replacement as an inline perl block in that function instead of a JSON entry, especially if the change needs multiline context to target uniquely.
 5. **Validate** using the same dry-run steps as Step 9 — apply all rules to upstream and diff against che-code. The uncovered diff should now be empty.
 

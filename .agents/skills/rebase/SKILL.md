@@ -154,9 +154,8 @@ For each NEEDS_RULE file in the pre-rebase report, use the `fix-rebase-rules` sk
 1. Read the che-code file to understand the che-specific modification
 2. Read the upstream file at `PREVIOUS_UPSTREAM_VERSION` to see the original code
 3. Create a rule: `from` = upstream snippet, `by` = che-modified version
-4. For source files (.ts, .html, etc.) — creates `.rebase/replace/<path>.json`
-5. For `package.json` — creates `.rebase/add/` and/or `.rebase/override/` rules
-6. Also updates `rebase.sh` routing — adds the `elif` entry
+4. The rule kind (replace vs JSON merge) matches the file — classified by the `add-rebase-rules` skill's Rule kinds reference (read `.agents/skills/add-rebase-rules/SKILL.md`)
+5. Also updates `rebase.sh` routing — adds the `elif` entry
 
 If rule creation fails for a file: check whether that file actually conflicts in the rebase (from the pre-rebase report conflict list). If it conflicts, this is a real blocker — stop for manual review. If it does not conflict, log as ERROR in the pre-rebase report and continue.
 
@@ -327,7 +326,7 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
      ```bash
      git show upstream-code/<target-version>:<path-without-code-prefix> > <file>
      ```
-   - **Create rebase rule:** follow the `add-rebase-rules` skill (read `.agents/skills/add-rebase-rules/SKILL.md`), passing the source commit found in step 1 — it creates the rule kind matching the file (`package.json` → `.rebase/add/`/`.rebase/override/`, everything else → `.rebase/replace/`) and the `elif` routing. Test with `run-all-tests.sh`.
+   - **Create rebase rule:** follow the `add-rebase-rules` skill (read `.agents/skills/add-rebase-rules/SKILL.md`), passing the source commit found in step 1 — it creates the rule kind matching the file (classified by its Rule kinds reference) and the `elif` routing. Test with `run-all-tests.sh`.
 
    Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
 
