@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2023 Red Hat, Inc.
+ * Copyright (c) 2023 - 2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -19,7 +19,7 @@ import { IRequestService } from '../../../../../platform/request/common/request.
 import { ReloadWindowAction } from '../../../../browser/actions/windowActions.js';
 import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from './devWorkspaceAssistant.js';
 import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
-import { IProgressService } from '../../../../../platform/progress/common/progress.js';
+import { IProgressService, ProgressLocation } from '../../../../../platform/progress/common/progress.js';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RELOAD_WINDOW_LABEL = nls.localize('reloadWindow', "Reload Window");
@@ -35,6 +35,7 @@ const CAN_NOT_RECONNECT = nls.localize('disconnectionHandler.message.canNotRecon
 export enum DisconnectionHandlerStatus {
 	AVAILABLE = 'Available',
 	IN_PROGRESS = 'InProgress',
+	WAITING_FOR_WORKSPACE_START = 'waiting for workspace start',
 	USER_ACTION_WAITING = 'waiting for the user action',
 	FAILED = 'Failed'
 }
@@ -43,12 +44,13 @@ export enum DisconnectionHandlerStatus {
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
-const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
+const DISCONNECTION_HANDLING_TIME = 50 * 1000; // 50 seconds
+const WORKSPACE_HANDLING_TIME = 30 * 1000; // 30 seconds
 
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
-
+	private progressService: IProgressService;
 	private reloadWindowHandler = () => {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
 	}
@@ -69,12 +71,13 @@ export class CheDisconnectionHandler {
 		environmentVariableService: IEnvironmentVariableService,
 		progressService: IProgressService
 	) {
+		this.progressService = progressService;
 		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
 	}
 
 	private canHandle(millisSinceLastIncomingData: number): boolean {
 		// the Che handler is waiting for the user action - so, the default behaviour should NOT be applied
-		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING) {
+		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING || this.status === DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START) {
 			return true;
 		}
 
@@ -91,10 +94,13 @@ export class CheDisconnectionHandler {
 	}
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
+		console.log(`[CheDisconnectionHandler] Status: ${this.status}`);
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
 			return;
 		}
 
+		// the Che handler is waiting for the dev workspace to start - so, the default behaviour should NOT be applied
+		this.status = DisconnectionHandlerStatus.WAITING_FOR_WORKSPACE_START;
 		const pendingAction = this.devWorkspaceAssistant.pendingAction;
 		let devWorkspace: DevWorkspaceLike;
 		try {
@@ -104,21 +110,20 @@ export class CheDisconnectionHandler {
 			return;
 		}
 		if (!devWorkspace || !devWorkspace.status) {
+			this.status = DisconnectionHandlerStatus.FAILED;
 			return;
 		}
-
 		const workspacePhase = devWorkspace.status.phase;
+		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
 		console.log(`[CheDisconnectionHandler]: workspacePhase=${workspacePhase}, pendingAction=${pendingAction}`);
-		if (pendingAction === 'restartPending' && workspacePhase !== DisconnectionHandlerStatus.FAILED && workspacePhase !== DevWorkspaceStatus.FAILING) {
+		if (pendingAction === 'restartPending' && workspacePhase !== DisconnectionHandlerStatus.FAILED) {
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
 		if (pendingAction === 'stopping') {
 			return;
 		}
-
-		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
-		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
+		if (workspacePhase === DevWorkspaceStatus.RUNNING) {
 			return this.onDisconnectionRunningWorkspace(type);
 		}
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
@@ -140,19 +145,39 @@ export class CheDisconnectionHandler {
 	 * @throws An error if the workspace cannot be retrieved or remains in the 'STARTING' phase until the timeout expires.
 	 */
 	private async getDevWorkspaceUntilNotStarting(): Promise<DevWorkspaceLike> {
-		const startTime = Date.now();
+		return this.progressService.withProgress(
+			{
+				location: ProgressLocation.Notification,
+				title: 'Waiting for DevWorkspace',
+			},
+			async progress => {
+				const startTime = Date.now();
 
-		while (Date.now() - startTime < DISCONNECTION_HANDLING_TIME) {
-			const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+				while (Date.now() - startTime < WORKSPACE_HANDLING_TIME) {
+					progress.report({
+						message: 'Checking DevWorkspace status...'
+					});
 
-			if (devWorkspace.status?.phase !== DevWorkspaceStatus.STARTING) {
-				return devWorkspace;
+					const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+					const phase = devWorkspace.status?.phase;
+
+					if (phase !== DevWorkspaceStatus.STARTING) {
+						progress.report({
+							message: `DevWorkspace status: ${phase}`
+						});
+						return devWorkspace;
+					}
+
+					progress.report({
+						message: 'DevWorkspace is starting. Please wait...'
+					});
+
+					await new Promise(resolve => setTimeout(resolve, 2000));
+				}
+
+				throw new Error('Timed out waiting for DevWorkspace to finish starting');
 			}
-
-			await new Promise(resolve => setTimeout(resolve, 2000));
-		}
-
-		throw new Error('Timed out waiting for DevWorkspace to finish starting');
+		);
 	}
 
 	// handle disconnection when dev workspace is not stopped
