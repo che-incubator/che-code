@@ -334,10 +334,12 @@ This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched file
 
    Once every mismatch is classified, the remaining align-with-upstream fixes can be applied in one pass: `bash post-rebase.sh --apply`. Run it only after the rules for rule-classified files are in place — rule-covered files are excluded from the scan automatically, so only the align decisions get applied.
 
-**Files kept after an upstream deletion** (the report's "Kept After Upstream Deletion" section lists their paths) — same `git log` investigation. First check whether the "deletion" was actually a **move** — upstream reorganizations regularly relocate files rather than remove them. Search the current upstream tree for the file's basename:
+**Files kept after an upstream deletion** (the report's "Kept After Upstream Deletion" section lists their paths) — same `git log` investigation. First check whether the "deletion" was actually a **move** — upstream reorganizations regularly relocate files rather than remove them. Search the current upstream tree for the file's basename (compare literally — a basename containing regex metacharacters, e.g. `foo[1].ts`, would not match itself under `grep -E`):
 
 ```bash
-git ls-tree -r upstream-code/<target-version> --name-only | grep -E '(^|/)<basename>$'
+git ls-tree -r upstream-code/<target-version> --name-only | while IFS= read -r p; do
+  [[ "${p##*/}" == "<basename>" ]] && echo "$p"
+done
 ```
 
 If the content lives at a new path, follow the move instead of deleting or keeping: delete the stale local copy, re-apply the Che change to the new upstream path (it is preserved in the kept copy, or the merge already carried it there), and move the rule to the new path (`.rebase/` rule file + `elif`/handler routing — see the `fix-rebase-rules` skill's "Handle upstream file rename or removal" step).
