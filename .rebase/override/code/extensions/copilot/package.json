@@ -1,5 +1,6 @@
 {
     "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.32.2",
         "undici": "^7.30.0"
     },
     "devDependencies": {
