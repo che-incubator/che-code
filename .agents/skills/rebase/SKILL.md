@@ -642,7 +642,7 @@ Before running `rebase.sh`, verify that every `elif` entry in `rebase.sh` has it
 2. The change is later **reverted** (e.g. feature removed)
 3. The replace rule file is deleted (or never created), but the `elif` entry in `rebase.sh` is forgotten
 
-**Detection:** For each `elif` entry that calls `apply_changes_multi_line "$file"`:
+**Detection:** For each `elif` entry that calls a replace-consuming handler (`apply_changes`, `apply_changes_multi_line`, or a custom handler that reads `.rebase/replace/<file>.json`):
 - Check if `.rebase/replace/<file>.json` exists → if not, it's an orphan
 - If the rule file exists, check if the `by` content is actually different from what upstream provides → if the file in the working tree matches the previous upstream exactly (no Che-specific diff), the elif is stale
 
