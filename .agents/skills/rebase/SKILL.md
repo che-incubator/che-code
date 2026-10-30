@@ -472,15 +472,15 @@ skopeo list-tags docker://docker.io/library/node \
 
 Pick the latest non-source tag for each image. For Red Hat images, prefer tags with the highest build number (e.g. `9.8-1784075995` > `9.8-1783399045`). For Alpine, follow the existing pattern: `<major>-alpine<alpine_version>` (e.g. `24-alpine3.24`).
 
-**Verify the Node.js version inside each candidate image before updating its Dockerfile:**
+**Verify the Node.js and npm versions inside each candidate image before updating its Dockerfile:**
 
 ```bash
-podman run --rm <candidate-image> node --version
+podman run --rm <candidate-image> sh -c "node --version && npm --version"
 ```
 
-The build runs `npm install` inside the container, and upstream's `preinstall.ts` requires the same major and at least the minor/patch from `code/.nvmrc`. Registry images are rebuilt on their own schedule, so the newest tag is not guaranteed to be new enough.
+The build runs `npm install` inside the container, and upstream's `preinstall.ts` checks both tools: it requires the same Node.js major and at least the minor/patch from `code/.nvmrc`, and rejects npm majors >= 12 (parsed from `npm_config_user_agent`). Registry images are rebuilt on their own schedule, so the newest tag is not guaranteed to be new enough.
 
-**Always update to the newest available tag regardless** — it is the best available base, and keeping an older image is never better: the Dockerfile's current lines match the **previous** `code/.nvmrc`, so if the newest tag lags the new target, the old image lags at least as much and `npm install` fails either way. Updating cannot make the build state worse — only closer to the target. If the checked version lags `code/.nvmrc`, do not stop: update anyway and record the gap in `.rebase/<ver>/rebase-errors.md` (it resolves when the registry rebuilds the image; the follow-up is a tag bump). The check exists to produce that report entry — it turns a late, confusing Docker build failure into a documented known issue for the reviewer.
+**Always update to the newest available tag regardless** — it is the best available base, and keeping an older image is never better: the Dockerfile's current lines match the **previous** `code/.nvmrc`, so if the newest tag lags the new target, the old image lags at least as much and `npm install` fails either way. Updating cannot make the build state worse — only closer to the target. If the checked Node.js version lags `code/.nvmrc`, or the image's npm is >= 12, do not stop: update anyway and record the gap in `.rebase/<ver>/rebase-errors.md` — a lagging Node resolves when the registry rebuilds the image (the follow-up is a tag bump); a too-new npm resolves when upstream's `preinstall.ts` starts accepting it. The check exists to produce that report entry — it turns a late, confusing Docker build failure into a documented known issue for the reviewer.
 
 **Files to update (5 Dockerfiles):**
 
