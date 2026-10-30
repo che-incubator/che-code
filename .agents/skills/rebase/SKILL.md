@@ -305,7 +305,7 @@ Run immediately after conflicts are resolved. This detects files that `git subtr
 - Are NOT `package-lock.json` files
 - Currently differ from the upstream content
 
-The report also lists **files kept after an upstream deletion** — files upstream deleted between the two versions that are still present locally. Each needs an explicit delete-or-keep decision (see below).
+The report also lists **files kept after an upstream deletion** — files upstream deleted between the two versions that are still present locally. Each needs an explicit delete-or-keep decision (see below). It also lists **files missing after an upstream change** — files upstream changed (including newly added) that are absent from the working tree; each needs an explicit restore-or-exclude decision (see below).
 
 **Run:**
 
@@ -313,7 +313,7 @@ The report also lists **files kept after an upstream deletion** — files upstre
 bash post-rebase.sh
 ```
 
-This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs, plus the paths of any files kept after an upstream deletion.
+This generates `.rebase/<ver>/post-rebase-report.md` listing all mismatched files with diffs, plus the paths of any files kept after an upstream deletion or missing after an upstream change.
 
 **Classification algorithm — for each detected mismatch:**
 
@@ -351,9 +351,19 @@ If the file had a rebase rule (`.rebase/replace/`, `.rebase/add/`, `.rebase/over
 
 `bash post-rebase.sh --apply` never deletes these files — deletion is a per-file decision, not a bulk operation.
 
+**Files missing after an upstream change** (the report's "Missing After Upstream Change" section lists their paths) — same `git log` investigation. An empty history on the path means the merge failed to bring the file in; a local deletion commit means Che removed it on purpose. One of two decisions:
+
+- **Restore (align with upstream):** the file should exist — write the upstream content back:
+  ```bash
+  git show upstream-code/<target-version>:<path-without-code-prefix> > code/<path-without-code-prefix>
+  ```
+- **Exclude (intentional):** Che deleted the file on purpose — record an `exclude` decision in the Decisions table. Files removed by a single commit can be recorded as one glob row (e.g. `code/extensions/copilot/test/simulation/cache/layers/*.sqlite`, the unused Copilot LFS simulation cache removed by [9cc5d4c7e25](https://github.com/che-incubator/che-code/commit/9cc5d4c7e25)).
+
+`bash post-rebase.sh --apply` never restores these files — restoring is a per-file decision, not a bulk operation.
+
 **After all mismatches are processed:**
 
-1. Re-run `bash post-rebase.sh` to confirm 0 mismatches remain and the kept-after-deletion list contains only files already recorded as keep decisions
+1. Re-run `bash post-rebase.sh` to confirm 0 mismatches remain, the kept-after-deletion list contains only files already recorded as keep decisions, and the missing-after-change list contains only files already recorded as exclude decisions
 2. Commit "align with upstream" fixes in one commit: "Fix auto-resolution errors: align N files with upstream"
 3. Commit new rebase rules individually (one commit per rule)
 
@@ -369,10 +379,11 @@ Update `.rebase/<ver>/post-rebase-report.md` to include a decisions table:
 | `code/path/file.ts` | align with upstream | merge commit leftover, no PR | abc1234 | def5678 |
 | `code/path/other.ts` | create rule | "fix: disable telemetry" (che#21122) | 31e901d | 17a4e94 |
 | `code/path/legacy.ts` | keep | upstream deleted it, still needed by che-remote (che#21150) | 9f2c8b1 | — |
+| `code/extensions/copilot/test/simulation/cache/layers/*.sqlite` | exclude | unused Copilot LFS simulation cache, removed intentionally | 9cc5d4c7e25 | — |
 ```
 
 The "Source commit" links to the commit that introduced the Che difference.
-The "Fix commit" links to the commit that resolved the mismatch (for keep decisions there is no fix commit — the file is left unchanged, so the cell holds `—`).
+The "Fix commit" links to the commit that resolved the mismatch (for keep and exclude decisions there is no fix commit — the file is left as-is, so the cell holds `—`).
 
 This report serves as a self-contained audit trail — the reviewer can quickly verify each decision by checking the linked commits.
 

@@ -14,6 +14,8 @@
 # Differences are reported; overwriting requires --apply.
 # Files kept locally after upstream deleted them are listed by path for an
 # explicit delete-or-keep decision; --apply never deletes them.
+# Files upstream changed but that are missing locally are listed by path for
+# an explicit restore-or-exclude decision; --apply never restores them.
 #
 # Usage: bash post-rebase.sh [--dry-run|--apply]
 #   --dry-run: only report differences, do not overwrite files (default)
@@ -94,14 +96,15 @@ checked=0
 fixed=0
 skipped_rules=0
 skipped_lock=0
-skipped_missing=0
+missing_changed=0
 skipped_deleted=0
 kept_deleted=0
 
-# Temp files for fixed and kept-after-deletion file lists
+# Temp files for fixed, kept-after-deletion and missing file lists
 FIXED_LIST=$(mktemp)
 KEPT_DELETED_LIST=$(mktemp)
-trap "rm -f $EXCLUSION_FILE $FIXED_LIST $KEPT_DELETED_LIST" EXIT
+MISSING_LIST=$(mktemp)
+trap "rm -f $EXCLUSION_FILE $FIXED_LIST $KEPT_DELETED_LIST $MISSING_LIST" EXIT
 
 echo "Scanning..."
 
@@ -138,9 +141,13 @@ while IFS= read -r upstream_file; do
     continue
   fi
 
-  # Check if file exists locally
+  # Missing locally while upstream still has it — either a fresh upstream
+  # addition the merge failed to bring in, or a file Che deleted on purpose;
+  # either way it needs an explicit restore-or-exclude decision
+  # (--apply never restores these files)
   if [[ ! -f "$SCRIPT_DIR/$local_file" ]]; then
-    skipped_missing=$((skipped_missing + 1))
+    missing_changed=$((missing_changed + 1))
+    echo "$local_file" >> "$MISSING_LIST"
     continue
   fi
 
@@ -169,7 +176,7 @@ echo "  Skipped (have rules):         $skipped_rules"
 echo "  Skipped (lock files):         $skipped_lock"
 echo "  Skipped (deleted in upstream): $skipped_deleted"
 echo "  Kept after upstream deletion: $kept_deleted"
-echo "  Skipped (missing locally):    $skipped_missing"
+echo "  Missing after upstream change: $missing_changed"
 echo "========================================="
 
 if [[ "$DRY_RUN" == "true" && $fixed -gt 0 ]]; then
@@ -183,6 +190,14 @@ if [[ $kept_deleted -gt 0 ]]; then
   while IFS= read -r f; do
     echo "  - $f"
   done < "$KEPT_DELETED_LIST"
+fi
+
+if [[ $missing_changed -gt 0 ]]; then
+  echo ""
+  echo "Missing after upstream change — each needs an explicit restore-or-exclude decision:"
+  while IFS= read -r f; do
+    echo "  - $f"
+  done < "$MISSING_LIST"
 fi
 
 # Generate report
@@ -210,7 +225,7 @@ REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
   echo "| Skipped (package-lock.json) | $skipped_lock |"
   echo "| Skipped (deleted in upstream) | $skipped_deleted |"
   echo "| Kept after upstream deletion | $kept_deleted |"
-  echo "| Skipped (missing locally) | $skipped_missing |"
+  echo "| Missing after upstream change | $missing_changed |"
   echo ""
 
   if [[ $fixed -gt 0 ]]; then
@@ -232,7 +247,7 @@ REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
       echo "\`\`\`"
       echo ""
     done < "$FIXED_LIST"
-  elif [[ $kept_deleted -eq 0 ]]; then
+  elif [[ $kept_deleted -eq 0 && $missing_changed -eq 0 ]]; then
     echo "## Result"
     echo ""
     echo "All files without Che-specific rules are identical to upstream. No mismatches detected."
@@ -246,6 +261,17 @@ REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
     while IFS= read -r kept_file; do
       echo "- \`$kept_file\`"
     done < "$KEPT_DELETED_LIST"
+    echo ""
+  fi
+
+  if [[ $missing_changed -gt 0 ]]; then
+    echo "## Missing After Upstream Change"
+    echo ""
+    echo "Upstream changed these files between $PREVIOUS_UPSTREAM_VERSION and $CURRENT_UPSTREAM_VERSION, but they are missing from the working tree. Each needs an explicit decision: restore (align with upstream — e.g. an addition the merge failed to bring in) or exclude (intentional divergence — a file Che deleted on purpose)."
+    echo ""
+    while IFS= read -r missing_file; do
+      echo "- \`$missing_file\`"
+    done < "$MISSING_LIST"
     echo ""
   fi
 } > "$REPORT_FILE"
