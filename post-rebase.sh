@@ -74,8 +74,12 @@ EXCLUSION_COUNT=$(wc -l < "$EXCLUSION_FILE" | tr -d ' ')
 echo "Exclusion list: $EXCLUSION_COUNT files with Che-specific rules"
 echo ""
 
-# Get list of files changed between previous and current upstream
-CHANGED_FILES=$(git diff --name-only "$PREV_REF" "$CURR_REF" 2>/dev/null)
+# Get list of files changed between previous and current upstream.
+# --no-renames: with rename detection on, a moved file prints only its new path,
+# so the old path would never reach the deletion branch below. Exact renames are
+# paired even at this diff size (renameLimit only disables the inexact phase), so
+# don't rely on detection being off — make every move print as old + new path.
+CHANGED_FILES=$(git diff --name-only --no-renames "$PREV_REF" "$CURR_REF" 2>/dev/null)
 if [[ -z "$CHANGED_FILES" ]]; then
   echo "ERROR: Could not get changed files. Ensure upstream-code remote is fetched."
   echo "  git fetch upstream-code $PREVIOUS_UPSTREAM_VERSION $CURRENT_UPSTREAM_VERSION"
