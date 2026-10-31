@@ -14,13 +14,10 @@
     "source-map-loader": "^5.0.0"
   },
   "dependencies": {
-    "@vscode/component-explorer": "^0.2.1-58",
-    "@vscode/component-explorer-webpack-plugin": "^0.3.1-53"
+    "@vscode/component-explorer": "^0.2.1-161",
+    "@vscode/component-explorer-webpack-plugin": "^0.3.1-153"
   },
   "overrides": {
-    "source-map-js": "^1.2.2",
-    "ajv": {
-      "fast-uri": "^3.1.8"
-    }
+    "source-map-js": "^1.2.2"
   }
 }

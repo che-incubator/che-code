@@ -10,10 +10,10 @@ import { localize } from '../../../../nls.js';
 import type { CreateTerminalParams } from '../../common/state/protocol/commands.js';
 import { TerminalClaimKind, type TerminalSessionClaim } from '../../common/state/protocol/state.js';
 import { ActionType } from '../../common/state/sessionActions.js';
-import { isAhpChatChannel, parseRequiredSessionUriFromChatUri, ToolCallConfirmationReason, ToolResultContentType, type ToolResultContent, type URI as ProtocolURI } from '../../common/state/sessionState.js';
+import { ToolCallConfirmationReason, ToolResultContentType, type ToolResultContent, type URI as ProtocolURI } from '../../common/state/sessionState.js';
 import { parseBangCommand } from '../agentHostBangCommand.js';
 import { DEFAULT_SHELL_COMMAND_TIMEOUT_MS, executeShellCommand, shellTypeForExecutable, type IShellCommandResult } from '../shared/shellCommandExecution.js';
-import { ILocalChatCommand, ILocalChatCommandContext, ILocalChatCommandRequest, LocalChatCommandRegistry } from './localChatCommand.js';
+import { ILocalChatCommand, ILocalChatCommandContext, ILocalChatCommandHandling, ILocalChatCommandRequest, LocalChatCommandRegistry } from './localChatCommand.js';
 
 /**
  * The generic `!command` command: runs the message as a terminal command via
@@ -39,23 +39,25 @@ export class BangLocalCommand extends Disposable implements ILocalChatCommand {
 		}));
 	}
 
-	tryHandle(request: ILocalChatCommandRequest): (() => Promise<void>) | undefined {
+	tryHandle(request: ILocalChatCommandRequest): ILocalChatCommandHandling | undefined {
 		const command = parseBangCommand(request.text);
 		if (command === undefined) {
 			return undefined;
 		}
-		return () => this._run(request.turnChannel, request.turnId, command);
+		// The raw command doubles as a provisional title so a brand-new session
+		// isn't left untitled until the first real (non-command) request.
+		return { run: () => this._run(request.turnChannel, request.turnId, command), suggestedTitle: command };
 	}
 
 	private async _run(turnChannel: ProtocolURI, turnId: string, command: string): Promise<void> {
 		const ctx = this._context;
-		const sessionChannel = isAhpChatChannel(turnChannel) ? parseRequiredSessionUriFromChatUri(turnChannel) : turnChannel;
+		const sessionChannel = ctx.getOwner(turnChannel);
 		const toolCallId = generateUuid();
 		const terminalUri = `agenthost-terminal://bang/${generateUuid()}`;
 		const displayName = localize('agentHostBang.terminal', "Terminal");
 		let terminalCreated = false;
 		try {
-			const workingDirStr = ctx.getState(sessionChannel)?.workingDirectory;
+			const workingDirStr = ctx.getState(sessionChannel)?.workingDirectories?.[0];
 			const cwd = workingDirStr ? URI.parse(workingDirStr).fsPath : undefined;
 			const shellPath = await ctx.terminalManager.getDefaultShell();
 			const shellType = shellTypeForExecutable(shellPath);
@@ -82,6 +84,7 @@ export class BangLocalCommand extends Disposable implements ILocalChatCommand {
 			const claim: TerminalSessionClaim = {
 				kind: TerminalClaimKind.Session,
 				session: sessionChannel,
+				chat: turnChannel,
 				turnId,
 				toolCallId,
 			};

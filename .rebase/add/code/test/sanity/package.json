@@ -1,6 +1,0 @@
-{
-    "overrides": {
-        "brace-expansion@2": "^2.1.4",
-        "js-yaml": "^4.3.2"
-    }
-}

@@ -16,7 +16,7 @@
   "dependencies": {
     "@microsoft/tiktokenizer": "^1.0.10",
     "@sinclair/typebox": "^0.34.41",
-    "@vscode/copilot-api": "^0.4.2",
+    "@vscode/copilot-api": "^0.5.2",
     "@vscode/l10n": "^0.0.18",
     "@vscode/prompt-tsx": "^0.4.0-alpha.8",
     "@vscode/tree-sitter-wasm": "0.0.5-php.2",
@@ -65,19 +65,10 @@
     "copy": "copyfiles src/package.json \"src/**/*.tiktoken\" dist",
     "package": "npm pack",
     "postinstall": "tsx script/postinstall.js",
-    "publish": "npm publish",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "overrides": {
-    "source-map-js": "^1.2.2",
-    "shell-quote": "^1.8.4",
-    "vite": {
-      "postcss": "^8.5.26"
-    },
-    "brace-expansion@1": "^1.1.18",
-    "minimatch@10": {
-      "brace-expansion": "5.0.9"
-    }
+    "source-map-js": "^1.2.2"
   }
 }

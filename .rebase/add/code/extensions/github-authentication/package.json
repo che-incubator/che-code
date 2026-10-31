@@ -1,7 +1,0 @@
-{
-    "overrides": {
-        "@types/node-fetch": {
-            "form-data": "^3.0.5"
-        }
-    }
-}
