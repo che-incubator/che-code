@@ -9,10 +9,7 @@
     "preview": "vite preview"
   },
   "overrides": {
-    "source-map-js": "^1.2.2",
-    "vite": {
-      "postcss": "^8.5.26"
-    }
+    "source-map-js": "^1.2.2"
   },
   "devDependencies": {
     "@vscode/component-explorer": "^0.2.1-58",

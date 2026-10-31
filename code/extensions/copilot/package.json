@@ -7249,30 +7249,7 @@
     "string_decoder": "npm:string_decoder@1.2.0",
     "yauzl": "^3.3.1",
     "zod": "3.25.76",
-    "shell-quote": "^1.8.4",
-    "qs": "^6.16.0",
-    "ip-address": "^10.5.0",
-    "ws": "^8.21.0",
-    "brace-expansion@1": "^1.1.18",
-    "brace-expansion@2": "^2.1.4",
-    "brace-expansion@5": "5.0.9",
-    "form-data@4": "^4.0.6",
     "@grpc/grpc-js": "^1.14.6",
-    "@vscode/vsce": {
-      "form-data": "^4.0.6"
-    },
-    "@grpc/proto-loader": {
-      "protobufjs": "^7.6.5"
-    },
-    "vite": {
-      "postcss": "^8.5.26"
-    },
-    "markdown-it": {
-      "linkify-it": "^5.0.2"
-    },
-    "ajv": {
-      "fast-uri": "^3.1.8"
-    },
     "express": {
       "proxy-addr": "^2.0.8"
     }

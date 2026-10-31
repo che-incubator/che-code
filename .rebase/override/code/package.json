@@ -3,17 +3,11 @@
     "bin": "out/vs/server/main.js",
     "dependencies": {
       "undici": "^7.30.0",
-      "ws": "^8.21.0"
+      "ws": "^8.21.0",
+      "tar": "^7.5.22"
     },
     "devDependencies": {
       "@vscode/l10n-dev": "0.0.18",
-      "@vscode/test-cli": "^0.0.12",
-      "eslint": "^9.39.3",
-      "tar": "^7.5.22"
-    },
-    "overrides": {
-      "chrome-remote-interface": {
-        "ws": "^7.5.11"
-      }
+      "@vscode/test-cli": "^0.0.12"
     }
 }

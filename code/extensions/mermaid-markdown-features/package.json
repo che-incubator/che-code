@@ -264,10 +264,6 @@
     "mermaid": "^11.17.1"
   },
   "overrides": {
-    "source-map-js": "^1.2.2",
-    "lodash-es": "4.18.1",
-    "@zenuml/core": {
-      "postcss": "^8.5.26"
-    }
+    "lodash-es": "4.18.1"
   }
 }
