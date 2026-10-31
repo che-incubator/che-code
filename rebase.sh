@@ -367,6 +367,8 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
       apply_github_auth_package_changes
+    elif [[ "$conflictingFile" == "code/extensions/github-authentication/src/extension.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
@@ -410,6 +412,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/server/node/remoteTerminalChannel.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench-dev.html" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"

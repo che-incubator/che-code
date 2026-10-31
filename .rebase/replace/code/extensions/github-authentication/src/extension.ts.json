@@ -1,0 +1,10 @@
+[
+  {
+    "from": "import * as vscode from 'vscode';",
+    "by": "import * as vscode from 'vscode';\nlet enableExtension = false;\nimport { initialize } from './device-flow';"
+  },
+  {
+    "from": "export async function activate(context: vscode.ExtensionContext) {\n\tconst uriHandler = new UriEventHandler();",
+    "by": "export async function activate(context: vscode.ExtensionContext) {\n\tif (!enableExtension) {\n\t\tinitialize(context);\n\t\treturn;\n\t}\n\n\tconst uriHandler = new UriEventHandler();"
+  }
+]
