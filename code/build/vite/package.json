@@ -8,14 +8,17 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "overrides": {
-    "source-map-js": "^1.2.2"
-  },
   "devDependencies": {
-    "@vscode/component-explorer": "^0.2.1-58",
-    "@vscode/component-explorer-vite-plugin": "^0.2.1-58",
+    "@vscode/component-explorer": "^0.2.1-161",
+    "@vscode/component-explorer-vite-plugin": "^0.2.1-161",
     "@vscode/rollup-plugin-esm-url": "^1.0.1-1",
     "rollup": "*",
     "vite": "7.3.1"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }

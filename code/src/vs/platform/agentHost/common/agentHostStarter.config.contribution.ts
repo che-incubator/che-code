@@ -6,18 +6,28 @@
 import * as nls from '../../../nls.js';
 import { IPolicyData } from '../../../base/common/defaultAccount.js';
 import { PolicyCategory } from '../../../base/common/policy.js';
-import { ConfigurationScope, Extensions as ConfigurationExtensions, IConfigurationRegistry } from '../../configuration/common/configurationRegistry.js';
-import { COPILOT_OTEL_CAPTURE_CONTENT_KEY, COPILOT_OTEL_ENABLED_KEY, COPILOT_OTEL_ENDPOINT_KEY, COPILOT_OTEL_HEADERS_KEY, COPILOT_OTEL_LOCK_CAPTURE_CONTENT_KEY, COPILOT_OTEL_PROTOCOL_KEY, COPILOT_OTEL_RESOURCE_ATTRIBUTES_KEY, COPILOT_OTEL_SERVICE_NAME_KEY, managedSettingValue } from '../../policy/common/copilotManagedSettings.js';
+import { AgentHostConfigurationSyncScope, ConfigurationScope, Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from '../../configuration/common/configurationRegistry.js';
+import { COPILOT_OTEL_CAPTURE_CONTENT_KEY, COPILOT_OTEL_CAPTURE_IDENTITY_KEY, COPILOT_OTEL_ENABLED_KEY, COPILOT_OTEL_ENDPOINT_KEY, COPILOT_OTEL_FILE_PATH_KEY, COPILOT_OTEL_HEADERS_KEY, COPILOT_OTEL_LOCK_CAPTURE_CONTENT_KEY, COPILOT_OTEL_PROTOCOL_KEY, COPILOT_OTEL_RESOURCE_ATTRIBUTES_KEY, COPILOT_OTEL_SERVICE_NAME_KEY, COPILOT_TEMPORARY_ALLOW_LOCAL_HARNESS_KEY, managedSettingValue, thirdPartyAgentEnabledValue } from '../../policy/common/copilotManagedSettings.js';
 import product from '../../product/common/product.js';
 import { Registry } from '../../registry/common/platform.js';
 import {
+	AgentHostAhpJsonlLoggingSettingId,
+	AgentHostAgentOrchestrationLimitsSettingId,
+	AgentHostAutoAttachPullRequestsSettingId,
 	AgentHostByokModelsEnabledSettingId,
+	CanvasesEnabledSettingId,
+	AgentHostGitHubMcpServerEnabledSettingId,
+	AgentHostMcpToolRoutingEnabledSettingId,
 	AgentHostClaudeAgentEnabledSettingId,
 	AgentHostCodexAgentBinaryArgsSettingId,
 	AgentHostCodexAgentEnabledSettingId,
 	AgentHostCodexAgentSdkRootSettingId,
 	AgentHostCodexAgentCodexHomeSettingId,
+	AgentHostMarkdownPlanRichLinksEnabledSettingId,
+	AgentHostOverlapProviderPreparationSettingId,
+	AgentHostPrewarmSessionsSettingId,
 	AgentHostOTelCaptureContentSettingId,
+	AgentHostOTelCaptureIdentitySettingId,
 	AgentHostOTelDbSpanExporterEnabledSettingId,
 	AgentHostOTelEnabledSettingId,
 	AgentHostOTelExporterTypeSettingId,
@@ -26,25 +36,54 @@ import {
 	AgentHostOTelOutfileSettingId,
 	AgentHostOTelResourceAttributesSettingId,
 	AgentHostOTelServiceNameSettingId,
+	AgentHostSystemProxyEnabledSettingId,
+	AgentHostWorkspaceSnapshotEnabledSettingId,
 } from './agentService.js';
+import {
+	AgentHostAhpJsonlLoggingEnabledConfigKey,
+	AgentHostAgentOrchestrationLimitsConfigKey,
+	AgentHostAutoAttachPullRequestsConfigKey,
+	AgentHostByokModelsEnabledConfigKey,
+	AgentHostByokModelsEnabledDefault,
+	AgentHostCanvasesEnabledConfigKey,
+	AgentHostCodexEnabledConfigKey,
+	AgentHostGitHubMcpServerEnabledConfigKey,
+	AgentHostMcpToolRoutingEnabledConfigKey,
+	AgentHostMarkdownPlanRichLinksEnabledConfigKey,
+	AgentHostOverlapProviderPreparationConfigKey,
+	AgentHostPrewarmSessionsConfigKey,
+	AgentHostSystemProxyEnabledConfigKey,
+	AgentHostWorkspaceSnapshotEnabledConfigKey,
+} from './agentHostSchema.js';
+import { AgentMergeConfigKey, AgentMergeSettingId, AGENT_MERGE_SETTING_TAG } from './agentMerge.js';
+import { ChatMoveConfigKey, ChatMoveSettingId } from './agentHostChatMove.js';
+import { artifactToolsConfigurationProperties } from './artifactToolsConfiguration.js';
+import { titleGenerationConfigurationProperties } from './titleGenerationConfiguration.js';
+import { isAhpJsonlLoggingEnabled } from './ahpJsonlLogger.js';
 
 // Settings consumed by the agent host starter (`electronAgentHostStarter.ts`
 // and `nodeAgentHostStarter.ts`) to populate the spawned agent host process's
 // environment. The starter exists in both the desktop main process and the
 // remote server process, so this registration has to be visible to both —
-// each starter file side-effect-imports this contribution, which causes the
-// registration to run as soon as the starter module is loaded. The renderer
-// also imports this so the same defaults show up in the settings UI.
+// the desktop starter and remote server bootstrap import this contribution.
+// The Node starter stays free of configuration-registration side effects.
+// The renderer also imports this so the same defaults show up in the settings UI.
 //
 // Side-effect imports of this file:
 //   - `src/vs/platform/agentHost/electron-main/electronAgentHostStarter.ts`
 //     (main process, loaded transitively from `app.ts`).
-//   - `src/vs/platform/agentHost/node/nodeAgentHostStarter.ts`
-//     (remote server, loaded transitively from `serverServices.ts`).
+//   - `src/vs/server/node/serverServices.ts`
+//     (remote server bootstrap, before starter construction).
 //   - `src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts`
 //     (renderer registration for the settings UI).
 
 const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
+
+// Experiment values resolve in the renderer, so they must sync to the agent host through root config.
+type AgentHostStarterConfigurationPropertySchema = IConfigurationPropertySchema & (
+	| { experiment?: never }
+	| Required<Pick<IConfigurationPropertySchema, 'experiment' | 'agentHost'>>
+);
 
 // Custom managed-settings resolvers for the enterprise OTel policies. The simple pass-through
 // keys use `managedSettingValue(KEY)`; these three combine or transform the managed value:
@@ -53,6 +92,9 @@ const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigurationE
 //   - outfile: when the enterprise mandates an OTLP endpoint/protocol, local file export is
 //     suppressed so spans can't be diverted to disk.
 function managedOTelProtocolValue(policyData: IPolicyData): string | undefined {
+	if (policyData.managedSettings?.[COPILOT_OTEL_FILE_PATH_KEY] !== undefined) {
+		return 'file';
+	}
 	const protocol = policyData.managedSettings?.[COPILOT_OTEL_PROTOCOL_KEY];
 	if (protocol === 'grpc') {
 		return 'otlp-grpc';
@@ -71,8 +113,20 @@ function managedOTelCaptureContentValue(policyData: IPolicyData): boolean | unde
 	return policyData.managedSettings?.[COPILOT_OTEL_LOCK_CAPTURE_CONTENT_KEY] === true ? false : undefined;
 }
 
+function managedOTelEnabledValue(policyData: IPolicyData): boolean | undefined {
+	const enabled = policyData.managedSettings?.[COPILOT_OTEL_ENABLED_KEY];
+	if (typeof enabled === 'boolean') {
+		return enabled;
+	}
+	return policyData.managedSettings?.[COPILOT_OTEL_FILE_PATH_KEY] !== undefined ? true : undefined;
+}
+
 function managedOTelOutfileValue(policyData: IPolicyData): string | undefined {
 	const managedSettings = policyData.managedSettings;
+	const filePath = managedSettings?.[COPILOT_OTEL_FILE_PATH_KEY];
+	if (typeof filePath === 'string') {
+		return filePath;
+	}
 	if (managedSettings?.[COPILOT_OTEL_ENDPOINT_KEY] !== undefined || managedSettings?.[COPILOT_OTEL_PROTOCOL_KEY] !== undefined) {
 		return '';
 	}
@@ -84,21 +138,198 @@ configurationRegistry.registerConfiguration({
 	title: nls.localize('chatAgentHostStarterConfigurationTitle', "Chat Agent Host Starter"),
 	type: 'object',
 	properties: {
-		[AgentHostClaudeAgentEnabledSettingId]: {
+		[AgentHostAhpJsonlLoggingSettingId]: {
 			type: 'boolean',
-			description: nls.localize('chat.agentHost.claudeAgent.enabled', "When enabled, the agent host registers the Claude provider (subject to the Claude SDK being reachable). Independent of `#chat.agents.claude.preferAgentHost#` and `#chat.editor.claude.preferAgentHost#`, which choose which integration surfaces Claude. Requires `#chat.agentHost.enabled#`. The agent host process must be restarted for changes to take effect."),
+			description: nls.localize('chat.agentHost.ahpJsonlLogging', "When enabled, captures AHP transport messages once: in the window for local and remote connections, or on the host for Mission Control connections. Enabled by default only in Insiders. Each logging process stops capture after writing 500 MiB across all connections, including reconnects. Existing per-connection rotation still applies. Restart the window or host process to reset its budget. Mission Control host capture follows the host's owning window setting, including live changes."),
+			default: isAhpJsonlLoggingEnabled(product.quality),
+			tags: ['experimental', 'advanced'],
+			agentHost: { key: AgentHostAhpJsonlLoggingEnabledConfigKey, scope: AgentHostConfigurationSyncScope.Local },
+		},
+		[AgentMergeSettingId.Enabled]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentMerge.enabled', "Enables the experimental Agent Merge controller and its commands. Agent Merge can monitor an agent session's pull request, ask the agent to address selected blockers, and optionally merge the pull request when it is ready."),
+			default: product.quality !== 'stable',
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentMergeConfigKey.Enabled },
+		},
+		[AgentMergeSettingId.AddressReviews]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentMerge.addressReviews', "Controls whether enabled Agent Merge sessions address unresolved review threads, changes-requested reviews, and new pull request comments from repository maintainers or the Copilot pull request reviewer."),
+			default: true,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.AddressReviews },
+		},
+		[AgentMergeSettingId.FixCI]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentMerge.fixCI', "Controls whether enabled Agent Merge sessions ask the agent to fix failed required CI checks."),
+			default: true,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.FixCI },
+		},
+		[AgentMergeSettingId.ResolveConflicts]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentMerge.resolveConflicts', "Controls whether enabled Agent Merge sessions ask the agent to update branches that are behind or resolve merge conflicts."),
+			default: true,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.ResolveConflicts },
+		},
+		[AgentMergeSettingId.MergePullRequest]: {
+			type: 'string',
+			enum: ['always', 'ifUnchanged', 'never'],
+			enumDescriptions: [
+				nls.localize('chat.agentMerge.mergePullRequest.always', "Merges the pull request whenever it is ready, including after Agent Merge has fixed CI failures or addressed review feedback."),
+				nls.localize('chat.agentMerge.mergePullRequest.ifUnchanged', "Merges the pull request only while Agent Merge has not changed it. Once a repair turn lands a commit, automatic merging turns itself off for that session so the changes can be reviewed."),
+				nls.localize('chat.agentMerge.mergePullRequest.never', "Never merges the pull request automatically."),
+			],
+			description: nls.localize('chat.agentMerge.mergePullRequest', "Controls whether the Agent Host automatically merges or enqueues pull requests for enabled Agent Merge sessions after all selected maintenance work is complete."),
+			default: 'never',
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.MergePullRequest },
+		},
+		[AgentMergeSettingId.MergeMethod]: {
+			type: 'string',
+			enum: ['auto', 'squash', 'merge', 'rebase'],
+			enumDescriptions: [
+				nls.localize('chat.agentMerge.mergeMethod.auto', "Uses the first repository-compatible method in this order: squash, merge commit, rebase."),
+				nls.localize('chat.agentMerge.mergeMethod.squash', "Uses squash merge when the repository permits it."),
+				nls.localize('chat.agentMerge.mergeMethod.merge', "Uses a merge commit when the repository permits it."),
+				nls.localize('chat.agentMerge.mergeMethod.rebase', "Uses rebase merge when the repository permits it."),
+			],
+			description: nls.localize('chat.agentMerge.mergeMethod', "Controls the native merge method used by Agent Merge."),
+			default: 'auto',
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.MergeMethod },
+		},
+		[AgentMergeSettingId.ReplyAttribution]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentMerge.replyAttribution', "Controls whether review-thread replies posted by Agent Merge include an automated-reply attribution note."),
+			default: true,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', AGENT_MERGE_SETTING_TAG],
+			agentHost: { key: AgentMergeConfigKey.ReplyAttribution },
+		},
+		[ChatMoveSettingId.Enabled]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.moveChats.enabled', "Enables moving chats between Agent Host sessions and into new sessions."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental'],
+			agentHost: { key: ChatMoveConfigKey.Enabled },
+		},
+		...titleGenerationConfigurationProperties,
+		...artifactToolsConfigurationProperties,
+		[CanvasesEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.canvases.enabled', "Controls whether local Agent Host Copilot sessions can open Canvases with interactive content in the Agents Window and the Editor Window. Newly created sessions pick up changes to this setting."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['preview'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostCanvasesEnabledConfigKey },
+		},
+		[AgentHostAutoAttachPullRequestsSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.experimental.autoAttachPullRequests', "Controls whether the Agent Host automatically discovers and associates a pull request for the currently checked-out branch. When disabled, only pull requests recorded by the agent as artifacts or explicitly selected or created through session actions are considered."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostAutoAttachPullRequestsConfigKey },
+		},
+		[AgentHostMarkdownPlanRichLinksEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.experimental.markdownPlanRichLinks', "When enabled, agents receive guidance for using rich links to issues, pull requests, commits, sessions, and chats, plus running task markers, when creating or editing Markdown plan documents."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostMarkdownPlanRichLinksEnabledConfigKey },
+		},
+		[AgentHostOverlapProviderPreparationSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.experimental.overlapProviderPreparation', "When enabled, agents prepare their session for a new turn, such as starting the runtime session, while the turn-start checkpoint is captured instead of after it. This can shorten the time to the first response, especially on the first turn of a session."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostOverlapProviderPreparationConfigKey },
+		},
+		[AgentHostPrewarmSessionsSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.experimental.prewarmSessions', "When enabled, new Agent Host Copilot chats start their runtime and MCP servers before the first message is sent, so connectors are ready sooner. Changes apply to new chats."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostPrewarmSessionsConfigKey },
+		},
+		[AgentHostWorkspaceSnapshotEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.experimental.workspaceSnapshot', "When enabled, the first turn of a new Copilot agent host chat includes a bounded file-name snapshot of its working directories, so the agent can orient itself without listing the workspace first. File contents are never included."),
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostWorkspaceSnapshotEnabledConfigKey },
+		},
+		[AgentHostAgentOrchestrationLimitsSettingId]: {
+			type: 'string',
+			enum: ['on', 'off'],
+			enumDescriptions: [
+				nls.localize('chat.agentHost.agentOrchestrationLimits.on', "Enforce the limits."),
+				nls.localize('chat.agentHost.agentOrchestrationLimits.off', "Do not enforce the limits."),
+			],
+			description: nls.localize('chat.agentHost.agentOrchestrationLimits', "Controls process-wide limits on sessions and chats created, messages sent, and recursive session spawning by Agent Host session tools. Confirmation requirements and input validation are unchanged."),
+			default: 'on',
+			scope: ConfigurationScope.APPLICATION,
+			tags: ['experimental', 'advanced'],
+			agentHost: { key: AgentHostAgentOrchestrationLimitsConfigKey },
+		},
+		[AgentHostSystemProxyEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.systemProxy.enabled', "When enabled, Copilot sessions automatically discover and use the operating system's proxy configuration when no proxy environment variable is set."),
 			default: true,
 			tags: ['experimental', 'advanced'],
-			// Owns the `Claude3PIntegration` policy; gating here disables Claude across all surfaces.
-			// The user-facing copilot-chat setting `github.copilot.chat.claudeAgent.enabled` attaches
-			// to this policy via a `policyReference` declared in the distro `product.json`. Ownership
-			// lives here (not in `product.json`) so the policy can carry a `value` callback that honors
-			// the account-side editor preview-features flag.
+			experiment: { mode: 'startup' },
+			agentHost: { key: AgentHostSystemProxyEnabledConfigKey },
+		},
+		[AgentHostGitHubMcpServerEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.githubMcpServer.enabled', "When enabled, agent-host sessions include the GitHub MCP server."),
+			default: true,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'startup' },
+			agentHost: { key: AgentHostGitHubMcpServerEnabledConfigKey },
+		},
+		[AgentHostMcpToolRoutingEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.experimental.mcpToolRouting', "When enabled, agent-host sessions use cached MCP tool metadata to route requests and only prompt for MCP authentication when a server is relevant. Newly created sessions pick up changes to this setting."),
+			default: false,
+			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'auto' },
+			agentHost: { key: AgentHostMcpToolRoutingEnabledConfigKey },
+		},
+		[AgentHostClaudeAgentEnabledSettingId]: {
+			type: 'boolean',
+			description: nls.localize('chat.agentHost.claudeAgent.enabled', "When enabled, the agent host registers the Claude provider, subject to the Claude SDK being reachable. The agent host process must be restarted for changes to take effect."),
+			default: true,
+			tags: ['experimental', 'advanced'],
+			// Owns the policy so the account-side preview-features flag can disable Claude across all surfaces.
 			policy: {
 				name: 'Claude3PIntegration',
 				category: PolicyCategory.InteractiveSession,
 				minimumVersion: '1.113',
-				value: (policyData) => policyData.chat_preview_features_enabled === false ? false : undefined,
+				value: thirdPartyAgentEnabledValue,
+				managedSettings: {
+					[COPILOT_TEMPORARY_ALLOW_LOCAL_HARNESS_KEY]: { type: 'boolean' },
+				},
 				localization: {
 					description: {
 						key: 'chat.agentHost.claudeAgent.enabled.policy',
@@ -109,36 +340,44 @@ configurationRegistry.registerConfiguration({
 		},
 		[AgentHostByokModelsEnabledSettingId]: {
 			type: 'boolean',
-			description: nls.localize('chat.agentHost.byokModels.enabled', "When enabled, the agent host wires up the BYOK ('bring your own key') language-model bridge so extension-provided BYOK models can run in agent-host sessions. Requires `#chat.agentHost.enabled#`. The agent host process must be restarted for changes to take effect."),
-			default: false,
+			description: nls.localize('chat.agentHost.byokModels.enabled', "When enabled, extension-provided BYOK ('bring your own key') models can run in agent-host sessions. Changes are synchronized to the running agent host and do not require a restart."),
+			default: AgentHostByokModelsEnabledDefault,
 			tags: ['experimental', 'advanced'],
+			experiment: { mode: 'startup' },
+			agentHost: { key: AgentHostByokModelsEnabledConfigKey, scope: AgentHostConfigurationSyncScope.Local },
 		},
 		[AgentHostCodexAgentEnabledSettingId]: {
 			type: 'boolean',
-			description: nls.localize('chat.agentHost.codexAgent.enabled', "When enabled, the agent host registers the Codex provider (subject to the Codex SDK being reachable). Requires `#chat.agentHost.enabled#`. The agent host process must be restarted for changes to take effect."),
-			default: false,
-			tags: ['experimental', 'advanced'],
+			description: nls.localize('chat.agentHost.codexAgent.enabled', "When enabled, the agent host registers the Codex provider (subject to the Codex SDK being reachable). Enabling takes effect without restarting the agent host."),
+			default: product.quality !== 'stable',
+			tags: ['experimental'],
 			// Allow the default to be overridden by an experiment. Uses `startup`
-			// (matching the sibling agent-host settings) since the agent host
-			// process must be restarted for a change to take effect anyway.
+			// to match the sibling agent-host provider settings.
 			experiment: { mode: 'startup' },
+			// Always mirrored, including when `false`: the host only acts on enable, so a
+			// forwarded `false` takes effect on the next agent host restart (otherwise
+			// in-progress Codex sessions would have to be stopped).
+			agentHost: { key: AgentHostCodexEnabledConfigKey },
 			// Owns the `Codex3PIntegration` policy; gating here disables Codex across all agent-host surfaces.
 			policy: {
 				name: 'Codex3PIntegration',
 				category: PolicyCategory.InteractiveSession,
 				minimumVersion: '1.126',
-				value: (policyData) => policyData.chat_preview_features_enabled === false ? false : undefined,
+				value: thirdPartyAgentEnabledValue,
+				managedSettings: {
+					[COPILOT_TEMPORARY_ALLOW_LOCAL_HARNESS_KEY]: { type: 'boolean' },
+				},
 				localization: {
 					description: {
 						key: 'chat.agentHost.codexAgent.enabled.policy',
-						value: nls.localize('chat.agentHost.codexAgent.enabled.policy', "Enable Codex Agent sessions in VS Code. Start and resume agentic coding sessions powered by OpenAI Codex SDK. Uses your existing Copilot subscription."),
+						value: nls.localize('chat.agentHost.codexAgent.enabled.policy', "Enable Codex Agent sessions in VS Code. Start and resume agentic coding sessions powered by OpenAI Codex. Usage can be routed through GitHub Copilot or authenticated directly with an OpenAI account."),
 					}
 				}
 			},
 		},
 		[AgentHostCodexAgentSdkRootSettingId]: {
 			type: 'string',
-			description: nls.localize('chat.agentHost.codexAgent.sdkRoot', "Experimental, for local SDK development only. Absolute path to a directory containing `node_modules/@openai/codex`. When set, the agent host spawns the Codex binary from this tree instead of downloading the SDK. Empty (the default) falls through to the SDK distribution shipped with this build. Requires `#chat.agentHost.enabled#`. The agent host process must be restarted for changes to take effect."),
+			description: nls.localize('chat.agentHost.codexAgent.sdkRoot', "Experimental, for local SDK development only. Absolute path to a directory containing `node_modules/@openai/codex`. When set, the agent host spawns the Codex binary from this tree instead of downloading the SDK. Empty (the default) falls through to the SDK distribution shipped with this build. The agent host process must be restarted for changes to take effect."),
 			default: '',
 			tags: ['experimental', 'advanced'],
 			included: product.quality !== 'stable',
@@ -160,7 +399,7 @@ configurationRegistry.registerConfiguration({
 		},
 		[AgentHostOTelEnabledSettingId]: {
 			type: 'boolean',
-			markdownDescription: nls.localize('chat.agentHost.otel.enabled', "When enabled, the agent host emits OpenTelemetry traces from the Copilot SDK. Configurable in user settings only. Requires `#chat.agentHost.enabled#`. Either configure `#chat.agentHost.otel.otlpEndpoint#` to ship traces to an external collector or enable `#chat.agentHost.otel.dbSpanExporter.enabled#` to capture them locally."),
+			markdownDescription: nls.localize('chat.agentHost.otel.enabled', "When enabled, the agent host emits OpenTelemetry traces from the Copilot SDK. Configurable in user settings only. Either configure `#chat.agentHost.otel.otlpEndpoint#` to ship traces to an external collector or enable `#chat.agentHost.otel.dbSpanExporter.enabled#` to capture them locally."),
 			default: false,
 			scope: ConfigurationScope.APPLICATION,
 			tags: ['experimental', 'advanced'],
@@ -170,9 +409,10 @@ configurationRegistry.registerConfiguration({
 				name: 'CopilotOtelEnabled',
 				category: PolicyCategory.InteractiveSession,
 				minimumVersion: '1.127',
-				value: managedSettingValue(COPILOT_OTEL_ENABLED_KEY),
+				value: managedOTelEnabledValue,
 				managedSettings: {
 					[COPILOT_OTEL_ENABLED_KEY]: { type: 'boolean' },
+					[COPILOT_OTEL_FILE_PATH_KEY]: { type: 'string' },
 				},
 				localization: {
 					description: {
@@ -208,7 +448,7 @@ configurationRegistry.registerConfiguration({
 						{ key: 'chat.agentHost.otel.protocol.policy.otlpHttp', value: nls.localize('chat.agentHost.otel.protocol.policy.otlpHttp', "Use OTLP over HTTP."), },
 						{ key: 'chat.agentHost.otel.protocol.policy.otlpGrpc', value: nls.localize('chat.agentHost.otel.protocol.policy.otlpGrpc', "Use OTLP over gRPC."), },
 						{ key: 'chat.agentHost.otel.protocol.policy.console', value: nls.localize('chat.agentHost.otel.protocol.policy.console', "Console exporter is not selected by enterprise managed settings."), },
-						{ key: 'chat.agentHost.otel.protocol.policy.file', value: nls.localize('chat.agentHost.otel.protocol.policy.file', "File exporter is not selected by enterprise managed settings."), },
+						{ key: 'chat.agentHost.otel.protocol.policy.file', value: nls.localize('chat.agentHost.otel.protocol.policy.file', "Use the enterprise-managed file exporter."), },
 					],
 				},
 			},
@@ -230,6 +470,7 @@ configurationRegistry.registerConfiguration({
 				value: managedSettingValue(COPILOT_OTEL_PROTOCOL_KEY),
 				managedSettings: {
 					[COPILOT_OTEL_PROTOCOL_KEY]: { type: 'string' },
+					[COPILOT_OTEL_FILE_PATH_KEY]: { type: 'string' },
 				},
 				localization: {
 					description: {
@@ -287,13 +528,35 @@ configurationRegistry.registerConfiguration({
 				},
 			},
 		},
+		// Shared with the Local extension; native runtimes resolve their own policy.
+		[AgentHostOTelCaptureIdentitySettingId]: {
+			type: 'boolean',
+			default: false,
+			scope: ConfigurationScope.APPLICATION,
+			included: false,
+			policy: {
+				name: 'CopilotOtelCaptureIdentity',
+				category: PolicyCategory.InteractiveSession,
+				minimumVersion: '1.140',
+				value: managedSettingValue(COPILOT_OTEL_CAPTURE_IDENTITY_KEY),
+				managedSettings: {
+					[COPILOT_OTEL_CAPTURE_IDENTITY_KEY]: { type: 'boolean' },
+				},
+				localization: {
+					description: {
+						key: 'chat.agentHost.otel.captureIdentity.policy',
+						value: nls.localize('chat.agentHost.otel.captureIdentity.policy', "Controls whether Copilot OpenTelemetry captures the authenticated account name, operating system username, and machine hostname. Independent of content capture."),
+					}
+				},
+			},
+		},
 		[AgentHostOTelOutfileSettingId]: {
 			type: 'string',
-			markdownDescription: nls.localize('chat.agentHost.otel.outfile', "Output path for span JSON lines when exporter type is `file`. Configurable in user settings only. Sets `COPILOT_OTEL_FILE_EXPORTER_PATH`."),
+			markdownDescription: nls.localize('chat.agentHost.otel.outfile', "Output path for span JSON lines when exporter type is `file`. An enterprise-managed telemetry file path takes precedence over user settings. Sets `COPILOT_OTEL_FILE_EXPORTER_PATH`."),
 			default: '',
 			scope: ConfigurationScope.APPLICATION,
 			tags: ['experimental', 'advanced'],
-			// Owns `CopilotOtelOutfile`; suppresses local file export when the enterprise mandates an OTLP sink.
+			// Owns `CopilotOtelOutfile`; supplies the managed file destination or suppresses local file export for an enterprise OTLP sink.
 			policy: {
 				name: 'CopilotOtelOutfile',
 				category: PolicyCategory.InteractiveSession,
@@ -302,11 +565,12 @@ configurationRegistry.registerConfiguration({
 				managedSettings: {
 					[COPILOT_OTEL_ENDPOINT_KEY]: { type: 'string' },
 					[COPILOT_OTEL_PROTOCOL_KEY]: { type: 'string' },
+					[COPILOT_OTEL_FILE_PATH_KEY]: { type: 'string' },
 				},
 				localization: {
 					description: {
 						key: 'chat.agentHost.otel.outfile.policy',
-						value: nls.localize('chat.agentHost.otel.outfile.policy', "Prevents local file export when enterprise-managed Copilot OpenTelemetry export is configured."),
+						value: nls.localize('chat.agentHost.otel.outfile.policy', "Controls the enterprise-managed file export destination for Copilot OpenTelemetry and prevents local file export when an enterprise OTLP destination is configured."),
 					}
 				},
 			},
@@ -398,5 +662,5 @@ configurationRegistry.registerConfiguration({
 				},
 			},
 		},
-	}
+	} satisfies Record<string, AgentHostStarterConfigurationPropertySchema>
 });

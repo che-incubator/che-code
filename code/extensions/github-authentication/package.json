@@ -19,7 +19,9 @@
   ],
   "enabledApiProposals": [
     "authIssuers",
-    "authProviderSpecific"
+    "authProviderSpecific",
+    "authSessionAccountIcon",
+    "authSessionExpiration"
   ],
   "activationEvents": [
     "*"
@@ -29,7 +31,8 @@
     "untrustedWorkspaces": {
       "supported": "limited",
       "restrictedConfigurations": [
-        "github-enterprise.uri"
+        "github-enterprise.uri",
+        "github-enterprise.uris"
       ]
     }
   },
