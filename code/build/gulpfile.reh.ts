@@ -12,7 +12,6 @@ import * as task from './lib/gulp/task.ts';
 import * as optimize from './lib/optimize.ts';
 import { inlineMeta } from './lib/inlineMeta.ts';
 import product from '../product.json' with { type: 'json' };
-import workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };
 import { getProductionDependencies } from './lib/dependencies.ts';
 import { readISODate } from './lib/date.ts';
 import vfs from 'vinyl-fs';
@@ -636,7 +635,7 @@ function tweakProductForServerWeb(product: typeof import('../product.json')) {
 						...bootstrapEntryPoints
 					],
 					resources: type === 'reh' ? serverResources : serverWithWebResources,
-					fileContentMapper: createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product, workbenchConfig)
+					fileContentMapper: createVSCodeWebFileContentMapper('.build/extensions', type === 'reh-web' ? tweakProductForServerWeb(product) : product)
 				}
 			}
 		)

@@ -1,7 +1,7 @@
 [
     {
-        "from": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';\n\n/**",
-        "by": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';\nimport { loadFromFileSystem } from './che/product.js';\n/**"
+        "from": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';",
+        "by": "import { ISandboxConfiguration } from '../../../base/parts/sandbox/common/sandboxTypes.js';\nimport { loadFromFileSystem } from './che/product.js';"
     },
     {
         "from": "\tproduct = { /*BUILD->INSERT_PRODUCT_CONFIGURATION*/ } as unknown as IProductConfiguration;\n\n\t// Running out of sources",

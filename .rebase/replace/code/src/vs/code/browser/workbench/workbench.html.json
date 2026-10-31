@@ -16,7 +16,7 @@
     "by": "./oss-dev/static/out/vs/code/browser/workbench/workbench.css"
   },
   {
-    "from": "const baseUrl = new URL('{{WORKBENCH_WEB_BASE_URL}}', window.location.origin).toString();",
+    "from": "const baseUrl = new URL(document.getElementById('vscode-workbench-web-base-url').getAttribute('data-settings'), window.location.origin).toString();",
     "by": "const baseUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}oss-dev/static`;"
   },
   {

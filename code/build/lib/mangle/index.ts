@@ -416,7 +416,6 @@ export class Mangler {
 	private readonly allExportedSymbols = new Set<DeclarationData>();
 
 	private readonly renameWorkerPool: workerpool.WorkerPool;
-	private readonly defaultWorkersNumber = 4;
 
 	private readonly projectPath: string;
 	private readonly log: typeof console.log;
@@ -432,16 +431,7 @@ export class Mangler {
 		this.config = config;
 
 		this.renameWorkerPool = workerpool.pool(path.join(import.meta.dirname, 'renameWorker.ts'), {
-			maxWorkers: ((): number => {
-				const envVal = Number(process.env['VSCODE_MANGLE_WORKERS'] ?? '');
-            	if (Number.isFinite(envVal) && envVal > 0) {
-					const maxWorkersNumber = Math.min(8, Math.max(1, Math.floor(envVal)));
-            		this.log(`env.VSCODE_MANGLE_WORKERS is set to ${envVal}, using ${maxWorkersNumber} number of maxWorkers`);
-            		return maxWorkersNumber;
-            	}
-				this.log(`env.VSCODE_MANGLE_WORKERS is not set, using the default number of maxWorkers: ${this.defaultWorkersNumber}`);
-            	return this.defaultWorkersNumber;
-            })(),
+			maxWorkers: 4,
 			minWorkers: 'max'
 		});
 	}

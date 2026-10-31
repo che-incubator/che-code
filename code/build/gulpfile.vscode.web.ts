@@ -13,7 +13,6 @@ import * as task from './lib/gulp/task.ts';
 import * as optimize from './lib/optimize.ts';
 import { readISODate } from './lib/date.ts';
 import product from '../product.json' with { type: 'json' };
-import workbenchConfig from '../src/vs/code/browser/workbench/che/workbench-config.json' with { type: 'json' };
 import { getProductionDependencies } from './lib/dependencies.ts';
 import vfs from 'vinyl-fs';
 import packageJson from '../package.json' with { type: 'json' };
@@ -121,7 +120,7 @@ const vscodeWebEntryPoints = [
  * @param extensionsRoot The location where extension will be read from
  * @param product The parsed product.json file contents
  */
-export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product: typeof import('../product.json'), workbenchConfig: typeof import('../src/vs/code/browser/workbench/che/workbench-config.json')) => {
+export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product: typeof import('../product.json')) => {
 	return (path: string): ((content: string) => string) | undefined => {
 		if (path.endsWith('vs/platform/product/common/product.js')) {
 			return content => {
@@ -138,11 +137,6 @@ export const createVSCodeWebFileContentMapper = (extensionsRoot: string, product
 				const builtinExtensions = JSON.stringify(extensions.scanBuiltinExtensions(extensionsRoot));
 				return content.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensions.substr(1, builtinExtensions.length - 2) /* without [ and ]*/);
 			};
-		} else if (path.endsWith('vs/code/browser/workbench/che/workbench-che-config.js')) {
-			return content => {
-				const workbenchConfiguration = JSON.stringify({ ...workbenchConfig });
-			return content.replace('/*BUILD->INSERT_WORKBENCH_CONFIGURATION*/', workbenchConfiguration.substr(1, workbenchConfiguration.length - 2) /* without { and }*/);
-			};
 		}
 
 		return undefined;
@@ -158,7 +152,7 @@ const bundleVSCodeWebTask = task.define('bundle-vscode-web-OLD', task.series(
 				src: 'out-build',
 				entryPoints: vscodeWebEntryPoints,
 				resources: vscodeWebResources,
-				fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product, workbenchConfig)
+				fileContentMapper: createVSCodeWebFileContentMapper('.build/web/extensions', product)
 			}
 		}
 	)
