@@ -56,7 +56,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
+    && yum install -y $LIBSECRET $LIBKEYBOARD gcc-toolset-13 gcc-toolset-13-gcc-c++ make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
@@ -68,7 +68,8 @@ COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-    VSCODE_SKIP_HEADER_INSTALL=1
+    VSCODE_SKIP_HEADER_INSTALL=1 \
+    PATH="/opt/rh/gcc-toolset-13/root/usr/bin:${PATH}"
 
 # Initialize a git repository for code build tools
 RUN git init .
