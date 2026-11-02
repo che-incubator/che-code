@@ -2,6 +2,18 @@
 
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/848
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/test/automation/package.json
+- code/test/smoke/package.json
+- code/test/mcp/package.json
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/823
 
