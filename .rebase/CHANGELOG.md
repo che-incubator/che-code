@@ -3,7 +3,7 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
-fix CVE-2026-104850 by updating @modelcontextprotocol/sdk to patched version (fc65a3392c2)
+https://github.com/che-incubator/che-code/pull/847
 
 - code/package.json
 - code/extensions/copilot/package.json
