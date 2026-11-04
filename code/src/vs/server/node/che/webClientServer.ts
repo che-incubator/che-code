@@ -73,6 +73,53 @@ export async function tryServeCompressedFile(
     }
 }
 
+export interface CodeRedirectEndpoint {
+    targetPort: number;
+    url: string;
+}
+
+/**
+ * Reads code-redirect endpoints from the DevWorkspace flattened devfile.
+ * Returns a port-to-URL mapping for use as a client-side tunnel factory.
+ */
+export function getCodeRedirectEndpoints(): CodeRedirectEndpoint[] {
+    const devfilePath = process.env['DEVWORKSPACE_FLATTENED_DEVFILE'];
+    if (!devfilePath) {
+        return [];
+    }
+
+    try {
+        const fs = require('fs');
+        const yaml = require('js-yaml');
+        const content = fs.readFileSync(devfilePath, 'utf8');
+        const devfile = yaml.load(content);
+
+        const endpoints: CodeRedirectEndpoint[] = [];
+
+        for (const component of devfile?.components || []) {
+            const container = component?.container;
+            if (!container?.endpoints) continue;
+
+            for (const endpoint of container.endpoints) {
+                if (endpoint.name?.startsWith('code-redirect-')) {
+                    const endpointUrl = endpoint.attributes?.['controller.devfile.io/endpoint-url'];
+                    if (endpointUrl && endpoint.targetPort) {
+                        endpoints.push({
+                            targetPort: endpoint.targetPort,
+                            url: endpointUrl
+                        });
+                    }
+                }
+            }
+        }
+
+        return endpoints;
+    } catch (error) {
+        console.error('[che-webClientServer] Failed to read code-redirect endpoints:', error);
+        return [];
+    }
+}
+
 export function getCheRedirectLocation(req: http.IncomingMessage, newQuery: any): string {
     let newLocation;
     // Grab headers
