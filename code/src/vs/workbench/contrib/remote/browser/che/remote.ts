@@ -113,8 +113,6 @@ export class CheDisconnectionHandler {
 					const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
 					const phase = devWorkspace?.status?.phase;
 
-					console.debug(`[CheDisconnectionHandler] Workspace phase: ${phase}`);
-
 					if (
 						phase &&
 						phase !== DevWorkspaceStatus.STARTING &&
@@ -125,7 +123,7 @@ export class CheDisconnectionHandler {
 						return devWorkspace;
 					}
 				} catch (error) {
-					console.warn('[CheDisconnectionHandler] DevWorkspace API temporarily unavailable. Retrying...', error);
+					// ignore errors and retry
 				}
 
 				const remainingTime = deadline - Date.now();
