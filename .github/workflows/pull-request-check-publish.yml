@@ -15,9 +15,17 @@ on:
     types:
       - completed
 
+# Only the latest publish run for a given head branch should proceed, so a
+# slower older run cannot overwrite the mutable pr-<number> tags after a newer one.
+concurrency:
+  group: pr-publish-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 jobs:
 
   publish-images:
+    # Skip builds that failed or were cancelled; we must not publish or comment for them.
+    if: github.event.workflow_run.conclusion == 'success'
     name: publish image from the pull request
     runs-on: ubuntu-22.04
     permissions:
