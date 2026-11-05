@@ -31,7 +31,6 @@ import { IWorkbenchContribution } from '../../../common/contributions.js';
 import { IRemoteAgentService } from '../../../services/remote/common/remoteAgentService.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { ReconnectionWaitEvent, PersistentConnectionEventType } from '../../../../platform/remote/common/remoteAgentConnection.js';
-import Severity from '../../../../base/common/severity.js';
 import { ReloadWindowAction } from '../../../browser/actions/windowActions.js';
 import { Disposable, IDisposable, MutableDisposable } from '../../../../base/common/lifecycle.js';
 import { SwitchRemoteViewItem } from './explorerViewItems.js';
@@ -789,7 +788,6 @@ const DISCONNECT_PROMPT_TIME = 40 * 1000; // 40 seconds
 
 export class RemoteAgentConnectionStatusListener extends Disposable implements IWorkbenchContribution {
 
-	private _reloadWindowShown: boolean = false;
 	private cheDisconnectionHandler: CheDisconnectionHandler;
 
 	constructor(
@@ -1024,17 +1022,19 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 
 						if (e.handled) {
 							logService.info(`Error handled: Not showing a notification for the error.`);
-						} else if (!this._reloadWindowShown) {
-							this._reloadWindowShown = true;
-							dialogService.confirm({
-								type: Severity.Error,
-								message: nls.localize('reconnectionPermanentFailure', "Cannot reconnect. Please reload the window."),
-								primaryButton: nls.localize({ key: 'reloadWindow.dialog', comment: ['&& denotes a mnemonic'] }, "&&Reload Window")
-							}).then(result => {
-								if (result.confirmed) {
-									commandService.executeCommand(ReloadWindowAction.ID);
-								}
-							});
+						} else {
+							progressService.withProgress(
+								{
+									location: ProgressLocation.Notification,
+									title: nls.localize(
+										"reconnectingToWorkspace",
+										"Reconnecting to workspace...",
+									),
+								},
+								async () => {
+									await commandService.executeCommand(ReloadWindowAction.ID);
+								},
+							);
 						}
 						break;
 
