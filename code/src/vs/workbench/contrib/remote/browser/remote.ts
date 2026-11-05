@@ -895,7 +895,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 			// ReconnectionWait    -> ReconnectionRunning
 			// ReconnectionRunning -> ConnectionGain, ReconnectionPermanentFailure
 
-			this._register(connection.onDidStateChange((e) => {
+			this._register(connection.onDidStateChange(async (e) => {
 				visibleProgress?.stopTimer();
 				disposableListener.clear();
 
@@ -1023,18 +1023,12 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						if (e.handled) {
 							logService.info(`Error handled: Not showing a notification for the error.`);
 						} else {
-							progressService.withProgress(
-								{
-									location: ProgressLocation.Notification,
-									title: nls.localize(
-										"reconnectingToWorkspace",
-										"Reconnecting to workspace...",
-									),
-								},
-								async () => {
-									await commandService.executeCommand(ReloadWindowAction.ID);
-								},
-							);
+							showProgress(ProgressLocation.Notification, [], nls.localize("reconnectingToWorkspace","Reconnecting to workspace..."));
+							try {
+								await commandService.executeCommand(ReloadWindowAction.ID);
+							} finally {
+								hideProgress();
+							}
 						}
 						break;
 
