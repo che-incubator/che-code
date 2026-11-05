@@ -82,6 +82,9 @@ const EMPTY_RECOMMENDATIONS_DATA: Record<string, string> = {
   'extensions.json': EMPTY_RECOMMENDATIONS_CONTENT,
 };
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test applying editor configurations:', () => {
   const fileExistsMock = jest.fn();
   const writeFileMock = jest.fn();

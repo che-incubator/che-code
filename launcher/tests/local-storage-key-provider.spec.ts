@@ -23,6 +23,9 @@ const NEW_WORKBENCH_FILE_NEW_LINE = `
 some code, some code, a mask to be replaced AACNa1ZINEAAIblpQoqFHrJPOyAt2gX1, some code
 `;
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test setting of Local Storage public key to VS Code', () => {
   beforeEach(() => {
     Object.assign(fs, {
