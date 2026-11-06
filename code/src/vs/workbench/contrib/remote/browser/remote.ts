@@ -942,20 +942,13 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 						break;
 
 					case PersistentConnectionEventType.ReconnectionWait: {
-						const handled = this.cheDisconnectionHandler.handleStateChange(
-							e.millisSinceLastIncomingData,
-							e.type
-						);
+						this.cheDisconnectionHandler.handleStateChange(e.millisSinceLastIncomingData, e.type);
 
 						if (visibleProgress) {
 							reconnectWaitEvent = e;
 							visibleProgress.startTimer(
 								Date.now() + 1000 * e.durationSeconds
 							);
-						}
-
-						if (handled) {
-							break;
 						}
 						
 						break;
