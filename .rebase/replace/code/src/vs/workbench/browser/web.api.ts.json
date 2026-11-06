@@ -1,0 +1,6 @@
+[
+    {
+        "from": "readonly configurationDefaults?: Record<string, unknown>;\n\n\t//#endregion\n\n\t//#region Profile options",
+        "by": "readonly configurationDefaults?: Record<string, unknown>;\n\n\t//#endregion\n\n\t/**\n\t * Initial keybindings content from ConfigMap (JSON array string).\n\t * When set, keybindings are merged into IndexedDB on every workspace start.\n\t */\n\treadonly cheInitialKeybindings?: string;\n\n\t//#region Profile options"
+    }
+]
