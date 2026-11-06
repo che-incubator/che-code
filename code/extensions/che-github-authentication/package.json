@@ -12,6 +12,9 @@
   "categories": [
     "Other"
   ],
+  "enabledApiProposals": [
+    "authIssuers"
+  ],
   "activationEvents": [
     "onAuthenticationRequest:github",
     "onAuthenticationRequest:github-enterprise"
