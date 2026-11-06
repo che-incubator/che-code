@@ -13,7 +13,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onAuthenticationRequest:github"
+    "onAuthenticationRequest:github",
+    "onAuthenticationRequest:github-enterprise"
   ],
   "capabilities": {
     "virtualWorkspaces": true,
@@ -26,6 +27,10 @@
       {
         "label": "GitHub",
         "id": "github"
+      },
+      {
+        "label": "GitHub Enterprise",
+        "id": "github-enterprise"
       }
     ],
     "commands": [

@@ -16,6 +16,7 @@ import { DeviceAuthentication } from './device-authentication';
 import { ErrorHandler } from './error-handler';
 import { ExtensionContext } from './extension-context';
 import { GitHubAuthProvider } from './github';
+import { GitHubEnterpriseAuthProvider } from './github-enterprise';
 import { K8sHelper } from './k8s-helper';
 import { Logger } from './logger';
 
@@ -48,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     authenticationProvider.setDeviceAuthentication(deviceAuthentication);
 
     vscode.authentication.registerAuthenticationProvider('github', 'GitHub', authenticationProvider);
+    vscode.authentication.registerAuthenticationProvider('github-enterprise', 'GitHub Enterprise', new GitHubEnterpriseAuthProvider());
 
     await authenticationProvider.hydrateFromK8sToken();
 }
