@@ -54,6 +54,8 @@ jobs:
           fi
       - name: Checkout che-code source code
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
       - name: Cleanup docker images
         run: docker system prune -af
       - name: Compile che-code

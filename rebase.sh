@@ -118,14 +118,19 @@ apply_multi_line_replace() {
 
 # Apply changes on code/package.json file
 apply_code_package_changes() {
-  
+
   echo "  ⚙️  reworking code/package.json..."
-  
+
   # reset the file from what is upstream
   git checkout --theirs code/package.json > /dev/null 2>&1
-  
+
   # now apply again the changes
   override_json_file code/package.json
+
+  # apply replace rules if they exist
+  if [ -f ".rebase/replace/code/package.json.json" ]; then
+    apply_multi_line_replace code/package.json
+  fi
 
   # resolve the change
   git add code/package.json > /dev/null 2>&1
@@ -215,6 +220,11 @@ insert_before("extensionsGallery"; "defaultChatAgent")
   jq --tab "$reorder" code/product.json > code/product.json.tmp
   cat code/product.json.tmp > code/product.json
   rm code/product.json.tmp
+
+  # apply replace rules if they exist
+  if [ -f ".rebase/replace/code/product.json.json" ]; then
+    apply_multi_line_replace code/product.json
+  fi
 
   # resolve the change
   git add code/product.json > /dev/null 2>&1
