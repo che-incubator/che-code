@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-24
-FROM registry.access.redhat.com/ubi8/nodejs-24:1785415202 as linux-libc-ubi8-builder
+FROM registry.access.redhat.com/ubi8/nodejs-24:1793350702 as linux-libc-ubi8-builder
 
 USER root
 
@@ -48,7 +48,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && yum install -y $LIBSECRET $LIBKEYBOARD curl glibc-gconv-extra make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
@@ -89,7 +89,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
-    && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
+    && npx tsc --project src/tsconfig.json --noEmit --skipLibCheck \
     && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \

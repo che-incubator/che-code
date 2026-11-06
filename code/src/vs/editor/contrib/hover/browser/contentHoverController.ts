@@ -224,6 +224,12 @@ export class ContentHoverController extends Disposable implements IEditorContrib
 		if (this._ignoreMouseEvents) {
 			return;
 		}
+		// When the user is dragging to select text (mouse down started outside the hover widget),
+		// hide the hover and suppress any new hover computation to avoid covering the selection.
+		if (this._isMouseDown && !this._shouldKeepHoverWidgetVisible(mouseEvent)) {
+			this._cancelSchedulerAndHide();
+			return;
+		}
 		this._mouseMoveEvent = mouseEvent;
 		const shouldKeepCurrentHover = this._shouldKeepCurrentHover(mouseEvent);
 		if (shouldKeepCurrentHover) {
@@ -311,6 +317,12 @@ export class ContentHoverController extends Disposable implements IEditorContrib
 		if (InlineSuggestionHintsContentWidget.dropDownVisible) {
 			return;
 		}
+		this._contentWidget?.hide();
+	}
+
+	/** Cancels pending and visible hover work when its editor is hidden. */
+	public cancel(): void {
+		this._cancelScheduler();
 		this._contentWidget?.hide();
 	}
 

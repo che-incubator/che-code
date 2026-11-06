@@ -15,7 +15,7 @@ import 'reflect-metadata';
 import * as vscode from 'vscode';
 import { ErrorHandler } from '../src/error-handler';
 import { ExtensionContext } from '../src/extension-context';
-import { GitHubAuthProvider, GithubService } from '../src/github';
+import { GitHubAuthProvider, GITHUB_AUTHORIZATION_SERVER, GithubService } from '../src/github';
 import { Logger } from '../src/logger';
 
 // ErrorHandler pulls in @kubernetes/client-node and is not used by session hydration
@@ -105,7 +105,10 @@ describe('GitHubAuthProvider session hydration', () => {
       removed: [],
       changed: ['bundle-session', 'gist-session'],
     }]);
-    expect(await provider.getSessions(['gist'])).toEqual([session('gist-session', 'new-pat', GIST_SCOPES)]);
+    expect(await provider.getSessions(['gist'])).toEqual([{
+      ...session('gist-session', 'new-pat', GIST_SCOPES),
+      authorizationServer: vscode.Uri.parse('https://github.com/login/oauth'),
+    }]);
   });
 
   test('removes a session whose scopes the new token does not cover, in a separate first event', async () => {
@@ -145,7 +148,10 @@ describe('GitHubAuthProvider session hydration', () => {
       { added: [], removed: ['device-auth-session'], changed: [] },
       { added: ['read:user user:email repo workflow', 'read:user user:email', 'user:email'], removed: [], changed: [] },
     ]);
-    expect(await provider.getSessions(['gist'])).toEqual([session('gist-session', 'pat', GIST_SCOPES)]);
+    expect(await provider.getSessions(['gist'])).toEqual([{
+      ...session('gist-session', 'pat', GIST_SCOPES),
+      authorizationServer: vscode.Uri.parse('https://github.com/login/oauth'),
+    }]);
   });
 
   test('joins a Device Authentication token removal that is already running', async () => {
@@ -166,5 +172,57 @@ describe('GitHubAuthProvider session hydration', () => {
     // A removal requested after the previous one completed runs again
     await provider.removeDeviceAuthToken();
     expect(removeDeviceAuthToken).toHaveBeenCalledTimes(2);
+  });
+
+  test('stamps the authorization server on a session created by createSession()', async () => {
+    tokenScopes = { 'pat': GIST_SCOPES };
+    currentToken = 'pat';
+
+    const provider = createProvider();
+    const session = await provider.createSession(GIST_SCOPES);
+
+    expect(session.authorizationServer).toBe(GITHUB_AUTHORIZATION_SERVER);
+    expect(JSON.parse(secrets.get(SESSIONS_KEY) ?? '[]')).toEqual([{
+      id: session.id,
+      accessToken: 'pat',
+      account: ACCOUNT,
+      scopes: GIST_SCOPES,
+      authorizationServer: { $mid: 1, scheme: 'https', authority: 'github.com', path: '/login/oauth', query: '', fragment: '' },
+    }]);
+  });
+
+  test('stamps the authorization server on sessions hydrated from the K8s token', async () => {
+    secrets.set(SESSIONS_KEY, JSON.stringify([session('bundle-session', 'old-pat', STANDARD_SCOPES)]));
+    tokenScopes = { 'new-pat': STANDARD_SCOPES };
+    currentToken = 'new-pat';
+
+    const provider = createProvider();
+    await provider.hydrateFromK8sToken();
+
+    const sessions = await provider.getSessions(STANDARD_SCOPES);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].authorizationServer).toBe(GITHUB_AUTHORIZATION_SERVER);
+  });
+
+  test('stamps the fallback authorization server on pre-fix persisted sessions when reading them', async () => {
+    secrets.set(SESSIONS_KEY, JSON.stringify([session('legacy-session', 'pat', GIST_SCOPES)]));
+
+    const provider = createProvider();
+    expect(await provider.getSessions()).toEqual([{
+      ...session('legacy-session', 'pat', GIST_SCOPES),
+      authorizationServer: GITHUB_AUTHORIZATION_SERVER,
+    }]);
+  });
+
+  test('revives a persisted authorization server from its JSON form', async () => {
+    secrets.set(SESSIONS_KEY, JSON.stringify([{
+      ...session('persisted-session', 'pat', GIST_SCOPES),
+      authorizationServer: { $mid: 1, scheme: 'https', authority: 'github.com', path: '/login/oauth', query: '', fragment: '' },
+    }]));
+
+    const provider = createProvider();
+    const sessions = await provider.getSessions();
+    expect(sessions[0].authorizationServer).toBeInstanceOf(vscode.Uri);
+    expect(sessions[0].authorizationServer).toEqual(vscode.Uri.parse('https://github.com/login/oauth'));
   });
 });

@@ -56,9 +56,9 @@ class FakeModelMetadataFetcher implements IModelMetadataFetcher {
 		};
 	}
 
-	async getEmbeddingsModel(): Promise<IEmbeddingModelInformation> {
+	async getEmbeddingsModel(family: 'text-embedding-3-small' | 'metis'): Promise<IEmbeddingModelInformation> {
 		return {
-			id: 'text-embedding-3-small',
+			id: family,
 			name: 'fake-name',
 			vendor: 'fake-vendor',
 			version: 'fake-version',
@@ -68,7 +68,7 @@ class FakeModelMetadataFetcher implements IModelMetadataFetcher {
 			capabilities: {
 				type: 'embeddings',
 				tokenizer: TokenizerType.O200K,
-				family: 'text-embedding-3-small',
+				family,
 				limits: { max_inputs: 256 }
 			}
 		};
@@ -96,6 +96,32 @@ suite('Endpoint Class Test', function () {
 		assert.strictEqual(CHAT_MODEL.GPT41, 'gpt-4.1-2025-04-14', 'Incorrect GPT 41 model name, changing this will break requests.');
 		assert.strictEqual(CHAT_MODEL.GPT4OMINI, 'gpt-4o-mini', 'Incorrect GPT 4o mini model name, changing this will break requests.');
 	});
+
+	test('resolves the dictation cleanup Nano alias to GPT-5.4 Nano', async function () {
+		const endpoint = await endpointProvider.getChatEndpoint('copilot-dictation-cleanup-nano');
+
+		assert.strictEqual(endpoint.model, 'gpt-5.4-nano');
+	});
+
+	test('resolves embedding endpoints by family with Metis as the default', async function () {
+		const defaultEndpoint = await endpointProvider.getEmbeddingsEndpoint();
+		const metisEndpoint = await endpointProvider.getEmbeddingsEndpoint('metis');
+		const text3smallEndpoint = await endpointProvider.getEmbeddingsEndpoint('text3small');
+
+		assert.deepStrictEqual({
+			defaultFamily: defaultEndpoint.family,
+			metisFamily: metisEndpoint.family,
+			text3smallFamily: text3smallEndpoint.family,
+			reusesMetisEndpoint: defaultEndpoint === metisEndpoint,
+			keepsFamiliesSeparate: metisEndpoint !== text3smallEndpoint,
+		}, {
+			defaultFamily: 'metis',
+			metisFamily: 'metis',
+			text3smallFamily: 'text-embedding-3-small',
+			reusesMetisEndpoint: true,
+			keepsFamiliesSeparate: true,
+		});
+	});
 });
 
 class CopilotMatchableModelMetadataFetcher implements IModelMetadataFetcher {
@@ -116,9 +142,9 @@ class CopilotMatchableModelMetadataFetcher implements IModelMetadataFetcher {
 	async getChatModelFromCapiFamily(family: string): Promise<IChatModelInformation> {
 		return makeChatModel(family);
 	}
-	async getEmbeddingsModel(): Promise<IEmbeddingModelInformation> {
+	async getEmbeddingsModel(family: 'text-embedding-3-small' | 'metis'): Promise<IEmbeddingModelInformation> {
 		return {
-			id: 'text-embedding-3-small',
+			id: family,
 			name: 'fake-name',
 			vendor: 'fake-vendor',
 			version: 'fake-version',
@@ -128,7 +154,7 @@ class CopilotMatchableModelMetadataFetcher implements IModelMetadataFetcher {
 			capabilities: {
 				type: 'embeddings',
 				tokenizer: TokenizerType.O200K,
-				family: 'text-embedding-3-small',
+				family,
 				limits: { max_inputs: 256 }
 			}
 		};
@@ -196,8 +222,20 @@ suite('ProductionEndpointProvider — utility model overrides', () => {
 		assert.strictEqual(endpoint.model, 'copilot-utility');
 	});
 
-	test('no override configured — does not use a Copilot utility model when the selected main agent model is BYOK', async () => {
+	test('no override configured — uses the Copilot utility model when the selected main agent model is BYOK and a Copilot token is available', async () => {
 		setFetcher([makeChatModel('copilot-utility')]);
+		await endpointProvider.getChatEndpoint(makeFakeLanguageModelChat({ vendor: 'anthropic' }));
+
+		const endpoint = await endpointProvider.getChatEndpoint('copilot-utility');
+
+		assert.strictEqual(endpoint.model, 'copilot-utility');
+	});
+
+	test('no override configured — rejects when the selected main agent model is BYOK and no Copilot token is available (air-gapped)', async () => {
+		setFetcher([makeChatModel('copilot-utility')]);
+		// Simulate a signed-out / air-gapped BYOK session with no Copilot token source.
+		// @ts-expect-error — access the protected auth service to stub its token-source signal.
+		sandbox.stub(endpointProvider._authService, 'hasCopilotTokenSource').get(() => false);
 		await endpointProvider.getChatEndpoint(makeFakeLanguageModelChat({ vendor: 'anthropic' }));
 
 		await assert.rejects(

@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-24
-FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1785389273 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1793353068 as linux-libc-ubi9-builder
 
 USER root
 
@@ -56,7 +56,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
+    && yum install -y $LIBSECRET $LIBKEYBOARD gcc-toolset-13 gcc-toolset-13-gcc-c++ glibc-gconv-extra make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
@@ -68,7 +68,8 @@ COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-    VSCODE_SKIP_HEADER_INSTALL=1
+    VSCODE_SKIP_HEADER_INSTALL=1 \
+    PATH="/opt/rh/gcc-toolset-13/root/usr/bin:${PATH}"
 
 # Initialize a git repository for code build tools
 RUN git init .
@@ -92,7 +93,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
-    && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
+    && npx tsc --project src/tsconfig.json --noEmit --skipLibCheck \
     && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \

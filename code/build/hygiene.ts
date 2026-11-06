@@ -83,7 +83,10 @@ export function checkNoNewJavaScriptFiles(repoRoot: string): string | undefined 
  * Main hygiene function that runs checks on files
  */
 export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, runEslint = true): NodeJS.ReadWriteStream {
-	console.log('Starting hygiene...');
+	const started = Date.now();
+	const requestedPaths = Array.isArray(some) ? some : undefined;
+	const scope = requestedPaths ? `${requestedPaths.length} requested path${requestedPaths.length === 1 ? '' : 's'}` : some ? 'provided file stream' : 'full repository';
+	console.log(`Starting hygiene (${scope})...`);
 	let errorCount = 0;
 
 	const productJson = es.through(function (file: VinylFile) {
@@ -210,30 +213,39 @@ export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, run
 	const snapshotFilter = filter(['**', '!**/*.snap', '!**/*.snap.actual']);
 	const yarnLockFilter = filter(['**', '!**/yarn.lock']);
 	const unicodeFilterStream = filter(Array.from(unicodeFilter), { restore: true });
+	const checkedFiles = new Set<string>();
+	const trackCheckedFile = () => es.through(function (file: VinylFile) {
+		checkedFiles.add(file.relative);
+		this.emit('data', file);
+	});
 
 	const result = input
 		.pipe(filter((f) => Boolean(f.stat && !f.stat.isDirectory())))
 		.pipe(snapshotFilter)
 		.pipe(yarnLockFilter)
 		.pipe(productJsonFilter)
-		.pipe(process.env['BUILD_SOURCEVERSION'] ? es.through() : productJson)
+		.pipe(process.env['BUILD_SOURCEVERSION'] ? es.through() : trackCheckedFile().pipe(productJson))
 		.pipe(productJsonFilter.restore)
 		.pipe(unicodeFilterStream)
+		.pipe(trackCheckedFile())
 		.pipe(unicode)
 		.pipe(unicodeFilterStream.restore)
 		.pipe(filter(Array.from(indentationFilter)))
+		.pipe(trackCheckedFile())
 		.pipe(indentation)
 		.pipe(filter(Array.from(copyrightFilter)))
+		.pipe(trackCheckedFile())
 		.pipe(copyrights);
 
 	const streams: NodeJS.ReadWriteStream[] = [
-		result.pipe(filter(Array.from(tsFormattingFilter))).pipe(formatting)
+		result.pipe(filter(Array.from(tsFormattingFilter))).pipe(trackCheckedFile()).pipe(formatting)
 	];
 
 	if (runEslint) {
 		streams.push(
 			result
 				.pipe(filter(Array.from(eslintFilter)))
+				.pipe(trackCheckedFile())
 				.pipe(
 					eslint((results) => {
 						errorCount += results.warningCount;
@@ -244,14 +256,14 @@ export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, run
 	}
 
 	streams.push(
-		result.pipe(filter(Array.from(stylelintFilter))).pipe(gulpstylelint(((message: string, isError: boolean) => {
+		result.pipe(filter(Array.from(stylelintFilter))).pipe(trackCheckedFile()).pipe(gulpstylelint(((message: string, isError: boolean) => {
 			if (isError) {
 				console.error(message);
 				errorCount++;
 			} else {
 				console.warn(message);
 			}
-		})))
+		}), false, false))
 	);
 
 	let count = 0;
@@ -266,7 +278,10 @@ export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, run
 			},
 			function () {
 				process.stdout.write('\n');
-				if (errorCount > 0) {
+				console.log(`Hygiene checked ${checkedFiles.size} file${checkedFiles.size === 1 ? '' : 's'} in ${Date.now() - started}ms.`);
+				if (requestedPaths && checkedFiles.size === 0) {
+					this.emit('error', `No hygiene-eligible files matched the requested paths: ${requestedPaths.join(', ')}`);
+				} else if (errorCount > 0) {
 					this.emit(
 						'error',
 						'Hygiene failed with ' +
@@ -364,7 +379,7 @@ if (import.meta.main) {
 						}
 					}
 
-					console.log('Reading git index versions...');
+					console.log(`Reading ${some.length} git index version${some.length === 1 ? '' : 's'}...`);
 
 					createGitIndexVinyls(some)
 						.then(
@@ -381,6 +396,9 @@ if (import.meta.main) {
 							console.error(err);
 							process.exit(1);
 						});
+				} else {
+					console.error('No staged files found. Pass file paths to check unstaged files.');
+					process.exit(1);
 				}
 			}
 		);

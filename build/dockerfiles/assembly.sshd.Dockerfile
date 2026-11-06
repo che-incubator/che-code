@@ -20,7 +20,7 @@ RUN microdnf -y install libsecret openssh-server nss_wrapper-libs \
 FROM quay.io/eclipse/che-machine-exec:next as machine-exec
 
 # UBI 9/10
-FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1785358511
+FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1793350401
 
 USER 0
 

@@ -1,6 +1,6 @@
 [
 	{
-		"from": "\t\tcontent=\"default-src 'none'; script-src 'sha256-nXjtuhBilO++r8hfxl5VjEScSmdm07wDAk6jw228DgM=' 'self'; frame-src 'self'; style-src 'unsafe-inline';\"",
+		"from": "\t\tcontent=\"default-src 'none'; script-src 'sha256-7cKy9iQfWRXcgRS74x6I4q5cRDkv8nQz51jecqMmQ5w=' 'self'; frame-src 'self'; style-src 'unsafe-inline';\"",
 		"by": "\t\tcontent=\"default-src 'none'; script-src 'unsafe-inline' 'self'; frame-src 'self'; style-src 'unsafe-inline';\""
 	},
 	{
@@ -8,8 +8,8 @@
 		"by": "\t\t\t\tconst hostname = location.hostname;\n\n\t\t\t\t// Run if we are on the same host.\n\t\t\t\tconst parent = new URL(parentOrigin);\n\t\t\t\tif (parent.hostname === hostname) {\n\t\t\t\t\treturn start(parentOrigin);\n\t\t\t\t}\n\n\t\t\t\tif (!crypto.subtle) {\n"
 	},
 	{
-		"from": "const swPath = encodeURI(`service-worker.js?v=${expectedWorkerVersion}&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&remoteAuthority=${searchParams.get('remoteAuthority') ?? ''}`);",
-		"by": "const swPath = encodeURI(`service-worker.js?v=${expectedWorkerVersion}&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&id=${ID}&remoteAuthority=${searchParams.get('remoteAuthority') ?? ''}`);"
+		"from": "&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&remoteAuthority=",
+		"by": "&vscode-resource-base-authority=${searchParams.get('vscode-resource-base-authority')}&id=${ID}&remoteAuthority="
 	},
 	{
 		"from": "navigator.serviceWorker.register(swPath, { type: 'module', updateViaCache: 'none' })",

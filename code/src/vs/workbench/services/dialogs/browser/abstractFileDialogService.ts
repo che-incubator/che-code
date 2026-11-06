@@ -55,7 +55,7 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 		@ICommandService protected readonly commandService: ICommandService,
 		@IEditorService protected readonly editorService: IEditorService,
 		@ICodeEditorService protected readonly codeEditorService: ICodeEditorService,
-		@ILogService private readonly logService: ILogService,
+		@ILogService protected readonly logService: ILogService,
 		@IRemoteAgentService private readonly remoteAgentService: IRemoteAgentService
 	) { }
 
@@ -178,8 +178,6 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 	private skipDialogs(): boolean {
 		if (this.environmentService.enableSmokeTestDriver) {
 			this.logService.warn('DialogService: Dialog requested during smoke test.');
-			// Disabled for this release to unblock smoke tests
-			return true;
 		}
 		// integration tests
 		return this.environmentService.isExtensionDevelopment && !!this.environmentService.extensionTestsLocationURI;
