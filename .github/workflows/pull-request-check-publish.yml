@@ -76,7 +76,6 @@ jobs:
           fi
           echo "Pull Request: ${matches}"
           echo "pr=${matches}" >> "${GITHUB_OUTPUT}"
-          echo "_PR_NUMBER=${matches}" >> "${GITHUB_ENV}"
 
       - name: Cleanup docker images
         if: steps.resolve.outputs.pr != ''
@@ -104,8 +103,10 @@ jobs:
 
       - name: Push che-code-amd64 docker image
         if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${_PR_NUMBER}-amd64
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
@@ -123,8 +124,10 @@ jobs:
 
       - name: Push che-code-arm64 docker image
         if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${_PR_NUMBER}-arm64
           docker tag che-code-arm64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
@@ -142,8 +145,10 @@ jobs:
 
       - name: Push che-dev docker image
         if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${_PR_NUMBER}-dev-amd64
           docker tag che-dev ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
@@ -156,6 +161,8 @@ jobs:
 
       - name: 'Comment PR'
         if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         uses: actions/github-script@v8
         with:
          script: |
