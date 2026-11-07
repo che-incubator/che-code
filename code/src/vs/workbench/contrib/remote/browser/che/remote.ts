@@ -40,6 +40,16 @@ export enum DisconnectionHandlerStatus {
 	FAILED = 'Failed'
 }
 
+class DevWorkspacePollingTimeoutError extends Error {
+    constructor(
+        public readonly lastWorkspace?: DevWorkspaceLike,
+        public readonly lastObservedPhase?: string,
+    ) {
+        super('Timed out waiting for DevWorkspace state.');
+        this.name = 'DevWorkspacePollingTimeoutError';
+    }
+}
+
 /**
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
@@ -101,6 +111,8 @@ export class CheDisconnectionHandler {
 	 */
 	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
 		const deadline = Date.now() + DISCONNECTION_HANDLING_TIME;
+		let lastWorkspace: DevWorkspaceLike | undefined;
+    	let lastObservedPhase: string | undefined;
 
   		return this.progressService.withProgress(
         {
@@ -113,14 +125,23 @@ export class CheDisconnectionHandler {
 					const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
 					const phase = devWorkspace?.status?.phase;
 
-					if (
-						phase &&
-						phase !== DevWorkspaceStatus.STARTING &&
-						phase !== DevWorkspaceStatus.FAILING &&
-						phase !== DevWorkspaceStatus.STOPPING &&
-						phase !== DevWorkspaceStatus.TERMINATING
-					) {
-						return devWorkspace;
+					if (phase) {
+						lastWorkspace = devWorkspace;
+						lastObservedPhase = phase;
+
+						if (phase === DevWorkspaceStatus.FAILED) {
+                            return devWorkspace;
+                        }
+
+						if (
+							phase &&
+							phase !== DevWorkspaceStatus.STARTING &&
+							phase !== DevWorkspaceStatus.FAILING &&
+							phase !== DevWorkspaceStatus.STOPPING &&
+							phase !== DevWorkspaceStatus.TERMINATING
+						) {
+							return devWorkspace;
+						}
 					}
 				} catch (error) {
 					// ignore errors and retry
@@ -133,7 +154,7 @@ export class CheDisconnectionHandler {
 					);
 				}
 			}
-			throw new Error('Timed out waiting for DevWorkspace to reach a stable phase.');
+			throw new DevWorkspacePollingTimeoutError(lastWorkspace, lastObservedPhase);
 		});
 	}
 
@@ -143,6 +164,7 @@ export class CheDisconnectionHandler {
 		}
 
 		if (this.devWorkspaceAssistant.pendingAction === 'stopping') {
+			this.status = DisconnectionHandlerStatus.AVAILABLE;
 			return;
 		}
 
@@ -156,12 +178,29 @@ export class CheDisconnectionHandler {
 	        const currentPendingAction = this.devWorkspaceAssistant.pendingAction as 'idle' | 'restartPending' | 'stopping';
 
 			if (currentPendingAction === 'stopping') {
+				this.status = DisconnectionHandlerStatus.AVAILABLE;
 				return;
 			}
 
 			if (currentPendingAction === 'restartPending') {
-				this.devWorkspaceAssistant.startWorkspace();
-				return;
+
+				const pollingError = error instanceof DevWorkspacePollingTimeoutError ? error : undefined;
+
+				if (pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILED || pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILING) {
+
+					this.status = DisconnectionHandlerStatus.AVAILABLE;
+					if (pollingError.lastWorkspace) {
+                		await this.onDisconnectionStoppedWorkspace(pollingError.lastWorkspace);
+            		}
+            		return;
+				}
+				
+				if (pollingError && !pollingError?.lastObservedPhase) {
+            		this.status = DisconnectionHandlerStatus.AVAILABLE;
+            		this.devWorkspaceAssistant.startWorkspace();
+            		return;
+        		}
+
 			}
 
 			this.status = DisconnectionHandlerStatus.FAILED;
@@ -184,13 +223,14 @@ export class CheDisconnectionHandler {
 		// Handle a pending restart only after the workspace reaches a stable phase.
 		if (currentPendingAction === 'restartPending') {
 			// Never automatically restart a workspace that has failed.
-			if (workspacePhase === DevWorkspaceStatus.FAILED) {
+			if (workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) {
 				this.status = DisconnectionHandlerStatus.AVAILABLE;
 				// Show the workspace-specific recovery dialog.
 				await this.onDisconnectionStoppedWorkspace(devWorkspace);
 				return;
 			}
 
+			this.status = DisconnectionHandlerStatus.AVAILABLE;
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
@@ -283,7 +323,7 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		if (workspacePhase === DevWorkspaceStatus.FAILED && statusMessage) {
+		if ((workspacePhase === DevWorkspaceStatus.FAILED  || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
