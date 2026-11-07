@@ -129,15 +129,6 @@ jobs:
         with:
           name: che-code-${{env.arch}}
           path: che-code-${{env.arch}}.tgz
-      - name: Store PR info
-        run: echo "${{ github.event.number }}" > PR_NUMBER
-      # Upload PR number artifact only once
-      - name: Upload PR Number artifact
-        uses: actions/upload-artifact@v7
-        if: ${{ env.arch == 'amd64' }}
-        with:
-          name: pull-request-number
-          path: PR_NUMBER
 
   dev:
     name: build-che-dev-image
