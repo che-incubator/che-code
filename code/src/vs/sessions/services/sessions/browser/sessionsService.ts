@@ -34,7 +34,7 @@ const ACTIVE_SESSION_STATES_KEY = 'agentSessions.activeSessionStates';
  * so a session that is gone for good cannot keep restore — and its provider
  * listeners — alive indefinitely.
  */
-const RESTORE_SESSION_WAIT_TIMEOUT = 30_000;
+const RESTORE_SESSION_WAIT_TIMEOUT = 10_000;
 
 /** Maximum number of recently opened sessions reported by {@link SessionsService.getRecentlyOpenedSessions}. */
 const MAX_RECENTLY_OPENED_SESSIONS = 10;

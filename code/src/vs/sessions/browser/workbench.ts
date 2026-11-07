@@ -1025,9 +1025,13 @@ export class Workbench extends Disposable implements IAgentWorkbenchLayoutServic
 		// Restore parts (open default view containers)
 		this.restoreParts();
 
+		const start = Date.now();
+
 		// Restore the sessions that were visible in the grid.
-		void this.sessionsService.restoreVisibleSessions().catch(e => {
-			this.logService.error('[Workbench] restoreVisibleSessions failed', e);
+		void this.sessionsService.restoreVisibleSessions().then(() => {
+			 this.logService.info(`[Workbench CRW-12544] Session restoration completed in ${Date.now() - start}ms`);
+		}).catch(e => {
+			this.logService.error('[Workbench CRW-12544] restoreVisibleSessions failed', e);
 		});
 
 		// Set lifecycle phase to `Restored`
