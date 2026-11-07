@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2023 Red Hat, Inc.
+ * Copyright (c) 2023 - 2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -19,13 +19,14 @@ import { IRequestService } from '../../../../../platform/request/common/request.
 import { ReloadWindowAction } from '../../../../browser/actions/windowActions.js';
 import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from './devWorkspaceAssistant.js';
 import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
-import { IProgressService } from '../../../../../platform/progress/common/progress.js';
+import { IProgressService, ProgressLocation } from '../../../../../platform/progress/common/progress.js';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RELOAD_WINDOW_LABEL = nls.localize('reloadWindow', "Reload Window");
 const RESTART_WORKSPACE_LABEL = nls.localize('disconnectionHandler.button.restart', 'Restart your workspace');
 const RETURN_TO_DASHBOARD_LABEL = nls.localize('disconnectionHandler.button.returnToDashboard', 'Return to dashboard');
 
+const WORKSPACE_STATE = nls.localize('disconnectionHandler.message.workspaceState', 'Getting workspace state...');
 const WORKSPACE_STOPPED = nls.localize('disconnectionHandler.message.workspaceStopped', 'Your workspace is not running.');
 const WORKSPACE_FAILED = nls.localize('disconnectionHandler.message.workspaceFailed', 'The workspace has failed with the following error');
 const WORKSPACE_STOPPED_BY_INACTIVITY = nls.localize('disconnectionHandler.message.workspaceStoppedByInactivity', 'Your workspace has stopped due to inactivity.');
@@ -39,11 +40,19 @@ export enum DisconnectionHandlerStatus {
 	FAILED = 'Failed'
 }
 
+class DevWorkspacePollingTimeoutError extends Error {
+	constructor(public readonly lastWorkspace?: DevWorkspaceLike,public readonly lastObservedPhase?: string) {
+		super("Timed out waiting for DevWorkspace state.");
+		this.name = "DevWorkspacePollingTimeoutError";
+	}
+}
+
 /**
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
 const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
+const WORKSPACE_POLL_INTERVAL = 2 * 1000; // 2 seconds
 
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
@@ -67,7 +76,7 @@ export class CheDisconnectionHandler {
 		private notificationService: INotificationService,
 		requestService: IRequestService,
 		environmentVariableService: IEnvironmentVariableService,
-		progressService: IProgressService
+		private progressService: IProgressService
 	) {
 		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
 	}
@@ -90,43 +99,163 @@ export class CheDisconnectionHandler {
 		return true;
 	}
 
+	/**
+	 * Wait until the workspace reaches a stable phase.
+	 *
+	 * Starting, Failing, Stopping and Terminating are transitional phases.
+	 * Temporary API errors are retried because the API may be unavailable
+	 * while the workspace pod is being restarted.
+	 */
+	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
+		const deadline = Date.now() + DISCONNECTION_HANDLING_TIME;
+		let lastWorkspace: DevWorkspaceLike | undefined;
+    	let lastObservedPhase: string | undefined;
+
+  		return this.progressService.withProgress(
+        {
+            location: ProgressLocation.Notification,
+            title: WORKSPACE_STATE
+        },
+        async () => {
+			while (Date.now() < deadline) {
+				try {
+					const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+					const phase = devWorkspace?.status?.phase;
+
+					if (phase) {
+						lastWorkspace = devWorkspace;
+						lastObservedPhase = phase;
+
+						if (phase === DevWorkspaceStatus.FAILED) {
+                            return devWorkspace;
+                        }
+
+						if (
+							phase &&
+							phase !== DevWorkspaceStatus.STARTING &&
+							phase !== DevWorkspaceStatus.FAILING &&
+							phase !== DevWorkspaceStatus.STOPPING &&
+							phase !== DevWorkspaceStatus.TERMINATING
+						) {
+							return devWorkspace;
+						}
+					}
+				} catch (error) {
+					// ignore errors and retry
+				}
+
+				const remainingTime = deadline - Date.now();
+				if (remainingTime > 0) {
+					await new Promise(resolve =>
+						setTimeout(resolve, Math.min(WORKSPACE_POLL_INTERVAL, remainingTime))
+					);
+				}
+			}
+			throw new DevWorkspacePollingTimeoutError(lastWorkspace, lastObservedPhase);
+		});
+	}
+
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
 			return;
 		}
 
-		const pendingAction = this.devWorkspaceAssistant.pendingAction;
-		if (pendingAction === 'restartPending') {
-			this.devWorkspaceAssistant.startWorkspace();
-			return;
-		}
-		if (pendingAction === 'stopping') {
+		if (this.devWorkspaceAssistant.pendingAction === 'stopping') {
+			this.status = DisconnectionHandlerStatus.AVAILABLE;
 			return;
 		}
 
+		// the Che handler is waiting for the dev workspace to start - so, the default behaviour should NOT be applied
 		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
-		let devWorkspace;
+
+		let devWorkspace: DevWorkspaceLike;
 		try {
-			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+			devWorkspace = await this.getDevWorkspaceUntilStable();
 		} catch (error) {
+	        const currentPendingAction = this.devWorkspaceAssistant.pendingAction as 'idle' | 'restartPending' | 'stopping';
+
+			if (currentPendingAction === 'stopping') {
+				this.status = DisconnectionHandlerStatus.AVAILABLE;
+				return;
+			}
+
+			if (currentPendingAction === 'restartPending') {
+
+				const pollingError = error instanceof DevWorkspacePollingTimeoutError ? error : undefined;
+
+				if (pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILED || pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILING) {
+
+					this.status = DisconnectionHandlerStatus.AVAILABLE;
+					if (pollingError.lastWorkspace) {
+                		await this.onDisconnectionStoppedWorkspace(pollingError.lastWorkspace);
+            		}
+            		return;
+				}
+				
+				if (pollingError && !pollingError?.lastObservedPhase) {
+            		this.status = DisconnectionHandlerStatus.AVAILABLE;
+            		this.devWorkspaceAssistant.startWorkspace();
+            		return;
+        		}
+
+			}
+
 			this.status = DisconnectionHandlerStatus.FAILED;
+			return;
 		}
 
 		if (!devWorkspace || !devWorkspace.status) {
+			this.status = DisconnectionHandlerStatus.FAILED;
 			return;
 		}
 
 		const workspacePhase = devWorkspace.status.phase;
+	    const currentPendingAction = this.devWorkspaceAssistant.pendingAction as 'idle' | 'restartPending' | 'stopping';
+
+		if (currentPendingAction === 'stopping') {
+       	 	this.status = DisconnectionHandlerStatus.AVAILABLE;
+        	return;
+    	}
+
+		// Handle a pending restart only after the workspace reaches a stable phase.
+		if (currentPendingAction === 'restartPending') {
+			// Never automatically restart a workspace that has failed.
+			if (workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) {
+				this.status = DisconnectionHandlerStatus.AVAILABLE;
+				// Show the workspace-specific recovery dialog.
+				await this.onDisconnectionStoppedWorkspace(devWorkspace);
+				return;
+			}
+
+			this.status = DisconnectionHandlerStatus.AVAILABLE;
+			this.devWorkspaceAssistant.startWorkspace();
+			return;
+		}
+
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			return this.onDisconnectionRunningWorkspace(type);
 		}
-
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
+		const restartPending = this.devWorkspaceAssistant.pendingAction === 'restartPending';
+
+		// Intercept permanent failure while a restart is pending,
+		// even if the normal disconnection handling time has elapsed.
+		if (restartPending && type === PersistentConnectionEventType.ReconnectionPermanentFailure && this.status !== DisconnectionHandlerStatus.FAILED) {
+			if (this.status === DisconnectionHandlerStatus.AVAILABLE) {
+				void this.handle(type).catch(() => {
+    				this.status = DisconnectionHandlerStatus.FAILED;
+				});
+			}
+			return true;
+		}
+
 		if (this.canHandle(millisSinceLastIncomingData)) {
-			this.handle(type);
+			void this.handle(type).catch(() => {
+    			this.status = DisconnectionHandlerStatus.FAILED;
+			});
 			return true;
 		}
 
@@ -191,7 +320,7 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		if (workspacePhase === DevWorkspaceStatus.FAILED && statusMessage) {
+		if ((workspacePhase === DevWorkspaceStatus.FAILED  || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
