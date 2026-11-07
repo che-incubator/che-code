@@ -41,13 +41,10 @@ export enum DisconnectionHandlerStatus {
 }
 
 class DevWorkspacePollingTimeoutError extends Error {
-    constructor(
-        public readonly lastWorkspace?: DevWorkspaceLike,
-        public readonly lastObservedPhase?: string,
-    ) {
-        super('Timed out waiting for DevWorkspace state.');
-        this.name = 'DevWorkspacePollingTimeoutError';
-    }
+	constructor(public readonly lastWorkspace?: DevWorkspaceLike,public readonly lastObservedPhase?: string) {
+		super("Timed out waiting for DevWorkspace state.");
+		this.name = "DevWorkspacePollingTimeoutError";
+	}
 }
 
 /**
@@ -246,7 +243,7 @@ export class CheDisconnectionHandler {
 
 		// Intercept permanent failure while a restart is pending,
 		// even if the normal disconnection handling time has elapsed.
-		if (restartPending && type === PersistentConnectionEventType.ReconnectionPermanentFailure) {
+		if (restartPending && type === PersistentConnectionEventType.ReconnectionPermanentFailure && this.status !== DisconnectionHandlerStatus.FAILED) {
 			if (this.status === DisconnectionHandlerStatus.AVAILABLE) {
 				void this.handle(type).catch(() => {
     				this.status = DisconnectionHandlerStatus.FAILED;
