@@ -22,6 +22,9 @@ const TEST_SET_EXTENSIONS_GALLERY_URLS = `{
 \t}
 }`;
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test Product JSON wrapper:', () => {
   test('should return getWebviewContentExternalBaseUrlTemplate', async () => {
     Object.assign(fs, {

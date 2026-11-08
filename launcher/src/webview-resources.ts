@@ -59,7 +59,7 @@ export class WebviewResources {
   }
 
   async update(file: string, currentURL: string, newURL: string): Promise<void> {
-    const content = await fs.readFile(file);
+    const content = await fs.readPatchable(file);
     const newContent = content.replace(currentURL, newURL);
     await fs.writeFile(file, newContent);
   }
