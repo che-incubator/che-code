@@ -190,7 +190,7 @@ export class CheDisconnectionHandler {
 			if (currentPendingAction === 'restartPending') {
 				console.log('[CRW-12719] current pending action is restartPending applied');
 				const pollingError = error instanceof DevWorkspacePollingTimeoutError ? error : undefined;
-
+				console.log(`[CRW-12719] pollingError lastObservedPhase: ${pollingError?.lastObservedPhase}`);
 				if (pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILED || pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILING) {
 					console.log('[CRW-12719] Workspace has failed - so, not applying restart');
 					this.status = DisconnectionHandlerStatus.AVAILABLE;
@@ -200,12 +200,10 @@ export class CheDisconnectionHandler {
             		return;
 				}
 				
-				if (pollingError && !pollingError?.lastObservedPhase) {
-					console.log('[CRW-12719] no failure phase detected - so, applying restart workspace behaviour');
-            		this.status = DisconnectionHandlerStatus.AVAILABLE;
-            		this.devWorkspaceAssistant.startWorkspace();
-            		return;
-        		}
+				console.log('[CRW-12719] no failure phase detected - so, applying restart workspace behaviour');
+            	this.status = DisconnectionHandlerStatus.AVAILABLE;
+            	this.devWorkspaceAssistant.startWorkspace();
+            	return;
 
 			}
 
