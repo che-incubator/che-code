@@ -91,6 +91,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
 
         try {
+          await vscode.commands.executeCommand('che-remote.command.prepareForRestart');
           await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
         } catch (error) {
           console.log('[CRW-12719] Failed to restart the workspace.', error);
