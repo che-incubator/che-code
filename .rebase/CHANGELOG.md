@@ -3,6 +3,12 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @RomanNikitenko
+https://github.com/che-incubator/che-code/commit/c3393b2914c
+
+- code/build/next/index.ts
+---
+
+#### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/823
 
 - code/extensions/copilot/src/platform/authentication/common/copilotToken.ts
