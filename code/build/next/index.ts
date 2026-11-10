@@ -26,6 +26,7 @@ import { copyResources } from './resources.ts';
 import { optimizeSvgFiles } from './svg.ts';
 import { getBundleOptions } from './bundle.ts';
 import { compileStandaloneFiles } from './standalone.ts';
+import { injectWorkbenchConfiguration } from './che/workbenchConfig.ts';
 
 const globAsync = promisify(glob);
 
@@ -409,6 +410,12 @@ function fileContentMapperPlugin(outDir: string, target: BuildTarget): esbuild.P
 						}
 					}
 					contents = contents.replace('/*BUILD->INSERT_BUILTIN_EXTENSIONS*/', () => builtinExtensionsReplacement!);
+					modified = true;
+				}
+
+				const cheWorkbenchConfiguration = injectWorkbenchConfiguration(contents);
+				if (cheWorkbenchConfiguration !== undefined) {
+					contents = cheWorkbenchConfiguration;
 					modified = true;
 				}
 
