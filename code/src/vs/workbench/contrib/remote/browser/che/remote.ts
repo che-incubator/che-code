@@ -84,7 +84,6 @@ export class CheDisconnectionHandler {
 	private canHandle(millisSinceLastIncomingData: number): boolean {
 		// the Che handler is waiting for the user action - so, the default behaviour should NOT be applied
 		if (this.status === DisconnectionHandlerStatus.USER_ACTION_WAITING) {
-			console.log('[CRW-12719] Che disconnection handler is waiting for the user action');
 			return true;
 		}
 
@@ -95,7 +94,6 @@ export class CheDisconnectionHandler {
 
 		// the default behaviour should be applied if the Che handler can not detect the state of the workspace during this time
 		if (millisSinceLastIncomingData > DISCONNECTION_HANDLING_TIME) {
-			console.log('[CRW-12719] Che disconnection handler timed out waiting for the dev workspace state');
 			return false;
 		}
 		return true;
@@ -128,7 +126,7 @@ export class CheDisconnectionHandler {
 						lastWorkspace = devWorkspace;
 						lastObservedPhase = phase;
 
-						console.log(`[CRW-12719] DevWorkspace phase: ${lastObservedPhase}`);
+						console.log(`[CRW-12719] DevWorkspace phase: ${lastObservedPhase} and Status: ${this.status}`);
 
 						if (phase === DevWorkspaceStatus.FAILED) {
                             return devWorkspace;
@@ -150,24 +148,18 @@ export class CheDisconnectionHandler {
 
 				const remainingTime = deadline - Date.now();
 				if (remainingTime > 0) {
-					console.log(`[CRW-12719] Waiting for DevWorkspace to reach a stable phase. Remaining time: ${remainingTime} ms`);
 					await new Promise(resolve =>
 						setTimeout(resolve, Math.min(WORKSPACE_POLL_INTERVAL, remainingTime))
 					);
 				}
 			}
-			console.log('[CRW-12719] Timed out waiting for DevWorkspace state.');
 			throw new DevWorkspacePollingTimeoutError(lastWorkspace, lastObservedPhase);
 		});
 	}
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
+		
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
-			return;
-		}
-
-		if (this.devWorkspaceAssistant.pendingAction === 'stopping') {
-			this.status = DisconnectionHandlerStatus.AVAILABLE;
 			return;
 		}
 
@@ -181,19 +173,13 @@ export class CheDisconnectionHandler {
 			console.log('[CRW-12719] Che disconnection error while getting the dev workspace state:', error);
 	        const currentPendingAction = this.devWorkspaceAssistant.pendingAction as 'idle' | 'restartPending' | 'stopping';
 
-			if (currentPendingAction === 'stopping') {
-				console.log('[CRW-12719] currentPendingAction is stopping applied');
-				this.status = DisconnectionHandlerStatus.AVAILABLE;
-				return;
-			}
-
 			if (currentPendingAction === 'restartPending') {
 				console.log('[CRW-12719] current pending action is restartPending applied');
 				const pollingError = error instanceof DevWorkspacePollingTimeoutError ? error : undefined;
 				console.log(`[CRW-12719] pollingError lastObservedPhase: ${pollingError?.lastObservedPhase}`);
 				if (pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILED || pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILING) {
 					console.log('[CRW-12719] Workspace has failed - so, not applying restart');
-					this.status = DisconnectionHandlerStatus.AVAILABLE;
+					this.status = DisconnectionHandlerStatus.FAILED;
 					if (pollingError.lastWorkspace) {
                 		await this.onDisconnectionStoppedWorkspace(pollingError.lastWorkspace);
             		}
@@ -201,7 +187,6 @@ export class CheDisconnectionHandler {
 				}
 				
 				console.log('[CRW-12719] no failure phase detected - so, applying restart workspace behaviour');
-            	this.status = DisconnectionHandlerStatus.AVAILABLE;
             	this.devWorkspaceAssistant.startWorkspace();
             	return;
 
@@ -212,7 +197,6 @@ export class CheDisconnectionHandler {
 		}
 
 		if (!devWorkspace || !devWorkspace.status) {
-			console.log('[CRW-12719] no dev workspace or no dev workspace status - so, applying failed behaviour');
 			this.status = DisconnectionHandlerStatus.FAILED;
 			return;
 		}
@@ -220,29 +204,26 @@ export class CheDisconnectionHandler {
 		const workspacePhase = devWorkspace.status.phase;
 	    const currentPendingAction = this.devWorkspaceAssistant.pendingAction as 'idle' | 'restartPending' | 'stopping';
 
-		if (currentPendingAction === 'stopping') {
-			console.log('[CRW-12719] current pending action is stopping applied');
-       	 	this.status = DisconnectionHandlerStatus.AVAILABLE;
-        	return;
-    	}
-
 		// Handle a pending restart only after the workspace reaches a stable phase.
 		if (currentPendingAction === 'restartPending') {
 			console.log('[CRW-12719] current pending action is restartPending applied');
 			// Never automatically restart a workspace that has failed.
 			if (workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) {
-				this.status = DisconnectionHandlerStatus.AVAILABLE;
+				this.status = DisconnectionHandlerStatus.FAILED;
 				// Show the workspace-specific recovery dialog.
 				console.log('[CRW-12719] Workspace has failed - so, not applying restart');
 				await this.onDisconnectionStoppedWorkspace(devWorkspace);
 				return;
 			}
-
-			this.status = DisconnectionHandlerStatus.AVAILABLE;
 			console.log('[CRW-12719] no failure phase detected - so, applying restart workspace behaviour');
 			this.devWorkspaceAssistant.startWorkspace();
 			return;
 		}
+
+		if (currentPendingAction === 'stopping') {
+			console.log('[CRW-12719] current pending action is stopping applied');
+        	return;
+    	}
 
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			console.log('[CRW-12719] workspace is starting or running');

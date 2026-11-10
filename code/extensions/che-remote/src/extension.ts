@@ -85,16 +85,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return;
           }
         } catch (error) {
-          console.log('[CRW-12719] Failed to update Devfile.', error);
           vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
           return;
         }
 
         try {
-          await vscode.commands.executeCommand('che-remote.command.prepareForRestart');
           await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
         } catch (error) {
-          console.log('[CRW-12719] Failed to restart the workspace.', error);
           vscode.window.showErrorMessage(`Failed to restart the workspace: ${error}`);
         }
       })
