@@ -421,6 +421,8 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/statusbar/statusbarPart.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupContributions.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/viewsWelcome/chatViewWelcomeController.ts" ]]; then
