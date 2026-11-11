@@ -2027,5 +2027,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/vscode.git"
+  },
+  "overrides": {
+    "@vscode/web-editors": {
+      "@vscode/hubrpc": "0.0.2-20"
+    }
   }
 }
