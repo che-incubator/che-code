@@ -837,7 +837,9 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		// Part container
 		if (this.element) {
 			const isWindowActive = this.activeWindowId === undefined ? this.targetWindow.document.hasFocus() : this.activeWindowId === this.targetWindow.vscodeWindowId;
-			const isInactive = !this.hostService.hasFocus || !isWindowActive;
+			// che: the browser window focus state is unreliable (a page loaded without focus keeps a stale
+			// focus tracker state), so on web the title bar is never rendered inactive
+			const isInactive = !isWeb && (!this.hostService.hasFocus || !isWindowActive);
 			if (isInactive) {
 				this.element.classList.add('inactive');
 			} else {
