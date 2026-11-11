@@ -739,3 +739,9 @@ https://github.com/che-incubator/che-code/pull/695
 
 - code/build/npm/preinstall.ts
 ---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/845
+
+- code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts
+---

@@ -2,5 +2,9 @@
   {
     "from": "\t\t\t\tthis.title.textContent = this.windowTitle.value;\n\t\t\t\tthis.titleDisposables.add(this.windowTitle.onDidChange(() => {\n\t\t\t\t\tthis.title.textContent = this.windowTitle.value;",
     "by": "\t\t\t\tthis.title.textContent = this.windowTitle.getHeader() || this.windowTitle.value;\n\t\t\t\tthis.titleDisposables.add(this.windowTitle.onDidChange(() => {\n\t\t\t\t\tthis.title.textContent = this.windowTitle.getHeader() || this.windowTitle.value;"
+  },
+  {
+    "from": "const isInactive = !this.hostService.hasFocus || !isWindowActive;",
+    "by": "// che: the browser window focus state is unreliable (a page loaded without focus keeps a stale\n\t\t\t// focus tracker state), so on web the title bar is never rendered inactive\n\t\t\tconst isInactive = !isWeb && (!this.hostService.hasFocus || !isWindowActive);"
   }
 ]
