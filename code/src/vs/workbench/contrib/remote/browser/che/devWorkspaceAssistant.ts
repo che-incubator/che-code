@@ -63,15 +63,18 @@ export class DevWorkspaceAssistant {
 		private environmentVariableService: IEnvironmentVariableService,
 		private progressService: IProgressService) {
 		CommandsRegistry.registerCommand('che-remote.command.restartWorkspace', () => {
+			console.log('[CRW-12719] Restarting workspace called from extension host...');
 			this.restartWorkspace();
 		});
 		CommandsRegistry.registerCommand('che-remote.command.stopWorkspaceAndRedirectToDashboard', () => {
 			this.stopWorkspaceAndRedirectToDashboard();
 		});
 		CommandsRegistry.registerCommand('che-remote.command.prepareForRestart', () => {
+			console.log('[CRW-12719] Preparing for workspace restart called from extension host...');
 			this._pendingAction = 'restartPending';
 		});
 		CommandsRegistry.registerCommand('che-remote.command.cancelRestart', () => {
+			console.log('[CRW-12719] Canceling workspace restart called from extension host...');
 			this._pendingAction = 'idle';
 		});
 	}
