@@ -88,12 +88,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
           return;
         }
-
-        try {
-          await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
-        } catch (error) {
-          vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
-        }
       })
     );
   }
