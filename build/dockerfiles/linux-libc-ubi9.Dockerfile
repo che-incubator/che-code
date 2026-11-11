@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-24
-FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1793353068 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.9-1793858418 as linux-libc-ubi9-builder
 
 USER root
 

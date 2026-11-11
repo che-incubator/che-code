@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-24
-FROM registry.access.redhat.com/ubi8/nodejs-24:1793350702 as linux-libc-ubi8-builder
+FROM registry.access.redhat.com/ubi8/nodejs-24:1794377250 as linux-libc-ubi8-builder
 
 USER root
 
