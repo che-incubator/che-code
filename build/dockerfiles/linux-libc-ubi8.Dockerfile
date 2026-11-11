@@ -21,6 +21,12 @@ ENV GITHUB_TOKEN=$GITHUB_TOKEN
 RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
+# Rust toolchain for the native Copilot CLI shim, pinned to direct UBI CDN RPM URLs:
+# the ubi-8-appstream module metadata references the rust-toolset module but the repo
+# package index ships none of its RPMs (broken x86_64 publication, 2026-11-11), so a
+# plain "yum install rust-toolset" fails with "No match for argument". The pinned set
+# is the newest one actually published (rust 1.92.0 + llvm-libs 21.1.8 — the same
+# versions the module resolves to on aarch64).
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://archives.fedoraproject.org/pub/archive/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
       https://archives.fedoraproject.org/pub/archive/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm"; \
@@ -48,7 +54,15 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl glibc-gconv-extra make cmake gcc gcc-c++ rust-toolset git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && UBI_APPSTREAM=https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$(uname -m)/appstream/os/Packages \
+    && RUST="\
+      $UBI_APPSTREAM/r/rust-toolset-1.92.0-1.module+el8.10.0+23854+aa7622f9.noarch.rpm \
+      $UBI_APPSTREAM/r/rust-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/c/cargo-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/r/rust-std-static-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/l/llvm-libs-21.1.8-1.module+el8.10.0+23969+c061985f.$(uname -m).rpm \
+      $UBI_APPSTREAM/l/llvm-filesystem-21.1.8-1.module+el8.10.0+23969+c061985f.$(uname -m).rpm" \
+    && yum install -y $LIBSECRET $LIBKEYBOARD $RUST curl glibc-gconv-extra make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
