@@ -33,6 +33,14 @@ git show upstream-code/<version>:<path>
 
 Where `<path>` is **without** the `code/` prefix (upstream stores VS Code sources at repo root).
 
+While reading `rebase.sh`, also verify it is still executable:
+
+```bash
+git ls-files -s rebase.sh   # must start with 100755
+```
+
+Report a `100644` entry as **ERROR** — both rebase workflows call `./rebase.sh` directly, so a dropped bit breaks every automated rebase (cause and remedy: the exec-bit rule in *Shell Portability*, `AGENTS.md`).
+
 ## Step 2 — Validate `.rebase/replace/` rules
 
 Each file under `.rebase/replace/` has the form `.rebase/replace/<code-path>.json` and contains a JSON array of `{ "from": "...", "by": "..." }` objects.

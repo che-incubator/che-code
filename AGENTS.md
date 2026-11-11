@@ -153,6 +153,8 @@ All shell scripts and ad-hoc terminal commands must work on both **macOS** (zsh 
 | `readarray` / `mapfile` | Requires bash 4+ | `while IFS= read -r` loop |
 | `sed -i ''` (macOS) vs `sed -i` (Linux) | Incompatible across platforms | Write to temp file + mv |
 
+**`temp + mv` silently drops the executable bit.** `mv` carries the temp file's mode (default `644`), not the target's. When rewriting an executable file this way (e.g. `rebase.sh`), restore the mode afterwards with `chmod +x <file>`; prefer in-place edits (`>`, Edit tool) for executable files. A mode-only change is invisible in normal diffs (`0 insertions, 0 deletions`) and CI never checks file modes. Verify before committing: `git diff --summary` shows no `mode change`, or `git ls-files -s <file>` starts with `100755`.
+
 ### Running scripts
 
 - Always invoke via `bash script.sh` or `./script.sh` (shebang `#!/bin/bash`)

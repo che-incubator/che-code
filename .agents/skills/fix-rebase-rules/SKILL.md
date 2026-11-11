@@ -183,6 +183,7 @@ Check `rebase.sh`'s `resolve_conflicts()` function:
 - For standard replace-rule files, add an `elif` branch calling `apply_changes "$conflictingFile"` (sed, single-line) or `apply_changes_multi_line "$conflictingFile"` (perl, multiline). Create the `.rebase/replace/<path>.json` rule file.
 - The smart fallback in the `else` branch handles files with no che-specific changes automatically (takes upstream), but files WITH che-specific changes need an explicit elif entry or a `.rebase/` rule.
 - Do not add duplicate entries.
+- **`rebase.sh` must stay executable (`100755`)** — rewrites drop the bit silently; see the exec-bit rule in *Shell Portability* (`AGENTS.md`) and verify with `git diff --summary` before committing.
 
 ## Step 9 — Validate every fix
 

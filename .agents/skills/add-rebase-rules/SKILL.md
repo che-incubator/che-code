@@ -132,6 +132,7 @@ Values go through: JSON parse → `jq -r` → env var → perl `\Q\E` (from) / l
      - `apply_changes_multi_line "$conflictingFile"` — higher-level wrapper that resets the file (`git checkout --theirs`), calls `apply_multi_line_replace`, then stages the result (`git add`).
      - `apply_multi_line_replace "$conflictingFile"` — low-level function that performs the Perl multiline replacement directly, without git checkout/add.
    - Do not add duplicate branches.
+   - **`rebase.sh` must stay executable (`100755`)** — rewrites drop the bit silently; see the exec-bit rule in *Shell Portability* (`AGENTS.md`) and verify with `git diff --summary` before committing.
 
 6. Update `.rebase/CHANGELOG.md`
    - Append a new entry in existing format:
