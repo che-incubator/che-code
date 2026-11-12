@@ -40,23 +40,17 @@ export enum DisconnectionHandlerStatus {
 	FAILED = 'Failed'
 }
 
-class DevWorkspacePollingTimeoutError extends Error {
-	constructor(public readonly lastWorkspace?: DevWorkspaceLike,public readonly lastObservedPhase?: string) {
-		super("Timed out waiting for DevWorkspace state.");
-		this.name = "DevWorkspacePollingTimeoutError";
-	}
-}
 
 /**
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
 const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
-const WORKSPACE_POLL_INTERVAL = 2 * 1000; // 2 seconds
 
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
+	private lastObservedPhase: string | undefined;
 
 	private reloadWindowHandler = () => {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
@@ -100,61 +94,27 @@ export class CheDisconnectionHandler {
 	}
 
 	/**
-	 * Wait until the workspace reaches a stable phase.
+	 * Wait until the workspace reaches a phase where a restart
+	 * decision can be made.
 	 *
-	 * Starting, Failing, Stopping and Terminating are transitional phases.
-	 * Temporary API errors are retried because the API may be unavailable
-	 * while the workspace pod is being restarted.
+	 * Used only for restart-pending operations.
 	 */
 	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
-		const deadline = Date.now() + DISCONNECTION_HANDLING_TIME;
-		let lastWorkspace: DevWorkspaceLike | undefined;
-    	let lastObservedPhase: string | undefined;
+		return this.progressService.withProgress(
+			{
+				location: ProgressLocation.Notification,
+				title: WORKSPACE_STATE
+			},
+			async () => {
+				const workspace = await this.devWorkspaceAssistant.waitForWorkspaceDecision();
 
-  		return this.progressService.withProgress(
-        {
-            location: ProgressLocation.Notification,
-            title: WORKSPACE_STATE
-        },
-        async () => {
-			while (Date.now() < deadline) {
-				try {
-					const devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
-					const phase = devWorkspace?.status?.phase;
+				this.lastObservedPhase = workspace.status?.phase;
 
-					if (phase) {
-						lastWorkspace = devWorkspace;
-						lastObservedPhase = phase;
+				console.log(`[CRW-12719] Workspace reached decision phase: ${this.lastObservedPhase}`);
 
-						console.log(`[CRW-12719] DevWorkspace phase: ${lastObservedPhase} and Status: ${this.status}`);
-
-						if (phase === DevWorkspaceStatus.FAILED) {
-                            return devWorkspace;
-                        }
-
-						if (
-							phase &&
-							phase !== DevWorkspaceStatus.STARTING &&
-							phase !== DevWorkspaceStatus.FAILING &&
-							phase !== DevWorkspaceStatus.STOPPING &&
-							phase !== DevWorkspaceStatus.TERMINATING
-						) {
-							return devWorkspace;
-						}
-					}
-				} catch (error) {
-					// ignore errors and retry
-				}
-
-				const remainingTime = deadline - Date.now();
-				if (remainingTime > 0) {
-					await new Promise(resolve =>
-						setTimeout(resolve, Math.min(WORKSPACE_POLL_INTERVAL, remainingTime))
-					);
-				}
+				return workspace;
 			}
-			throw new DevWorkspacePollingTimeoutError(lastWorkspace, lastObservedPhase);
-		});
+		);
 	}
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
@@ -171,18 +131,21 @@ export class CheDisconnectionHandler {
 			devWorkspace = await this.getDevWorkspaceUntilStable();
 		} catch (error) {
 			this.status = DisconnectionHandlerStatus.FAILED;
-			const pollingError = error instanceof DevWorkspacePollingTimeoutError ? error : undefined;
-			if (pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILED || pollingError?.lastObservedPhase === DevWorkspaceStatus.FAILING) {
-				if (pollingError.lastWorkspace) {
-                		await this.onDisconnectionStoppedWorkspace(pollingError.lastWorkspace);
-            	}
-            	return;
-			}
+			
+			console.error('[CRW-12719] Unable to determine workspace status:', error);
 
-			if (pendingAction === 'restartPending') {
-				this.devWorkspaceAssistant.startWorkspace();
-				return;
-			}
+			this.notificationService.prompt(
+				Severity.Error,
+				'Unable to determine workspace status. Please check the workspace from the dashboard.',
+				[{
+					label: RETURN_TO_DASHBOARD_LABEL,
+					isSecondary: false,
+					run: this.goToDashboardHandler
+				}],
+				{ sticky: true }
+			);
+
+			return;
 		}
 
 		if (!devWorkspace || !devWorkspace.status) {
@@ -192,7 +155,8 @@ export class CheDisconnectionHandler {
 		const workspacePhase = devWorkspace.status.phase;
 
 		if (pendingAction === 'restartPending') {
-			if (workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) {
+			console.log(`[CRW-12719] Restart decision based on workspace phase: ${workspacePhase}`);
+			if (workspacePhase === DevWorkspaceStatus.FAILED) {
 				this.status = DisconnectionHandlerStatus.FAILED;
 				// Show the workspace-specific recovery dialog.
 				await this.onDisconnectionStoppedWorkspace(devWorkspace);
@@ -214,7 +178,7 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
-		console.log(`[CRW-12719] CheDisconnectionHandler.handleStateChange: type=${type}, status=${this.status}`);
+		console.log(`[CRW-12719] CheDisconnectionHandler.handleStateChange: type=${type}, lastObservedPhase=${this.lastObservedPhase}`);
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);
 			return true;
