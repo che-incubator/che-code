@@ -214,6 +214,7 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
+		console.log(`[CRW-12719] CheDisconnectionHandler.handleStateChange: type=${type}, status=${this.status}`);
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);
 			return true;
