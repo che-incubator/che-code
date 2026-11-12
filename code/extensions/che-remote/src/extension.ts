@@ -78,19 +78,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
       vscode.commands.registerCommand('che-remote.command.restartFromLocalDevfile', async () => {
         try {
+          console.log('[CRW-12719] Restarting workspace from local Devfile...');
           const updated = await updateDevfile(cheApi);
+          console.log(`[CRW-12719] Restarting workspace from local Devfile... done. Updated: ${updated}`);
           if (!updated) {
             return;
           }
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to update Devfile. ${error}`);
           return;
-        }
-
-        try {
-          await vscode.commands.executeCommand('che-remote.command.restartWorkspace');
-        } catch (error) {
-          vscode.window.showErrorMessage(`Failed to restart the workpace: ${error}`);
         }
       })
     );

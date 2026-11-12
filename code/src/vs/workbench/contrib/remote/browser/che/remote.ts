@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2023 Red Hat, Inc.
+ * Copyright (c) 2023 - 2026 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -19,13 +19,14 @@ import { IRequestService } from '../../../../../platform/request/common/request.
 import { ReloadWindowAction } from '../../../../browser/actions/windowActions.js';
 import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from './devWorkspaceAssistant.js';
 import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
-import { IProgressService } from '../../../../../platform/progress/common/progress.js';
+import { IProgressService, ProgressLocation } from '../../../../../platform/progress/common/progress.js';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RELOAD_WINDOW_LABEL = nls.localize('reloadWindow', "Reload Window");
 const RESTART_WORKSPACE_LABEL = nls.localize('disconnectionHandler.button.restart', 'Restart your workspace');
 const RETURN_TO_DASHBOARD_LABEL = nls.localize('disconnectionHandler.button.returnToDashboard', 'Return to dashboard');
 
+const WORKSPACE_STATE = nls.localize('disconnectionHandler.message.workspaceState', 'Getting workspace state...');
 const WORKSPACE_STOPPED = nls.localize('disconnectionHandler.message.workspaceStopped', 'Your workspace is not running.');
 const WORKSPACE_FAILED = nls.localize('disconnectionHandler.message.workspaceFailed', 'The workspace has failed with the following error');
 const WORKSPACE_STOPPED_BY_INACTIVITY = nls.localize('disconnectionHandler.message.workspaceStoppedByInactivity', 'Your workspace has stopped due to inactivity.');
@@ -39,6 +40,7 @@ export enum DisconnectionHandlerStatus {
 	FAILED = 'Failed'
 }
 
+
 /**
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
@@ -48,6 +50,7 @@ const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
+	private lastObservedPhase: string | undefined;
 
 	private reloadWindowHandler = () => {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
@@ -67,7 +70,7 @@ export class CheDisconnectionHandler {
 		private notificationService: INotificationService,
 		requestService: IRequestService,
 		environmentVariableService: IEnvironmentVariableService,
-		progressService: IProgressService
+		private progressService: IProgressService
 	) {
 		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
 	}
@@ -90,26 +93,59 @@ export class CheDisconnectionHandler {
 		return true;
 	}
 
+	/**
+	 * Wait until the workspace reaches a phase where a restart
+	 * decision can be made.
+	 *
+	 * Used only for restart-pending operations.
+	 */
+	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
+		return this.progressService.withProgress(
+			{
+				location: ProgressLocation.Notification,
+				title: WORKSPACE_STATE
+			},
+			async () => {
+				const workspace = await this.devWorkspaceAssistant.waitForWorkspaceDecision();
+
+				this.lastObservedPhase = workspace.status?.phase;
+
+				console.log(`[CRW-12719] Workspace reached decision phase: ${this.lastObservedPhase}`);
+
+				return workspace;
+			}
+		);
+	}
+
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
+
 		if (this.status !== DisconnectionHandlerStatus.AVAILABLE) {
 			return;
 		}
 
 		const pendingAction = this.devWorkspaceAssistant.pendingAction;
-		if (pendingAction === 'restartPending') {
-			this.devWorkspaceAssistant.startWorkspace();
-			return;
-		}
-		if (pendingAction === 'stopping') {
-			return;
-		}
-
 		this.status = DisconnectionHandlerStatus.IN_PROGRESS;
-		let devWorkspace;
+		let devWorkspace: DevWorkspaceLike | undefined;
+
 		try {
-			devWorkspace = await this.devWorkspaceAssistant.getDevWorkspace();
+			devWorkspace = await this.getDevWorkspaceUntilStable();
 		} catch (error) {
 			this.status = DisconnectionHandlerStatus.FAILED;
+			
+			console.error('[CRW-12719] Unable to determine workspace status:', error);
+
+			this.notificationService.prompt(
+				Severity.Error,
+				'Unable to determine workspace status. Please check the workspace from the dashboard.',
+				[{
+					label: RETURN_TO_DASHBOARD_LABEL,
+					isSecondary: false,
+					run: this.goToDashboardHandler
+				}],
+				{ sticky: true }
+			);
+
+			return;
 		}
 
 		if (!devWorkspace || !devWorkspace.status) {
@@ -117,6 +153,23 @@ export class CheDisconnectionHandler {
 		}
 
 		const workspacePhase = devWorkspace.status.phase;
+
+		if (pendingAction === 'restartPending') {
+			console.log(`[CRW-12719] Restart decision based on workspace phase: ${workspacePhase}`);
+			if (workspacePhase === DevWorkspaceStatus.FAILED) {
+				this.status = DisconnectionHandlerStatus.FAILED;
+				// Show the workspace-specific recovery dialog.
+				await this.onDisconnectionStoppedWorkspace(devWorkspace);
+				return;
+			}
+			this.devWorkspaceAssistant.startWorkspace();
+			return;
+		}
+
+		if (pendingAction === 'stopping') {
+			return;
+		}
+
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			return this.onDisconnectionRunningWorkspace(type);
 		}
@@ -125,6 +178,7 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
+		console.log(`[CRW-12719] CheDisconnectionHandler.handleStateChange: type=${type}, lastObservedPhase=${this.lastObservedPhase}`);
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);
 			return true;
@@ -191,7 +245,8 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		if (workspacePhase === DevWorkspaceStatus.FAILED && statusMessage) {
+		
+		if ((workspacePhase === DevWorkspaceStatus.FAILED  || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
