@@ -618,5 +618,51 @@ get_commit_message() {
   echo "vscode-upstream-sha1: ${1}"
 }
 
+# $1 is the file to hash
+sha256_of() {
+  if command -v sha256sum > /dev/null 2>&1; then
+    sha256sum "$1" | cut -d ' ' -f 1
+  else
+    shasum -a 256 "$1" | cut -d ' ' -f 1
+  fi
+}
+
+# Electron typings consumed by code/build/npm/electronTypes.ts (called from the root package postinstall).
+# Upstream downloads them from the GitHub release of the Electron 'target' version; hermetic downstream
+# builds (Dev Spaces / Konflux) have no network, so keep a checksum-verified copy in sync with
+# 'target' in code/.npmrc and the sha256 recorded in code/build/checksums/electron.txt.
+update_electron_types() {
+  local -r typesFile="build/typings/electron.d.ts"
+  local expected
+  local version
+  expected=$(grep -E ' \*electron\.d\.ts$' code/build/checksums/electron.txt | cut -d ' ' -f 1)
+  if [ -z "$expected" ]; then
+    echo "❌ code/build/checksums/electron.txt does not contain an electron.d.ts entry"
+    exit 1
+  fi
+  if [ -f "$typesFile" ] && [ "$(sha256_of "$typesFile")" = "$expected" ]; then
+    echo "✅ Electron typings are up to date"
+    return
+  fi
+
+  version=$(grep -E '^target=' code/.npmrc | cut -d '"' -f 2)
+  echo "⬇️  Updating Electron typings to v${version}"
+  mkdir -p "$(dirname "$typesFile")"
+  curl -fsSL -o "${typesFile}.tmp" "https://github.com/electron/electron/releases/download/v${version}/electron.d.ts"
+  if [ "$(sha256_of "${typesFile}.tmp")" != "$expected" ]; then
+    rm -f "${typesFile}.tmp"
+    echo "❌ Downloaded electron.d.ts (v${version}) does not match the checksum in code/build/checksums/electron.txt"
+    exit 1
+  fi
+  mv "${typesFile}.tmp" "$typesFile"
+
+  git add "$typesFile"
+  if ! git diff --cached --quiet -- "$typesFile"; then
+    git commit -s -m "chore: update Electron typings to v${version}" > /dev/null
+    echo "🚀  Electron typings updated to v${version}"
+  fi
+}
+
 # perform rebase
 do_rebase
+update_electron_types

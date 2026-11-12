@@ -112,7 +112,7 @@ Nine extensions provide Kubernetes/Che integration:
 To rebase on upstream VS Code:
 1. `git remote add upstream-code https://github.com/microsoft/vscode` (if not already added)
 2. `git fetch upstream-code release/<version>` — fetch the release branch that `rebase.sh` targets (check `UPSTREAM_VERSION` in `rebase.sh` for the current ref, e.g. `upstream-code/release/1.104`)
-3. `./rebase.sh` — Pulls subtree, applies `.rebase/` patches, updates JSON overrides
+3. `./rebase.sh` — Pulls subtree, applies `.rebase/` patches, updates JSON overrides, and keeps `build/typings/electron.d.ts` in sync with the upstream Electron `target` (committed separately; needed by hermetic downstream builds, checked by `pull-request-check.yml`)
 4. Fix any conflicts
 5. `./build/artifacts/generate.sh` to update `artifacts.lock.yaml`
 
