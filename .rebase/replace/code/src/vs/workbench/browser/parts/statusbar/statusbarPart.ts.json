@@ -1,0 +1,10 @@
+[
+  {
+    "from": "import { IThemeService } from '../../../../platform/theme/common/themeService.js';",
+    "by": "import { IThemeService } from '../../../../platform/theme/common/themeService.js';\nimport { isWeb } from '../../../../base/common/platform.js';"
+  },
+  {
+    "from": "const isInactive = !this.hostService.hasFocus || !isWindowActive;",
+    "by": "// che: the browser window focus state is unreliable (a page loaded without focus keeps a stale\n\t\t// focus tracker state), so on web the status bar is never rendered inactive\n\t\tconst isInactive = !isWeb && (!this.hostService.hasFocus || !isWindowActive);"
+  }
+]

@@ -196,6 +196,8 @@ After user confirmation:
 2. Move approved pins to `.rebase/override/` files (create or update the override file)
 3. **Delete empty files** — if removing all pins from a `.rebase/add/` file leaves it as `{}`, delete the file entirely rather than keeping an empty JSON object. An empty `{}` is a no-op merge that clutters the rebase rules.
 4. **Remove stale `rebase.sh` elif entries** — when deleting a `.rebase/add/` or `.rebase/override/` file, check whether the corresponding `code/` file path has an `elif` entry in the `resolve_conflicts()` function of `rebase.sh`. If the file no longer has **any** rebase rules (no add, no override, no replace), remove its `elif` entry. Files with no Che-specific rules are handled correctly by the smart fallback in the `else` branch. Leaving stale entries causes `override_json_file()` to fail when no `.tmp` file is created.
+
+   **`rebase.sh` must stay executable (`100755`)** — both rebase workflows call `./rebase.sh` directly, and a dropped bit breaks every automated rebase. Rewrites drop the bit silently; see the exec-bit rule in *Shell Portability* (`AGENTS.md`) and verify with `git diff --summary` before committing.
 5. **Update `code/` files — restore upstream values, do NOT delete:**
 
    **Critical:** Removing a pin from `.rebase/add/` or `.rebase/override/` does NOT mean deleting the entry from the corresponding `code/` file. This applies to **every section** — `dependencies`, `devDependencies`, `overrides`, or any other. For each removed entry, check the upstream file:

@@ -112,7 +112,7 @@ Nine extensions provide Kubernetes/Che integration:
 To rebase on upstream VS Code:
 1. `git remote add upstream-code https://github.com/microsoft/vscode` (if not already added)
 2. `git fetch upstream-code release/<version>` — fetch the release branch that `rebase.sh` targets (check `UPSTREAM_VERSION` in `rebase.sh` for the current ref, e.g. `upstream-code/release/1.104`)
-3. `./rebase.sh` — Pulls subtree, applies `.rebase/` patches, updates JSON overrides
+3. `./rebase.sh` — Pulls subtree, applies `.rebase/` patches, updates JSON overrides, and keeps `build/typings/electron.d.ts` in sync with the upstream Electron `target` (committed separately; needed by hermetic downstream builds, checked by `pull-request-check.yml`)
 4. Fix any conflicts
 5. `./build/artifacts/generate.sh` to update `artifacts.lock.yaml`
 
@@ -152,6 +152,8 @@ All shell scripts and ad-hoc terminal commands must work on both **macOS** (zsh 
 | `declare -A` | Requires bash 4+ (macOS has 3.2) | Use temp files or `grep -qxF` |
 | `readarray` / `mapfile` | Requires bash 4+ | `while IFS= read -r` loop |
 | `sed -i ''` (macOS) vs `sed -i` (Linux) | Incompatible across platforms | Write to temp file + mv |
+
+**`temp + mv` silently drops the executable bit.** `mv` carries the temp file's mode (default `644`), not the target's. When rewriting an executable file this way (e.g. `rebase.sh`), restore the mode afterwards with `chmod +x <file>`; prefer in-place edits (`>`, Edit tool) for executable files. A mode-only change is invisible in normal diffs (`0 insertions, 0 deletions`) and CI never checks file modes. Verify before committing: `git diff --summary` shows no `mode change`, or `git ls-files -s <file>` starts with `100755`.
 
 ### Running scripts
 

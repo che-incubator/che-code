@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi8/nodejs-24
-FROM registry.access.redhat.com/ubi8/nodejs-24:1785415202 as linux-libc-ubi8-builder
+FROM registry.access.redhat.com/ubi8/nodejs-24:1794377250 as linux-libc-ubi8-builder
 
 USER root
 
@@ -21,6 +21,12 @@ ENV GITHUB_TOKEN=$GITHUB_TOKEN
 RUN if [ -z $GITHUB_TOKEN ]; then unset GITHUB_TOKEN; fi
 
 # Install libsecret-devel on s390x and ppc64le for keytar build (binary included in npm package for x86)
+# Rust toolchain for the native Copilot CLI shim, pinned to direct UBI CDN RPM URLs:
+# the ubi-8-appstream module metadata references the rust-toolset module but the repo
+# package index ships none of its RPMs (broken x86_64 publication, 2026-11-11), so a
+# plain "yum install rust-toolset" fails with "No match for argument". The pinned set
+# is the newest one actually published (rust 1.92.0 + llvm-libs 21.1.8 — the same
+# versions the module resolves to on aarch64).
 RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
       https://archives.fedoraproject.org/pub/archive/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-0.20.4-2.fc34.s390x.rpm \
       https://archives.fedoraproject.org/pub/archive/fedora-secondary/releases/34/Everything/s390x/os/Packages/l/libsecret-devel-0.20.4-2.fc34.s390x.rpm"; \
@@ -48,7 +54,15 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD curl make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
+    && UBI_APPSTREAM=https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$(uname -m)/appstream/os/Packages \
+    && RUST="\
+      $UBI_APPSTREAM/r/rust-toolset-1.92.0-1.module+el8.10.0+23854+aa7622f9.noarch.rpm \
+      $UBI_APPSTREAM/r/rust-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/c/cargo-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/r/rust-std-static-1.92.0-1.module+el8.10.0+23854+aa7622f9.$(uname -m).rpm \
+      $UBI_APPSTREAM/l/llvm-libs-21.1.8-1.module+el8.10.0+23969+c061985f.$(uname -m).rpm \
+      $UBI_APPSTREAM/l/llvm-filesystem-21.1.8-1.module+el8.10.0+23969+c061985f.$(uname -m).rpm" \
+    && yum install -y $LIBSECRET $LIBKEYBOARD $RUST curl glibc-gconv-extra make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon bash tar gzip rsync patch \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
@@ -89,7 +103,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
-    && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
+    && npx tsc --project src/tsconfig.json --noEmit --skipLibCheck \
     && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
@@ -104,6 +118,12 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && mkdir -p /checode/ld_libs \
     && find /usr/lib64 -name 'libnode.so*' -exec cp -P -t /checode/ld_libs/ {} + \
     && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/ {} +
+
+# Native Copilot CLI shim: upstream product builds ship it in bin/copilot-shim/ next to node;
+# the Copilot extension adds that folder to the END of the terminal PATH (see code/copilot_shim/REQUIREMENTS.md)
+RUN cd /checode-compilation/copilot_shim \
+    && cargo build --release --locked \
+    && install -Dm755 target/release/copilot /checode/bin/copilot-shim/copilot
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

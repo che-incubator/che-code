@@ -23,7 +23,7 @@ FROM quay.io/eclipse/che-machine-exec:next as machine-exec
 FROM quay.io/devfile/universal-developer-image:ubi9-latest as bubblewrap-ubi9
 
 # UBI 9/10
-FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1785358511
+FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.9-1793849542
 
 USER 0
 

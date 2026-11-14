@@ -1,0 +1,2 @@
+# Vendored upstream artifact, updated by rebase.sh: collapse it in GitHub diffs
+build/typings/electron.d.ts linguist-generated=true

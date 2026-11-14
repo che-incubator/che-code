@@ -13,8 +13,8 @@
 set -e
 set -u
 
-PREVIOUS_UPSTREAM_VERSION="release/1.116"
-CURRENT_UPSTREAM_VERSION="release/1.128"
+PREVIOUS_UPSTREAM_VERSION="release/1.128"
+CURRENT_UPSTREAM_VERSION="release/1.143"
 
 # update $1 json file
 # $2 is the formatting option
@@ -355,8 +355,6 @@ resolve_conflicts() {
       apply_code_package_changes
     elif [[ "$conflictingFile" == "code/build/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/npm/gyp/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/vite/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/package.json" ]]; then
@@ -369,7 +367,7 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/github-authentication/package.json" ]]; then
       apply_github_auth_package_changes
-    elif [[ "$conflictingFile" == "code/build/lib/mangle/index.ts" ]]; then
+    elif [[ "$conflictingFile" == "code/extensions/github-authentication/src/extension.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/remote/browser/browserSocketFactory.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -413,6 +411,8 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench.html" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/code/browser/workbench/workbench-dev.html" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/workbench.contribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/windowTitle.ts" ]]; then
@@ -420,6 +420,8 @@ resolve_conflicts() {
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/titlebarPart.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/src/vs/workbench/browser/parts/statusbar/statusbarPart.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/chat/browser/chatSetup/chatSetupContributions.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -459,18 +461,16 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.reh.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/build/gulpfile.vscode.web.ts" ]]; then
-      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/gulpfile.extensions.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/hygiene.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/lib/i18n.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/build/next/index.ts" ]]; then
+      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/build/npm/dirs.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/emmet/package.json" ]]; then
-      apply_changes "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/workbench/contrib/terminal/common/terminalConfiguration.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/base/common/network.ts" ]]; then
@@ -495,8 +495,6 @@ resolve_conflicts() {
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/platform/authentication/test/node/copilotToken.spec.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/chatSessions/vscode-node/copilotCLITerminalIntegration.ts" ]]; then
-      apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/src/extension/onboardDebug/vscode-node/copilotDebugCommandContribution.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/.esbuild.mts" ]]; then
@@ -509,31 +507,15 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/copilot/chat-lib/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/integration/browser/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/test/sanity/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/mermaid-markdown-features/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/notebook-renderers/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/css-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/html-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/json-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/markdown-language-features/package.json" ]]; then
-      apply_package_changes_by_path "$conflictingFile"
-    elif [[ "$conflictingFile" == "code/extensions/extension-editing/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/src/vs/platform/workspaces/common/workspaceIdentifier.ts" ]]; then
       apply_changes_multi_line "$conflictingFile"
@@ -636,5 +618,51 @@ get_commit_message() {
   echo "vscode-upstream-sha1: ${1}"
 }
 
+# $1 is the file to hash
+sha256_of() {
+  if command -v sha256sum > /dev/null 2>&1; then
+    sha256sum "$1" | cut -d ' ' -f 1
+  else
+    shasum -a 256 "$1" | cut -d ' ' -f 1
+  fi
+}
+
+# Electron typings consumed by code/build/npm/electronTypes.ts (called from the root package postinstall).
+# Upstream downloads them from the GitHub release of the Electron 'target' version; hermetic downstream
+# builds (Dev Spaces / Konflux) have no network, so keep a checksum-verified copy in sync with
+# 'target' in code/.npmrc and the sha256 recorded in code/build/checksums/electron.txt.
+update_electron_types() {
+  local -r typesFile="build/typings/electron.d.ts"
+  local expected
+  local version
+  expected=$(grep -E ' \*electron\.d\.ts$' code/build/checksums/electron.txt | cut -d ' ' -f 1)
+  if [ -z "$expected" ]; then
+    echo "❌ code/build/checksums/electron.txt does not contain an electron.d.ts entry"
+    exit 1
+  fi
+  if [ -f "$typesFile" ] && [ "$(sha256_of "$typesFile")" = "$expected" ]; then
+    echo "✅ Electron typings are up to date"
+    return
+  fi
+
+  version=$(grep -E '^target=' code/.npmrc | cut -d '"' -f 2)
+  echo "⬇️  Updating Electron typings to v${version}"
+  mkdir -p "$(dirname "$typesFile")"
+  curl -fsSL -o "${typesFile}.tmp" "https://github.com/electron/electron/releases/download/v${version}/electron.d.ts"
+  if [ "$(sha256_of "${typesFile}.tmp")" != "$expected" ]; then
+    rm -f "${typesFile}.tmp"
+    echo "❌ Downloaded electron.d.ts (v${version}) does not match the checksum in code/build/checksums/electron.txt"
+    exit 1
+  fi
+  mv "${typesFile}.tmp" "$typesFile"
+
+  git add "$typesFile"
+  if ! git diff --cached --quiet -- "$typesFile"; then
+    git commit -s -m "chore: update Electron typings to v${version}" > /dev/null
+    echo "🚀  Electron typings updated to v${version}"
+  fi
+}
+
 # perform rebase
 do_rebase
+update_electron_types
