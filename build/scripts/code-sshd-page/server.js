@@ -61,6 +61,9 @@ const server = http.createServer((req, res) => {
       </label>
     </div>
     </div>
+    <div>
+      <b>NOTE: The <code>Dev Spaces Local/Remote Support</code> (eg. <a href="https://open-vsx.org/extension/redhat/devspaces-remote-connector">Open VSX Registry</a>, <a href="https://github.com/redhat-developer/devspaces-remote-connector/releases">GitHub Releases</a>) can connect to this (or any) workspace directly from the extension.</b>
+    </div>
     <div id="docs-parent">
     </div>
     <div id="docs-extension" hidden>

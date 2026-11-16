@@ -1,0 +1,288 @@
+#!/bin/bash
+#
+# Copyright (c) 2026 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# Post-rebase verification script.
+# Detects files that git subtree merge auto-resolved incorrectly.
+# Files without Che-specific rebase rules must be identical to upstream.
+# Differences are reported; overwriting requires --apply.
+# Files kept locally after upstream deleted them are listed by path for an
+# explicit delete-or-keep decision; --apply never deletes them.
+# Files upstream changed but that are missing locally are listed by path for
+# an explicit restore-or-exclude decision; --apply never restores them.
+#
+# Usage: bash post-rebase.sh [--dry-run|--apply]
+#   --dry-run: only report differences, do not overwrite files (default)
+#   --apply: overwrite mismatched files with upstream content
+
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Parse arguments (dry-run by default; overwriting is opt-in)
+DRY_RUN=true
+if [[ "${1:-}" == "--apply" ]]; then
+  DRY_RUN=false
+fi
+
+# Read versions from rebase.sh
+PREVIOUS_UPSTREAM_VERSION=$(grep '^PREVIOUS_UPSTREAM_VERSION=' "$SCRIPT_DIR/rebase.sh" | cut -d'"' -f2)
+CURRENT_UPSTREAM_VERSION=$(grep '^CURRENT_UPSTREAM_VERSION=' "$SCRIPT_DIR/rebase.sh" | cut -d'"' -f2)
+
+if [[ -z "$PREVIOUS_UPSTREAM_VERSION" || -z "$CURRENT_UPSTREAM_VERSION" ]]; then
+  echo "ERROR: Could not read PREVIOUS_UPSTREAM_VERSION or CURRENT_UPSTREAM_VERSION from rebase.sh"
+  exit 1
+fi
+
+# Prefix with remote name for git commands
+PREV_REF="upstream-code/$PREVIOUS_UPSTREAM_VERSION"
+CURR_REF="upstream-code/$CURRENT_UPSTREAM_VERSION"
+
+echo "Previous upstream: $PREV_REF"
+echo "Current upstream:  $CURR_REF"
+echo ""
+
+# Build exclusion list (one file path per line in a temp file)
+EXCLUSION_FILE=$(mktemp)
+trap "rm -f $EXCLUSION_FILE" EXIT
+
+# 1. Files with .rebase/replace/ rules (strip .rebase/replace/ prefix and trailing .json)
+find "$SCRIPT_DIR/.rebase/replace/" -name "*.json" 2>/dev/null | while IFS= read -r rule_file; do
+  rel="${rule_file#$SCRIPT_DIR/.rebase/replace/}"
+  echo "${rel%.json}"
+done >> "$EXCLUSION_FILE"
+
+# 2. Files with .rebase/add/ entries
+find "$SCRIPT_DIR/.rebase/add/" -type f 2>/dev/null | while IFS= read -r add_file; do
+  echo "${add_file#$SCRIPT_DIR/.rebase/add/}"
+done >> "$EXCLUSION_FILE"
+
+# 3. Files with .rebase/override/ entries
+find "$SCRIPT_DIR/.rebase/override/" -type f 2>/dev/null | while IFS= read -r override_file; do
+  echo "${override_file#$SCRIPT_DIR/.rebase/override/}"
+done >> "$EXCLUSION_FILE"
+
+# 4. Files from elif entries in rebase.sh
+grep 'elif \[\[.*\$conflictingFile.*==.*"' "$SCRIPT_DIR/rebase.sh" | \
+  sed 's/.*== "//; s/".*//' >> "$EXCLUSION_FILE"
+
+EXCLUSION_COUNT=$(wc -l < "$EXCLUSION_FILE" | tr -d ' ')
+echo "Exclusion list: $EXCLUSION_COUNT files with Che-specific rules"
+echo ""
+
+# Get list of files changed between previous and current upstream.
+# --no-renames: with rename detection on, a moved file prints only its new path,
+# so the old path would never reach the deletion branch below. Exact renames are
+# paired even at this diff size (renameLimit only disables the inexact phase), so
+# don't rely on detection being off — make every move print as old + new path.
+CHANGED_FILES=$(git diff --name-only --no-renames "$PREV_REF" "$CURR_REF" 2>/dev/null)
+if [[ -z "$CHANGED_FILES" ]]; then
+  echo "ERROR: Could not get changed files. Ensure upstream-code remote is fetched."
+  echo "  git fetch upstream-code $PREVIOUS_UPSTREAM_VERSION $CURRENT_UPSTREAM_VERSION"
+  exit 1
+fi
+TOTAL_CHANGED=$(echo "$CHANGED_FILES" | wc -l | tr -d ' ')
+echo "Files changed between upstream versions: $TOTAL_CHANGED"
+echo ""
+
+# Counters
+checked=0
+fixed=0
+skipped_rules=0
+skipped_lock=0
+missing_changed=0
+skipped_deleted=0
+kept_deleted=0
+
+# Temp files for fixed, kept-after-deletion and missing file lists
+FIXED_LIST=$(mktemp)
+KEPT_DELETED_LIST=$(mktemp)
+MISSING_LIST=$(mktemp)
+trap "rm -f $EXCLUSION_FILE $FIXED_LIST $KEPT_DELETED_LIST $MISSING_LIST" EXIT
+
+echo "Scanning..."
+
+while IFS= read -r upstream_file; do
+  [[ -z "$upstream_file" ]] && continue
+
+  local_file="code/$upstream_file"
+
+  # File deleted by upstream between the two versions — checked before the
+  # rule/lock exclusions so a kept file that has a rule still surfaces for
+  # its delete-or-keep decision
+  if ! git cat-file -e "$CURR_REF:$upstream_file" 2>/dev/null; then
+    if [[ -f "$SCRIPT_DIR/$local_file" ]]; then
+      # Kept after an upstream deletion — needs an explicit delete-or-keep
+      # decision (--apply never touches these files)
+      kept_deleted=$((kept_deleted + 1))
+      echo "$local_file" >> "$KEPT_DELETED_LIST"
+    else
+      # The merge removed it together with upstream — nothing to decide
+      skipped_deleted=$((skipped_deleted + 1))
+    fi
+    continue
+  fi
+
+  # Skip package-lock.json files (regenerated separately)
+  if [[ "$upstream_file" == */package-lock.json || "$upstream_file" == "package-lock.json" ]]; then
+    skipped_lock=$((skipped_lock + 1))
+    continue
+  fi
+
+  # Skip files with Che-specific rules (check exclusion list)
+  if grep -qxF "$local_file" "$EXCLUSION_FILE" 2>/dev/null; then
+    skipped_rules=$((skipped_rules + 1))
+    continue
+  fi
+
+  # Missing locally while upstream still has it — either a fresh upstream
+  # addition the merge failed to bring in, or a file Che deleted on purpose;
+  # either way it needs an explicit restore-or-exclude decision
+  # (--apply never restores these files)
+  if [[ ! -f "$SCRIPT_DIR/$local_file" ]]; then
+    missing_changed=$((missing_changed + 1))
+    echo "$local_file" >> "$MISSING_LIST"
+    continue
+  fi
+
+  checked=$((checked + 1))
+
+  # Compare upstream with local using git hash-object for efficiency
+  upstream_hash=$(git rev-parse "$CURR_REF:$upstream_file" 2>/dev/null)
+  local_hash=$(git hash-object "$SCRIPT_DIR/$local_file" 2>/dev/null)
+
+  if [[ "$upstream_hash" != "$local_hash" ]]; then
+    fixed=$((fixed + 1))
+    echo "$local_file" >> "$FIXED_LIST"
+
+    if [[ "$DRY_RUN" == "false" ]]; then
+      git show "$CURR_REF:$upstream_file" > "$SCRIPT_DIR/$local_file"
+    fi
+  fi
+done <<< "$CHANGED_FILES"
+
+echo ""
+echo "========================================="
+echo "Results:"
+echo "  Checked:                      $checked"
+echo "  Fixed (auto-resolution errors): $fixed"
+echo "  Skipped (have rules):         $skipped_rules"
+echo "  Skipped (lock files):         $skipped_lock"
+echo "  Skipped (deleted in upstream): $skipped_deleted"
+echo "  Kept after upstream deletion: $kept_deleted"
+echo "  Missing after upstream change: $missing_changed"
+echo "========================================="
+
+if [[ "$DRY_RUN" == "true" && $fixed -gt 0 ]]; then
+  echo ""
+  echo "DRY RUN mode — files were NOT overwritten. Run with --apply to fix."
+fi
+
+if [[ $kept_deleted -gt 0 ]]; then
+  echo ""
+  echo "Kept after upstream deletion — each needs an explicit delete-or-keep decision:"
+  while IFS= read -r f; do
+    echo "  - $f"
+  done < "$KEPT_DELETED_LIST"
+fi
+
+if [[ $missing_changed -gt 0 ]]; then
+  echo ""
+  echo "Missing after upstream change — each needs an explicit restore-or-exclude decision:"
+  while IFS= read -r f; do
+    echo "  - $f"
+  done < "$MISSING_LIST"
+fi
+
+# Generate report
+VERSION_SHORT="${CURRENT_UPSTREAM_VERSION#release/}"
+REPORT_DIR="$SCRIPT_DIR/.rebase/$VERSION_SHORT"
+mkdir -p "$REPORT_DIR"
+REPORT_FILE="$REPORT_DIR/post-rebase-report.md"
+
+{
+  echo "# Post-Rebase Verification Report"
+  echo ""
+  echo "**Date:** $(date +%Y-%m-%d)"
+  echo "**Previous upstream:** $PREVIOUS_UPSTREAM_VERSION"
+  echo "**Current upstream:** $CURRENT_UPSTREAM_VERSION"
+  echo "**Mode:** $(if [[ "$DRY_RUN" == "true" ]]; then echo "dry-run"; else echo "fix"; fi)"
+  echo ""
+  echo "## Summary"
+  echo ""
+  echo "| Metric | Count |"
+  echo "|--------|-------|"
+  echo "| Files changed in upstream | $TOTAL_CHANGED |"
+  echo "| Files checked (no rules) | $checked |"
+  echo "| Files fixed (auto-resolution errors) | $fixed |"
+  echo "| Skipped (have Che-specific rules) | $skipped_rules |"
+  echo "| Skipped (package-lock.json) | $skipped_lock |"
+  echo "| Skipped (deleted in upstream) | $skipped_deleted |"
+  echo "| Kept after upstream deletion | $kept_deleted |"
+  echo "| Missing after upstream change | $missing_changed |"
+  echo ""
+
+  if [[ $fixed -gt 0 ]]; then
+    echo "## Detected Mismatches"
+    echo ""
+    while IFS= read -r fixed_file; do
+      echo "- \`$fixed_file\`"
+    done < "$FIXED_LIST"
+    echo ""
+    echo "## Diffs"
+    echo ""
+    while IFS= read -r fixed_file; do
+      upstream_path="${fixed_file#code/}"
+      echo "### \`$fixed_file\`"
+      echo ""
+      echo "\`\`\`diff"
+      # Show first 50 lines of diff (upstream vs our broken version from git)
+      diff <(git show "$CURR_REF:$upstream_path") <(git show HEAD:"$fixed_file") 2>/dev/null | head -50
+      echo "\`\`\`"
+      echo ""
+    done < "$FIXED_LIST"
+  elif [[ $kept_deleted -eq 0 && $missing_changed -eq 0 ]]; then
+    echo "## Result"
+    echo ""
+    echo "All files without Che-specific rules are identical to upstream. No mismatches detected."
+  fi
+
+  if [[ $kept_deleted -gt 0 ]]; then
+    echo "## Kept After Upstream Deletion"
+    echo ""
+    echo "Upstream deleted these files between $PREVIOUS_UPSTREAM_VERSION and $CURRENT_UPSTREAM_VERSION, but they are still present locally. Each needs an explicit decision: delete (align with upstream) or keep (intentional divergence)."
+    echo ""
+    while IFS= read -r kept_file; do
+      echo "- \`$kept_file\`"
+    done < "$KEPT_DELETED_LIST"
+    echo ""
+  fi
+
+  if [[ $missing_changed -gt 0 ]]; then
+    echo "## Missing After Upstream Change"
+    echo ""
+    echo "Upstream changed these files between $PREVIOUS_UPSTREAM_VERSION and $CURRENT_UPSTREAM_VERSION, but they are missing from the working tree. Each needs an explicit decision: restore (align with upstream — e.g. an addition the merge failed to bring in) or exclude (intentional divergence — a file Che deleted on purpose)."
+    echo ""
+    while IFS= read -r missing_file; do
+      echo "- \`$missing_file\`"
+    done < "$MISSING_LIST"
+    echo ""
+  fi
+} > "$REPORT_FILE"
+
+echo ""
+echo "Report saved to: $REPORT_FILE"
+
+if [[ $fixed -gt 0 ]]; then
+  echo ""
+  echo "Fixed files:"
+  while IFS= read -r f; do
+    echo "  - $f"
+  done < "$FIXED_LIST"
+fi

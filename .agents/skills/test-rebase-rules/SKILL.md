@@ -28,21 +28,21 @@ git fetch upstream-code
 ### Test all files
 
 ```bash
-bash .claude/skills/test-rebase-rules/run-all-tests.sh
+bash .agents/skills/test-rebase-rules/run-all-tests.sh
 ```
 
 ### Test specific file(s)
 
 ```bash
-bash .claude/skills/test-rebase-rules/run-all-tests.sh code/product.json
-bash .claude/skills/test-rebase-rules/run-all-tests.sh code/product.json code/src/server-main.ts
+bash .agents/skills/test-rebase-rules/run-all-tests.sh code/product.json
+bash .agents/skills/test-rebase-rules/run-all-tests.sh code/product.json code/src/server-main.ts
 ```
 
 ### Test a single handler manually
 
 ```bash
-bash .claude/skills/test-rebase-rules/test-rebase-handler.sh apply_code_product_changes
-bash .claude/skills/test-rebase-rules/test-rebase-handler.sh apply_changes code/src/server-main.ts
+bash .agents/skills/test-rebase-rules/test-rebase-handler.sh apply_code_product_changes
+bash .agents/skills/test-rebase-rules/test-rebase-handler.sh apply_changes code/src/server-main.ts
 ```
 
 ## Interpreting results
@@ -61,7 +61,7 @@ When failures occur, diff files are saved at `/tmp/diff-<safe_name>` and error o
 ## Workflow
 
 1. Ensure upstream remote is fetched (see Prerequisites)
-2. Run `bash .claude/skills/test-rebase-rules/run-all-tests.sh` (or with specific files)
+2. Run `bash .agents/skills/test-rebase-rules/run-all-tests.sh` (or with specific files)
 3. For any **FAIL** results, read the corresponding `/tmp/diff-*` file to identify the root cause
 4. Save a report to `.rebase/rebase-rules-test-report.md` (see Report format below)
 5. Present the report to the user
