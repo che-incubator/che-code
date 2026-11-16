@@ -165,6 +165,8 @@ If rule creation fails for a file: check whether that file actually conflicts in
 
 For files that have `.rebase/` rules but no `elif` entry in `resolve_conflicts()`, add the entry following the existing patterns.
 
+After any `rebase.sh` edit, verify it stays executable (`100755`) — see the exec-bit rule in *Shell Portability* (`AGENTS.md`); `git diff --summary` must show no `mode change` for `rebase.sh`.
+
 ### Step 6: Validate existing rules against the NEW upstream
 
 Run the `validate-rebase-rules` skill (read `.agents/skills/validate-rebase-rules/SKILL.md`). This produces `rebase-rules-validation.md`.

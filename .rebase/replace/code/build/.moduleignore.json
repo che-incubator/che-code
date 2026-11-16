@@ -1,6 +1,6 @@
 [
-    {
-        "from": "# @github/copilot - strip unneeded binaries and files\n@github/copilot/sdk/index.js\n@github/copilot/prebuilds/**",
-        "by": "# @github/copilot - strip unneeded binaries and files\n@github/copilot/prebuilds/**"
-    }
+  {
+    "from": "# @github/copilot - strip unneeded binaries and files\n# Agent Host uses the runtime bundled with @github/copilot-sdk.\n@github/copilot/**",
+    "by": "# @github/copilot - strip unneeded binaries and files\n@github/copilot/prebuilds/**\n@github/copilot/clipboard/**\n@github/copilot/ripgrep/**\n@github/copilot/pvrecorder/**\n@github/copilot/foundry-local-sdk/**\n@github/copilot/mxc-bin/**\n@github/copilot/sharp/**\n@github/copilot/**/keytar.node\n\n# os-theme is pulled in by @github/copilot but the CLI does not use its native addon.\n# See https://github.com/microsoft/vscode-engineering/issues/3087.\n@os-theme/**"
+  }
 ]

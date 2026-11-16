@@ -1,0 +1,10 @@
+[
+    {
+        "from": "import { compileStandaloneFiles } from './standalone.ts';",
+        "by": "import { compileStandaloneFiles } from './standalone.ts';\nimport { injectWorkbenchConfiguration } from './che/workbenchConfig.ts';"
+    },
+    {
+        "from": "\t\t\t\tif (modified) {\n\t\t\t\t\treturn { contents, loader: 'ts' };",
+        "by": "\t\t\t\tconst cheWorkbenchConfiguration = injectWorkbenchConfiguration(contents);\n\t\t\t\tif (cheWorkbenchConfiguration !== undefined) {\n\t\t\t\t\tcontents = cheWorkbenchConfiguration;\n\t\t\t\t\tmodified = true;\n\t\t\t\t}\n\n\t\t\t\tif (modified) {\n\t\t\t\t\treturn { contents, loader: 'ts' };"
+    }
+]

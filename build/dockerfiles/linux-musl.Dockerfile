@@ -30,6 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsecret-1-dev \
     # kerberos authentication
     libkrb5-dev \
+    # compile the native Copilot CLI shim
+    rustc cargo \
     ca-certificates procps \
     && rm -rf /var/lib/apt/lists/*
 
@@ -145,7 +147,7 @@ RUN if [ "${TARGETARCH}" = "amd64" ] || [ "${TARGETARCH}" = "arm64" ]; then \
       NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp compile-copilot-extension-build; \
     fi
 
-RUN npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck
+RUN npx tsc --project src/tsconfig.json --noEmit --skipLibCheck
 
 RUN NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min
 
@@ -173,6 +175,12 @@ RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html"
     -not -path "*/vs/workbench/workbench.web.main.internal.js" \
     -not -path "*/vs/workbench/api/node/extensionHostProcess.js" \
     -exec gzip -9 -k {} \;
+
+# Native Copilot CLI shim: upstream product builds ship it in bin/copilot-shim/ next to node;
+# the Copilot extension adds that folder to the END of the terminal PATH (see code/copilot_shim/REQUIREMENTS.md)
+RUN cd /checode-compilation/copilot_shim \
+    && cargo build --release --locked \
+    && install -Dm755 target/release/copilot /checode/bin/copilot-shim/copilot
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode
