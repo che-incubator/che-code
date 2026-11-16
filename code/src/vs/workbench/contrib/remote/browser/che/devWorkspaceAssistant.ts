@@ -46,11 +46,8 @@ export class DevWorkspaceAssistant {
 	static INACTIVITY_REASON = 'inactivity';
 	static RUN_TIMEOUT_REASON = 'run-timeout';
 
-	private static readonly POLL_INTERVAL_MS = 2000;
+	static readonly POLL_INTERVAL_MS = 2000;
 	private static readonly STOP_TIMEOUT_MS = 10000;
-
-	// Maximum time to wait for a workspace decision.
-	private static readonly STATUS_CHECK_TIMEOUT_MS = 60000;
 
 	/**
 	 * Tracks the intentional workspace lifecycle action in progress:
@@ -245,61 +242,4 @@ export class DevWorkspaceAssistant {
 		window.location.href = dashboardUrl;
 	}
 
-	/**
-	 * Wait until the workspace reaches a decision phase.
-	 *
-	 * Maximum wait: 30 seconds.
-	 * Check interval: 2 seconds.
-	 *
-	 * Returns immediately when RUNNING, STOPPED or FAILED
-	 * is observed. Throws when the maximum wait is exceeded.
-	 */
-	async waitForWorkspaceDecision(): Promise<DevWorkspaceLike> {
-		const deadline = Date.now() + DevWorkspaceAssistant.STATUS_CHECK_TIMEOUT_MS;
-
-		while (true) {
-			const remainingTime = deadline - Date.now();
-
-			if (remainingTime <= 0) {
-				throw new Error('Timed out waiting for workspace status.');
-        	}
-
-			try {
-				const workspace = await this.getDevWorkspace(Math.min(5000, remainingTime));
-				const phase = workspace?.status?.phase;
-
-				console.log(`[CRW-12719] Workspace phase: ${phase}`);
-
-				switch (phase) {
-					case DevWorkspaceStatus.RUNNING:
-					case DevWorkspaceStatus.STOPPED:
-					case DevWorkspaceStatus.FAILED:
-						return workspace;
-
-					case DevWorkspaceStatus.STARTING:
-					case DevWorkspaceStatus.FAILING:
-					case DevWorkspaceStatus.STOPPING:
-					case DevWorkspaceStatus.TERMINATING:
-						// Continue observing transitional phases.
-						break;
-
-					default:
-						console.warn(`[CRW-12719] Unknown workspace phase: ${phase}`);
-						break;
-					}
-
-			} catch (error) {
-				console.warn(
-					'[CRW-12719] Unable to retrieve workspace status. Retrying.',
-					error
-				);
-			}
-
-			const nextDelay = Math.min(DevWorkspaceAssistant.POLL_INTERVAL_MS,deadline - Date.now());
-
-			if (nextDelay > 0) {
-				await new Promise(resolve => setTimeout(resolve, nextDelay));
-			}
-		}
-	}
 }

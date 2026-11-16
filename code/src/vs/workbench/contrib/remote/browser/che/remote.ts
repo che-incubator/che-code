@@ -46,6 +46,7 @@ export enum DisconnectionHandlerStatus {
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
 const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
+const STATUS_CHECK_TIMEOUT_MS = 60000;
 
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
@@ -106,13 +107,63 @@ export class CheDisconnectionHandler {
 				title: WORKSPACE_STATE
 			},
 			async () => {
-				const workspace = await this.devWorkspaceAssistant.waitForWorkspaceDecision();
+				const deadline = Date.now() + STATUS_CHECK_TIMEOUT_MS;
+				let phase: string | undefined;
 
-				this.lastObservedPhase = workspace.status?.phase;
+				while (
+					Date.now() < deadline &&
+					phase !== DevWorkspaceStatus.RUNNING &&
+					phase !== DevWorkspaceStatus.STOPPED &&
+					phase !== DevWorkspaceStatus.FAILED
+				) {
+					const remainingTime = deadline - Date.now();
 
-				console.log(`[CRW-12719] Workspace reached decision phase: ${this.lastObservedPhase}`);
+					try {
+						const workspace = await this.devWorkspaceAssistant.getDevWorkspace(
+							Math.min(5000, remainingTime)
+						);
 
-				return workspace;
+						phase = workspace?.status?.phase;
+						this.lastObservedPhase = phase;
+
+						console.log(
+							`[CRW-12719] Workspace phase: ${phase}`
+						);
+
+						switch (phase) {
+							case DevWorkspaceStatus.RUNNING:
+							case DevWorkspaceStatus.STOPPED:
+							case DevWorkspaceStatus.FAILED:
+								console.log(
+									`[CRW-12719] Workspace reached decision phase: ${phase}`
+								);
+								return workspace;
+
+							case DevWorkspaceStatus.STARTING:
+							case DevWorkspaceStatus.FAILING:
+							case DevWorkspaceStatus.STOPPING:
+							case DevWorkspaceStatus.TERMINATING:
+								break;
+
+							default:
+								console.warn(
+									`[CRW-12719] Unknown workspace phase: ${phase}`
+								);
+								break;
+						}
+					} catch (error) {
+						console.warn(
+							'[CRW-12719] Unable to retrieve workspace status. Retrying.',
+							error
+						);
+					}
+
+					await new Promise(resolve => setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS));
+				}
+
+				throw new Error(
+					`Timed out waiting for workspace status. Last observed phase: ${phase}`
+				);
 			}
 		);
 	}
