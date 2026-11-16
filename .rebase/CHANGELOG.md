@@ -15,6 +15,16 @@ https://github.com/che-incubator/che-code/pull/848
 - code/test/scenario/package.json
 ---
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/commit/ab1e910773e
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/commit/c3393b2914c
 
