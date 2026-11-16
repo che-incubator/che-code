@@ -16,5 +16,8 @@
   },
   "devDependencies": {
     "npm-run-all2": "^8.0.4"
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0"
   }
 }
