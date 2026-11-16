@@ -32,7 +32,14 @@ const statusBarColorCustomizations: { [colorId: string]: string } = {
 
 const configurationDefaults: Record<string, any> = {
     'workbench.colorTheme': 'Dark',
-    'workbench.colorCustomizations': statusBarColorCustomizations
+    'workbench.colorCustomizations': statusBarColorCustomizations,
+    // the Modern UI derives modernUI.shellBackground from titleBar.activeBackground,
+    // which leaks the title bar color (e.g. customer warning banners set via
+    // window.header) into all workbench gutters; users can still enable it explicitly
+    'workbench.experimental.modernUI': false,
+    // the terminal initial hint only advertises the `copilot` command (Copilot CLI is not
+    // preinstalled in workspace containers); users can still enable it explicitly
+    'terminal.integrated.initialHint': false
 }
 
 const initialColorTheme: IInitialColorTheme = {

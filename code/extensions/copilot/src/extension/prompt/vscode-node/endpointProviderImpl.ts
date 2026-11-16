@@ -11,7 +11,7 @@ import { AutoChatEndpoint } from '../../../platform/endpoint/node/autoChatEndpoi
 import { IAutomodeService } from '../../../platform/endpoint/node/automodeService';
 import { CopilotChatEndpoint, CopilotUtilityChatEndpoint, CopilotUtilitySmallChatEndpoint } from '../../../platform/endpoint/node/copilotChatEndpoint';
 import { EmbeddingEndpoint } from '../../../platform/endpoint/node/embeddingsEndpoint';
-import { IModelMetadataFetcher, ModelMetadataFetcher } from '../../../platform/endpoint/node/modelMetadataFetcher';
+import { EmbeddingsModelFamily, IModelMetadataFetcher, ModelMetadataFetcher } from '../../../platform/endpoint/node/modelMetadataFetcher';
 import { ExtensionContributedChatEndpoint } from '../../../platform/endpoint/vscode-node/extChatEndpoint';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IChatEndpoint, IEmbeddingsEndpoint } from '../../../platform/networking/common/networking';
@@ -20,6 +20,10 @@ import { Emitter, Event } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 
+const embeddingsModelFamilies: Record<EmbeddingsEndpointFamily, EmbeddingsModelFamily> = {
+	text3small: 'text-embedding-3-small',
+	metis: 'metis',
+};
 
 // Keep in sync with `BYOKUtilityModelDefault` in `src/vs/workbench/contrib/chat/common/constants.ts` and the `chat.byokUtilityModelDefault` enum in `chat.shared.contribution.ts`.
 const enum BYOKUtilityModelDefault {
@@ -139,7 +143,9 @@ export class ProductionEndpointProvider extends Disposable implements IEndpointP
 		if (model.id === AutoChatEndpoint.pseudoModelId) {
 			try {
 				const allEndpoints = await this.getAllChatEndpoints();
-				return this._autoModeService.resolveAutoModeEndpoint(requestOrFamilyOrModel as ChatRequest, allEndpoints);
+				// `await` so a routing failure is caught here rather than escaping
+				// the `try` and failing the whole request.
+				return await this._autoModeService.resolveAutoModeEndpoint(requestOrFamilyOrModel as ChatRequest, allEndpoints);
 			} catch {
 				return this.getChatEndpoint('copilot-utility');
 			}
@@ -160,14 +166,21 @@ export class ProductionEndpointProvider extends Disposable implements IEndpointP
 
 	/**
 	 * Resolves a chat endpoint from a family string. The internal utility
-	 * families (`copilot-utility` / `copilot-utility-small`) are routed through
-	 * their dedicated resolvers; any other value is treated as a CAPI model
-	 * family (e.g. `gemini-3-flash`, `gpt-5-mini`) and resolved directly. This
-	 * lets callers such as the execution and search subagents honor their
-	 * `*.model` override settings rather than silently falling back to the
-	 * parent model.
+	 * aliases are routed through their dedicated resolvers; any other value is
+	 * treated as a CAPI model family (e.g. `gemini-3-flash`, `gpt-5-mini`) and
+	 * resolved directly. This lets callers such as the execution and search
+	 * subagents honor their `*.model` override settings rather than silently
+	 * falling back to the parent model.
 	 */
 	private async _resolveFamily(family: string): Promise<IChatEndpoint> {
+		if (family === 'copilot-dictation-cleanup-nano') {
+			const modelMetadata = await this._modelFetcher.getChatModelFromCapiFamily('gpt-5.4-nano');
+			return this.getOrCreateChatEndpointInstance(modelMetadata);
+		}
+		if (family === 'copilot-dictation-cleanup-luna') {
+			const modelMetadata = await this._modelFetcher.getChatModelFromCapiFamily('gpt-5.6-luna');
+			return this.getOrCreateChatEndpointInstance(modelMetadata);
+		}
 		if (family === 'copilot-utility' || family === 'copilot-utility-small') {
 			return this._resolveUtilityFamily(family);
 		}
@@ -193,8 +206,12 @@ export class ProductionEndpointProvider extends Disposable implements IEndpointP
 				case BYOKUtilityModelDefault.MainAgent:
 					return this._instantiationService.createInstance(ExtensionContributedChatEndpoint, this._mainAgentBYOKModel);
 				case BYOKUtilityModelDefault.None:
-					throw new Error(`No utility model is configured for '${family}' while the selected main agent model is BYOK.`);
+					throw this._createMissingUtilityModelError(family);
 				case BYOKUtilityModelDefault.Copilot:
+					// Copilot utility models require a Copilot token source (unavailable for air-gapped / signed-out BYOK).
+					if (!this._authService.hasCopilotTokenSource) {
+						throw this._createMissingUtilityModelError(family);
+					}
 					break;
 			}
 		}
@@ -207,11 +224,21 @@ export class ProductionEndpointProvider extends Disposable implements IEndpointP
 		}
 	}
 
+	/** Creates an actionable error for when no usable utility model is available for a BYOK main agent model. */
+	private _createMissingUtilityModelError(family: 'copilot-utility' | 'copilot-utility-small'): Error {
+		const utilityModelSetting = family === 'copilot-utility' ? 'chat.utilityModel' : 'chat.utilitySmallModel';
+		// 'copilot' is only usable when a Copilot token is available; for
+		// air-gapped / signed-out BYOK it cannot be used, so don't offer it.
+		const defaultOptions = this._authService.hasCopilotTokenSource ? `'mainAgent' or 'copilot'` : `'mainAgent'`;
+		return new Error(`No utility model is configured for '${family}' while the selected main agent model is BYOK. Configure setting '${utilityModelSetting}' or set 'chat.byokUtilityModelDefault' to ${defaultOptions}.`);
+	}
+
 	private _getBYOKUtilityModelDefault(): BYOKUtilityModelDefault {
 		const value = this._configService.getNonExtensionConfig<unknown>(ProductionEndpointProvider.BYOK_UTILITY_MODEL_DEFAULT_CONFIG_KEY);
 		switch (value) {
 			case undefined:
-				return BYOKUtilityModelDefault.None;
+				// Preserve the Copilot default when running against a core that does not register this setting.
+				return BYOKUtilityModelDefault.Copilot;
 			case BYOKUtilityModelDefault.None:
 			case BYOKUtilityModelDefault.MainAgent:
 			case BYOKUtilityModelDefault.Copilot:
@@ -330,14 +357,14 @@ export class ProductionEndpointProvider extends Disposable implements IEndpointP
 
 	async getEmbeddingsEndpoint(family?: EmbeddingsEndpointFamily): Promise<IEmbeddingsEndpoint> {
 		this._logService.trace(`Resolving embedding model`);
-		const modelMetadata = await this._modelFetcher.getEmbeddingsModel('text-embedding-3-small');
+		const modelMetadata = await this._modelFetcher.getEmbeddingsModel(embeddingsModelFamilies[family ?? 'metis']);
 		const model = await this.getOrCreateEmbeddingEndpointInstance(modelMetadata);
 		this._logService.trace(`Resolved embedding model`);
 		return model;
 	}
 
 	private async getOrCreateEmbeddingEndpointInstance(modelMetadata: IEmbeddingModelInformation): Promise<IEmbeddingsEndpoint> {
-		const modelId = 'text-embedding-3-small';
+		const modelId = modelMetadata.id;
 		let embeddingEndpoint = this._embeddingEndpoints.get(modelId);
 		if (!embeddingEndpoint) {
 			embeddingEndpoint = this._instantiationService.createInstance(EmbeddingEndpoint, modelMetadata);

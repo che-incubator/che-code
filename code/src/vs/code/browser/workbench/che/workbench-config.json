@@ -8,7 +8,9 @@
 		"workbench.colorCustomizations": {
 			"statusBarItem.remoteBackground": "#FDB940",
 			"statusBarItem.remoteForeground": "#525C86"
-		}
+		},
+		"workbench.experimental.modernUI": false,
+		"terminal.integrated.initialHint": false
 	},
 	"initialColorTheme": {
 		"themeType": "dark",

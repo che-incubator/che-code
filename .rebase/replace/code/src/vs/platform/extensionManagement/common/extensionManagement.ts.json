@@ -1,7 +1,7 @@
 [
     {
-        "from": "\tqueryAllVersions?: boolean;\n\tsource?: string;",
-        "by": "\tqueryAllVersions?: boolean;\n\tpreferResourceApi?: boolean;\n\tsource?: string;"
+        "from": "\tqueryAllVersions?: boolean;\n\tincludeBlockedVersions?: boolean;\n\tsource?: string;",
+        "by": "\tqueryAllVersions?: boolean;\n\tincludeBlockedVersions?: boolean;\n\tpreferResourceApi?: boolean;\n\tsource?: string;"
     },
     {
         "from": "import { IExtensionGalleryManifest } from './extensionGalleryManifest.js';",

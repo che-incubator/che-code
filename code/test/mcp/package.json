@@ -5,11 +5,11 @@
   "main": "./out/main.js",
   "private": true,
   "scripts": {
-    "compile": "cd ../automation && npm run compile && cd ../mcp && node ../../node_modules/typescript/bin/tsc",
-    "watch-automation": "cd ../automation && npm run watch",
-    "watch-mcp": "node ../../node_modules/typescript/bin/tsc --watch --preserveWatchOutput",
-    "watch": "npm-run-all2 -lp watch-automation watch-mcp",
-    "start-stdio": "echo 'Starting vscode-automation-mcp... For customization and troubleshooting, see ./test/mcp/README.md' && npm ci && npm run -s compile && node ./out/stdio.js"
+    "compile": "cd ../scenario && npm run compile && cd ../mcp && node ../../node_modules/typescript/bin/tsc6",
+    "watch-scenario": "cd ../scenario && npm run watch",
+    "watch-mcp": "node ../../node_modules/typescript/bin/tsc6 --watch --preserveWatchOutput",
+    "watch": "npm-run-all2 -lp watch-scenario watch-mcp",
+    "start-stdio": "echo 'Starting vscode-automation-mcp... For customization and troubleshooting, see ./test/mcp/README.md' && npm run -s compile && node ./out/stdio.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.26.0",
@@ -24,15 +24,6 @@
     "npm-run-all2": "^8.0.4"
   },
   "overrides": {
-    "shell-quote": "^1.8.4",
-    "qs": "^6.16.0",
-    "ip-address": "^10.5.0",
-    "@types/node-fetch": {
-      "form-data": "^4.0.6"
-    },
-    "ajv": {
-      "fast-uri": "^3.1.8"
-    },
     "express": {
       "proxy-addr": "^2.0.8"
     }
