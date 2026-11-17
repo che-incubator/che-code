@@ -292,6 +292,7 @@
     "micromatch": "4.0.8",
     "braces": "3.0.3",
     "es5-ext": "npm:@unes/es5-ext@0.10.64-1",
+    "shell-quote": "^1.12.0",
     "@github/copilot-sdk": {
       "zod": "^4.6.7"
     },
