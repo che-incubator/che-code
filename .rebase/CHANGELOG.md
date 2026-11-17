@@ -11,6 +11,19 @@ https://github.com/che-incubator/che-code/pull/847
 - code/build/agent-sdk/agents/claude/package.json
 ---
 
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/848
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/test/automation/package.json
+- code/test/smoke/package.json
+- code/test/mcp/package.json
+- code/test/scenario/package.json
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/commit/c3393b2914c
 

@@ -34,5 +34,8 @@
   },
   "allowScripts": {
     "fsevents@2.3.3": true
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0"
   }
 }

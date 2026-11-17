@@ -509,6 +509,12 @@ resolve_conflicts() {
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/mcp/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/automation/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/smoke/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
+    elif [[ "$conflictingFile" == "code/test/scenario/package.json" ]]; then
+      apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/test/monaco/package.json" ]]; then
       apply_package_changes_by_path "$conflictingFile"
     elif [[ "$conflictingFile" == "code/extensions/mermaid-markdown-features/package.json" ]]; then
