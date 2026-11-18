@@ -25,7 +25,7 @@ https://github.com/che-incubator/che-code/pull/848
 ---
 
 #### @sbouchet
-https://github.com/che-incubator/che-code/commit/858
+https://github.com/che-incubator/che-code/pull/858
 
 - code/package.json
 - code/remote/package.json
