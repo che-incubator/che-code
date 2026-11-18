@@ -1,7 +1,7 @@
 {
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.32.2",
-        "undici": "^7.30.0"
+        "undici": "^7.30.2"
     },
     "devDependencies": {
         "tar": "^7.5.22",
