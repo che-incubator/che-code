@@ -7100,7 +7100,7 @@
     "@google/genai": "1.30.0",
     "@humanwhocodes/gitignore-to-minimatch": "1.0.2",
     "@microsoft/tiktokenizer": "^1.0.10",
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.212.0",
     "@opentelemetry/exporter-logs-otlp-grpc": "^0.219.0",
@@ -7136,7 +7136,7 @@
     "lru-cache": "^11.1.0",
     "markdown-it": "^14.2.0",
     "minimatch": "^10.2.1",
-    "undici": "^7.30.0",
+    "undici": "^7.30.2",
     "vscode-tas-client": "^0.3.3",
     "web-tree-sitter": "^0.23.0"
   },
