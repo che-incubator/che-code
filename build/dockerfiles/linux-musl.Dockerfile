@@ -24,7 +24,9 @@ RUN apk add --update --no-cache \
     # requirements for keytar
     libsecret libsecret-dev \
     # kerberos authentication
-    krb5-dev
+    krb5-dev \
+    # compile the native Copilot CLI shim
+    rust cargo
 
 #########################################################
 #
@@ -66,7 +68,7 @@ RUN NODE_VERSION=$(cat /checode-compilation/remote/.npmrc | grep target | cut -d
     && cp -r /checode-compilation/node_modules/tslib /checode-compilation/remote/node_modules/
 
 RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build
-RUN npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck
+RUN npx tsc --project src/tsconfig.json --noEmit --skipLibCheck
 RUN NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min
 RUN NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-alpine-min-ci
 RUN cp -r ../vscode-reh-web-linux-alpine /checode
@@ -78,6 +80,12 @@ RUN find /checode/out -type f \( -name "*.js" -o -name "*.css" -o -name "*.html"
     -not -path "*/vs/workbench/workbench.web.main.internal.js" \
     -not -path "*/vs/workbench/api/node/extensionHostProcess.js" \
     -exec gzip -9 -k {} \;
+
+# Native Copilot CLI shim: upstream product builds ship it in bin/copilot-shim/ next to node;
+# the Copilot extension adds that folder to the END of the terminal PATH (see code/copilot_shim/REQUIREMENTS.md)
+RUN cd /checode-compilation/copilot_shim \
+    && cargo build --release --locked \
+    && install -Dm755 target/release/copilot /checode/bin/copilot-shim/copilot
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

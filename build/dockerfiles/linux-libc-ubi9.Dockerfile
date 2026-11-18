@@ -7,7 +7,7 @@
 #
 
 # https://registry.access.redhat.com/ubi9/nodejs-24
-FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1785389273 as linux-libc-ubi9-builder
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.9-1793858418 as linux-libc-ubi9-builder
 
 USER root
 
@@ -56,7 +56,7 @@ RUN { if [[ $(uname -m) == "s390x" ]]; then LIBSECRET="\
     else \
       LIBKEYBOARD=""; echo "Warning: arch $(uname -m) not supported"; \
     fi; } \
-    && yum install -y $LIBSECRET $LIBKEYBOARD make cmake gcc gcc-c++ git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
+    && yum install -y $LIBSECRET $LIBKEYBOARD gcc-toolset-13 gcc-toolset-13-gcc-c++ glibc-gconv-extra make cmake gcc gcc-c++ rust-toolset git git-core-doc openssh less libX11-devel libxkbcommon krb5-devel bash tar gzip rsync patch npm \
     && yum -y clean all && rm -rf /var/cache/yum
 
 #########################################################
@@ -68,7 +68,8 @@ COPY code /checode-compilation
 WORKDIR /checode-compilation
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-    VSCODE_SKIP_HEADER_INSTALL=1
+    VSCODE_SKIP_HEADER_INSTALL=1 \
+    PATH="/opt/rh/gcc-toolset-13/root/usr/bin:${PATH}"
 
 # Initialize a git repository for code build tools
 RUN git init .
@@ -92,7 +93,7 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && echo "caching /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node" \
     && cp /usr/bin/node /checode-compilation/.build/node/v${NODE_VERSION}/linux-${NODE_ARCH}/node \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp copy-codicons compile-non-native-extensions-build compile-copilot-extension-build compile-extension-media-build \
-    && npx tsgo --project src/tsconfig.json --noEmit --skipLibCheck \
+    && npx tsc --project src/tsconfig.json --noEmit --skipLibCheck \
     && NODE_OPTIONS="--max-old-space-size=8192" node build/next/index.ts bundle --minify --nls --mangle-privates --target server-web --out out-vscode-reh-web-min \
     && NODE_OPTIONS="--max-old-space-size=8192" ./node_modules/.bin/gulp vscode-reh-web-linux-${NODE_ARCH}-min-ci \
     && cp -r ../vscode-reh-web-linux-${NODE_ARCH} /checode \
@@ -110,6 +111,12 @@ RUN NODE_ARCH=$(echo "console.log(process.arch)" | node) \
     && find /usr/lib64 -name 'libz.so*' -exec cp -P -t /checode/ld_libs/core/ {} + \
     && find /usr/lib64 -name 'libssl.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} + \
     && find /usr/lib64 -name 'libcrypto.so*' -exec cp -P -t /checode/ld_libs/openssl/ {} +
+
+# Native Copilot CLI shim: upstream product builds ship it in bin/copilot-shim/ next to node;
+# the Copilot extension adds that folder to the END of the terminal PATH (see code/copilot_shim/REQUIREMENTS.md)
+RUN cd /checode-compilation/copilot_shim \
+    && cargo build --release --locked \
+    && install -Dm755 target/release/copilot /checode/bin/copilot-shim/copilot
 
 RUN chmod a+x /checode/out/server-main.js \
     && chgrp -R 0 /checode && chmod -R g+rwX /checode

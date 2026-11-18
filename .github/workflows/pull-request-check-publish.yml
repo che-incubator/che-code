@@ -15,11 +15,27 @@ on:
     types:
       - completed
 
+# Serialize publish runs for a given head branch so they don't race on the mutable
+# pr-<number> tags. Runs are queued rather than cancelled: cancelling at the workflow
+# level happens before the job-level success gate, so a late-finishing older check
+# could otherwise cancel an already-running newer publisher. Instead, each run only
+# publishes when its head SHA still matches the open PR (see "Resolve Pull Request
+# number"), so a stale older run no-ops instead of overwriting the newer images.
+concurrency:
+  group: pr-publish-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
 jobs:
 
   publish-images:
+    # Skip builds that failed or were cancelled; we must not publish or comment for them.
+    if: github.event.workflow_run.conclusion == 'success'
     name: publish image from the pull request
     runs-on: ubuntu-22.04
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Free up disk space
         run: |
@@ -34,28 +50,40 @@ jobs:
           username: ${{ secrets.QUAY_PULL_REQUESTS_USERNAME }}
           password: ${{ secrets.QUAY_PULL_REQUESTS_PASSWORD }}
 
-      - name: Download Pull Request Number artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: pull-request-number
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-
-      - name: Grab Pull Request number
+      - name: Resolve Pull Request number
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          pr_number=$(cat "PR_NUMBER")
-          echo "Pull Request: ${pr_number}"
-          if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
-            echo "Wrong Pull Request number"
+          matches=$(gh api -X GET "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f state=open -f "head=${HEAD_OWNER}:${HEAD_BRANCH}" \
+            --jq ".[] | select(.head.sha == \"${HEAD_SHA}\") | .number")
+          count=$(printf '%s\n' "${matches}" | grep -c '^[0-9]\+$' || true)
+          if [ "${count}" -eq 0 ]; then
+            # Normal when the PR head moved (force-push) or the PR was closed/merged
+            # while the check was still running: the stale HEAD_SHA no longer matches
+            # any open PR. Treat it as a no-op so the run stays green; publish steps
+            # are gated on steps.resolve.outputs.pr and show as skipped.
+            echo "No open pull request found for ${HEAD_OWNER}:${HEAD_BRANCH} at ${HEAD_SHA}; nothing to publish"
+            exit 0
+          fi
+          if [ "${count}" -ne 1 ]; then
+            echo "Expected exactly one open PR for ${HEAD_OWNER}:${HEAD_BRANCH} at ${HEAD_SHA}, found ${count}"
             exit 1
           fi
-          echo "_PR_NUMBER=$pr_number" >> $GITHUB_ENV
+          echo "Pull Request: ${matches}"
+          echo "pr=${matches}" >> "${GITHUB_OUTPUT}"
 
       - name: Cleanup docker images
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker system prune -af
 
       - name: Download che-code docker image artifact
+        if: steps.resolve.outputs.pr != ''
         uses: actions/download-artifact@v7
         with:
           pattern: che-*
@@ -65,64 +93,86 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: List downloaded files
+        if: steps.resolve.outputs.pr != ''
         run: |
           ls -lahR
       - name: Load che-code-amd64 image
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker load -i che-code-amd64.tgz
 
       - name: Push che-code-amd64 docker image
+        if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${_PR_NUMBER}-amd64
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
       
       - name: Remove che-code-amd64 and prune
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker image rm che-code-amd64 || true
           docker system prune -af
 
       - name: Load che-code-arm64 image
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker load -i che-code-arm64.tgz
 
       - name: Push che-code-arm64 docker image
+        if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${{env._PR_NUMBER}}-arm64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${_PR_NUMBER}-arm64
           docker tag che-code-arm64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
       
       - name: Remove che-code-arm64 and prune
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker image rm che-code-arm64 || true
           docker system prune -af
 
       - name: Load che-dev image
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker load -i che-dev.tgz
 
       - name: Push che-dev docker image
+        if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         run: |
-          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${{env._PR_NUMBER}}-dev-amd64
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code-dev:pr-${_PR_NUMBER}-dev-amd64
           docker tag che-dev ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
       
       - name: Remove che-dev and prune
+        if: steps.resolve.outputs.pr != ''
         run: |
           docker image rm che-dev || true
           docker system prune -af
-          
+
       - name: 'Comment PR'
+        if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         uses: actions/github-script@v8
         with:
          script: |
-           const { repo: { owner, repo } } = context;
+           const tagUrl = (image) => {
+             const [path, tag] = image.replace(/^quay\.io\//, '').split(':');
+             return `https://quay.io/repository/${path}?tab=tags&tag=${tag}`;
+           };
            await github.rest.issues.createComment({
               issue_number: process.env._PR_NUMBER,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](https://${process.env._CHE_CODE_AMD64_IMAGE})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](https://${process.env._CHE_CODE_ARM64_IMAGE})\nDev image: [${process.env._CHE_DEV_IMAGE}](https://${process.env._CHE_DEV_IMAGE})`
+              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](${tagUrl(process.env._CHE_CODE_AMD64_IMAGE)})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](${tagUrl(process.env._CHE_CODE_ARM64_IMAGE)})\nDev image: [${process.env._CHE_DEV_IMAGE}](${tagUrl(process.env._CHE_DEV_IMAGE)})`
             })

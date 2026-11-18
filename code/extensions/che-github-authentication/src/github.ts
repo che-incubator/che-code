@@ -20,6 +20,28 @@ import { Logger } from './logger';
 import { arrayEquals, getMatchingHydrationScopeBundles, hasAllScopes, isUnauthorizedError, sessionMatchesRequestedScopes } from './utils';
 import { AuthenticationSession } from 'vscode';
 
+// `vscode` doesn't publicly export `UriComponents`, so derive the exact shape from `Uri.from`.
+type UriComponents = Parameters<typeof vscode.Uri.from>[0];
+
+/**
+ * The OAuth authorization server that issues GitHub sessions, see the `authIssuers` API proposal.
+ * Copilot and other consumers derive the GitHub deployment from this URI and reject
+ * sessions that do not identify it.
+ */
+export const GITHUB_AUTHORIZATION_SERVER = vscode.Uri.parse('https://github.com/login/oauth');
+
+/**
+ * Revives the `authorizationServer` of a persisted session. `JSON.parse` returns plain
+ * objects, and sessions persisted before the field existed do not have it at all —
+ * both fall back to the GitHub authorization server, like upstream `github-authentication`.
+ */
+function reviveAuthorizationServer(value: unknown): vscode.Uri {
+  if (value && typeof value === 'object') {
+    return vscode.Uri.from(value as UriComponents);
+  }
+  return GITHUB_AUTHORIZATION_SERVER;
+}
+
 export interface GithubUser {
   login: string;
   id: number;
@@ -68,7 +90,14 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
     const raw = await this.extensionContext.getContext().secrets.get(this.storageKey);
     if (raw) {
       try {
-        return JSON.parse(raw);
+        const sessions: unknown = JSON.parse(raw);
+        if (!Array.isArray(sessions)) {
+          throw new Error('Stored sessions are not an array');
+        }
+        return sessions.map(session => ({
+          ...session,
+          authorizationServer: reviveAuthorizationServer(session?.authorizationServer),
+        }));
       } catch {
         this.logger.warn('GitHubAuthProvider: failed to parse stored sessions, starting fresh');
       }
@@ -288,6 +317,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
           accessToken: token,
           account,
           scopes,
+          authorizationServer: GITHUB_AUTHORIZATION_SERVER,
         };
       });
 
@@ -395,6 +425,7 @@ export class GitHubAuthProvider implements vscode.AuthenticationProvider {
       accessToken: token,
       account: { label: githubUser.login, id: githubUser.id.toString() },
       scopes,
+      authorizationServer: GITHUB_AUTHORIZATION_SERVER,
     };
 
     const isDeviceAuth = await this.getDeviceAuthState();
