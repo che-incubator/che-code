@@ -36,6 +36,23 @@ jobs:
             exit 1
           fi
 
+  check-electron-types:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout che-code source code
+        uses: actions/checkout@v6
+      - name: Check if Electron typings match code/build/checksums/electron.txt
+        run: |
+          EXPECTED=$(grep -E ' \*electron\.d\.ts$' code/build/checksums/electron.txt | cut -d ' ' -f 1)
+          ACTUAL=$(sha256sum build/typings/electron.d.ts 2>/dev/null | cut -d ' ' -f 1)
+          if [[ -z "${EXPECTED}" || "${EXPECTED}" != "${ACTUAL}" ]]; then
+            VERSION=$(grep -E '^target=' code/.npmrc | cut -d '"' -f 2)
+            echo "[ERROR] build/typings/electron.d.ts does not match Electron v${VERSION} (expected sha256: ${EXPECTED:-<missing>}, actual: ${ACTUAL:-<missing>})."
+            echo "[ERROR] It is updated by './rebase.sh'. To update it manually:"
+            echo "[ERROR]   curl -fsSL -o build/typings/electron.d.ts https://github.com/electron/electron/releases/download/v${VERSION}/electron.d.ts"
+            exit 1
+          fi
+
   build:
     name: build
     strategy:
