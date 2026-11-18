@@ -1,5 +1,5 @@
 /**********************************************************************
- * Copyright (c) 2023 - 2026 Red Hat, Inc.
+ * Copyright (c) 2023 Red Hat, Inc.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -126,17 +126,10 @@ export class CheDisconnectionHandler {
 						phase = workspace?.status?.phase;
 						this.lastObservedPhase = phase;
 
-						console.log(
-							`[CRW-12719] Workspace phase: ${phase}`
-						);
-
 						switch (phase) {
 							case DevWorkspaceStatus.RUNNING:
 							case DevWorkspaceStatus.STOPPED:
 							case DevWorkspaceStatus.FAILED:
-								console.log(
-									`[CRW-12719] Workspace reached decision phase: ${phase}`
-								);
 								return workspace;
 
 							case DevWorkspaceStatus.STARTING:
@@ -146,16 +139,10 @@ export class CheDisconnectionHandler {
 								break;
 
 							default:
-								console.warn(
-									`[CRW-12719] Unknown workspace phase: ${phase}`
-								);
 								break;
 						}
 					} catch (error) {
-						console.warn(
-							'[CRW-12719] Unable to retrieve workspace status. Retrying.',
-							error
-						);
+						// Ignore errors and continue polling
 					}
 
 					await new Promise(resolve => setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS));
@@ -182,8 +169,6 @@ export class CheDisconnectionHandler {
 			devWorkspace = await this.getDevWorkspaceUntilStable();
 		} catch (error) {
 			this.status = DisconnectionHandlerStatus.FAILED;
-			
-			console.error('[CRW-12719] Unable to determine workspace status:', error);
 
 			this.notificationService.prompt(
 				Severity.Error,
@@ -206,8 +191,7 @@ export class CheDisconnectionHandler {
 		const workspacePhase = devWorkspace.status.phase;
 
 		if (pendingAction === 'restartPending') {
-			console.log(`[CRW-12719] Restart decision based on workspace phase: ${workspacePhase}`);
-			if (workspacePhase === DevWorkspaceStatus.FAILED) {
+			if (workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.STOPPED) {
 				this.status = DisconnectionHandlerStatus.FAILED;
 				// Show the workspace-specific recovery dialog.
 				await this.onDisconnectionStoppedWorkspace(devWorkspace);
@@ -229,7 +213,6 @@ export class CheDisconnectionHandler {
 	}
 
 	handleStateChange(millisSinceLastIncomingData: number, type: PersistentConnectionEventType): boolean {
-		console.log(`[CRW-12719] CheDisconnectionHandler.handleStateChange: type=${type}, lastObservedPhase=${this.lastObservedPhase}`);
 		if (this.canHandle(millisSinceLastIncomingData)) {
 			this.handle(type);
 			return true;
