@@ -2,7 +2,7 @@
     "name": "che-code",
     "bin": "out/vs/server/main.js",
     "dependencies": {
-      "undici": "^7.30.0",
+      "undici": "^7.30.2",
       "ws": "^8.21.0",
       "tar": "^7.5.22"
     },
