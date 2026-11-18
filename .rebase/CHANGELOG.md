@@ -773,3 +773,12 @@ https://github.com/che-incubator/che-code/pull/845
 
 - code/src/vs/workbench/browser/parts/statusbar/statusbarPart.ts
 ---
+
+#### @sbouchet
+be61fce93bf
+
+- code/build/package.json
+- code/extensions/copilot/package.json
+- code/extensions/extension-editing/package.json
+- code/extensions/markdown-language-features/package.json
+---
