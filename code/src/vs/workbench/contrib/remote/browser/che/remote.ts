@@ -51,7 +51,6 @@ const STATUS_CHECK_TIMEOUT_MS = 60000;
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
 	private status: DisconnectionHandlerStatus = DisconnectionHandlerStatus.AVAILABLE;
-	private lastObservedPhase: string | undefined;
 
 	private reloadWindowHandler = () => {
 		this.commandService.executeCommand(ReloadWindowAction.ID);
@@ -124,7 +123,6 @@ export class CheDisconnectionHandler {
 						);
 
 						phase = workspace?.status?.phase;
-						this.lastObservedPhase = phase;
 
 						switch (phase) {
 							case DevWorkspaceStatus.RUNNING:
