@@ -1,5 +1,6 @@
 {
     "overrides": {
+        "@modelcontextprotocol/sdk": "^1.32.2",
         "express": {
             "proxy-addr": "^2.0.8"
         },

@@ -3,6 +3,15 @@
 The file to keep a list of changed files which will potentially help to resolve rebase conflicts.
 
 #### @sbouchet
+https://github.com/che-incubator/che-code/pull/847
+
+- code/package.json
+- code/extensions/copilot/package.json
+- code/test/mcp/package.json
+- code/build/agent-sdk/agents/claude/package.json
+---
+
+#### @sbouchet
 https://github.com/che-incubator/che-code/pull/848
 
 - code/package.json
@@ -13,6 +22,16 @@ https://github.com/che-incubator/che-code/pull/848
 - code/test/smoke/package.json
 - code/test/mcp/package.json
 - code/test/scenario/package.json
+---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/858
+
+- code/package.json
+- code/remote/package.json
+- code/extensions/copilot/package.json
+- code/extensions/copilot/chat-lib/package.json
+- code/extensions/notebook-renderers/package.json
 ---
 
 #### @RomanNikitenko
@@ -763,4 +782,10 @@ https://github.com/che-incubator/che-code/pull/845
 https://github.com/che-incubator/che-code/pull/845
 
 - code/src/vs/workbench/browser/parts/statusbar/statusbarPart.ts
+---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/845
+
+- code/extensions/markdown-language-features/package.json
 ---
