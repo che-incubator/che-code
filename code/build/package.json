@@ -78,6 +78,9 @@
     "path-scurry": {
       "lru-cache": "11.2.1"
     },
+    "@vscode/vsce": {
+      "markdown-it": "^14.3.3"
+    },
     "yauzl": "^3.3.1"
   },
   "allowScripts": {
