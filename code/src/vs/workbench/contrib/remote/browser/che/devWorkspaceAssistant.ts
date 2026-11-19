@@ -31,7 +31,9 @@ export type Status = {
 }
 
 export type Metadata = {
-	annotations: { [key: string]: string }
+	annotations: { [key: string]: string },
+	resourceVersion?: string;
+
 }
 
 export type DevWorkspaceLike = {
@@ -44,7 +46,7 @@ export class DevWorkspaceAssistant {
 	static INACTIVITY_REASON = 'inactivity';
 	static RUN_TIMEOUT_REASON = 'run-timeout';
 
-	private static readonly POLL_INTERVAL_MS = 2000;
+	static readonly POLL_INTERVAL_MS = 2000;
 	private static readonly STOP_TIMEOUT_MS = 10000;
 
 	/**
@@ -76,12 +78,12 @@ export class DevWorkspaceAssistant {
 		});
 	}
 
-	async getDevWorkspace(): Promise<DevWorkspaceLike> {
+	async getDevWorkspace(timeoutMs = 5000): Promise<DevWorkspaceLike> {
 		const url = this.getWorkspaceUrl();
 		const context = await this.requestService.request({
 			type: 'get',
 			url,
-			timeout: 5000,
+			timeout: timeoutMs,
 			callSite: 'che-remote.devWorkspaceAssistant',
 		}, CancellationToken.None);
 		const result = await asJson(context);
@@ -163,32 +165,27 @@ export class DevWorkspaceAssistant {
 	 * Poll the Dashboard API until the workspace reaches STOPPED (or FAILED) status.
 	 * Resolves on timeout so the redirect to Dashboard can still proceed.
 	 */
-	private waitForStopped(): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const timeoutId = setTimeout(() => {
-				clearInterval(intervalId);
-				resolve();
-			}, DevWorkspaceAssistant.STOP_TIMEOUT_MS);
+	private async waitForStopped(): Promise<void> {
+		const deadline = Date.now() + DevWorkspaceAssistant.STOP_TIMEOUT_MS;
 
-			const intervalId = setInterval(async () => {
-				try {
-					const result = await this.getDevWorkspace();
-					const phase = result.status?.phase;
+		while (Date.now() < deadline) {
+			const result = await this.getDevWorkspace();
+			const phase = result.status?.phase;
 
-					if (phase === DevWorkspaceStatus.STOPPED) {
-						clearTimeout(timeoutId);
-						clearInterval(intervalId);
-						resolve();
-					} else if (phase === DevWorkspaceStatus.FAILED) {
-						clearTimeout(timeoutId);
-						clearInterval(intervalId);
-						reject(new Error(`Workspace entered ${phase} state: ${result.status?.message}`));
-					}
-				} catch (e) {
-					// Dashboard API may be temporarily unreachable during shutdown
-				}
-			}, DevWorkspaceAssistant.POLL_INTERVAL_MS);
-		});
+			if (phase === DevWorkspaceStatus.STOPPED) {
+				return;
+			}
+
+			if (phase === DevWorkspaceStatus.FAILED || phase === DevWorkspaceStatus.FAILING) {
+				throw new Error(`Workspace entered ${phase} state: ${result.status?.message}`);
+			}
+
+			await new Promise(resolve =>
+				setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS)
+			);
+		}
+
+		throw new Error('Timed out waiting for workspace to stop.');
 	}
 
 	async restartWorkspace(): Promise<void> {
@@ -241,4 +238,5 @@ export class DevWorkspaceAssistant {
 		const dashboardUrl = this.getDashboardUrl();
 		window.location.href = dashboardUrl;
 	}
+
 }
