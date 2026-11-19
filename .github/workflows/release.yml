@@ -32,7 +32,7 @@ jobs:
           token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
       -
         name: "Setup Node"
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: 'code/.nvmrc'
       -
