@@ -53,7 +53,7 @@
     },
     "minimatch": "^3.1.5",
     "handlebars": "4.7.9",
-    "brace-expansion@1": "^1.1.18",
+    "brace-expansion@1": "^1.1.22",
     "js-yaml": "^3.15.2"
   },
   "repository": {

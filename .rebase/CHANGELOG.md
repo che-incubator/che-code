@@ -792,3 +792,9 @@ https://github.com/che-incubator/che-code/pull/845
 
 - code/src/vs/workbench/browser/parts/statusbar/statusbarPart.ts
 ---
+
+#### @RomanNikitenko
+https://github.com/che-incubator/che-code/pull/845
+
+- code/extensions/markdown-language-features/package.json
+---
