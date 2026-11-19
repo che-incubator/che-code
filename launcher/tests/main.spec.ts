@@ -76,6 +76,11 @@ jest.mock('../src/code-workspace', () => ({
   },
 }));
 
+const restorePatchablesMock = jest.fn();
+jest.mock('../src/fs-extra', () => ({
+  restorePatchables: () => restorePatchablesMock(),
+}));
+
 const launchVsCode = jest.fn();
 jest.mock('../src/vscode-launcher', () => ({
   VSCodeLauncher: function () {
@@ -106,6 +111,9 @@ describe('Test main flow:', () => {
 
     await new Main().start();
 
+    expect(restorePatchablesMock.mock.invocationCallOrder[0]).toBeLessThan(
+      setDevWorkspaceIdMock.mock.invocationCallOrder[0]
+    );
     expect(setDevWorkspaceIdMock).toBeCalled();
     expect(configureOpenVSIXRegistryMock).toBeCalled();
     expect(configureWebviewResourcesMock).toBeCalled();

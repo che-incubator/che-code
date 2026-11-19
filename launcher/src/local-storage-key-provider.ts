@@ -68,7 +68,7 @@ export class LocalStorageKeyProvider {
   }
 
   async update(file: string, text: string, newText: string): Promise<void> {
-    const content = await fs.readFile(file);
+    const content = await fs.readPatchable(file);
     const newContent = content.replace(text, newText);
 
     if (content === newContent) {
