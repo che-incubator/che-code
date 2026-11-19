@@ -17,27 +17,27 @@ import { IRemoteAgentService } from '../../services/remote/common/remoteAgentSer
 // Get policy service from remote agent if available, otherwise use NullPolicyService
 export function getPolicyService(remoteAgentService: IRemoteAgentService, logService: ILogService, remoteAuthority?: string): IPolicyService {
 
-    let policyService: IPolicyService;
-    if (remoteAuthority) {
-        try {
-            const connection = remoteAgentService.getConnection();
-            if (connection) {
-                const policyChannel = connection.getChannel('policy');
-                // PolicyChannelClient needs initial policiesData - start with empty object, policies will be loaded when definitions are registered
-                policyService = new PolicyChannelClient({}, policyChannel);
-                logService.info('Policy channel client was created successfully');
-            } else {
-                logService.warn('Failed to get remote aget connection, using NullPolicyService');
-                policyService = new NullPolicyService();
-            }
-        } catch (error) {
-            console.log('/// web main /// connection - ERROR ');
-            logService.warn('Failed to create policy channel client, using NullPolicyService', error);
-            policyService = new NullPolicyService();
-        }
-    } else {
-        logService.warn('Failed to create policy channel client(no remote authority), using NullPolicyService');
-        policyService = new NullPolicyService();
-    }
-    return policyService;
+	let policyService: IPolicyService;
+	if (remoteAuthority) {
+		try {
+			const connection = remoteAgentService.getConnection();
+			if (connection) {
+				const policyChannel = connection.getChannel('policy');
+				// PolicyChannelClient needs initial policiesData - start with empty object, policies will be loaded when definitions are registered
+				policyService = new PolicyChannelClient({}, policyChannel);
+				logService.info('Policy channel client was created successfully');
+			} else {
+				logService.warn('Failed to get remote aget connection, using NullPolicyService');
+				policyService = new NullPolicyService();
+			}
+		} catch (error) {
+			console.log('/// web main /// connection - ERROR ');
+			logService.warn('Failed to create policy channel client, using NullPolicyService', error);
+			policyService = new NullPolicyService();
+		}
+	} else {
+		logService.warn('Failed to create policy channel client(no remote authority), using NullPolicyService');
+		policyService = new NullPolicyService();
+	}
+	return policyService;
 }
