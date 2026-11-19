@@ -19,34 +19,34 @@ const NEW_TERMINAL_IN_CONTAINER_COMMAND_ID = 'che-terminal.new';
 const NEW_TERMINAL_IN_CONTAINER_TITLE = localize('newTerminal.selectContainer.title', 'New Terminal (Select a Container)');
 
 export function setupCheTerminalMenus(): void {
-  MenuRegistry.appendMenuItems(
-    [
-      {
-        id: MenuId.MenubarTerminalMenu,
-        item: {
-          group: TerminalMenuBarGroup.Create,
-          command: {
-            id: NEW_TERMINAL_IN_CONTAINER_COMMAND_ID,
-            title: NEW_TERMINAL_IN_CONTAINER_TITLE
-          },
-          order: 1.5
-        }
-      }
-    ]
-  );
+	MenuRegistry.appendMenuItems(
+		[
+			{
+				id: MenuId.MenubarTerminalMenu,
+				item: {
+					group: TerminalMenuBarGroup.Create,
+					command: {
+						id: NEW_TERMINAL_IN_CONTAINER_COMMAND_ID,
+						title: NEW_TERMINAL_IN_CONTAINER_TITLE
+					},
+					order: 1.5
+				}
+			}
+		]
+	);
 
-  MenuRegistry.appendMenuItems(
-    [
-      {
-        id: MenuId.TerminalInstanceContext,
-        item: {
-          command: {
-            id: NEW_TERMINAL_IN_CONTAINER_COMMAND_ID,
-            title: NEW_TERMINAL_IN_CONTAINER_TITLE
-          },
-          group: CONTEXT_MENU_GROUP_CREATE
-        }
-      }
-    ]
-  );
+	MenuRegistry.appendMenuItems(
+		[
+			{
+				id: MenuId.TerminalInstanceContext,
+				item: {
+					command: {
+						id: NEW_TERMINAL_IN_CONTAINER_COMMAND_ID,
+						title: NEW_TERMINAL_IN_CONTAINER_TITLE
+					},
+					group: CONTEXT_MENU_GROUP_CREATE
+				}
+			}
+		]
+	);
 }

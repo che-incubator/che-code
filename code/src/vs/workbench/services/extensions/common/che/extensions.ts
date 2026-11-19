@@ -19,26 +19,26 @@ import { ApiProposalName, allApiProposals } from "../../../../../platform/extens
 import { ILogService } from "../../../../../platform/log/common/log.js";
 
 function normalizeProposedApiName(name: string): ApiProposalName {
-    const match = /^(.+?)@\d+$/.exec(name);
-    return (match ? match[1] : name) as ApiProposalName;
+	const match = /^(.+?)@\d+$/.exec(name);
+	return (match ? match[1] : name) as ApiProposalName;
 }
 
 export function normalizeAndFilterProposals(
-    logService: ILogService,
-    key: string,
-    proposals: readonly string[]
+	logService: ILogService,
+	key: string,
+	proposals: readonly string[]
 ): ApiProposalName[] {
-    const normalizedProposals: ApiProposalName[] = [];
-    for (const name of proposals) {
-        const normalizedName = normalizeProposedApiName(name);
-        const result = Boolean(allApiProposals[normalizedName]);
-        if (!result) {
-            logService.error(`Extension '${key}' wants API proposal '${name}' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.`);
-            continue;
-        }
-        if (!normalizedProposals.includes(normalizedName)) {
-            normalizedProposals.push(normalizedName);
-        }
-    }
-    return normalizedProposals;
+	const normalizedProposals: ApiProposalName[] = [];
+	for (const name of proposals) {
+		const normalizedName = normalizeProposedApiName(name);
+		const result = Boolean(allApiProposals[normalizedName]);
+		if (!result) {
+			logService.error(`Extension '${key}' wants API proposal '${name}' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.`);
+			continue;
+		}
+		if (!normalizedProposals.includes(normalizedName)) {
+			normalizedProposals.push(normalizedName);
+		}
+	}
+	return normalizedProposals;
 }
