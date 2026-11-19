@@ -36,6 +36,8 @@ jobs:
           fi
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
       - name: Docker Build
         env:
           # https://github.com/microsoft/vscode-ripgrep#github-api-limit-note
