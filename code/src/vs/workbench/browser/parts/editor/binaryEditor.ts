@@ -48,6 +48,12 @@ export abstract class BaseBinaryResourceEditor extends EditorPlaceholder {
 	}
 
 	protected async getContents(input: EditorInput, options: IEditorOptions): Promise<IEditorPlaceholderContents> {
+
+		console.log('[CRW-12544] Resolving input', {
+        	typeId: input.typeId,
+        	resource: input.resource?.toString()
+    	});
+
 		const model = await input.resolve();
 
 		// Assert Model instance
