@@ -299,6 +299,9 @@
     },
     "@vscode/component-explorer-cli": {
       "zod": "^4.6.7"
+    },
+    "@vscode/telemetry-extractor": {
+      "@vscode/ripgrep": "1.18.0"
     }
   },
   "repository": {
