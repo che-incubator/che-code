@@ -10,9 +10,39 @@
 /* eslint-disable header/header */
 
 import { createReadStream } from 'fs';
-import { access, constants as fsConstants } from 'fs/promises';
+import { access, constants as fsConstants, readFile } from 'fs/promises';
 import * as http from 'http';
 import * as url from 'url';
+
+const CHE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
+
+/**
+ * Reads keybindings.json content from the ConfigMap mount path.
+ *
+ * Returns:
+ * - the raw file content if the file was read;
+ * - `undefined` if the file does not exist (no keybindings in the ConfigMap);
+ * - `null` if the file exists but could not be read (EACCES, EISDIR, ...),
+ *   so that the browser skips the merge instead of treating the ConfigMap
+ *   as absent and removing the previously injected keybindings.
+ *
+ * `null` (unlike `undefined`) survives the JSON serialization of the
+ * workbench configuration, so the browser can tell the two cases apart.
+ */
+export async function getCheInitialKeybindings(): Promise<string | null | undefined> {
+    try {
+        return await readFile(CHE_CONFIG_KEYBINDINGS_PATH, 'utf-8');
+    } catch (error) {
+        // An absent file is the normal "no ConfigMap" case: stay silent.
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return undefined;
+        }
+        // Any other error is worth a line in the server log, which ends up
+        // in the container log.
+        console.warn(`[WebClientServer] Failed to read ${CHE_CONFIG_KEYBINDINGS_PATH}: ${error}`);
+        return null;
+    }
+}
 
 const compressibleMimeTypes = new Set([
     'text/html', 'text/javascript', 'text/css', 'text/plain',
