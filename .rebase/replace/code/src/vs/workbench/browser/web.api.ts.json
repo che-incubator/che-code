@@ -1,0 +1,6 @@
+[
+    {
+        "from": "readonly configurationDefaults?: Record<string, unknown>;\n\n\t//#endregion\n\n\t//#region Profile options",
+        "by": "readonly configurationDefaults?: Record<string, unknown>;\n\n\t//#endregion\n\n\t/**\n\t * Initial keybindings content from ConfigMap (JSON array string).\n\t * When set, keybindings are merged into IndexedDB on every workspace start.\n\t * `undefined`: no keybindings.json in the ConfigMap (previously injected entries are removed).\n\t * `null`: the file exists but could not be read on the server (the merge is skipped, nothing is written).\n\t */\n\treadonly cheInitialKeybindings?: string | null;\n\n\t//#region Profile options"
+    }
+]

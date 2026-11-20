@@ -316,6 +316,14 @@ export interface IWorkbenchConstructionOptions {
 
 	//#endregion
 
+	/**
+	 * Initial keybindings content from ConfigMap (JSON array string).
+	 * When set, keybindings are merged into IndexedDB on every workspace start.
+	 * `undefined`: no keybindings.json in the ConfigMap (previously injected entries are removed).
+	 * `null`: the file exists but could not be read on the server (the merge is skipped, nothing is written).
+	 */
+	readonly cheInitialKeybindings?: string | null;
+
 	//#region Profile options
 
 	/**

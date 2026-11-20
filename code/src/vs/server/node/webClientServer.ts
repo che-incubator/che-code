@@ -5,7 +5,7 @@
 
 import { createReadStream, promises } from 'fs';
 import * as http from 'http';
-import { getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';
+import { getCheInitialKeybindings, getCheRedirectLocation, tryServeCompressedFile } from './che/webClientServer.js';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
 import { isEqualOrParent } from '../../base/common/extpath.js';
@@ -433,7 +433,8 @@ export class WebClientServer {
 			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
 			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
 			productConfiguration,
-			callbackRoute: callbackRoute
+			callbackRoute: callbackRoute,
+			cheInitialKeybindings: await getCheInitialKeybindings(),
 		};
 
 		const cookies = cookie.parse(req.headers.cookie || '');
