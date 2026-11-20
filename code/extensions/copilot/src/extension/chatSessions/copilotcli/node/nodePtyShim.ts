@@ -71,6 +71,9 @@ export async function resolveNodePtySourcePath(vscodeAppRoot: string, logService
 			if (candidatePath !== candidatePaths[0]) {
 				logService.info(`Using node-pty prebuilds from ${candidatePath}`);
 			}
+			// [d40a45d3-verify] TEMPORARY verification logging — remove once the hermetic
+			// skip of prepareBuiltInCopilotRipgrepShim is validated.
+			logService.info(`[d40a45d3-verify] node-pty source resolved: ${candidatePath}`);
 			return candidatePath;
 		}
 	}
@@ -89,6 +92,7 @@ export async function copyNodePtyFiles(extensionPath: string, sourceNodePtyPath:
 		logService.info(`Found ${uniqueEntries.length} entries to copy${uniqueEntries.length !== entries.length ? ` (${entries.length - uniqueEntries.length} duplicates ignored)` : ''}: ${uniqueEntries.join(', ')}`);
 
 		await copyNodePtyWithRetries(sourceNodePtyPath, nodePtyDir, uniqueEntries, logService);
+		logService.info(`[d40a45d3-verify] node-pty shim materialized: ${uniqueEntries.join(', ')} -> ${nodePtyDir}`);
 	} catch (error) {
 		logService.error(`Failed to create node-pty shim (source dir: ${sourceNodePtyPath}, extension dir: ${nodePtyDir})`, error);
 		throw error;

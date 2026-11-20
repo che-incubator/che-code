@@ -42,6 +42,9 @@ export async function ensureRipgrepShim(extensionPath: string, vscodeAppRoot: st
 
 async function _ensureRipgrepShim(extensionPath: string, vscodeAppRoot: string, logService: ILogService): Promise<void> {
 	const vscodeRipgrepPath = await resolveAppModulePath(vscodeAppRoot, '@vscode', 'ripgrep-universal', 'bin', process.platform + '-' + process.arch);
+	// [d40a45d3-verify] TEMPORARY verification logging — remove once the hermetic skip of
+	// prepareBuiltInCopilotRipgrepShim is validated.
+	logService.info(`[d40a45d3-verify] ripgrep source resolved: ${vscodeRipgrepPath} (app root: ${vscodeAppRoot}, platform: ${process.platform}-${process.arch})`);
 
 	await copyRipgrepShim(extensionPath, vscodeRipgrepPath, logService);
 }
@@ -57,6 +60,7 @@ export async function copyRipgrepShim(extensionPath: string, vscodeRipgrepPath: 
 		logService.info(`Found ${uniqueEntries.length} entries to copy${uniqueEntries.length !== entries.length ? ` (${entries.length - uniqueEntries.length} duplicates ignored)` : ''}: ${uniqueEntries.join(', ')}`);
 
 		await copyRipgrepWithRetries(vscodeRipgrepPath, ripgrepDir, uniqueEntries, logService);
+		logService.info(`[d40a45d3-verify] ripgrep shim materialized: ${uniqueEntries.join(', ')} -> ${ripgrepDir}`);
 	} catch (error) {
 		logService.error(`Failed to create ripgrep shim (vscode dir: ${vscodeRipgrepPath}, extension dir: ${ripgrepDir})`, error);
 		throw error;
