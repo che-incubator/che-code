@@ -592,7 +592,28 @@ export class CopilotCLISDK implements ICopilotCLISDK {
 				process.env['COPILOT_CLI_ENABLED_FEATURE_FLAGS'] = [...flags].join(',');
 			}
 
-			return await import('@github/copilot/sdk');
+			const pkg = await import('@github/copilot/sdk');
+			// [d40a45d3-verify] TEMPORARY verification logging — confirm the natives the
+			// skipped build-time prep would have materialized are already present
+			// (extension postinstall) and the SDK loads against them. Remove once validated.
+			try {
+				const copilotBase = path.join(this.extensionContext.extensionPath, 'node_modules', '@github', 'copilot');
+				const copilotVersion = JSON.parse(await fs.readFile(path.join(copilotBase, 'package.json'), 'utf8'))?.version;
+				const prebuildsDir = path.join(copilotBase, 'sdk', 'prebuilds', process.platform + '-' + process.arch);
+				const prebuildEntries = await fs.readdir(prebuildsDir).catch(() => undefined);
+				if (!prebuildEntries) {
+					this.logService.error(`[d40a45d3-verify] SDK loaded (@github/copilot@${copilotVersion}) but prebuilds dir MISSING: ${prebuildsDir}`);
+				} else {
+					const details = await Promise.all(prebuildEntries.map(async entry => {
+						const stat = await fs.stat(path.join(prebuildsDir, entry)).catch(() => undefined);
+						return stat?.isFile() ? `${entry}(${stat.size}b)` : entry;
+					}));
+					this.logService.info(`[d40a45d3-verify] SDK loaded: @github/copilot@${copilotVersion}; prebuilds ${process.platform}-${process.arch}: ${details.join(', ')}`);
+				}
+			} catch (error) {
+				this.logService.warn(`[d40a45d3-verify] SDK diagnostics failed (SDK itself loaded fine): ${error}`);
+			}
+			return pkg;
 		} catch (error) {
 			this.logService.error(`[CopilotCLISession] Failed to load @github/copilot/sdk: ${error}`);
 			throw error;
@@ -624,14 +645,25 @@ export class CopilotCLISDK implements ICopilotCLISDK {
 
 	protected async ensureShims(): Promise<void> {
 		const successfulPlaceholder = path.join(this.extensionContext.extensionPath, 'node_modules', '@github', 'copilot', 'shims.txt');
-		if (await checkFileExists(successfulPlaceholder)) {
+		// [d40a45d3-verify] TEMPORARY verification logging for the devspaces-images
+		// commit "fix(devspaces-code): skip copilot ripgrep shim prep in hermetic build".
+		// Remove once the skip is validated in a running workspace.
+		const markerExists = await checkFileExists(successfulPlaceholder);
+		const ripgrepShimDir = path.join(this.extensionContext.extensionPath, 'node_modules', '@github', 'copilot', 'sdk', 'ripgrep');
+		const ripgrepShimPreexists = await checkFileExists(ripgrepShimDir);
+		this.logService.info(`[d40a45d3-verify] ensureShims: shims.txt marker ${markerExists ? 'EXISTS (shims provided at build time or by an earlier session)' : 'ABSENT — runtime recreation path (expected when the hermetic build skips prepareBuiltInCopilotRipgrepShim)'}; pre-existing sdk/ripgrep dir: ${ripgrepShimPreexists ? 'present' : 'absent'}`);
+		if (markerExists) {
 			return;
 		}
+		const started = Date.now();
 		await Promise.all([
-			ensureRipgrepShim(this.extensionContext.extensionPath, this.envService.appRoot, this.logService),
-			ensureNodePtyShim(this.extensionContext.extensionPath, this.envService.appRoot, this.logService),
+			ensureRipgrepShim(this.extensionContext.extensionPath, this.envService.appRoot, this.logService)
+				.then(() => this.logService.info('[d40a45d3-verify] ensureRipgrepShim: OK'), error => { this.logService.error('[d40a45d3-verify] ensureRipgrepShim: FAILED', error); throw error; }),
+			ensureNodePtyShim(this.extensionContext.extensionPath, this.envService.appRoot, this.logService)
+				.then(() => this.logService.info('[d40a45d3-verify] ensureNodePtyShim: OK'), error => { this.logService.error('[d40a45d3-verify] ensureNodePtyShim: FAILED', error); throw error; }),
 		]);
 		await fs.writeFile(successfulPlaceholder, 'Shims created successfully');
+		this.logService.info(`[d40a45d3-verify] ensureShims: shims.txt written after ${Date.now() - started}ms — runtime shim recreation succeeded`);
 	}
 
 	public async getAuthInfo(): Promise<NonNullable<SessionOptions['authInfo']>> {
