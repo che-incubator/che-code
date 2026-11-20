@@ -26,7 +26,7 @@ const RESTART_WORKSPACE_LABEL = nls.localize('disconnectionHandler.button.restar
 const RETURN_TO_DASHBOARD_LABEL = nls.localize('disconnectionHandler.button.returnToDashboard', 'Return to dashboard');
 
 const WORKSPACE_STATUS = nls.localize('disconnectionHandler.message.workspaceState', 'Checking workspace status...');
-const WORKSPACE_STARTING = nls.localize('workspaceStarting', 'Workspace is starting...');
+const WORKSPACE_READY = nls.localize('workspaceReady', 'Workspace is ready, restoring connection...');
 const WORKSPACE_WAITING = nls.localize('workspaceWaiting', 'Waiting for workspace to become ready...');
 const RESTARTING_CONNECTION = nls.localize('restartingConnection', 'Restarting the connection...');
 const CONNECTION_LOST = nls.localize('disconnectionHandler.message.connectionLost', 'Connection lost. Attempting to reconnect...');
@@ -48,8 +48,7 @@ export enum DisconnectionHandlerStatus {
  * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
-const DISCONNECTION_HANDLING_TIME = 60 * 1000; // 60 seconds
-const STATUS_CHECK_TIMEOUT_MS = 60000;
+const DISCONNECTION_HANDLING_TIME = 3 * 60 * 1000; // 180 seconds
 
 export class CheDisconnectionHandler {
 	private devWorkspaceAssistant: DevWorkspaceAssistant;
@@ -107,47 +106,54 @@ export class CheDisconnectionHandler {
 	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
 		this.reportProgress(WORKSPACE_STATUS);
 
-		const deadline = Date.now() + STATUS_CHECK_TIMEOUT_MS;
+		const deadline = Date.now() + DISCONNECTION_HANDLING_TIME;
 		let phase: string | undefined;
-		let hasSeenStartingPhase = false;
+		let lastReportedPhase: string | undefined;
 
-		while (
-			Date.now() < deadline &&
-			phase !== DevWorkspaceStatus.RUNNING &&
-			phase !== DevWorkspaceStatus.STOPPED &&
-			phase !== DevWorkspaceStatus.FAILED
-		) {
+		while (Date.now() < deadline) {
 			const remainingTime = deadline - Date.now();
 
 			try {
 				const workspace = await this.devWorkspaceAssistant.getDevWorkspace(Math.min(5000, remainingTime));
 				phase = workspace?.status?.phase;
 
-				if (phase === DevWorkspaceStatus.STARTING) {
-					this.reportProgress(hasSeenStartingPhase ? WORKSPACE_WAITING : WORKSPACE_STARTING);
-					hasSeenStartingPhase = true;
-				}
+				if (phase !== lastReportedPhase) {
+					lastReportedPhase = phase;
 
-				switch (phase) {
-					case DevWorkspaceStatus.RUNNING:
-					case DevWorkspaceStatus.STOPPED:
-					case DevWorkspaceStatus.FAILED:
-						return workspace;
+					switch (phase) {
+						case DevWorkspaceStatus.STARTING:
+							this.reportProgress(WORKSPACE_WAITING);
+							break;
 
-					case DevWorkspaceStatus.STARTING:
-					case DevWorkspaceStatus.FAILING:
-					case DevWorkspaceStatus.STOPPING:
-					case DevWorkspaceStatus.TERMINATING:
-						break;
+						case DevWorkspaceStatus.RUNNING:
+							this.reportProgress(WORKSPACE_READY);
+							return workspace;
 
-					default:
-						break;
+						case DevWorkspaceStatus.FAILING:
+						case DevWorkspaceStatus.STOPPING:
+						case DevWorkspaceStatus.TERMINATING:
+						case DevWorkspaceStatus.STOPPED:
+						case DevWorkspaceStatus.FAILED:
+							throw new Error(`Workspace reached an unsuccessful phase: ${phase}`);
+
+						default:
+							this.reportProgress(WORKSPACE_STATUS);
+							break;
+					}
 				}
 			} catch (error) {
-				// Ignore errors and continue polling
+				if (error instanceof Error && error.message.startsWith('Workspace reached an unsuccessful phase:')) {
+					throw error;
+				}
+				// Ignore transient errors and continue polling.
 			}
 
-			await new Promise(resolve => setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS));
+			const remainingAfterRequest = deadline - Date.now();
+			if (remainingAfterRequest <= 0) {
+				break;
+			}
+
+			await new Promise(resolve => setTimeout(resolve, Math.min(DevWorkspaceAssistant.POLL_INTERVAL_MS, remainingAfterRequest)));
 		}
 
 		throw new Error(`Timed out waiting for workspace status. Last observed phase: ${phase}`);
