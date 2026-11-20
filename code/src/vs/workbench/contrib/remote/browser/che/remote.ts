@@ -19,17 +19,17 @@ import { IRequestService } from '../../../../../platform/request/common/request.
 import { ReloadWindowAction } from '../../../../browser/actions/windowActions.js';
 import { DevWorkspaceAssistant, DevWorkspaceLike, DevWorkspaceStatus } from './devWorkspaceAssistant.js';
 import { IEnvironmentVariableService } from '../../../terminal/common/environmentVariable.js';
-import { IProgressService, ProgressLocation } from '../../../../../platform/progress/common/progress.js';
+import { IProgressService } from '../../../../../platform/progress/common/progress.js';
 
 const CANCEL_LABEL = nls.localize('cancel', "Cancel");
 const RESTART_WORKSPACE_LABEL = nls.localize('disconnectionHandler.button.restart', 'Restart your workspace');
 const RETURN_TO_DASHBOARD_LABEL = nls.localize('disconnectionHandler.button.returnToDashboard', 'Return to dashboard');
 
 const WORKSPACE_STATUS = nls.localize('disconnectionHandler.message.workspaceState', 'Checking workspace status...');
-const WORKSPACE_STARTING = nls.localize('workspaceStarting','Workspace is starting...');
-const WORKSPACE_WAITING = nls.localize('workspaceWaiting','Waiting for workspace to become ready...');
-const RESTARTING_CONNECTION = nls.localize('restartingConnection','Restarting the connection...');
-const CONNECTION_LOST = nls.localize('disconnectionHandler.message.connectionLost','Connection lost. Attempting to reconnect...');
+const WORKSPACE_STARTING = nls.localize('workspaceStarting', 'Workspace is starting...');
+const WORKSPACE_WAITING = nls.localize('workspaceWaiting', 'Waiting for workspace to become ready...');
+const RESTARTING_CONNECTION = nls.localize('restartingConnection', 'Restarting the connection...');
+const CONNECTION_LOST = nls.localize('disconnectionHandler.message.connectionLost', 'Connection lost. Attempting to reconnect...');
 
 const WORKSPACE_STOPPED = nls.localize('disconnectionHandler.message.workspaceStopped', 'Your workspace is not running.');
 const WORKSPACE_FAILED = nls.localize('disconnectionHandler.message.workspaceFailed', 'The workspace has failed with the following error');
@@ -45,10 +45,10 @@ export enum DisconnectionHandlerStatus {
 
 
 /**
- * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped 
+ * Time for the Che disconnection handler to detect (and handle) if a dev workspace was stopped and figure out the reason the workspace was stopped
  * The default behaviour should be applied if the Che handler can not detect the state of the workspace during this time.
  */
-const DISCONNECTION_HANDLING_TIME = 30 * 1000; // 30 seconds
+const DISCONNECTION_HANDLING_TIME = 60 * 1000; // 60 seconds
 const STATUS_CHECK_TIMEOUT_MS = 60000;
 
 export class CheDisconnectionHandler {
@@ -57,15 +57,15 @@ export class CheDisconnectionHandler {
 
 	private reloadWindowHandler = async () => {
 		await this.commandService.executeCommand(ReloadWindowAction.ID);
-	}
+	};
 
 	private startWorkspaceHandler = () => {
 		this.devWorkspaceAssistant.startWorkspace();
-	}
+	};
 
 	private goToDashboardHandler = () => {
 		this.devWorkspaceAssistant.goToDashboard();
-	}
+	};
 
 	constructor(
 		private commandService: ICommandService,
@@ -73,8 +73,8 @@ export class CheDisconnectionHandler {
 		private notificationService: INotificationService,
 		requestService: IRequestService,
 		environmentVariableService: IEnvironmentVariableService,
-		private readonly progressService: IProgressService,
-	    private readonly reportProgress: (message: string) => void
+		readonly progressService: IProgressService,
+		private readonly reportProgress: (message: string) => void
 
 	) {
 		this.devWorkspaceAssistant = new DevWorkspaceAssistant(requestService, environmentVariableService, progressService);
@@ -105,63 +105,53 @@ export class CheDisconnectionHandler {
 	 * Used only for restart-pending operations.
 	 */
 	private async getDevWorkspaceUntilStable(): Promise<DevWorkspaceLike> {
-		return this.progressService.withProgress(
-			{
-				location: ProgressLocation.Notification,
-				title: WORKSPACE_STATUS
-			},
-			async () => {
-				const deadline = Date.now() + STATUS_CHECK_TIMEOUT_MS;
-				let phase: string | undefined;
-	            let hasSeenStartingPhase = false;
+		this.reportProgress(WORKSPACE_STATUS);
 
-				while (
-					Date.now() < deadline &&
-					phase !== DevWorkspaceStatus.RUNNING &&
-					phase !== DevWorkspaceStatus.STOPPED &&
-					phase !== DevWorkspaceStatus.FAILED
-				) {
-					const remainingTime = deadline - Date.now();
+		const deadline = Date.now() + STATUS_CHECK_TIMEOUT_MS;
+		let phase: string | undefined;
+		let hasSeenStartingPhase = false;
 
-					try {
-						const workspace = await this.devWorkspaceAssistant.getDevWorkspace(
-							Math.min(5000, remainingTime)
-						);
+		while (
+			Date.now() < deadline &&
+			phase !== DevWorkspaceStatus.RUNNING &&
+			phase !== DevWorkspaceStatus.STOPPED &&
+			phase !== DevWorkspaceStatus.FAILED
+		) {
+			const remainingTime = deadline - Date.now();
 
-						phase = workspace?.status?.phase;
+			try {
+				const workspace = await this.devWorkspaceAssistant.getDevWorkspace(Math.min(5000, remainingTime));
+				phase = workspace?.status?.phase;
 
-						if (phase === DevWorkspaceStatus.STARTING) {
-							this.reportProgress(hasSeenStartingPhase ? WORKSPACE_WAITING : WORKSPACE_STARTING);
-							hasSeenStartingPhase = true;
-						}
-
-						switch (phase) {
-							case DevWorkspaceStatus.RUNNING:
-							case DevWorkspaceStatus.STOPPED:
-							case DevWorkspaceStatus.FAILED:
-								return workspace;
-
-							case DevWorkspaceStatus.STARTING:
-							case DevWorkspaceStatus.FAILING:
-							case DevWorkspaceStatus.STOPPING:
-							case DevWorkspaceStatus.TERMINATING:
-								break;
-
-							default:
-								break;
-						}
-					} catch (error) {
-						// Ignore errors and continue polling
-					}
-
-					await new Promise(resolve => setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS));
+				if (phase === DevWorkspaceStatus.STARTING) {
+					this.reportProgress(hasSeenStartingPhase ? WORKSPACE_WAITING : WORKSPACE_STARTING);
+					hasSeenStartingPhase = true;
 				}
 
-				throw new Error(
-					`Timed out waiting for workspace status. Last observed phase: ${phase}`
-				);
+				switch (phase) {
+					case DevWorkspaceStatus.RUNNING:
+					case DevWorkspaceStatus.STOPPED:
+					case DevWorkspaceStatus.FAILED:
+						return workspace;
+
+					case DevWorkspaceStatus.STARTING:
+					case DevWorkspaceStatus.FAILING:
+					case DevWorkspaceStatus.STOPPING:
+					case DevWorkspaceStatus.TERMINATING:
+						break;
+
+					default:
+						break;
+				}
+			} catch (error) {
+				// Ignore errors and continue polling
 			}
-		);
+
+			await new Promise(resolve => setTimeout(resolve, DevWorkspaceAssistant.POLL_INTERVAL_MS));
+		}
+
+		throw new Error(`Timed out waiting for workspace status. Last observed phase: ${phase}`);
+
 	}
 
 	private async handle(type: PersistentConnectionEventType): Promise<void> {
@@ -216,8 +206,8 @@ export class CheDisconnectionHandler {
 
 		if (workspacePhase === DevWorkspaceStatus.STARTING || workspacePhase === DevWorkspaceStatus.RUNNING) {
 			if (type === PersistentConnectionEventType.ConnectionLost) {
-        		this.reportProgress(CONNECTION_LOST);
-    		}
+				this.reportProgress(CONNECTION_LOST);
+			}
 			return this.onDisconnectionRunningWorkspace(type);
 		}
 		return this.onDisconnectionStoppedWorkspace(devWorkspace);
@@ -264,8 +254,8 @@ export class CheDisconnectionHandler {
 
 		const workspacePhase = devWorkspace.status.phase;
 		const statusMessage = devWorkspace.status?.message;
-		
-		if ((workspacePhase === DevWorkspaceStatus.FAILED  || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
+
+		if ((workspacePhase === DevWorkspaceStatus.FAILED || workspacePhase === DevWorkspaceStatus.FAILING) && statusMessage) {
 			return this.displayDialog(`${WORKSPACE_FAILED}: ${statusMessage}`, Severity.Error);
 		}
 
@@ -276,19 +266,19 @@ export class CheDisconnectionHandler {
 		const restartWorkspaceButton: IPromptButton<void> = {
 			label: RESTART_WORKSPACE_LABEL,
 			run: this.startWorkspaceHandler
-		}
+		};
 
 		const goToDashboardButton: IPromptButton<void> = {
 			label: RETURN_TO_DASHBOARD_LABEL,
 			run: this.goToDashboardHandler
-		}
+		};
 
 		const cancelButton: IPromptButton<void> = {
 			label: CANCEL_LABEL,
 			run: () => {
 				this.displayNotification(severity, message);
 			}
-		}
+		};
 
 		await this.dialogService.prompt({
 			type: severity,
