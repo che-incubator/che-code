@@ -9,6 +9,7 @@
 
 # This Workflow performs a full release of Che Code
 name: Release Che Code
+run-name: Release Che Code ${{ inputs.version }} on ${{ github.ref_name }}
 on:
   workflow_dispatch:
     inputs:
@@ -31,16 +32,36 @@ jobs:
         with:
           token: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
       -
+        name: "Display release parameters"
+        env:
+          VERSION: ${{ inputs.version }}
+          FORCE_RECREATE_TAGS: ${{ inputs.forceRecreateTags }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          TRIGGERED_BY: ${{ github.actor }}
+        run: |
+          echo "=== Release Parameters ==="
+          echo "Version: ${VERSION}"
+          echo "Force recreate tags: ${FORCE_RECREATE_TAGS}"
+          echo "Branch: ${REF_NAME}"
+          echo "Commit SHA: ${COMMIT_SHA}"
+          echo "Triggered by: ${TRIGGERED_BY}"
+          echo "=========================="
+
+          # Validate version format
+          [[ "${VERSION}" =~ ^7\.[0-9]+\.[0-9]+$ ]] || { echo "[ERROR] Invalid version: ${VERSION}"; exit 1; }
+      -
         name: "Setup Node"
         uses: actions/setup-node@v6
         with:
           node-version-file: 'code/.nvmrc'
       -
         name: Check existing tags
+        env:
+          RECREATE_TAGS: ${{ github.event.inputs.forceRecreateTags }}
+          VERSION: ${{ github.event.inputs.version }}
         run: |
           set +e
-          RECREATE_TAGS=${{ github.event.inputs.forceRecreateTags }}
-          VERSION=${{ github.event.inputs.version }}
           EXISTING_TAG=$(git ls-remote --exit-code origin refs/tags/${VERSION})
           if [[ -n ${EXISTING_TAG} ]]; then
             if [[ ${RECREATE_TAGS} == "true" ]]; then
@@ -55,10 +76,12 @@ jobs:
           fi
       -
         name: "Tag release"
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GITHUB_TOKEN: ${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
         run: |
           git config --global user.name "Mykhailo Kuznietsov"
           git config --global user.email "mkuznets@redhat.com"
           git config --global pull.rebase true
-          export GITHUB_TOKEN=${{ secrets.CHE_INCUBATOR_BOT_TOKEN }}
-          /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --tag-release
+          /bin/bash make-release.sh --version "${VERSION}" --tag-release
 

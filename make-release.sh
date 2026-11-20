@@ -52,7 +52,7 @@ bump_version () {
   npm --no-git-tag-version version --allow-same-version ${NEXT_VERSION}
 
   if [[ ${NOCOMMIT} -eq 0 ]]; then
-    COMMIT_MSG="chore: Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
+    COMMIT_MSG="chore(release): Bump to ${NEXT_VERSION} in ${BUMP_BRANCH}"
     git commit -asm "${COMMIT_MSG}" || true
     git pull origin "${BUMP_BRANCH}"
 
@@ -115,7 +115,7 @@ sed_in_place -e "s|\(FROM quay.io/eclipse/che-machine-exec:\)[^ ]\+|\1${VERSION}
 
 # commit change into branch
 if [[ ${NOCOMMIT} -eq 0 ]]; then
-  COMMIT_MSG="chore: Bump to ${VERSION} in ${BRANCH}"
+  COMMIT_MSG="chore(release): Bump to ${VERSION} in ${BRANCH}"
   git commit -asm "${COMMIT_MSG}"
   git pull origin "${BRANCH}"
   git push origin "${BRANCH}"
