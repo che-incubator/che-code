@@ -1,0 +1,48 @@
+{
+    "name": "keybindings",
+    "displayName": "%displayName%",
+    "description": "%description%",
+    "publisher": "eclipse-che",
+    "license": "EPL-2.0",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.88.0"
+    },
+    "icon": "images/eclipse-che-logo.png",
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "capabilities": {
+        "virtualWorkspaces": true,
+        "untrustedWorkspaces": {
+            "supported": true
+        }
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "compile": "gulp compile-extension:che-keybindings",
+        "watch": "gulp watch-extension:che-keybindings",
+        "vscode:prepublish": "npm run compile",
+        "lint:fix": "eslint --fix --cache=true --no-error-on-unmatched-pattern=true \"{src,tests}/**/*.{ts,tsx}\"",
+        "license:generate": "podman run --rm -t -v $PWD:/workspace/project quay.io/che-incubator/dash-licenses:next"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/che-incubator/che-code.git"
+    },
+    "extensionDependencies": [
+        "eclipse-che.api",
+        "eclipse-che.terminal"
+    ],
+    "dependencies": {
+        "node-fetch": "^3.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.5",
+        "typescript": "^5.3.3",
+        "@types/vscode": "^1.85.0"
+    }
+}
