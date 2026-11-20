@@ -96,6 +96,7 @@ jobs:
         if: steps.resolve.outputs.pr != ''
         run: |
           ls -lahR
+
       - name: Load che-code-amd64 image
         if: steps.resolve.outputs.pr != ''
         run: |
@@ -110,7 +111,7 @@ jobs:
           docker tag che-code-amd64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_AMD64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
+
       - name: Remove che-code-amd64 and prune
         if: steps.resolve.outputs.pr != ''
         run: |
@@ -131,11 +132,32 @@ jobs:
           docker tag che-code-arm64 ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_CODE_ARM64_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
+
       - name: Remove che-code-arm64 and prune
         if: steps.resolve.outputs.pr != ''
         run: |
           docker image rm che-code-arm64 || true
+          docker system prune -af
+
+      - name: Load che-code-ppc64le image
+        if: steps.resolve.outputs.pr != ''
+        run: |
+          docker load -i che-code-ppc64le.tgz
+
+      - name: Push che-code-ppc64le docker image
+        if: steps.resolve.outputs.pr != ''
+        env:
+          _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
+        run: |
+          export IMAGE=quay.io/che-incubator-pull-requests/che-code:pr-${_PR_NUMBER}-ppc64le
+          docker tag che-code-ppc64le ${IMAGE}
+          docker push ${IMAGE}
+          echo "_CHE_CODE_PPC64LE_IMAGE=${IMAGE}" >> $GITHUB_ENV
+
+      - name: Remove che-code-ppc64le and prune
+        if: steps.resolve.outputs.pr != ''
+        run: |
+          docker image rm che-code-ppc64le || true
           docker system prune -af
 
       - name: Load che-dev image
@@ -152,7 +174,7 @@ jobs:
           docker tag che-dev ${IMAGE}
           docker push ${IMAGE}
           echo "_CHE_DEV_IMAGE=${IMAGE}" >> $GITHUB_ENV
-      
+
       - name: Remove che-dev and prune
         if: steps.resolve.outputs.pr != ''
         run: |
@@ -165,14 +187,14 @@ jobs:
           _PR_NUMBER: ${{ steps.resolve.outputs.pr }}
         uses: actions/github-script@v8
         with:
-         script: |
-           const tagUrl = (image) => {
-             const [path, tag] = image.replace(/^quay\.io\//, '').split(':');
-             return `https://quay.io/repository/${path}?tab=tags&tag=${tag}`;
-           };
-           await github.rest.issues.createComment({
+          script: |
+            const tagUrl = (image) => {
+              const [path, tag] = image.replace(/^quay\.io\//, '').split(':');
+              return `https://quay.io/repository/${path}?tab=tags&tag=${tag}`;
+            };
+            await github.rest.issues.createComment({
               issue_number: process.env._PR_NUMBER,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](${tagUrl(process.env._CHE_CODE_AMD64_IMAGE)})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](${tagUrl(process.env._CHE_CODE_ARM64_IMAGE)})\nDev image: [${process.env._CHE_DEV_IMAGE}](${tagUrl(process.env._CHE_DEV_IMAGE)})`
+              body: `Pull Request images published ✨\n\nEditor amd64: [${process.env._CHE_CODE_AMD64_IMAGE}](${tagUrl(process.env._CHE_CODE_AMD64_IMAGE)})\nEditor arm64: [${process.env._CHE_CODE_ARM64_IMAGE}](${tagUrl(process.env._CHE_CODE_ARM64_IMAGE)})\nEditor ppc64le: [${process.env._CHE_CODE_PPC64LE_IMAGE}](${tagUrl(process.env._CHE_CODE_PPC64LE_IMAGE)})\nDev image: [${process.env._CHE_DEV_IMAGE}](${tagUrl(process.env._CHE_DEV_IMAGE)})`
             })
