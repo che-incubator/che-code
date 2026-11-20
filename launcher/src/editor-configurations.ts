@@ -14,10 +14,15 @@ import { mergeFirstWithSecond, parseJSON } from './json-utils.js';
 
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
 
+// Must match CHE_CONFIG_KEYBINDINGS_PATH in code/src/vs/server/node/che/webClientServer.ts;
+// the launcher is a separate project and cannot import it from there.
+const CHECODE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
+
 const enum EditorConfigs {
   Settings = 'settings.json',
   Extensions = 'extensions.json',
   Product = 'product.json',
+  Keybindings = 'keybindings.json',
 }
 
 /**
@@ -37,6 +42,7 @@ export class EditorConfigurations {
       await this.configureSettings();
       await this.configureExtensions();
       await this.configureProductJSON();
+      await this.checkKeybindingsMount();
     } catch (error) {
       console.log(`  > Failed to apply editor configurations ${error}`);
     }
@@ -158,6 +164,31 @@ export class EditorConfigurations {
       console.log('    > product.json have been configured.');
     } catch (error) {
       console.log(`Failed to configure ${EditorConfigs.Product}.`, error);
+    }
+  }
+
+  /**
+   * Unlike the other keys of the ConfigMap, 'keybindings.json' is read by the editor
+   * from the ConfigMap mounted into the workspace, not through the Kubernetes API.
+   * Diagnostics only: never writes, and a failure here cannot skip the configuration
+   * steps above (this method is called last).
+   */
+  private async checkKeybindingsMount(): Promise<void> {
+    const configmapContent = this.configmapData![EditorConfigs.Keybindings];
+    if (!configmapContent) {
+      return;
+    }
+
+    try {
+      if (await fs.fileExists(CHECODE_CONFIG_KEYBINDINGS_PATH)) {
+        return;
+      }
+
+      console.log(
+        `  > Warning: '${EditorConfigs.Keybindings}' is set in the 'vscode-editor-configurations' ConfigMap, but ${CHECODE_CONFIG_KEYBINDINGS_PATH} is not mounted, so the keybindings will not be applied. Mount the ConfigMap at /checode-config (annotations controller.devfile.io/mount-as: subpath, controller.devfile.io/mount-path: /checode-config).`
+      );
+    } catch (error) {
+      console.log(`Failed to check the '${EditorConfigs.Keybindings}' mount.`, error);
     }
   }
 }
