@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "markdown-it": "^14.3.3"
+    }
+}
