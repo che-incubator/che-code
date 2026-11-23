@@ -20,6 +20,9 @@ jest.mock('../src/flattened-devfile', () => ({
   },
 }));
 
+// Patched files are read through readPatchable: route it to the readFile mocks of these tests
+Object.assign(fs, { readPatchable: (file: string) => fs.readFile(file) });
+
 describe('Test Configuring of WebView static resources:', () => {
   test('should get Webview resources URL from product.json', async () => {
     // had to combine two tests in one due to some issues with mocking the '../src/flattened-devfile' module
