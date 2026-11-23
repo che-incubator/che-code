@@ -250,6 +250,16 @@ export class ErrorPlaceholderEditor extends EditorPlaceholder {
 		} else if (isEditorOpenError(error) && error.forceMessage) {
 			label = error.message;
 		} else if (error) {
+			console.log('[CRW-12544] Error opening editor', {
+					resource: resource?.toString(),
+					errorName: error.name,
+					errorMessage: error.message,
+					errorStack: error.stack,
+					error,
+					timestamp: new Date().toISOString()
+				}
+			);
+
 			label = localize('unknownErrorEditorTextWithError', "The editor could not be opened due to an unexpected error. Please consult the log for more details.");
 		} else {
 			label = localize('unknownErrorEditorTextWithoutError', "The editor could not be opened due to an unexpected error.");
