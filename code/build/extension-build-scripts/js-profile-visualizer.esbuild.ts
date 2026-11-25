@@ -26,11 +26,30 @@ cp.execFileSync(cpy, ['src/**/*.css', 'out/esm'], { cwd: coreDir, stdio: 'inheri
 // Build the table package with webpack using override config that disables type-checking
 cp.execFileSync(webpack, ['--mode', 'production', '--config', path.join(rootDir, 'webpack.override.js')], { cwd: tableDir, stdio: 'inherit' });
 
-// Copy the sub-package's package.json to root so the build system picks up
-// the correct extension manifest (with engines, contributes, main, etc.)
+// che-code packages this monorepo as a single built-in extension rooted at this
+// directory (the build globs extensions/*/package.json), so at runtime
+// `context.extensionUri` is this repo root. The table package's webpack output
+// lands in packages/vscode-js-profile-table/out, but two different runtime paths
+// expect it at the repo root:
+//   - the extension loads its webview bundles via joinPath(extensionUri, 'out', ...)
+//     so they must exist at <root>/out
+//   - the build rewrites a bundled extension's manifest `main` from /out/ to /dist/
+//     (see updateExtensionPackageJSON in build/lib/extensions.ts), so the entry
+//     point (and its webpack-split sibling chunks/wasm) must exist at <root>/dist
+// Mirror the build output to both locations so every runtime path resolves.
+const tableOut = path.join(tableDir, 'out');
+for (const dir of ['out', 'dist']) {
+	const dest = path.join(rootDir, dir);
+	fs.rmSync(dest, { recursive: true, force: true });
+	fs.cpSync(tableOut, dest, { recursive: true });
+}
+
+// Promote the table package's manifest to the repo root so `vsce ls` and VS Code
+// read it as the extension manifest. Point main/browser at the mirrored entry in
+// dist/ (the /out/ -> /dist/ rewrite then leaves these unchanged).
 const tablePkg = JSON.parse(fs.readFileSync(path.join(tableDir, 'package.json'), 'utf8'));
-tablePkg.main = './packages/vscode-js-profile-table/out/extension.js';
+tablePkg.main = './dist/extension.js';
 if (tablePkg.browser) {
-	tablePkg.browser = './packages/vscode-js-profile-table/out/extension.web.js';
+	tablePkg.browser = './dist/extension.web.js';
 }
 fs.writeFileSync(path.join(rootDir, 'package.json'), JSON.stringify(tablePkg, null, 2));

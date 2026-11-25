@@ -2,14 +2,6 @@ diff --git a/code/extensions/js-profile-visualizer/package.json b/code/extension
 index 7a7bf706eb3..edbc2a2ad76 100644
 --- a/code/extensions/js-profile-visualizer/package.json
 +++ b/code/extensions/js-profile-visualizer/package.json
-@@ -3,7 +3,6 @@
-   "private": true,
-   "workspaces": [
-     "packages/vscode-js-profile-core",
--    "packages/vscode-js-profile-flame",
-     "packages/vscode-js-profile-table"
-   ],
-   "scripts": {
 @@ -32,11 +31,12 @@
      "tabWidth": 2
    },
@@ -29,12 +21,7 @@ diff --git a/code/extensions/js-profile-visualizer/package-lock.json b/code/exte
 index 45449ad..4c5f4e4 100644
 --- a/code/extensions/js-profile-visualizer/package-lock.json
 +++ b/code/extensions/js-profile-visualizer/package-lock.json
-@@ -7,12 +7,11 @@
-       "name": "js-profile-visualizer",
-       "workspaces": [
-         "packages/vscode-js-profile-core",
--        "packages/vscode-js-profile-flame",
-         "packages/vscode-js-profile-table"
+@@ -12,7 +12,7 @@
        ],
        "devDependencies": {
          "@types/glob": "^8.1.0",
@@ -195,17 +182,6 @@ index 45449ad..4c5f4e4 100644
        "dev": true,
        "license": "MIT"
      },
-@@ -11595,10 +11531,6 @@
-       "resolved": "packages/vscode-js-profile-core",
-       "link": true
-     },
--    "node_modules/vscode-js-profile-flame": {
--      "resolved": "packages/vscode-js-profile-flame",
--      "link": true
--    },
-     "node_modules/vscode-js-profile-table": {
-       "resolved": "packages/vscode-js-profile-table",
-       "link": true
 @@ -11652,12 +11584,6 @@
          "rimraf": "bin.js"
        }
@@ -219,33 +195,6 @@ index 45449ad..4c5f4e4 100644
      "node_modules/watchpack": {
        "version": "2.5.1",
        "resolved": "https://registry.npmjs.org/watchpack/-/watchpack-2.5.1.tgz",
-@@ -12516,26 +12442,6 @@
-       "integrity": "sha512-3EvQak7EIOLyIGz+IP9qSwRmP08ZRWgTeoRgAXPVkkDXZ8riqJ7LDtkgx++uHBiJ3MUaSdlUYPZcLFFw7E6zGg==",
-       "license": "BSD-3-Clause"
-     },
--    "packages/vscode-js-profile-flame": {
--      "version": "1.0.11",
--      "license": "MIT",
--      "dependencies": {
--        "@vscode/codicons": "^0.0.35",
--        "chroma-js": "^2.4.2",
--        "cytoscape": "^3.27.0",
--        "cytoscape-elk": "^2.3.0",
--        "vscode-js-profile-core": "*",
--        "vscode-webview-tools": "^0.1.1"
--      },
--      "devDependencies": {
--        "@types/chroma-js": "^2.4.3",
--        "@types/cytoscape": "^3.19.15",
--        "@types/resize-observer-browser": "^0.1.7"
--      },
--      "engines": {
--        "vscode": "^1.74.0"
--      }
--    },
-     "packages/vscode-js-profile-table": {
-       "version": "1.0.10",
-       "license": "MIT",
 -- 
 2.55.0
 
