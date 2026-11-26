@@ -14,9 +14,11 @@ import { FlattenedDevfile, Project } from './flattened-devfile.js';
 import { parseJSON } from './json-utils.js';
 import path from 'path';
 
+export const SKIP_PROJECT_SYNC_SETTING = 'workspace.skipProjectSync';
+
 export interface Workspace {
   folders: Folder[];
-  settings?: KeyValue;
+  settings?: WorkspaceSettings;
 }
 
 export interface Folder {
@@ -24,8 +26,8 @@ export interface Folder {
   path: string;
 }
 
-export interface KeyValue {
-  [key: string]: string;
+export interface WorkspaceSettings {
+  [key: string]: string | boolean | number;
 }
 
 export class CodeWorkspace {
@@ -106,16 +108,20 @@ export class CodeWorkspace {
         }
       }
 
-      if (await this.synchronizeProjects(workspace!, devfile.projects)) {
-        saveRequired = true;
-      }
+      if (this.shouldSkipProjectSync(workspace!)) {
+        console.log(`  > ${SKIP_PROJECT_SYNC_SETTING} is true, leaving workspace folders unchanged`);
+      } else {
+        if (await this.synchronizeProjects(workspace!, devfile.projects)) {
+          saveRequired = true;
+        }
 
-      if (await this.synchronizeProjects(workspace!, devfile.dependentProjects)) {
-        saveRequired = true;
-      }
+        if (await this.synchronizeProjects(workspace!, devfile.dependentProjects)) {
+          saveRequired = true;
+        }
 
-      if (await this.synchronizeProjects(workspace!, devfile.starterProjects)) {
-        saveRequired = true;
+        if (await this.synchronizeProjects(workspace!, devfile.starterProjects)) {
+          saveRequired = true;
+        }
       }
 
       const hasDevfileProjects =
@@ -154,6 +160,11 @@ export class CodeWorkspace {
     const regex = /\,(?!\s*?[\{\[\"\'\w])/g;
     const sanitized = content.replace(regex, '');
     return JSON.parse(sanitized);
+  }
+
+  // Only an explicit boolean true opts out. Missing, false, and string values keep the default sync.
+  private shouldSkipProjectSync(workspace: Workspace): boolean {
+    return workspace.settings?.[SKIP_PROJECT_SYNC_SETTING] === true;
   }
 
   async fileExists(file: string | undefined): Promise<boolean> {
