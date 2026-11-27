@@ -81,7 +81,8 @@
     "@vscode/vsce": {
       "markdown-it": "^14.3.3"
     },
-    "yauzl": "^3.3.1"
+    "yauzl": "^3.3.1",
+    "parse5": "^8.1.1"
   },
   "allowScripts": {
     "@vscode/vsce-sign@2.1.0": true,
