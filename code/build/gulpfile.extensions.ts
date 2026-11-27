@@ -66,6 +66,7 @@ const compilations = [
 	'extensions/css-language-features/server/tsconfig.json',
 	'extensions/debug-auto-launch/tsconfig.json',
 	'extensions/debug-server-ready/tsconfig.json',
+	'extensions/devfile/tsconfig.json',
 	'extensions/emmet/tsconfig.json',
 	'extensions/extension-editing/tsconfig.json',
 	'extensions/git/tsconfig.json',
@@ -78,6 +79,9 @@ const compilations = [
 	'extensions/html-language-features/server/tsconfig.json',
 	'extensions/ipynb/tsconfig.json',
 	'extensions/jake/tsconfig.json',
+	'extensions/js-debug/tsconfig.json',
+	'extensions/js-debug-companion/tsconfig.json',
+	'extensions/js-profile-visualizer/packages/vscode-js-profile-table/tsconfig.json',
 	'extensions/json-language-features/client/tsconfig.json',
 	'extensions/json-language-features/server/tsconfig.json',
 	'extensions/markdown-language-features/tsconfig.json',
@@ -234,23 +238,49 @@ export function createExtensionTasks(tsconfigFile: string, repoRoot = root) {
 		return watchStream;
 	}));
 
+	// Watch variant of {@link transpileTask}: incrementally transpiles with
+	// esbuild (no type-check), used for extensions that are not type-checked
+	// via tsgo (e.g. vendored git submodules built from upstream sources).
+	const watchTranspileTask = task.define(`watch-extension-transpile:${name}`, task.series(cleanTask, () => {
+		const pipeline = createPipeline(false, true, true);
+		const nonts = gulp.src(src, srcOpts).pipe(filter(['**', '!**/*.{ts,mts,cts}'], { dot: true }));
+		const input = es.merge(nonts, pipeline.tsProjectSrc());
+		const watchInput = watcher(src, { ...srcOpts, ...{ readDelay: 200 } });
+
+		return watchInput
+			.pipe(util.incremental(pipeline, input))
+			.pipe(gulp.dest(out));
+	}));
+
 	// Tasks
 	task.task(transpileTask);
 	task.task(compileTask);
 	task.task(watchTask);
+	task.task(watchTranspileTask);
 
-	return { transpileTask, compileTask, watchTask };
+	return { transpileTask, compileTask, watchTask, watchTranspileTask };
 }
 
-const tasks = compilations.map(tsconfigFile => createExtensionTasks(tsconfigFile));
+// Extensions vendored as pristine git submodules (built from upstream sources).
+// che-code does not own their source and they only type-check cleanly with their
+// own bundled TypeScript toolchain, not the build's tsgo. Transpile them with
+// esbuild (no type-check) instead of type-checking them via tsgo.
+const transpileOnlyCompilations = new Set([
+	'extensions/devfile/tsconfig.json',
+	'extensions/js-debug/tsconfig.json',
+	'extensions/js-debug-companion/tsconfig.json',
+	'extensions/js-profile-visualizer/packages/vscode-js-profile-table/tsconfig.json',
+]);
+
+const tasks = compilations.map(tsconfigFile => ({ tsconfigFile, ...createExtensionTasks(tsconfigFile) }));
 
 const transpileExtensionsTask = task.define('transpile-extensions', task.parallel(...tasks.map(t => t.transpileTask)));
 task.task(transpileExtensionsTask);
 
-export const compileExtensionsTask = task.define('compile-extensions', task.parallel(...tasks.map(t => t.compileTask)));
+export const compileExtensionsTask = task.define('compile-extensions', task.parallel(...tasks.map(t => transpileOnlyCompilations.has(t.tsconfigFile) ? t.transpileTask : t.compileTask)));
 task.task(compileExtensionsTask);
 
-export const watchExtensionsTask = task.define('watch-extensions', task.parallel(...tasks.map(t => t.watchTask)));
+export const watchExtensionsTask = task.define('watch-extensions', task.parallel(...tasks.map(t => transpileOnlyCompilations.has(t.tsconfigFile) ? t.watchTranspileTask : t.watchTask)));
 task.task(watchExtensionsTask);
 
 //#region Extension media
