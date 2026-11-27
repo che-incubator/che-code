@@ -2,6 +2,7 @@
     "overrides": {
         "@vscode/vsce": {
             "markdown-it": "^14.3.3"
-        }
+        },
+        "parse5": "^8.1.1"
     }
 }
