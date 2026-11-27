@@ -12,6 +12,7 @@ import * as fs from '../src/fs-extra';
 import { EditorConfigurations } from '../src/editor-configurations';
 
 const REMOTE_SETTINGS_PATH = '/checode/remote/data/Machine/settings.json';
+const CHECODE_CONFIG_KEYBINDINGS_PATH = '/checode-config/keybindings.json';
 const WORKSPACE_FILE_PATH = '/projects/.code-workspace';
 const WORKSPACE_FILE_CONTENT =
   '{\n' +
@@ -36,6 +37,11 @@ const SETTINGS_JSON = JSON.parse(SETTINGS_CONTENT);
 const SETTINGS_TO_FILE = JSON.stringify(SETTINGS_JSON, null, '\t');
 const CONFIGMAP_SETTINGS_DATA: Record<string, string> = {
   'settings.json': SETTINGS_CONTENT,
+};
+
+const CONFIGMAP_KEYBINDINGS_CONTENT = '[{"key": "ctrl+shift+t", "command": "workbench.action.terminal.new"}]';
+const CONFIGMAP_KEYBINDINGS_DATA: Record<string, string> = {
+  'keybindings.json': CONFIGMAP_KEYBINDINGS_CONTENT,
 };
 
 const WORKSPACE_FILE_EXTENSIONS_CONTENT =
@@ -275,5 +281,54 @@ describe('Test applying editor configurations:', () => {
       'product.json',
       JSON.stringify(JSON.parse(mergedProductJSON), null, '\t')
     );
+  });
+
+  it('should not warn when configmap keybindings are mounted', async () => {
+    fileExistsMock.mockResolvedValue(true);
+    const consoleLogSpy = jest.spyOn(console, 'log');
+
+    await new EditorConfigurations(undefined, CONFIGMAP_KEYBINDINGS_DATA).configure();
+
+    expect(fileExistsMock).toHaveBeenCalledWith(CHECODE_CONFIG_KEYBINDINGS_PATH);
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('not mounted'));
+    consoleLogSpy.mockRestore();
+  });
+
+  it('should warn when configmap keybindings are not mounted', async () => {
+    fileExistsMock.mockResolvedValue(false);
+    const consoleLogSpy = jest.spyOn(console, 'log');
+
+    await new EditorConfigurations(undefined, CONFIGMAP_KEYBINDINGS_DATA).configure();
+
+    const warnings = consoleLogSpy.mock.calls.filter(
+      ([message]) => typeof message === 'string' && message.includes('not mounted')
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0][0]).toBe(
+      `  > Warning: 'keybindings.json' is set in the 'vscode-editor-configurations' ConfigMap, but ${CHECODE_CONFIG_KEYBINDINGS_PATH} is not mounted, so the keybindings will not be applied. Mount the ConfigMap at /checode-config (annotations controller.devfile.io/mount-as: subpath, controller.devfile.io/mount-path: /checode-config).`
+    );
+    consoleLogSpy.mockRestore();
+  });
+
+  it('should not warn when configmap does not contain keybindings', async () => {
+    fileExistsMock.mockResolvedValue(false);
+    const consoleLogSpy = jest.spyOn(console, 'log');
+
+    await new EditorConfigurations(undefined, CONFIGMAP_SETTINGS_DATA).configure();
+
+    expect(fileExistsMock).not.toHaveBeenCalledWith(CHECODE_CONFIG_KEYBINDINGS_PATH);
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('not mounted'));
+    consoleLogSpy.mockRestore();
+  });
+
+  it('should not warn when configmap keybindings are empty', async () => {
+    fileExistsMock.mockResolvedValue(false);
+    const consoleLogSpy = jest.spyOn(console, 'log');
+
+    await new EditorConfigurations(undefined, { 'keybindings.json': '' }).configure();
+
+    expect(fileExistsMock).not.toHaveBeenCalledWith(CHECODE_CONFIG_KEYBINDINGS_PATH);
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining('not mounted'));
+    consoleLogSpy.mockRestore();
   });
 });
