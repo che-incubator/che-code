@@ -302,7 +302,8 @@
     },
     "@vscode/telemetry-extractor": {
       "@vscode/ripgrep": "1.18.0"
-    }
+    },
+    "follow-redirects": "^1.16.3"
   },
   "repository": {
     "type": "git",
