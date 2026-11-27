@@ -6,6 +6,9 @@
         "express": {
             "proxy-addr": "^2.0.8"
         },
-        "parse5": "^8.1.1"
+        "parse5": "^8.1.1",
+        "proxy-addr": "^2.0.8",
+        "body-parser": "^2.4.0"
+        }
     }
 }
