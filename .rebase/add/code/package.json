@@ -20,6 +20,9 @@
         },
         "@vscode/telemetry-extractor": {
             "@vscode/ripgrep": "1.18.0"
+        },
+        "express": {
+            "body-parser": "^2.4.0"
         }
     }
 }
