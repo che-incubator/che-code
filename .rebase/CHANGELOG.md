@@ -7,6 +7,16 @@ https://github.com/che-incubator/che-code/pull/866
 
 - code/package.json
 ---
+
+#### @sbouchet
+https://github.com/che-incubator/che-code/pull/867
+
+- code/package.json
+- code/extensions/copilot/package.json
+- code/test/mcp/package.json
+- code/build/agent-sdk/agents/claude/package.json
+---
+
 #### @RomanNikitenko
 https://github.com/che-incubator/che-code/pull/864
 

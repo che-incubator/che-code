@@ -7148,7 +7148,8 @@
     "shell-quote": "^1.12.0",
     "@grpc/grpc-js": "^1.14.6",
     "express": {
-      "proxy-addr": "^2.0.8"
+      "proxy-addr": "^2.0.8",
+      "body-parser": "^2.4.0"
     }
   },
   "vscodeCommit": "94c8e2adc50e26ef70af85a0de3a9efed757acaa",
